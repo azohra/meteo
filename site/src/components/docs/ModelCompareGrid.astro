@@ -1,0 +1,264 @@
+---
+import { MODELS, OBSERVATION_MODELS, SMOKE_MODELS } from "../../lib/catalogue";
+
+/* Generated from models.json at build time (the same single-source pattern as
+   CapabilityMatrix), so the catalogue columns — slug, provider, kind, grid,
+   cadence, horizon, status flags — can never drift from the catalogue.
+   Transport and verification dates live only in this page's prose, so they
+   arrive authored, keyed by slug; a catalogue model the page has not authored
+   renders an em dash rather than an invented value. Feeds the catalogue does
+   not carry (staged and evaluated models) arrive as fully authored rows. */
+
+interface AuthoredFacts {
+  transport: string;
+  verified: string;
+}
+
+interface ExtraRow {
+  label: string;
+  slug: string;
+  provider: string;
+  kind: string;
+  grid: string;
+  cadence: string;
+  horizon: string;
+  transport: string;
+  verified: string;
+  status: string;
+}
+
+interface Props {
+  authored?: Record<string, AuthoredFacts>;
+  extraRows?: ExtraRow[];
+}
+
+const { authored = {}, extraRows = [] } = Astro.props;
+
+function cycles(intervalHours: number): string {
+  if (intervalHours === 6) return "00/06/12/18Z";
+  if (intervalHours === 12) return "00/12Z";
+  return `every ${intervalHours} h`;
+}
+
+function grid(gridKm: number): string {
+  return `${gridKm} km`;
+}
+
+const NONE = "—";
+
+function authoredFacts(slug: string): AuthoredFacts {
+  return authored[slug] ?? { transport: NONE, verified: NONE };
+}
+
+interface Row {
+  label: string;
+  slug: string;
+  status: string;
+  provider: string;
+  kind: string;
+  grid: string;
+  cadence: string;
+  horizon: string;
+  transport: string;
+  verified: string;
+}
+
+const modelRows: Row[] = MODELS.map((m) => ({
+  label: m.label,
+  slug: m.slug,
+  status: m.sunset
+    ? `retires ${m.sunset.date}`
+    : m.experimental
+      ? "experimental feed"
+      : "",
+  provider: m.provider,
+  kind: m.kind,
+  grid: grid(m.gridKm),
+  cadence: `${cycles(m.runIntervalHours)} · ${m.stepHours} h step`,
+  horizon: `${m.horizonHours} h`,
+  ...authoredFacts(m.slug),
+}));
+
+const smokeRows: Row[] = SMOKE_MODELS.map((m) => ({
+  label: m.label,
+  slug: m.slug,
+  status: m.experimental ? "experimental feed" : "",
+  provider: m.provider,
+  kind: `${m.kind} · smoke`,
+  grid: grid(m.gridKm),
+  cadence: `${cycles(m.runIntervalHours)} · ${m.stepHours} h step`,
+  horizon: `${m.horizonHours} h`,
+  ...authoredFacts(m.slug),
+}));
+
+const observationRows: Row[] = OBSERVATION_MODELS.map((m) => ({
+  label: m.label,
+  slug: m.slug,
+  status: m.experimental ? "experimental feed" : "",
+  provider: m.provider,
+  kind: "observation",
+  grid: grid(m.gridKm),
+  cadence: `${m.cadenceMinutes} min granules`,
+  horizon: NONE,
+  ...authoredFacts(m.slug),
+}));
+
+const rows: Row[] = [
+  ...modelRows,
+  ...smokeRows,
+  ...observationRows,
+  ...extraRows.map((r) => ({
+    label: r.label,
+    slug: r.slug,
+    status: r.status,
+    provider: r.provider,
+    kind: r.kind,
+    grid: r.grid,
+    cadence: r.cadence,
+    horizon: r.horizon,
+    transport: r.transport,
+    verified: r.verified,
+  })),
+];
+---
+
+<div class="mc-grid">
+  <p class="scroll-hint" id="model-table-scroll-hint">Scroll horizontally to see all columns.</p>
+  <div
+    class="table-scroll"
+    role="region"
+    aria-label="Forecast model feeds"
+    aria-describedby="model-table-scroll-hint"
+    tabindex="0"
+  >
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Model</th>
+          <th scope="col">Provider</th>
+          <th scope="col">Kind</th>
+          <th scope="col">Grid</th>
+          <th scope="col">Runs used (UTC) · step</th>
+          <th scope="col">Horizon</th>
+          <th scope="col">Transport</th>
+          <th scope="col">Verified</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr>
+              <th scope="row">
+                <span class="mc-name">{r.label}</span>
+                <span class="mc-slug">{r.slug}</span>
+                {r.status && <span class="mc-status">{r.status}</span>}
+              </th>
+              <td>{r.provider}</td>
+              <td>{r.kind}</td>
+              <td class="mc-num">{r.grid}</td>
+              <td class="mc-num">{r.cadence}</td>
+              <td class="mc-num">{r.horizon}</td>
+              <td>{r.transport}</td>
+              <td class="mc-num">{r.verified}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .mc-grid {
+    margin: 28px 0 40px;
+  }
+  .table-scroll {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+  .table-scroll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .scroll-hint {
+    display: none;
+  }
+  table {
+    width: 100%;
+    min-width: 940px;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    font-size: 14px;
+  }
+  thead th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-top: 1px solid var(--rule);
+  }
+  tbody th,
+  tbody td {
+    padding: 10px 12px;
+    color: var(--ink-soft);
+    font-weight: 400;
+    vertical-align: baseline;
+  }
+  tbody th {
+    text-align: left;
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .mc-name {
+    display: block;
+    white-space: nowrap;
+  }
+  .mc-slug {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--ink-mute);
+  }
+  .mc-status {
+    display: block;
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--ink-mute);
+  }
+  .mc-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) {
+    .scroll-hint {
+      display: block;
+      margin: 0 0 8px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--ink-mute);
+    }
+  }
+</style>

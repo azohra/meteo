@@ -1,0 +1,51 @@
+---
+import Figure from "../figure/Figure.astro";
+import Legend from "../figure/Legend.astro";
+import SyntheticMeteogram from "../meteogram/SyntheticMeteogram.astro";
+import MeteogramAnnotations from "../meteogram/MeteogramAnnotations.astro";
+import {
+  onlyOverlays,
+  renderSyntheticMeteogram,
+} from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+/* The three derived height lines of the convective-cycle scenario, isolated
+   for the reading guide: usable lift, the parcel boundary-layer top, and
+   cloud base follow different paths because each encodes a different limit. */
+const scenario = scenarioById("convective-cycle");
+const overlays = onlyOverlays("boundaryLayerTop", "cloudBase", "usableLiftTop", "launch", "selectedHour");
+const idPrefix = "reading-height-lines";
+const { scene } = renderSyntheticMeteogram(
+  scenario,
+  { overlays, columnWidthPx: 72, plotHeightPx: 390 },
+  idPrefix,
+);
+---
+
+<Figure
+  id="reading-height-lines"
+  title="Three heights answer three different questions"
+  lesson="Usable lift, the parcel-derived boundary-layer top, and cloud base can separate or meet because they encode different limits."
+  description={scenario.accessibilityDescription}
+  caption="The line geometry is serialized directly from the scene; this focused view changes visibility, not the scenario values."
+  units="altitude m and ft · height lines m ASL · time UTC"
+  {scenario}
+>
+  <MeteogramAnnotations {scenario} {scene} mode="lines" />
+  <SyntheticMeteogram
+    {scenario}
+    {idPrefix}
+    {overlays}
+    columnWidthPx={72}
+    plotHeightPx={390}
+  />
+  <Legend
+    slot="legend"
+    label="Height lines"
+    items={[
+      { label: "Usable lift", description: "Climb limit", color: "var(--chart-usable)" },
+      { label: "Boundary layer", description: "Thermodynamic depth", color: "var(--chart-boundary)" },
+      { label: "Cloud base", description: "Moisture limit", color: "var(--meteo-gram-cloud-base)" },
+    ]}
+  />
+</Figure>

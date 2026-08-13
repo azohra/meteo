@@ -1,0 +1,119 @@
+---
+import { isDeterministicProfile } from "@azohra/meteo.briefing/contract";
+import { dewPointDepressionC, relativeHumidityPercent } from "@azohra/meteo.briefing/derive";
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+import Figure from "../figure/Figure.astro";
+import { onlyOverlays } from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const scenario = scenarioById("cloud-base-limits-lift");
+const profile = scenario.profile;
+if (!isDeterministicProfile(profile)) throw new Error("cloud-base-limits-lift must be deterministic");
+const hour = profile.hours[3];
+const nearSaturated = hour.levels
+  .map((level) => ({
+    ...level,
+    depressionC: dewPointDepressionC(level.temperatureC, level.dewPointC),
+    relativeHumidity: relativeHumidityPercent(level.temperatureC, level.dewPointC),
+  }))
+  .filter((level) => level.depressionC <= 0.5);
+const coverage = hour.surface.cloudCoverPercent;
+const coverageCells = Array.from({ length: 10 }, (_, index) => index < Math.round(coverage / 10));
+const moistureSvg = renderMeteogramSvg(
+  buildMeteogramScene(profile, {
+    timeZone: scenario.timeZone,
+    hourIndices: [3],
+    overlays: onlyOverlays("clouds", "cloudBase", "temperature", "dewPoint", "launch", "selectedHour"),
+    smooth: false,
+    columnWidthPx: 150,
+    plotHeightPx: 260,
+  }),
+  { idPrefix: "moisture-signals-column" },
+);
+---
+
+<Figure
+  id="moisture-signals"
+  title="Coverage, cloud base, and sampled saturation answer different questions"
+  lesson="A horizontal coverage fraction cannot locate cloud vertically, and one cloud-base height cannot describe every moist layer aloft."
+  description={`At the selected hour, total cloud coverage is ${coverage} percent, published cloud base is ${hour.derived.cloudBaseM.toFixed(1)} metres, and ${nearSaturated.length} pressure ${nearSaturated.length === 1 ? "level is" : "levels are"} within 0.5 degrees Celsius of saturation.`}
+  caption="The values come from one controlled cloud-capped profile. Dew-point depression and relative humidity are computed with @azohra/meteo.briefing/derive."
+  units="cloud % · altitude m ASL · temperature and dew-point depression °C"
+  {scenario}
+>
+  <div class="signal-sequence">
+    <section>
+      <span class="signal-index">01</span>
+      <h4>Total cloud</h4>
+      <p>What fraction of the model grid cell is covered?</p>
+      <div class="coverage" role="img" aria-label={`Total cloud coverage ${coverage} percent`}>
+        <div aria-hidden="true">{coverageCells.map((filled) => <i class:list={{ filled }}></i>)}</div>
+        <strong>{coverage.toFixed(0)}%</strong>
+      </div>
+      <small>Coverage has no altitude or thickness.</small>
+    </section>
+
+    <section>
+      <span class="signal-index">02</span>
+      <h4>Published cloud base</h4>
+      <p>Where does the lower parcel-or-column moisture limit sit?</p>
+      <div class="base-readout" role="img" aria-label={`Cloud base ${hour.derived.cloudBaseM.toFixed(1)} metres above sea level`}>
+        <span aria-hidden="true">surface parcel ↑</span>
+        <i aria-hidden="true"></i>
+        <strong>{hour.derived.cloudBaseM.toLocaleString("en-CA", { maximumFractionDigits: 1 })} m</strong>
+      </div>
+      <small>One lower boundary; not a complete cloud profile.</small>
+    </section>
+
+    <section>
+      <span class="signal-index">03</span>
+      <h4>Near-saturated samples</h4>
+      <p>Which published pressure levels put temperature within 0.5 °C of dew point?</p>
+      <div
+        class="column-chart"
+        role="region"
+        tabindex="0"
+        aria-label="Scrollable near-saturated pressure-level chart"
+        set:html={moistureSvg}
+      ></div>
+      <ul class="saturation-list" aria-label="Near-saturated pressure-level readings">
+        {nearSaturated.map((level) => (
+          <li>
+            <strong>{level.pressureHpa} hPa</strong>
+            <span>{level.heightM.toFixed(0)} m · ΔTd {level.depressionC.toFixed(1)} °C · RH {level.relativeHumidity.toFixed(0)}%</span>
+          </li>
+        ))}
+      </ul>
+      <small>Package geometry locates the sampled layers; sparse levels still do not imply full vertical resolution.</small>
+    </section>
+  </div>
+</Figure>
+
+<style>
+  .signal-sequence { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); }
+  section { min-width: 0; padding: 16px; }
+  section + section { border-left: 1px solid var(--rule); }
+  .signal-index { color: var(--accent-strong); font: 700 11px/1 var(--mono); }
+  h4 { margin: 6px 0 5px; color: var(--ink); font: 700 16px/1.2 var(--sans); }
+  p { min-height: 54px; margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+  small { display: block; margin-top: 10px; color: var(--ink-mute); font: 10px/1.4 var(--mono); }
+  .coverage { min-height: 190px; display: grid; align-content: center; }
+  .coverage > div { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; height: 34px; }
+  .coverage i { border: 1px solid var(--ink); background: var(--surface); }
+  .coverage i.filled { background: var(--chart-cloud); }
+  .coverage strong, .base-readout strong { margin-top: 12px; color: var(--ink); font: 700 38px/1 var(--display); }
+  .base-readout { min-height: 190px; display: grid; place-content: center; text-align: center; }
+  .base-readout span { color: var(--ink-mute); font: 11px var(--mono); }
+  .base-readout i { width: 150px; margin: 24px auto 2px; border-top: 4px double var(--chart-cloud-base); }
+  .column-chart { min-height: 190px; overflow-x: auto; }
+  .column-chart :global(svg) { display: block; width: 100%; min-width: 250px; height: auto; }
+  .saturation-list { margin: 8px 0 0; padding: 0; list-style: none; }
+  .saturation-list li { display: grid; gap: 2px; padding-top: 7px; border-top: 1px solid var(--rule); }
+  .saturation-list strong { color: var(--accent-strong); font: 700 11px/1.3 var(--mono); }
+  .saturation-list span { color: var(--ink-soft); font: 10px/1.4 var(--mono); }
+  @media (max-width: 700px) {
+    .signal-sequence { grid-template-columns: 1fr; }
+    section + section { border-left: 0; border-top: 1px solid var(--rule); }
+    p { min-height: 0; }
+  }
+</style>

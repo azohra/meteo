@@ -1,0 +1,333 @@
+@import "./theme.css";
+
+/* Starlight rides the platform tokens. Every --sl-* colour resolves through
+   the same light-dark() pairs as the rest of the site, so the docs follow
+   the system preference and the header toggle's data-theme pin exactly like
+   the custom pages and the station components do. */
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --sl-color-white: var(--ink);
+  --sl-color-gray-1: var(--ink);
+  --sl-color-gray-2: var(--ink-soft);
+  --sl-color-gray-3: var(--ink-mute);
+  --sl-color-gray-4: var(--rule-strong);
+  --sl-color-gray-5: var(--rule);
+  --sl-color-gray-6: var(--surface-raised);
+  --sl-color-gray-7: var(--surface);
+  --sl-color-black: var(--page);
+  --sl-color-accent-low: var(--surface-accent);
+  --sl-color-accent: var(--accent);
+  --sl-color-accent-high: var(--accent-strong);
+  --sl-color-text: var(--ink-soft);
+  --sl-color-text-accent: var(--accent);
+  --sl-color-text-invert: var(--accent-ink);
+  --sl-color-bg: var(--page);
+  --sl-color-bg-nav: light-dark(rgba(238, 241, 245, 0.94), rgba(13, 19, 25, 0.94));
+  --sl-color-bg-sidebar: var(--page);
+  --sl-color-bg-inline-code: var(--surface-sunken);
+  --sl-color-bg-accent: var(--accent);
+  --sl-color-hairline-light: color-mix(in srgb, var(--rule) 60%, transparent);
+  --sl-color-hairline: var(--rule);
+  --sl-color-hairline-shade: var(--rule);
+  --sl-color-backdrop-overlay: light-dark(rgb(23 35 46 / 0.5), rgb(0 0 0 / 0.6));
+
+  --sl-color-blue-high: light-dark(#184e82, #9ec7ef);
+  --sl-color-blue: light-dark(#1f5f9b, #5fa4e0);
+  --sl-color-blue-low: light-dark(#e3edf6, #14202e);
+  --sl-color-green-high: light-dark(#0e5c2e, #86e7b8);
+  --sl-color-green: var(--status-good);
+  --sl-color-green-low: light-dark(#e2f2e8, #10251a);
+  --sl-color-orange-high: light-dark(#8a4207, #fcd34d);
+  --sl-color-orange: var(--status-warning);
+  --sl-color-orange-low: light-dark(#f7ecdd, #2b2010);
+  --sl-color-purple-high: light-dark(#6f3953, #dfb2c8);
+  --sl-color-purple: light-dark(#934568, #c586a5);
+  --sl-color-purple-low: light-dark(#f2e4eb, #271520);
+  --sl-color-red-high: light-dark(#8f1d1d, #fca5a5);
+  --sl-color-red: var(--status-serious);
+  --sl-color-red-low: light-dark(#f8e4e4, #2b1414);
+
+  --sl-font: var(--sans);
+  --sl-font-mono: var(--mono);
+  --sl-content-width: 52rem;
+  --sl-sidebar-width: 17.5rem;
+  --sl-content-gap-y: 1.15rem;
+  --sl-line-height: 1.68;
+  --sl-line-height-headings: 1.15;
+  --sl-shadow-sm: var(--shadow);
+  --sl-shadow-md: var(--shadow);
+  --sl-shadow-lg: var(--shadow);
+}
+
+body {
+  font-family: var(--sans);
+}
+
+/* Wide-screen layout. Stock Starlight (TwoColumnContent.astro, layer
+   starlight.core) balloons the TOC container to absorb half the surplus and
+   packs the content column right against it (`--sl-content-margin-inline:
+   auto 0`), leaving a void beside the left sidebar. Instead: the TOC keeps
+   its natural width and the content centers between the two sidebars with
+   even gutters. These rules are unlayered, so they win over the layered
+   stock rules; guards match stock exactly. */
+@media (min-width: 72rem) {
+  [data-has-sidebar][data-has-toc] .right-sidebar-container {
+    width: var(--sl-sidebar-width);
+  }
+
+  [data-has-sidebar][data-has-toc] .main-pane {
+    --sl-content-margin-inline: auto;
+    width: calc(100% - var(--sl-sidebar-width));
+  }
+}
+
+/* Short pages: the docs footer sits at the bottom of the viewport instead of
+   hanging mid-page. The main column stretches to fill the space under the
+   header, the last content panel flexes to absorb the surplus, and the
+   footer rides at the end of its container. Long pages are unaffected: the
+   auto margin collapses to the .page-meta 3rem minimum. */
+.main-pane > main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--sl-nav-height) - var(--sl-mobile-toc-height, 0rem));
+}
+
+.main-pane > main > .content-panel:last-child {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.main-pane > main > .content-panel:last-child > .sl-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sl-container > .docs-footer {
+  margin-block-start: auto;
+}
+
+.header {
+  box-shadow: none;
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#starlight__sidebar a,
+#starlight__sidebar summary {
+  border-radius: var(--radius-small);
+}
+
+#starlight__sidebar a {
+  color: var(--ink-mute);
+}
+
+#starlight__sidebar a:hover,
+#starlight__sidebar a:focus-visible {
+  color: var(--ink);
+}
+
+#starlight__sidebar a[aria-current="page"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+#starlight__sidebar a[aria-current="page"] * {
+  color: inherit;
+}
+
+.sl-markdown-content {
+  font-size: 1.02rem;
+}
+
+.sl-markdown-content > p:first-child {
+  color: var(--ink);
+  font-size: 1.16rem;
+  line-height: 1.58;
+}
+
+h1#_top,
+.sl-markdown-content :is(h1, h2, h3):not(:where(.not-content *)) {
+  font-family: var(--display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+/* The page signs itself once: the grade under the title. */
+h1#_top {
+  position: relative;
+  padding-bottom: 1.05rem;
+  margin-top: 1.6rem;
+  font-size: clamp(1.9rem, 4vw, 2.4rem);
+}
+
+h1#_top::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 7rem;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--band-gradient);
+  content: "";
+}
+
+.sl-markdown-content h2:not(:where(.not-content *)) {
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+  font-size: 1.4rem;
+}
+
+.sl-markdown-content h3:not(:where(.not-content *)) {
+  font-size: 1.12rem;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)) {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+  border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
+  border-radius: 4px;
+  font-family: var(--mono);
+}
+
+.sl-markdown-content pre:not(:where(.not-content *)),
+.expressive-code .frame {
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+
+.sl-markdown-content pre:not(:where(.not-content *)) {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.expressive-code .frame {
+  border: 1px solid var(--rule);
+}
+
+.sl-markdown-content table:not(:where(.not-content *)) {
+  width: 100%;
+  border-top: 2px solid var(--rule-strong);
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+  background: var(--surface-raised);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.sl-markdown-content td:not(:where(.not-content *)) {
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.sl-markdown-content tr:nth-child(even) td:not(:where(.not-content *)) {
+  background: color-mix(in srgb, var(--surface-raised) 55%, transparent);
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+  padding: 0.72rem 0.8rem;
+  border-bottom-color: var(--rule);
+}
+
+.sl-markdown-content :is(th:first-child, td:first-child):not(:where(.not-content *)) {
+  padding-inline-start: 0.8rem;
+}
+
+.sl-markdown-content :is(th:last-child, td:last-child):not(:where(.not-content *)) {
+  padding-inline-end: 0.8rem;
+}
+
+/* Figures are printed plates: one light chart face in either theme (the
+   color-scheme pin in theme.css), framed by the page's own chrome. */
+.sl-markdown-content .figure-shell:not(:where(.not-content *)),
+.sl-markdown-content figure.figure-shell {
+  width: 100%;
+  padding: clamp(1rem, 2vw, 1.4rem);
+  margin: 2rem 0 2.75rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--ink-soft);
+}
+
+.sl-markdown-content figure.figure-shell:focus-within {
+  border-color: var(--accent);
+}
+
+.pagination-links a {
+  border-radius: var(--radius);
+  box-shadow: none;
+  border-color: var(--rule);
+  background: var(--surface);
+}
+
+.pagination-links a:hover {
+  border-color: var(--accent);
+}
+
+site-search button[data-open-modal] {
+  border-radius: 999px;
+  box-shadow: none;
+  background: var(--surface);
+  border-color: var(--rule);
+  color: var(--ink-mute);
+}
+
+site-search button[data-open-modal]:hover {
+  border-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 49.99rem) {
+  .sl-markdown-content {
+    font-size: 1rem;
+  }
+
+  .sl-markdown-content > p:first-child {
+    font-size: 1.1rem;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --page: #fff;
+    --surface: #fff;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .sl-markdown-content .figure-shell:not(:where(.not-content *)),
+  .sl-markdown-content figure.figure-shell {
+    width: 100%;
+    margin-inline: 0;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}

@@ -1,0 +1,21 @@
+---
+import AboutContent from "../components/about/AboutContent.mdx";
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="Why this project exists — meteo by Azohra"
+  description="How a Nelson paraglider's club website grew into an open platform for free-flight forecasts, Meteograms, and live station data."
+  activeNav="about"
+>
+  <main class="shell prose about-shell">
+    <AboutContent />
+  </main>
+</Base>
+
+<style>
+  .about-shell {
+    padding-top: 42px;
+    padding-bottom: 72px;
+  }
+</style>

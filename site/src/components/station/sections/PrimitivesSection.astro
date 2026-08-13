@@ -1,0 +1,327 @@
+---
+/* Primitives: the smallest pieces one at a time, then composed. The page's
+   script supplies the band-chip label vocabulary. */
+---
+
+<section class="station-section" id="primitives" aria-labelledby="primitives-title">
+  <h2 id="primitives-title">Primitives</h2>
+  <p class="station-note">
+    The smallest pieces, one at a time — then composed. Every atom
+    is a plain inline element you can drop into your own markup.
+  </p>
+  <div class="station-primitives">
+    <div class="station-panel station-specimens">
+      <h3>The atoms — the feed&rsquo;s primary station, one element at a time</h3>
+      <div class="station-specimen-grid">
+        <div class="station-specimen">
+          <code>&lt;meteo-speed&gt;</code>
+          <div class="station-specimen-value"><meteo-speed></meteo-speed></div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-gust&gt;</code>
+          <div class="station-specimen-value"><meteo-gust></meteo-gust></div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-lull&gt;</code>
+          <div class="station-specimen-value"><meteo-lull></meteo-lull></div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-direction&gt;</code>
+          <div class="station-specimen-value"><meteo-direction></meteo-direction></div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-temperature&gt;</code>
+          <div class="station-specimen-value"><meteo-temperature></meteo-temperature></div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-pressure station-id="valley-tempest"&gt;</code>
+          <div class="station-specimen-value">
+            <meteo-pressure station-id="valley-tempest"></meteo-pressure>
+          </div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-updated-at&gt;</code>
+          <div class="station-specimen-value"><meteo-updated-at></meteo-updated-at></div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-band-chip&gt; + labels</code>
+          <div class="station-specimen-value">
+            <meteo-band-chip
+              class="station-chip"
+              thresholds='{"unit":"kmh","values":[5,12,20,28]}'
+            ></meteo-band-chip>
+          </div>
+        </div>
+        <div class="station-specimen">
+          <code>&lt;meteo-sparkline&gt;</code>
+          <div class="station-specimen-value"><meteo-sparkline></meteo-sparkline></div>
+        </div>
+      </div>
+    </div>
+    <div class="station-panel station-primitive-sentence">
+      <h3>Composed — the atoms disappear into your own prose</h3>
+      <p class="station-sentence">
+        Right now at Launch Ridge it&rsquo;s blowing <meteo-speed></meteo-speed> from
+        the <meteo-direction></meteo-direction>, gusting <meteo-gust></meteo-gust> —
+        updated <meteo-updated-at></meteo-updated-at>.
+      </p>
+      <code class="station-sentence-source">
+        Right now at &#123;station.name&#125; it's blowing &lt;meteo-speed&gt; from the
+        &lt;meteo-direction&gt;, gusting &lt;meteo-gust&gt; — updated &lt;meteo-updated-at&gt;.
+      </code>
+    </div>
+    <div class="station-primitives-row">
+      <div class="station-panel">
+        <h3>Band chips across the fleet — five words over 5 · 12 · 20 · 28 km/h</h3>
+        <div class="station-chip-list">
+          <div class="station-chip-item">
+            <span>Launch Ridge</span>
+            <meteo-band-chip
+              class="station-chip"
+              station-id="launch-ridge"
+              thresholds='{"unit":"kmh","values":[5,12,20,28]}'
+            ></meteo-band-chip>
+          </div>
+          <div class="station-chip-item">
+            <span>Summit Logger</span>
+            <meteo-band-chip
+              class="station-chip"
+              station-id="summit-logger"
+              thresholds='{"unit":"kmh","values":[5,12,20,28]}'
+            ></meteo-band-chip>
+          </div>
+          <div class="station-chip-item">
+            <span>Valley Tempest</span>
+            <meteo-band-chip
+              class="station-chip"
+              station-id="valley-tempest"
+              thresholds='{"unit":"kmh","values":[5,12,20,28]}'
+            ></meteo-band-chip>
+          </div>
+          <div class="station-chip-item">
+            <span>North Bluff</span>
+            <meteo-band-chip
+              class="station-chip"
+              station-id="north-bluff"
+              thresholds='{"unit":"kmh","values":[5,12,20,28]}'
+            ></meteo-band-chip>
+          </div>
+        </div>
+      </div>
+      <div class="station-panel">
+        <h3>The bare dial — one 160-unit drawing, any size</h3>
+        <div class="station-dials">
+          <figure class="station-dial-figure">
+            <meteo-dial size="120" station-id="launch-ridge"></meteo-dial>
+            <figcaption>size="120"</figcaption>
+          </figure>
+          <figure class="station-dial-figure">
+            <meteo-dial size="200" station-id="launch-ridge"></meteo-dial>
+            <figcaption>size="200"</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+    <div class="station-panel">
+      <h3>Strips with sparklines — the board-row pairing</h3>
+      <div
+        class="station-board"
+        role="region"
+        tabindex="0"
+        aria-label="Scrollable station board rows"
+      >
+        <div class="station-board-row">
+          <meteo-station-strip station-id="launch-ridge"></meteo-station-strip>
+          <meteo-sparkline station-id="launch-ridge"></meteo-sparkline>
+        </div>
+        <div class="station-board-row">
+          <meteo-station-strip station-id="summit-logger"></meteo-station-strip>
+          <meteo-sparkline station-id="summit-logger"></meteo-sparkline>
+        </div>
+        <div class="station-board-row">
+          <meteo-station-strip station-id="valley-tempest"></meteo-station-strip>
+          <meteo-sparkline station-id="valley-tempest"></meteo-sparkline>
+        </div>
+        <div class="station-board-row">
+          <meteo-station-strip station-id="north-bluff"></meteo-station-strip>
+          <meteo-sparkline station-id="north-bluff"></meteo-sparkline>
+        </div>
+      </div>
+    </div>
+    <div class="station-panel">
+      <h3>Freshness — the presenter, all three words</h3>
+      <p class="station-caption">
+        <code>&lt;meteo-freshness-badge&gt;</code> is the presenter for
+        rows you compose yourself — the cards and table above judge
+        their own freshness from the feed&rsquo;s clocks and re-judge
+        between polls.
+      </p>
+      <div class="station-badges">
+        <meteo-freshness-badge status="live"></meteo-freshness-badge>
+        <meteo-freshness-badge status="aging"></meteo-freshness-badge>
+        <meteo-freshness-badge status="stale"></meteo-freshness-badge>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .station-primitives {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .station-specimens {
+    padding-block-end: 0;
+    overflow: hidden;
+  }
+
+  .station-specimen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    margin: 0 -1.1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .station-specimen {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-block-end: -1px; /* the outer card clips the last row's rule */
+    padding: 0.9rem 1.1rem 1rem;
+    border-inline-end: 1px solid var(--rule);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .station-specimen > code {
+    background: none;
+    padding: 0;
+    color: var(--ink-mute);
+    font: 0.7rem/1.5 var(--mono);
+    overflow-wrap: anywhere;
+  }
+
+  .station-specimen-value {
+    display: flex;
+    align-items: center;
+    min-height: 1.6rem;
+    font-size: 1.05rem;
+  }
+
+  .station-primitive-sentence {
+    padding: 1.5rem 1.6rem 1.3rem;
+  }
+
+  /* Body size on purpose: the atoms are built for running prose, and
+     scaling them up only amplifies their internal seams. */
+  .station-sentence {
+    max-width: 62ch;
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+
+  /* The markup that composed the sentence above it — output, then source. */
+  .station-sentence-source {
+    display: block;
+    margin-block-start: 0.9rem;
+    padding: 0.8rem 0 0;
+    border-top: 1px dashed var(--rule);
+    background: none;
+    color: var(--ink-mute);
+    font: 0.76rem/1.6 var(--mono);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .station-primitives-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 1.1rem;
+  }
+
+  .station-chip {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 0.78rem;
+    line-height: 1;
+    color: var(--ink-mute);
+    white-space: nowrap;
+  }
+
+  .station-chip-list {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .station-chip-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block-end: 0.55rem;
+    border-block-end: 1px dashed var(--rule);
+  }
+
+  .station-chip-item:last-child {
+    padding-block-end: 0;
+    border-block-end: none;
+  }
+
+  .station-chip-item > span {
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .station-dials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .station-dial-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0;
+  }
+
+  .station-dial-figure figcaption {
+    color: var(--ink-mute);
+    font: 0.7rem/1.4 var(--mono);
+  }
+
+  /* The classic board row: a strip stating the reading, a sparkline showing
+     the six hours behind it. The strip's children become the flex items
+     (the host erases its box), so the region scrolls on phones exactly as
+     the strips section does. */
+  .station-board {
+    display: grid;
+    gap: 0.7rem;
+    overflow-x: auto;
+    padding-block-end: 0.25rem;
+  }
+
+  .station-board-row {
+    display: flex;
+    gap: 0.9rem;
+    align-items: center;
+    min-width: max-content;
+  }
+
+  .station-board-row :global(.meteo-strip) {
+    flex: 1;
+  }
+
+  .station-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+</style>

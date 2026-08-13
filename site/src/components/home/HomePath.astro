@@ -1,0 +1,245 @@
+---
+import SectionHeader from "./SectionHeader.astro";
+
+// The platform in one picture: two lanes into one package on your page.
+// The forecast row is the forecast engine publishing static JSON; the
+// station lane reads the field directly. Facts restated from README.md and
+// /docs/overview/ — commands and paths are the real ones.
+---
+
+<section id="path" class="home-path" aria-labelledby="home-path-title">
+  <div class="home-path__inner section-inner">
+    <SectionHeader
+      number="01"
+      title="From the providers to your page"
+      titleId="home-path-title"
+      intro="The forecast engine downloads ECCC and NOAA model files and writes JSON forecasts to static hosting you control. Station adapters poll the launch's weather stations and serve every reading as one feed."
+    />
+
+    <div
+      class="home-path__scroll"
+      role="region"
+      tabindex="0"
+      aria-label="Scrollable diagram of the platform path from providers and stations to your page"
+    >
+      <svg viewBox="0 0 980 330" role="img" aria-labelledby="home-path-svg-title home-path-svg-desc">
+        <title id="home-path-svg-title">From providers and stations to your page</title>
+        <desc id="home-path-svg-desc">
+          Forecast row: ECCC and NOAA model files feed the forecast engine, which publishes public
+          JSON at stable paths, shown in the Data section below. Station row: WindNerd,
+          Tempest, and Campbell stations are normalized by vendor adapters into a single
+          documented contract and served by a mountable feed handler. The &#64;azohra packages
+          render both on your own site or app, as Meteograms and live station displays.
+        </desc>
+
+        <defs>
+          <marker id="hp-head" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+            <path d="M0 0 L10 5 L0 10 Z" class="hp-arrow"></path>
+          </marker>
+        </defs>
+
+        <!-- lane labels -->
+        <text x="20" y="30" class="hp-lane hp-mono">FORECAST · MODEL PROVIDERS → OPEN DATA</text>
+        <text x="20" y="200" class="hp-lane hp-mono">STATION · WEATHER STATIONS → ONE FEED</text>
+
+        <!-- forecast lane -->
+        <rect x="20" y="44" width="176" height="96" class="hp-card"/>
+        <text x="34" y="68" class="hp-name">ECCC · NOAA</text>
+        <text x="34" y="86" class="hp-note">HRDPS · RDPS · GDPS</text>
+        <text x="34" y="100" class="hp-note">HRRR · GFS · NAM</text>
+        <text x="34" y="122" class="hp-sub hp-mono">provider model fields</text>
+
+        <path d="M196 92 H236" class="hp-flow" marker-end="url(#hp-head)"/>
+
+        <rect x="236" y="44" width="196" height="96" class="hp-card"/>
+        <text x="250" y="68" class="hp-name">Forecast engine</text>
+        <text x="250" y="88" class="hp-sub hp-mono">meteo forecast build</text>
+        <text x="250" y="108" class="hp-note">samples each catalogued site,</text>
+        <text x="250" y="122" class="hp-note">derives soaring quantities</text>
+
+        <path d="M432 92 H506" class="hp-flow" marker-end="url(#hp-head)"/>
+        <text x="468" y="80" text-anchor="middle" class="hp-flow-label hp-mono">publishes</text>
+
+        <rect x="510" y="44" width="226" height="96" class="hp-card hp-card-data"/>
+        <text x="524" y="68" class="hp-name">Published JSON</text>
+        <text x="524" y="86" class="hp-sub hp-mono">storage you control</text>
+        <text x="524" y="106" class="hp-note">public JSON at stable paths — § Data</text>
+        <text x="524" y="122" class="hp-note">versioned schema · append-only history</text>
+
+        <path d="M736 92 H770 V148" class="hp-flow" marker-end="url(#hp-head)"/>
+
+        <!-- station lane -->
+        <rect x="20" y="214" width="176" height="96" class="hp-card"/>
+        <text x="34" y="238" class="hp-name">Weather stations</text>
+        <text x="34" y="256" class="hp-note">WindNerd · Tempest</text>
+        <text x="34" y="270" class="hp-note">Campbell · your own</text>
+        <text x="34" y="292" class="hp-sub hp-mono">any hardware</text>
+
+        <path d="M196 262 H236" class="hp-flow" marker-end="url(#hp-head)"/>
+
+        <rect x="236" y="214" width="196" height="96" class="hp-card"/>
+        <text x="250" y="238" class="hp-name">Vendor adapters</text>
+        <text x="250" y="258" class="hp-sub hp-mono">one documented contract</text>
+        <text x="250" y="278" class="hp-note">normalized readings and history;</text>
+        <text x="250" y="292" class="hp-note">outages degrade with a reason</text>
+
+        <path d="M432 262 H506" class="hp-flow" marker-end="url(#hp-head)"/>
+        <text x="468" y="250" text-anchor="middle" class="hp-flow-label hp-mono">serves</text>
+
+        <rect x="510" y="214" width="226" height="96" class="hp-card"/>
+        <text x="524" y="238" class="hp-name">Your station feed</text>
+        <text x="524" y="258" class="hp-sub hp-mono">createStationFeedHandler</text>
+        <text x="524" y="278" class="hp-note hp-mono">GET /api/wind/feed</text>
+        <text x="524" y="292" class="hp-note">the whole fleet, one document</text>
+
+        <path d="M736 262 H770 V206" class="hp-flow" marker-end="url(#hp-head)"/>
+
+        <!-- the page both lanes land on -->
+        <rect x="740" y="118" width="220" height="118" class="hp-card hp-card-page"/>
+        <text x="756" y="144" class="hp-name">Your site or app</text>
+        <text x="756" y="164" class="hp-sub hp-mono">pnpm add @azohra/*</text>
+        <text x="756" y="188" class="hp-out hp-mono">▸ Meteogram — scene → SVG</text>
+        <text x="756" y="208" class="hp-out hp-mono">▸ Station — live components</text>
+        <text x="756" y="226" class="hp-note">your palette, thresholds, policy</text>
+      </svg>
+    </div>
+
+    <p class="home-path__scroll-cue" aria-hidden="true">
+      Scroll horizontally to follow both rows →
+    </p>
+
+    <div class="home-path__footnotes">
+      <a href="/docs/overview/">Explore the architecture <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* 01 sits on the bare page ground between the hero and the briefing band;
+     a notch tighter than the instrument sections — the diagram is one card. */
+  .home-path {
+    padding-block: clamp(4rem, 7vw, 6.5rem);
+  }
+
+  .home-path__scroll {
+    overflow-x: auto;
+    padding: clamp(1rem, 2.5vw, 1.8rem);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius) var(--radius) 0 0;
+    box-shadow: var(--shadow);
+  }
+
+  .home-path__scroll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    min-width: 54rem;
+    height: auto;
+  }
+
+  svg text {
+    font-family: var(--sans);
+  }
+
+  svg text.hp-mono {
+    font-family: var(--mono);
+  }
+
+  .hp-lane {
+    fill: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+  }
+
+  .hp-card {
+    fill: var(--surface-raised);
+    stroke: var(--rule-strong);
+  }
+
+  .hp-card-data {
+    stroke: var(--accent);
+    stroke-width: 1.3;
+  }
+
+  .hp-card-page {
+    fill: var(--surface-accent);
+    stroke: var(--rule-strong);
+    stroke-width: 1.3;
+  }
+
+  .hp-name {
+    fill: var(--ink);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .hp-sub {
+    fill: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .hp-note {
+    fill: var(--ink-mute);
+    font-size: 10.5px;
+  }
+
+  .hp-out {
+    fill: var(--ink);
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .hp-flow {
+    stroke: var(--ink-soft);
+    stroke-width: 1.6;
+    fill: none;
+  }
+
+  .hp-flow-label {
+    fill: var(--ink-mute);
+    font-size: 10px;
+  }
+
+  .hp-arrow {
+    fill: var(--ink-soft);
+  }
+
+  .home-path__scroll-cue {
+    display: none;
+    margin: 0;
+    padding: 0.42rem 0.85rem;
+    color: var(--ink-mute);
+    background: var(--surface-raised);
+    border: 1px solid var(--rule);
+    border-block-start: 0;
+    font: 0.68rem/1.4 var(--mono);
+  }
+
+  @media (max-width: 56rem) {
+    .home-path__scroll-cue {
+      display: block;
+    }
+  }
+
+  .home-path__footnotes {
+    display: flex;
+    justify-content: flex-end;
+    margin-block-start: 1.1rem;
+  }
+
+  .home-path__footnotes a {
+    flex: 0 0 auto;
+    color: var(--accent);
+    font: 600 0.72rem/1.4 var(--mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+</style>

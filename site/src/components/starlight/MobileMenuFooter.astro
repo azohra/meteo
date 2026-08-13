@@ -1,0 +1,50 @@
+---
+import { GITHUB_URL, NAV_LINKS } from "../../lib/nav";
+import ThemeToggle from "../ThemeToggle.astro";
+---
+
+<div class="mobile-menu-theme"><ThemeToggle /></div>
+<nav class="mobile-project-nav" aria-label="Project">
+  {NAV_LINKS.map(({ label, href }) => <a href={href}>{label}</a>)}
+  <a href={GITHUB_URL}>GitHub</a>
+</nav>
+
+<style>
+  @layer starlight.components {
+    .mobile-menu-theme {
+      display: flex;
+      justify-content: flex-start;
+      padding-block-start: 1rem;
+      margin-top: auto;
+    }
+
+    .mobile-project-nav {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      padding: 1rem 0 1.5rem;
+      margin-top: 0.75rem;
+      border-top: 1px solid var(--rule);
+      font-family: var(--mono);
+      font-size: var(--sl-text-xs);
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+    }
+
+    .mobile-project-nav a {
+      padding: 0.55rem 0.65rem;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius-small);
+      background: var(--surface);
+      color: var(--ink-soft);
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .mobile-project-nav a:hover,
+    .mobile-project-nav a:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  }
+</style>

@@ -1,0 +1,326 @@
+---
+/* The anatomy of the published dataset: every committed file in
+   site/public/data-sample (README.md aside) as one tree with sizes
+   measured at build time, and a real excerpt of one site document. The
+   excerpt is parsed from test-hill.json and re-rendered — the folds are
+   labelled with counts computed from the same parse, so nothing shown can
+   drift from the file. The spec (test/forecast.spec.ts) walks the same
+   directory and holds every row to disk. */
+import { statSync } from "node:fs";
+import { publicDir } from "astro:config/server";
+import manifest from "../../../public/data-sample/hrdps-continental/manifest.json";
+import testHill from "../../../public/data-sample/hrdps-continental/sites/test-hill.json";
+import { formatBytes, renderJsonHtml } from "../../lib/forecast-exhibit";
+
+const sizeOf = (relative: string) => statSync(new URL(`data-sample/${relative}`, publicDir)).size;
+
+interface TreeRow {
+  indent: number;
+  name: string;
+  path?: string;
+  note?: string;
+}
+
+const TREE: TreeRow[] = [
+  { indent: 0, name: "data-sample/" },
+  {
+    indent: 1,
+    name: "models.json",
+    path: "models.json",
+    note: "the model catalogue: grid, cadence, horizon, capabilities, sunset dates",
+  },
+  {
+    indent: 1,
+    name: "runs.json",
+    path: "runs.json",
+    note: "the newest run per model — printed whole above",
+  },
+  {
+    indent: 1,
+    name: "sites.json",
+    path: "sites.json",
+    note: "the site catalogue this run was built from",
+  },
+  {
+    indent: 1,
+    name: "site-context.json",
+    path: "site-context.json",
+    note: "measured terrain per site: elevation, slope, aspect, relief, land cover — sources named",
+  },
+  { indent: 1, name: "hrdps-continental/" },
+  {
+    indent: 2,
+    name: "manifest.json",
+    path: "hrdps-continental/manifest.json",
+    note: "this run: reference time, hours, sites, and what the build cost",
+  },
+  { indent: 2, name: "sites/" },
+  {
+    indent: 3,
+    name: "test-hill.json",
+    path: "hrdps-continental/sites/test-hill.json",
+    note: "one site document — excerpted at right",
+  },
+  { indent: 3, name: "test-ridge.json", path: "hrdps-continental/sites/test-ridge.json" },
+  { indent: 3, name: "test-valley.json", path: "hrdps-continental/sites/test-valley.json" },
+  { indent: 2, name: "history/" },
+  {
+    indent: 3,
+    name: "test-hill/2026-08.jsonl.gz",
+    path: "hrdps-continental/history/test-hill/2026-08.jsonl.gz",
+    note: "append-only month archive: one gzip member per published run",
+  },
+  {
+    indent: 3,
+    name: "test-hill/2026-08.index.json",
+    path: "hrdps-continental/history/test-hill/2026-08.index.json",
+    note: "sidecar index: byte offset and length per member",
+  },
+  {
+    indent: 3,
+    name: "test-ridge/2026-08.jsonl.gz",
+    path: "hrdps-continental/history/test-ridge/2026-08.jsonl.gz",
+  },
+  {
+    indent: 3,
+    name: "test-ridge/2026-08.index.json",
+    path: "hrdps-continental/history/test-ridge/2026-08.index.json",
+  },
+  {
+    indent: 3,
+    name: "test-valley/2026-08.jsonl.gz",
+    path: "hrdps-continental/history/test-valley/2026-08.jsonl.gz",
+  },
+  {
+    indent: 3,
+    name: "test-valley/2026-08.index.json",
+    path: "hrdps-continental/history/test-valley/2026-08.index.json",
+  },
+];
+
+const totalBytes = TREE.reduce((sum, row) => sum + (row.path ? sizeOf(row.path) : 0), 0);
+
+/* The excerpt: document skeleton verbatim, the last published hour opened,
+   its derived block in full. */
+const hours = testHill.hours;
+const firstHour = hours[0];
+const lastHour = hours[hours.length - 1];
+const surfaceCount = Object.keys(lastHour.surface).length;
+const pressures = lastHour.levels.map((level) => level.pressureHpa);
+const key = (name: string) => `<span class="t-key">"${name}"</span>`;
+const fold = (text: string) => `<span class="t-fold">… ${text} …</span>`;
+const excerptHtml = [
+  "{",
+  `  ${key("schemaVersion")}: ${renderJsonHtml(testHill.schemaVersion)},`,
+  `  ${key("model")}: ${renderJsonHtml(testHill.model)},`,
+  `  ${key("run")}: ${renderJsonHtml(testHill.run, 1)},`,
+  `  ${key("site")}: ${renderJsonHtml(testHill.site, 1)},`,
+  `  ${key("semantics")}: ${renderJsonHtml(testHill.semantics, 1)},`,
+  `  ${key("hours")}: [`,
+  `    ${fold(`${hours.length - 1} earlier hours`)}`,
+  "    {",
+  `      ${key("validAt")}: ${renderJsonHtml(lastHour.validAt)},`,
+  `      ${key("surface")}: { ${fold(`${surfaceCount} surface quantities`)} },`,
+  `      ${key("levels")}: [ ${
+    fold(`${pressures.length} pressure levels, ${Math.max(...pressures)}–${Math.min(...pressures)} hPa`)
+  } ],`,
+  `      ${key("derived")}: ${renderJsonHtml(lastHour.derived, 3)}`,
+  "    }",
+  "  ]",
+  "}",
+].join("\n");
+
+const stats = manifest.stats;
+---
+
+<section id="dataset" class="fc-dataset" aria-labelledby="dataset-title">
+  <div class="section-inner">
+    <h2 id="dataset-title">The published dataset</h2>
+    <p class="fc-section-lede">
+      Point the engine at a site catalogue and an output directory, and this tree is what lands
+      there. This one is an HRDPS continental run over three test sites, served
+      at <code>meteo.azohra.com/data-sample/</code> — curl any path in it.
+    </p>
+
+    <div class="fc-dataset-grid">
+      <div class="fc-tree-panel">
+        <p class="fc-panel-title">meteo.azohra.com/data-sample/</p>
+        <ul class="fc-tree">
+          {TREE.map((row) => (
+            <li
+              class="fc-tree-row"
+              data-path={row.path}
+              style={`--indent: ${row.indent}`}
+            >
+              <span class="fc-tree-name">{row.name}</span>
+              <span class="fc-tree-size">{row.path ? formatBytes(sizeOf(row.path)) : ""}</span>
+              {row.note && <span class="fc-tree-note">{row.note}</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <figure class="fc-excerpt">
+        <div class="fc-term">
+          <p class="fc-panel-title fc-term-title">
+            hrdps-continental/sites/test-hill.json · excerpt, pretty-printed
+          </p>
+          <pre class="fc-term-body" id="site-document-excerpt" set:html={excerptHtml} />
+        </div>
+        <figcaption class="fc-caption">
+          Between the run's first and last published
+          hour, <code>thermalVelocityMps</code> goes {firstHour.derived.thermalVelocityMps} →
+          {lastHour.derived.thermalVelocityMps} and <code>usableLiftTopM</code> goes
+          {firstHour.derived.usableLiftTopM ?? "null"} → {lastHour.derived.usableLiftTopM ??
+            "null"} — derived by the engine from the sampled fields. The equations behind every
+          derived quantity are
+          in <a href="/docs/forecast/derivation-science/">Meteogram derivations</a>. The full
+          file: <a href="/data-sample/hrdps-continental/sites/test-hill.json">test-hill.json</a>.
+        </figcaption>
+      </figure>
+    </div>
+
+    <p class="fc-cost" id="dataset-cost">
+      The documents above total {formatBytes(totalBytes)}. <code>manifest.stats</code> records
+      what building them cost the engine: {stats.downloads} provider
+      downloads, {formatBytes(stats.downloadBytes)} fetched,
+      {Math.round(stats.durationMs / 1000)} s, {stats.retries} retries.
+    </p>
+  </div>
+</section>
+
+<style>
+  .fc-dataset {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+    border-block-end: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--surface) 48%, transparent);
+  }
+
+  .fc-dataset h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .fc-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .fc-dataset-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .fc-tree-panel {
+    min-width: 0;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .fc-panel-title {
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+    font: 600 0.7rem/1.4 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--ink-mute);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .fc-tree {
+    margin: 0;
+    padding: 0.7rem 0.9rem 0.9rem;
+    list-style: none;
+    overflow-x: auto;
+  }
+
+  .fc-tree-row {
+    display: grid;
+    grid-template-columns: minmax(11rem, max-content) max-content;
+    column-gap: 1rem;
+    align-items: baseline;
+    padding-block: 0.16rem;
+    padding-inline-start: calc(var(--indent, 0) * 1.1rem);
+  }
+
+  .fc-tree-name {
+    font: 0.8rem/1.5 var(--mono);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .fc-tree-size {
+    font: 0.72rem/1.5 var(--mono);
+    color: var(--ink-mute);
+    white-space: nowrap;
+  }
+
+  .fc-tree-note {
+    grid-column: 1 / -1;
+    padding-inline-start: 1.1rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--ink-mute);
+  }
+
+  .fc-excerpt {
+    min-width: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .fc-term {
+    border-radius: var(--radius);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    overflow: hidden;
+  }
+
+  .fc-term-title {
+    color: var(--term-muted);
+    border-block-end: 1px solid var(--term-border);
+  }
+
+  .fc-term-body {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    font: 0.78rem/1.55 var(--mono);
+    color: var(--term-ink);
+    overflow-x: auto;
+  }
+
+  .fc-term-body :global(.t-key) { color: var(--term-key); }
+  .fc-term-body :global(.t-num) { color: var(--term-number); }
+  .fc-term-body :global(.t-str) { color: var(--term-string); }
+  .fc-term-body :global(.t-nul) { color: var(--term-muted); font-style: italic; }
+  .fc-term-body :global(.t-fold) { color: var(--term-muted); font-style: italic; }
+
+  .fc-caption {
+    max-width: 40rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--ink-mute);
+  }
+
+  .fc-cost {
+    max-width: 46rem;
+    margin: 1.4rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 58rem) {
+    .fc-dataset-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

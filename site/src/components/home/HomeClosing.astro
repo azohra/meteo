@@ -1,0 +1,165 @@
+---
+import AttributionLine from "../AttributionLine.astro";
+import MeteoMark from "../MeteoMark.astro";
+---
+
+<section class="home-closing" aria-labelledby="home-closing-title">
+  <div class="home-closing__inner">
+    <div class="home-closing__band">
+      <div class="home-closing__mark" aria-hidden="true"><MeteoMark /></div>
+      <h2 id="home-closing-title">Built for free flight</h2>
+      <p class="home-closing__mission">
+        Clubs and pilots can publish their own forecasts and station pages with inspectable,
+        reusable, open tools — every derivation checkable, every document reproducible.
+      </p>
+      <p class="home-closing__signoff">Made with ♥ in Nelson, BC — by a pilot, for pilots.</p>
+      <nav class="home-closing__links" aria-label="Project lineage and neighbours">
+        <span class="home-closing__links-group">
+          <span class="home-closing__links-label">Lineage</span>
+          <a href="https://github.com/ajberkley/canadarasp#readme">canadarasp</a>
+          <a href="https://soaringmeteo.org/">soaringmeteo</a>
+        </span>
+        <span class="home-closing__links-group">
+          <span class="home-closing__links-label">Downstream</span>
+          <a href="https://acrophobia.ca">acrophobia.ca</a>
+        </span>
+        <span class="home-closing__links-group">
+          <a href="/about/">About the project <span aria-hidden="true">→</span></a>
+        </span>
+      </nav>
+      <div class="home-closing__legal"><AttributionLine /></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* One fixed deep teal in either theme: the accent at instrument depth.
+     Full bleed — the page ends on the band itself, not on a card. */
+  .home-closing {
+    margin-block-start: clamp(4.5rem, 9vw, 8rem);
+    color: #e7f3f7;
+    background: #0c5b72;
+  }
+
+  /* The grade sweeps the full width once, closing the page the way every
+     page title opens: on the platform's judgment ramp. */
+  .home-closing::before {
+    display: block;
+    height: 4px;
+    background: var(--band-gradient);
+    content: "";
+  }
+
+  .home-closing__inner {
+    width: min(74.25rem, calc(100% - 3.5rem));
+    margin-inline: auto;
+  }
+
+  .home-closing__band {
+    display: grid;
+    justify-items: center;
+    padding: clamp(2.8rem, 6vw, 4.5rem) 0 clamp(1.6rem, 3.5vw, 2.4rem);
+    text-align: center;
+  }
+
+  .home-closing__mark {
+    width: 4rem;
+    color: #7fd7ec;
+  }
+
+  .home-closing__mark :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  h2 {
+    margin: 1.8rem 0 0;
+    color: #ffffff;
+    font-size: clamp(2rem, 3.8vw, 2.9rem);
+    line-height: 1.08;
+  }
+
+  .home-closing__mission {
+    max-width: 46rem;
+    margin: 1.1rem 0 0;
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    line-height: 1.55;
+  }
+
+  .home-closing__signoff {
+    margin: 1.7rem 0 0;
+    color: #7fd7ec;
+    font: 700 clamp(0.82rem, 1.6vw, 1rem) / 1.5 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .home-closing__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 2.4rem;
+    justify-content: center;
+    width: 100%;
+    margin-block-start: clamp(2rem, 4.5vw, 3rem);
+    padding-block-start: 1.1rem;
+    border-block-start: 1px solid color-mix(in srgb, #7fd7ec 30%, transparent);
+  }
+
+  .home-closing__links-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 1.1rem;
+    align-items: baseline;
+  }
+
+  .home-closing__links-label {
+    color: #7fd7ec;
+    font: 600 0.62rem/1.5 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .home-closing__links a {
+    color: #e7f3f7;
+    font: 600 0.78rem/1.5 var(--mono);
+  }
+
+  .home-closing__links a:hover {
+    color: #7fd7ec;
+    text-decoration: underline;
+  }
+
+  .home-closing__links a:focus-visible {
+    outline: 2px solid #7fd7ec;
+    outline-offset: 2px;
+  }
+
+  .home-closing__legal :global(.attribution-line) {
+    max-width: 46rem;
+    margin: 1.4rem 0 0;
+    color: color-mix(in srgb, #e7f3f7 55%, #0c5b72);
+    font: 0.68rem/1.7 var(--mono);
+  }
+
+  .home-closing__legal :global(.attribution-line a) {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .home-closing__legal :global(.attribution-line a:hover) {
+    color: #7fd7ec;
+  }
+
+  @media (max-width: 39rem) {
+    .home-closing__inner {
+      width: min(100% - 2rem, 74.25rem);
+    }
+
+    .home-closing__links {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+{
+  "name": "meteo-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The meteo by Azohra platform's workspace shell: orchestration for the six published packages - @azohra/meteo.core, @azohra/meteo.briefing, @azohra/meteo.station, @azohra/meteo.grib, @azohra/meteo.j2k, and @azohra/meteo.forecast (the engine) - and the site. Nothing publishes from here - the packages are the atoms; this repo is the platform.",
+  "author": "Justin Watts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azohra/meteo.git"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --filter '!meteo-site' -r build && vp pack",
+    "test": "vp test",
+    "test:all": "pnpm run test && pnpm -r test",
+    "typecheck": "pnpm run build && tsc -p tsconfig.json --noEmit",
+    "typecheck:all": "pnpm run typecheck && pnpm -r typecheck",
+    "lint": "vp lint",
+    "fmt": "vp fmt",
+    "fmt:check": "vp fmt --check",
+    "schemas": "pnpm run build && node dist/internal/emit-schemas.js",
+    "schemas:check": "pnpm run build && node dist/internal/emit-schemas.js --check",
+    "figures": "pnpm build && node internal/generate-doc-figures.mjs",
+    "figures:check": "pnpm build && node internal/generate-doc-figures.mjs --check",
+    "station-assets": "pnpm build && node internal/generate-station-assets.mjs",
+    "station-assets:check": "pnpm build && node internal/generate-station-assets.mjs --check",
+    "scenarios:generate": "pnpm build && node internal/scenarios.mjs generate",
+    "scenarios:check": "pnpm build && node internal/scenarios.mjs check",
+    "doc-fences:check": "pnpm build && node internal/check-doc-fences.mjs"
+  },
+  "devDependencies": {
+    "@azohra/meteo.briefing": "workspace:*",
+    "@azohra/meteo.core": "workspace:*",
+    "@azohra/meteo.forecast": "workspace:*",
+    "@azohra/meteo.station": "workspace:*",
+    "@changesets/cli": "^3.0.0",
+    "@fontsource/big-shoulders": "^5.0.0",
+    "@fontsource/ibm-plex-mono": "^5.0.0",
+    "@fontsource/ibm-plex-sans": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "opentype.js": "^1.3.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.6.0",
+    "vite-plus": "0.2.7",
+    "vitest": "^4.0.0"
+  },
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "homepage": "https://meteo.azohra.com"
+}

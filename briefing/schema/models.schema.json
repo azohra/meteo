@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meteo.azohra.com/schema/models.schema.json",
+  "title": "meteo by Azohra model catalogue, models.json",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Lowercase hyphenated slug — the identity of models and sites everywhere."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The only place prose model names live."
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gridKm": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "stepHours": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "horizonHours": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "runIntervalHours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Hours between the runs this dataset publishes — the model's own schedule where every run is built, or the built subset where it is not (HRRR declares 6, its published synoptic subset). Freshness metadata: a run older than about twice this interval is genuinely late. Required since 0.3.0."
+          },
+          "typicalPublicationLagHours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Upper end of normal for THIS dataset's publish of a run after its referenceTime, hours: provider complete-availability plus pipeline overhead (≤15 min poll + build), rounded up. Judge freshness against runIntervalHours + this; thresholds stay consumer-owned. Seeded 2026-08-10 from the dated [verified] availability times in the portal's forecast-model-feeds reference; re-verify against the accumulated run archive ~September 2026."
+          },
+          "sunset": {
+            "description": "Machine-readable retirement notice: no runs expected after date (UTC calendar date); successor names the replacing catalogue slug, or null for end-of-life with no replacement. Absent when no retirement is announced.",
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "successor": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Lowercase hyphenated slug — the identity of models and sites everywhere."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "date",
+              "successor"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ensemble"
+            ]
+          },
+          "experimental": {
+            "type": "boolean"
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "levels": {
+                "type": "boolean",
+                "description": "False -> hours[].levels is always empty for this model."
+              },
+              "pressureLevels": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "description": "The isobaric levels (hPa) the model publishes today."
+              },
+              "verticalVelocity": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "omega",
+                      "fromGeometricW"
+                    ]
+                  },
+                  {
+                    "type": "boolean",
+                    "const": false
+                  }
+                ],
+                "description": "Vertical-velocity provenance, not just presence: \"omega\" = the provider's own published omega (Pa/s); \"fromGeometricW\" = converted at build from geometric w via omega ~ -rho*g*w; false = not published. Declared so consumers can label converted values differently from native ones."
+              },
+              "verticalVelocityLevels": {
+                "description": "The subset of pressureLevels (hPa) that actually carries omega — present exactly when verticalVelocity is not false. A level absent from this list never carries omega, so renderers can label the sparse coverage instead of guessing at gaps.",
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "heatFluxes": {
+                "type": "boolean",
+                "description": "Whether the model publishes surface sensible and latent heat fluxes."
+              },
+              "gust": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "hourMax",
+                      "instant"
+                    ]
+                  },
+                  {
+                    "type": "boolean",
+                    "const": false
+                  }
+                ],
+                "description": "Gust semantics, not just presence: \"hourMax\" = max model-timestep gust over the hour ending at validAt (ECCC); \"instant\" = diagnostic gust at validAt (NOAA); false = no gust published. The two differ ~20-30 % systematically, so renderers must label them differently."
+              },
+              "precipitation": {
+                "type": "string",
+                "enum": [
+                  "instantRate",
+                  "windowMeanRate"
+                ],
+                "description": "Precipitation-rate semantics: \"instantRate\" = instantaneous rate diagnostic at validAt; \"windowMeanRate\" = accumulation over the step window ending at validAt divided by its length. Required — every model publishes precipitation, so unlike gust there is no false. Echoed per document in the profile's semantics tag."
+              },
+              "cape": {
+                "type": "boolean",
+                "description": "Whether the model publishes surface-based CAPE (surface.capeJkg)."
+              },
+              "cin": {
+                "type": "boolean",
+                "description": "Whether the model publishes surface-based CIN — deliberately decoupled from cape: the HRDPS family has CAPE with no CIN."
+              },
+              "pblHeight": {
+                "type": "boolean",
+                "description": "Whether the model publishes its own PBL depth (surface.pblHeightM, metres AGL)."
+              },
+              "cloudLayers": {
+                "type": "boolean",
+                "description": "Whether the model publishes low/mid/high cloud-layer fractions (NOAA sigma bands)."
+              },
+              "cloudProfile": {
+                "type": "boolean",
+                "description": "Whether the model publishes a per-level cloud fraction (levels[].cloudFractionPercent)."
+              },
+              "smoke": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "radiativelyCoupled",
+                      "passive"
+                    ]
+                  },
+                  {
+                    "type": "boolean",
+                    "const": false
+                  }
+                ],
+                "description": "Smoke semantics, not just presence: \"radiativelyCoupled\" = prognostic smoke whose radiative effect attenuates the model's own shortwave, so fluxes and derived thermal quantities are ALREADY smoke-aware and a downstream derate would double-count (HRRRv4: Dowell et al. 2022, doi:10.1175/WAF-D-21-0151.1); \"passive\" = smoke published without radiative feedback (derived quantities are smoke-blind, a derate applies); false = no smoke published. Echoed in the profile's semantics.smoke."
+              }
+            },
+            "required": [
+              "levels",
+              "pressureLevels",
+              "verticalVelocity",
+              "heatFluxes",
+              "gust",
+              "precipitation",
+              "cape",
+              "cin",
+              "pblHeight",
+              "cloudLayers",
+              "cloudProfile",
+              "smoke"
+            ]
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "provider",
+          "gridKm",
+          "stepHours",
+          "horizonHours",
+          "runIntervalHours",
+          "typicalPublicationLagHours",
+          "kind",
+          "experimental",
+          "capabilities"
+        ]
+      }
+    },
+    "smokeModels": {
+      "description": "Smoke-document models (RAQDPS today) — separate from models so pre-smoke consumers keep parsing the catalogue. Absence means the catalogue predates smoke documents.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Lowercase hyphenated slug — the identity of models and sites everywhere."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The only place prose model names live."
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gridKm": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "stepHours": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "horizonHours": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "runIntervalHours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Hours between published runs — freshness metadata, like the profile entries'."
+          },
+          "typicalPublicationLagHours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Upper end of normal for THIS dataset's publish of a run after its referenceTime, hours — semantics, 2026-08-10 forecast-model-feeds seeding, and ~September 2026 re-verification intent exactly as on the profile entries."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "deterministic",
+              "ensemble"
+            ]
+          },
+          "experimental": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "provider",
+          "gridKm",
+          "stepHours",
+          "horizonHours",
+          "runIntervalHours",
+          "typicalPublicationLagHours",
+          "kind",
+          "experimental"
+        ]
+      }
+    },
+    "observationModels": {
+      "description": "Observation datasets (GOES-18 DSR today) — separate from models so pre-observation consumers keep parsing the catalogue. Absence means the catalogue predates observations.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Lowercase hyphenated slug — the identity of models and sites everywhere."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The only place prose model names live."
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gridKm": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Nominal product resolution at the sites, km — not the instrument's finest."
+          },
+          "cadenceMinutes": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Native observation cadence, minutes — the freshness yardstick."
+          },
+          "experimental": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slug",
+          "label",
+          "provider",
+          "gridKm",
+          "cadenceMinutes",
+          "experimental"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "models"
+  ],
+  "description": "data/models.json — the hand-maintained discovery catalogue. Frontends render what a model declares instead of hardcoding model lists."
+}

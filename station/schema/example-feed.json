@@ -1,0 +1,147 @@
+{
+  "$comment": "Example @azohra/meteo.station feed document. Validates against stationfeed.schema.json; readers must ignore unknown keys (this one included).",
+  "schemaVersion": 2,
+  "servedAt": "2026-08-05T22:13:00.000Z",
+  "primaryStationId": "meadow",
+  "stations": [
+    {
+      "id": "meadow",
+      "name": "Ridge Meadow",
+      "sourceLabel": "Tempest",
+      "pageUrl": "https://example.com/stations/ridge-meadow",
+      "latitude": 49.5,
+      "longitude": -118.5,
+      "timeZone": "America/Vancouver",
+      "elevationM": 1180,
+      "capabilities": {
+        "gustLull": true,
+        "temperature": true,
+        "conditions": true,
+        "history": false
+      },
+      "samplingWindowSeconds": 60,
+      "recommendedPollSeconds": 60,
+      "status": "ok",
+      "reading": {
+        "observedAt": "2026-08-05T22:13:00.000Z",
+        "windAvgMps": 2.5,
+        "windDirectionDeg": 273,
+        "windGustMps": 4.2,
+        "windLullMps": 1.1,
+        "temperatureC": 21.5,
+        "windChillC": 20.9,
+        "conditions": {
+          "dewPointC": 7.5,
+          "lastLightningStrikeAt": null,
+          "lastLightningStrikeDistanceKm": null,
+          "lightningStrikeCountLastHour": null,
+          "precipitationMinutesToday": 0,
+          "precipitationRateMmPerHour": 0,
+          "precipitationTodayMm": 0,
+          "pressureTrend": "steady",
+          "relativeHumidityPercent": 40,
+          "seaLevelPressureHpa": 1014.2,
+          "solarRadiationWm2": 645,
+          "uvIndex": 5.8
+        }
+      },
+      "history": null
+    },
+    {
+      "id": "bluff",
+      "name": "Bluff Launch",
+      "sourceLabel": "WindNerd",
+      "pageUrl": "https://example.com/stations/bluff-launch",
+      "latitude": 49.7,
+      "longitude": -118.2,
+      "timeZone": "America/Vancouver",
+      "elevationM": 1370,
+      "capabilities": {
+        "gustLull": true,
+        "temperature": true,
+        "conditions": true,
+        "history": true
+      },
+      "samplingWindowSeconds": 60,
+      "recommendedPollSeconds": 60,
+      "status": "ok",
+      "reading": {
+        "observedAt": "2026-08-05T22:12:45.000Z",
+        "windAvgMps": 2.5,
+        "windDirectionDeg": 290,
+        "windGustMps": 3.9,
+        "windLullMps": 1.7,
+        "temperatureC": 22.6,
+        "windChillC": null,
+        "conditions": {
+          "dewPointC": null,
+          "lastLightningStrikeAt": null,
+          "lastLightningStrikeDistanceKm": null,
+          "lightningStrikeCountLastHour": null,
+          "precipitationMinutesToday": null,
+          "precipitationRateMmPerHour": null,
+          "precipitationTodayMm": null,
+          "pressureTrend": "steady",
+          "relativeHumidityPercent": null,
+          "seaLevelPressureHpa": 1006.1,
+          "solarRadiationWm2": null,
+          "uvIndex": null
+        }
+      },
+      "history": {
+        "periodMinutes": 1,
+        "points": [
+          {
+            "observedAt": "2026-08-05T22:10:45.000Z",
+            "windAvgMps": 1.7,
+            "windGustMps": 2.2,
+            "windLullMps": 1.1,
+            "windDirectionDeg": 300,
+            "temperatureC": 20.2,
+            "seaLevelPressureHpa": 1007.7
+          },
+          {
+            "observedAt": "2026-08-05T22:11:45.000Z",
+            "windAvgMps": 3.3,
+            "windGustMps": 5.8,
+            "windLullMps": 1.9,
+            "windDirectionDeg": 310,
+            "temperatureC": null,
+            "seaLevelPressureHpa": null
+          },
+          {
+            "observedAt": "2026-08-05T22:12:45.000Z",
+            "windAvgMps": 2.5,
+            "windGustMps": 3.9,
+            "windLullMps": 1.7,
+            "windDirectionDeg": 290,
+            "temperatureC": 22.6,
+            "seaLevelPressureHpa": 1006.1
+          }
+        ]
+      }
+    },
+    {
+      "id": "narrows",
+      "name": "Gorge Narrows",
+      "sourceLabel": "Campbell logger",
+      "pageUrl": "https://example.com/stations/gorge-narrows",
+      "latitude": 49.3,
+      "longitude": -118.8,
+      "timeZone": "America/Vancouver",
+      "elevationM": 460,
+      "capabilities": {
+        "gustLull": true,
+        "temperature": true,
+        "conditions": false,
+        "history": true
+      },
+      "samplingWindowSeconds": 3,
+      "recommendedPollSeconds": 15,
+      "status": "unavailable",
+      "reason": "upstream_error",
+      "reading": null,
+      "history": null
+    }
+  ]
+}

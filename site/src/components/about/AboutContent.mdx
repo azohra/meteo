@@ -1,0 +1,89 @@
+import QuantityHomes from "./QuantityHomes.astro";
+
+# Why this project exists
+
+I am Justin Watts, a paraglider and software builder in Nelson, British Columbia. I read forecasts
+before I fly, help open and maintain flying sites, and work on the remote weather stations pilots use
+there. meteo grew from that life, not from a plan to start a software platform.
+
+It began while I was rebuilding [acrophobia.ca](https://acrophobia.ca) for our local free-flight club.
+We wanted meteograms built around the questions pilots ask, and live weather-station data
+beside the knowledge we had gathered about our flying sites. Building those pieces exposed a larger
+gap. Much of what pilots rely on was not available as modern, web-friendly software, and very little
+of it was open enough for another pilot or club to operate and adapt for themselves.
+
+What started as one club's need became an open-source meteorology platform for pilots, primarily free-flight
+paragliders. meteo by Azohra brings forecast and live observational data into tools people can use to
+inform a flying decision. It does not make that decision for them.
+
+The people running and extending the platform will often be technical. The people using what it
+creates should not need to be. A downstream site can make the result beautiful, legible, and specific
+to its community while the science, contracts, and derivations remain inspectable underneath.
+
+## The open-forecast bet
+
+meteo publishes shareable inputs, makes derivations executable, versions the resulting document,
+and lets more than one frontend draw it. Readers can check the number behind a mark, compare a profile
+with its archived run, and build another presentation from the same science.
+
+## An acknowledged lineage
+
+This work descends from [Canada RASP](https://github.com/ajberkley/canadarasp#readme), an extraordinary
+resource that has served Canadian pilots for years and to which I contribute. It kept its operations
+open enough for this project to learn from; meteo's first derivations were faithful ports of
+its constants. That is a debt worth naming.
+
+The projects now do different jobs. Canada RASP draws national maps from a standing server. meteo
+carries those lessons into a portable, web-friendly system that derives site columns, publishes
+versioned documents, renders them through a reusable library, and can sit inside many downstream
+experiences. In publishing open soaring forecasts at all, it also follows
+[soaringmeteo](https://soaringmeteo.org/), which has done that job for the wider free-flight world
+for years.
+
+## Learning in public
+
+The platform keeps growing as I learn, find new problems, and gain enough understanding to take on
+another part of the weather stack. The documentation, logbook entries, and labs are part of the
+work: a record of what I learn, where the methods came from, what remains uncertain, and how the
+foundations can be improved. I want that trail to help another pilot or builder begin further ahead.
+
+## Portable state
+
+Portable documents keep renderer decisions reversible. The prototype stored display units,
+pre-smoothed height series, a Pacific daylight window, and thresholds that belonged to one chart.
+
+The current contract inverts those defaults: SI values, unsmoothed derived series, every forecast
+hour, published source fields, slugs as identity, declared field semantics, and a `schemaVersion` on
+every document. Presentation choices—timezone, window, palette, smoothing, overlays, and interaction—
+belong to the renderer or the downstream application.
+
+## Authority across the document boundary
+
+Every published quantity has exactly one authority — the forecast engine or the package, never both.
+[Authority by quantity](/docs/overview/#authority-by-quantity) in the documentation overview is
+that split's home; the figure below shows where each value lives.
+
+<QuantityHomes />
+
+The versioned JSON between the engine and package carries model and site identity,
+times, units, declared provider semantics, source fields, and engine-derived values. The model
+catalogue states what each model can and cannot publish. Missing capability remains an absence,
+never a zero invented by a frontend.
+
+## Publishing
+
+The forecast engine fetches provider data, derives profiles, and publishes static artifacts. The
+forecast package validates those artifacts and turns them into a scene or SVG. Station handles live observations as
+a separate capability. They belong to the same platform and can meet in the same pilot experience,
+but neither is required to operate the other.
+
+Club sites, personal publishers, and other downstream applications choose their schedule, hosting,
+location catalogue, access, retention, alerts, and presentation.
+
+The [documentation overview](/docs/overview/) maps these responsibilities. Executable authority lives in
+the engine's [derivation module](https://github.com/azohra/meteo/blob/main/forecast/src/derive.ts) for
+stored derivations, the
+[`forecast/`](https://github.com/azohra/meteo/tree/main/briefing) capability for the
+contract and renderer, and
+[`models.json`](https://github.com/azohra/meteo/blob/main/forecast/models.json) for the model
+catalogue.

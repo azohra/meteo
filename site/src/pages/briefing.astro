@@ -1,0 +1,69 @@
+---
+import Base from "../layouts/Base.astro";
+import BriefingCompare from "../components/briefing/BriefingCompare.astro";
+import BriefingFindings from "../components/briefing/BriefingFindings.astro";
+import BriefingHero from "../components/briefing/BriefingHero.astro";
+import BriefingHistory from "../components/briefing/BriefingHistory.astro";
+import BriefingPlate from "../components/briefing/BriefingPlate.astro";
+import BriefingSurfaces from "../components/briefing/BriefingSurfaces.astro";
+
+/* The read side's exhibit is what it reads and states. Every number on
+   this page is interpolated at build time from the package's own output —
+   analyzeForecast and compareForecasts over the scenario registry's
+   generated profiles, and the history reader over the committed sample
+   archive's bytes (src/components/briefing/exhibit.ts). Nothing is fetched
+   at runtime; nothing is typed in by hand. The homepage owns the
+   interactive layer-toggle exhibit; here the Meteogram appears as one tier
+   among seven, drawn once. */
+---
+
+<Base
+  title="Briefing — read, analyze, and compare published forecasts — meteo by Azohra"
+  description="@azohra/meteo.briefing turns published forecast JSON into a briefing: typed findings for one day, agreement and spread across models, convergence across a model's runs, and the Meteogram when the answer should be drawn."
+  activeNav="briefing"
+>
+  <main id="main-content" class="bf-main">
+    <BriefingHero />
+    <BriefingFindings />
+    <BriefingCompare />
+    <BriefingHistory />
+    <BriefingPlate />
+    <BriefingSurfaces />
+
+    <section id="boundary" class="bf-boundary" aria-labelledby="briefing-boundary-title">
+      <div class="section-inner">
+        <h2 id="briefing-boundary-title">This package reads forecasts. It doesn't make them.</h2>
+        <p>
+          Producing and publishing forecasts is the job
+          of <a href="/forecast/">@azohra/meteo.forecast</a>, the engine.
+          Whatever the engine publishes, this package can read, analyze,
+          compare, and draw — the full reference is
+          the <a href="/docs/briefing/">briefing documentation</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .bf-main {
+    padding-block-end: 72px;
+  }
+
+  .bf-boundary {
+    padding-block: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .bf-boundary h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-boundary p {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.65;
+  }
+</style>

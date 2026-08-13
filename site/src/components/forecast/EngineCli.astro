@@ -1,0 +1,117 @@
+---
+/* The CLI, honestly: the install-and-first-build commands are the README's
+   own verified forms (README.md § The CLI), and the second panel is the
+   exact command that captured the dataset shown above
+   (site/public/data-sample/README.md § How it was generated). The 48-hour
+   horizon is read from the committed catalogue, not typed. */
+import models from "../../../public/data-sample/models.json";
+
+const hrdps = models.models.find((model) => model.slug === "hrdps-continental");
+const horizonHours = hrdps?.horizonHours ?? 48;
+---
+
+<section id="cli" class="fc-cli" aria-labelledby="cli-title">
+  <div class="section-inner">
+    <h2 id="cli-title">The CLI</h2>
+    <p class="fc-section-lede">
+      Installing the package puts the <code>meteo</code> binary on your path. Six
+      commands: <code>meteo forecast &lt;build|migrate|terrain|runs-index|freshness|catalogue&gt;</code>.
+    </p>
+
+    <div class="fc-cli-grid">
+      <div class="fc-term">
+        <p class="fc-term-title">a first build</p>
+        <pre class="fc-term-body"><code><span class="t-prompt">$</span> pnpm add @azohra/meteo.forecast
+
+<span class="t-comment"># plan it first: prints what it would build, fetches and writes nothing</span>
+<span class="t-prompt">$</span> pnpm exec meteo forecast build --model hrdps-continental \
+    --sites ./sites.json --output ./public/data --dry-run</code></pre>
+      </div>
+
+      <div class="fc-term">
+        <p class="fc-term-title">the build behind the dataset above</p>
+        <pre class="fc-term-body"><code><span class="t-prompt">$</span> pnpm --dir forecast build
+<span class="t-prompt">$</span> node forecast/dist/cli.js forecast build --model hrdps-continental \
+    --sites scenarios/catalog/sites.json \
+    --output site/public/data-sample --max-steps 8</code></pre>
+      </div>
+    </div>
+
+    <p class="fc-cli-note">
+      Drop <code>--dry-run</code> and the engine fetches the newest complete run and writes the
+      tree shown above. <code>--max-steps 8</code> is what holds the dataset above to eight of
+      the model's {horizonHours} hourly steps.
+    </p>
+  </div>
+</section>
+
+<style>
+  .fc-cli {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+    border-block-end: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--surface) 48%, transparent);
+  }
+
+  .fc-cli h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .fc-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .fc-cli-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 2rem);
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+    align-items: start;
+  }
+
+  .fc-term {
+    min-width: 0;
+    border-radius: var(--radius);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    overflow: hidden;
+  }
+
+  .fc-term-title {
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+    font: 600 0.7rem/1.4 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--term-muted);
+    border-block-end: 1px solid var(--term-border);
+  }
+
+  .fc-term-body {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    font: 0.78rem/1.65 var(--mono);
+    color: var(--term-ink);
+    overflow-x: auto;
+  }
+
+  .fc-term-body .t-prompt { color: var(--term-string); }
+  .fc-term-body .t-comment { color: var(--term-muted); font-style: italic; }
+
+  .fc-cli-note {
+    max-width: 46rem;
+    margin: 1.4rem 0 0;
+    color: var(--ink-mute);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 58rem) {
+    .fc-cli-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

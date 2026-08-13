@@ -1,0 +1,89 @@
+---
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+import Figure from "../figure/Figure.astro";
+import Legend from "../figure/Legend.astro";
+import { onlyOverlays } from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const scenario = scenarioById("convective-cycle");
+const sinkRates = [0.7, 1, 1.3] as const;
+const overlays = onlyOverlays(
+  "boundaryLayerTop",
+  "cloudBase",
+  "usableLiftTop",
+  "launch",
+  "selectedHour",
+);
+const panels = sinkRates.map((sinkRateMps) => ({
+  sinkRateMps,
+  svg: renderMeteogramSvg(
+    buildMeteogramScene(scenario.profile, {
+      timeZone: scenario.timeZone,
+      overlays,
+      sinkRateMps,
+      smooth: false,
+      columnWidthPx: 58,
+      plotHeightPx: 260,
+    }),
+    { idPrefix: `lift-profile-${String(sinkRateMps).replace(".", "-")}` },
+  ),
+}));
+---
+
+<Figure
+  id="lift-profile"
+  title="One atmosphere, three sink thresholds"
+  lesson="Changing the sink threshold moves the strongest-core crossing without changing the parcel boundary layer or cloud base."
+  description="Three views of the same convective cycle at sink thresholds 0.7, 1.0, and 1.3 metres per second. Only the usable-lift series changes."
+  caption="The package recomputes usable lift from the published profile for each threshold. At 1.0 m/s it reproduces the pipeline-published series; the other panels are reversible reader parameters."
+  units="altitude m and ft · sink rate m/s · time UTC"
+  {scenario}
+>
+  <div class="lift-panels">
+    {panels.map((panel) => (
+      <section aria-label={`Usable-lift profile at ${panel.sinkRateMps.toFixed(1)} metres per second sink`}>
+        <header>
+          <strong>{panel.sinkRateMps.toFixed(1)} m/s</strong>
+          <span>{panel.sinkRateMps === 1 ? "published convention" : "reader parameter"}</span>
+        </header>
+        <div
+          class="chart"
+          role="region"
+          tabindex="0"
+          aria-label={`Scrollable ${panel.sinkRateMps.toFixed(1)} metre-per-second lift profile chart`}
+          set:html={panel.svg}
+        ></div>
+      </section>
+    ))}
+  </div>
+
+  <Legend
+    slot="legend"
+    label="Height lines"
+    items={[
+      { label: "Usable lift", description: "Moves with sink rate", color: "var(--chart-usable)" },
+      { label: "Boundary layer", description: "Same parcel crossing", color: "var(--chart-boundary)" },
+      { label: "Cloud base", description: "Same moisture cap", color: "var(--chart-cloud-base)" },
+    ]}
+  />
+</Figure>
+
+<style>
+  .lift-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); }
+  section { min-width: 0; }
+  section + section { border-left: 1px solid var(--rule); }
+  section > header { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+  section strong { color: var(--ink); font: 700 15px/1.2 var(--mono); }
+  section span { color: var(--ink-mute); font: 10px/1.3 var(--mono); text-align: right; }
+  .chart { min-width: 0; overflow-x: auto; }
+  .chart :global(svg) { display: block; width: 100%; min-width: 330px; height: auto; }
+  @media (max-width: 720px) {
+    .lift-panels { grid-template-columns: 1fr; }
+    section + section { border-left: 0; border-top: 1px solid var(--rule); }
+    .chart :global(svg) { min-width: 0; }
+  }
+  @media print {
+    .lift-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .chart :global(svg) { min-width: 0; }
+  }
+</style>

@@ -1,0 +1,62 @@
+---
+title: "Column ceilings can hide ensemble spread"
+summary: "Adding 500 hPa headroom exposed spread that a 700 hPa ceiling had concealed"
+section: "Ensemble interpretation"
+kind: "experiment"
+published: 2026-08-08
+updated: 2026-08-08
+status: "current"
+order: 3
+scenarios:
+  - "ensemble-tight"
+  - "ensemble-wide"
+  - "ensemble-column-censored"
+thumbnail: "ensemble-ceiling"
+---
+
+import SpreadDiagram from "../../components/logbook/SpreadDiagram.astro";
+
+# Column ceilings can hide ensemble spread
+
+One strong REPS hour showed all 21 members in near-perfect agreement: boundary-layer tops within
+16 m of each other, sitting at the very top of the published column. Agreement that tight among 21
+model realizations would be a strong signal — if it came from the atmosphere. It came from the
+column.
+
+## What the 21 members actually shared
+
+Each member passes through the complete nonlinear derivation as its own atmosphere before
+percentile aggregation. Averaging source temperature, moisture, and heat flux first would
+manufacture a column no member predicted. (The current percentile shape, contributor counts,
+full-dropout form, and circular wind rule live in [Ensemble values](/docs/briefing/ensemble-values/).)
+So 21 members agreeing to within 16 m meant 21 separate derivations landing in the same place.
+
+The place they landed was the input's edge. The published column stopped at 700 hPa, about
+3,150 m, and the hour was strong enough that every member's derivation ran into that ceiling. When
+every atmosphere is truncated at the same height, every boundary-layer top comes out at that
+height. The narrow spread described the shared input ceiling, not the weather.
+
+## Raise the ceiling, and the disagreement reappears
+
+Adding 500 hPa as computational headroom raised the ceiling to about 5,700 m. For the same hour,
+the boundary-layer spread widened from 16 m to 205 m and the usable-lift spread widened to 425 m —
+the members had disagreed all along, and the column had been clipping the disagreement off. Hours
+that had already terminated below 700 hPa remained bit-for-bit unchanged, the control confirming
+that the headroom changed nothing except where truncation bites. And because a later atmosphere
+could reach even the higher ceiling, `ceiledMembers` preserves the warning rather than letting
+false agreement masquerade as confidence again.
+
+See the two signals side by side below — genuine spread, and the censored profile that declares
+its own truncation.
+
+<SpreadDiagram />
+
+## Spread is not probability
+
+Member fraction measures agreement among model realizations. “18 of 21” does not establish an 86%
+chance of usable lift. Probability requires calibration against archived forecasts and observations;
+this project does not yet have that evidence.
+
+The [forecast model feed reference](/docs/forecast/forecast-model-feeds/) records the current source
+levels and provider paths. ECCC documents the underlying system on its
+[REPS open-data page](https://eccc-msc.github.io/open-data/msc-data/nwp_reps/readme_reps_en/).

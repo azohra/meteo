@@ -1,0 +1,168 @@
+/* Shared exhibit chrome for the station page family — the cross-section
+   classes every gallery section leans on (panels, grids, notes, segmented
+   controls). Imported unscoped by src/pages/station.astro; everything is
+   namespaced `station-`. Styles a single component owns live scoped inside
+   that component. */
+
+.station-caption code,
+.station-note code {
+  color: var(--accent);
+  background: none;
+  padding: 0;
+}
+
+.station-segmented {
+  display: inline-flex;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.station-segmented button {
+  padding: 0.48rem 0.85rem;
+  color: var(--ink-mute);
+  background: transparent;
+  border: 0;
+  font: 600 0.75rem/1.2 var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.station-segmented button + button {
+  border-inline-start: 1px solid var(--rule);
+}
+
+.station-segmented button:hover {
+  color: var(--accent);
+}
+
+.station-segmented button[aria-pressed="true"] {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+/* The Month picker: a plain select riding the same pill language as the
+   segmented controls beside it. */
+.station-select {
+  padding: 0.44rem 1.6rem 0.44rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 0.75rem/1.2 var(--sans);
+  cursor: pointer;
+}
+
+.station-select:hover {
+  border-color: var(--accent);
+}
+
+.station-section {
+  display: grid;
+  gap: 1.1rem;
+  /* Clear the two sticky bars on anchor jumps. */
+  scroll-margin-top: calc(var(--header-h) + 4rem);
+  /* Grid items default to min-width auto, which lets one wide exhibit
+     (the charts measure their wrapper and the table has a real
+     min-content) push the whole shared column track past the viewport on
+     phones. Release the floor; the charts are ResizeObserver-responsive
+     and redraw at the measured width. */
+  min-width: 0;
+}
+
+.station-section > *,
+.station-grid > *,
+.station-panel,
+.station-panel > *,
+.station-ways > *,
+.station-primitives > *,
+.station-primitives-row > * {
+  min-width: 0;
+}
+
+.station-section h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.6vw, 1.9rem);
+  line-height: 1.15;
+}
+
+/* The registry note: each section's lead, the teaching voice. */
+.station-note {
+  max-width: 68ch;
+  margin: -0.35rem 0 0;
+  color: var(--ink-mute);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.station-caption {
+  max-width: 52rem;
+  margin: 0;
+  color: var(--ink-mute);
+  font: 0.8rem/1.6 var(--mono);
+}
+
+/* ---- panels and grids: the exhibits' shared chrome ---- */
+.station-panel {
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.station-panel h3,
+.station-way h3 {
+  margin: 0 0 0.6rem;
+  color: var(--ink-mute);
+  font: 600 0.72rem/1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.station-panel h3 code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  text-transform: none;
+}
+
+.station-grid {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.station-grid-instruments {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 400px));
+  justify-content: start;
+}
+
+.station-grid-charts {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+.station-grid-cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  align-items: start;
+}
+
+.station-grid-roses {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  align-items: start;
+}
+
+.station-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+/* ---- scroll regions: wide exhibits scroll themselves, never the page ---- */
+.station-scroll-region:focus-visible,
+.station-strips:focus-visible,
+.station-board:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

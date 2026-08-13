@@ -1,0 +1,104 @@
+---
+import { render } from "astro:content";
+import ArticleMeta from "../../components/logbook/ArticleMeta.astro";
+import ArticleNav from "../../components/logbook/ArticleNav.astro";
+import Base from "../../layouts/Base.astro";
+import {
+  relatedLogbookEntries,
+  logbookEntries,
+  type LogbookEntry,
+} from "../../lib/logbook";
+
+export function getStaticPaths() {
+  return logbookEntries().map((doc) => ({ params: { slug: doc.slug }, props: { doc } }));
+}
+
+interface Props {
+  doc: LogbookEntry;
+}
+
+const { doc } = Astro.props;
+
+const { Content } = await render(doc.entry);
+const entries = logbookEntries();
+const related = relatedLogbookEntries(doc, entries);
+---
+
+<Base title={`${doc.title} — meteo by Azohra`} description={doc.summary} activeNav="logbook">
+  <main class="shell prose">
+    <p class="back-link"><a href="/logbook/">&larr; Logbook</a></p>
+    <ArticleMeta doc={doc} />
+    <Content />
+
+    {
+      related.length > 0 && (
+        <aside class="related-entries" aria-labelledby="related-entries-title">
+          <p class="related-label" id="related-entries-title">Related entries</p>
+          <ul>
+            {related.map((entry) => (
+              <li>
+                <a href={entry.url}>{entry.title}</a>
+                <span>{entry.summary}</span>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+
+    <ArticleNav current={doc} entries={entries} />
+  </main>
+</Base>
+
+<style>
+  .related-entries {
+    width: min(920px, calc(100vw - 48px));
+    margin: 64px 50% 0;
+    padding: 20px 0 4px;
+    transform: translateX(-50%);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .related-label {
+    margin: 0 0 12px;
+    font: 600 12px/1.4 var(--mono);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .related-entries ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    margin: 0;
+    padding: 0 0 20px;
+    list-style: none;
+  }
+  .related-entries li {
+    margin: 0;
+  }
+  .related-entries a {
+    display: block;
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .related-entries span {
+    display: block;
+    margin-top: 7px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink-mute);
+  }
+  @media (max-width: 680px) {
+    .related-entries {
+      width: calc(100vw - 36px);
+    }
+    .related-entries ul {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

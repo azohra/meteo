@@ -1,0 +1,62 @@
+{
+  "name": "@azohra/meteo.forecast",
+  "version": "0.1.1",
+  "description": "The forecast engine of meteo by Azohra: fetches provider bytes (ECCC Datamart, NOAA Open Data), samples gridpoints, derives site forecasts, and publishes the versioned JSON documents and history archives that @azohra/meteo.briefing reads - the write side of the contract that package's read side validates.",
+  "keywords": [
+    "weather",
+    "forecast",
+    "meteorology",
+    "soaring",
+    "grib2",
+    "hrdps",
+    "gfs",
+    "hrrr",
+    "cli"
+  ],
+  "author": "Justin Watts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azohra/meteo.git",
+    "directory": "forecast"
+  },
+  "type": "module",
+  "bin": {
+    "meteo": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "models.json"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./models.json": "./models.json",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "test": "pnpm --dir ../briefing build && pnpm --dir ../grib build && vp test",
+    "typecheck": "pnpm --dir ../briefing build && pnpm --dir ../grib build && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@azohra/meteo.briefing": "workspace:*",
+    "@azohra/meteo.grib": "workspace:*",
+    "ajv": "^8.20.0",
+    "aws4fetch": "^1.0.20",
+    "geotiff": "^3.0.5",
+    "h5wasm": "^0.10.3",
+    "proj4": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "homepage": "https://meteo.azohra.com"
+}

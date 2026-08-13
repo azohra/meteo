@@ -1,0 +1,14 @@
+---
+interface Props {
+  captionId: string;
+  caption?: string;
+  units?: string;
+}
+
+const { captionId, caption, units } = Astro.props;
+---
+
+<figcaption id={captionId} class="meteo-gram-figure__caption">
+  {caption && <span>{caption}</span>}
+  {units && <span class="meteo-gram-figure__units"><span class="meteo-gram-figure__units-label">Units</span> {units}</span>}
+</figcaption>

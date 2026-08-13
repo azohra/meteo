@@ -1,0 +1,123 @@
+---
+import SectionHeader from "./SectionHeader.astro";
+
+// The foundation, in the README's own voice: two pure-TypeScript decoders
+// written for this workspace and published on their own. Facts restated
+// from README.md § "The decoders" and the /docs/grib/ and /docs/j2k/ pages.
+const decoders = [
+  {
+    name: "@azohra/meteo.grib",
+    title: "GRIB2 in pure TypeScript",
+    detail:
+      "Rotated lat-lon and Lambert grids, complex packing, multi-field messages, NOMADS .idx byte-range helpers — written because no maintained JavaScript decoder covered the grids ECCC and NOAA actually ship. Decoded values match ecCodes bit for bit.",
+    install: "pnpm add @azohra/meteo.grib",
+    href: "/docs/grib/",
+  },
+  {
+    name: "@azohra/meteo.j2k",
+    title: "The JPEG 2000 inside it",
+    detail:
+      "Decodes the codestreams inside ECCC's GRIB2, scoped to exactly the subset those feeds ship — anything outside it fails loudly with a named error. Every step cites its clause of the JPEG 2000 standard, and it is the codec @azohra/meteo.grib runs in production.",
+    install: "pnpm add @azohra/meteo.j2k",
+    href: "/docs/j2k/",
+  },
+];
+---
+
+<section id="decoders" class="home-decoders" aria-labelledby="home-decoders-title">
+  <div class="home-decoders__inner section-inner">
+    <SectionHeader
+      number="05"
+      eyebrow="@azohra/meteo.grib · @azohra/meteo.j2k"
+      title="Read the provider bytes yourself"
+      titleId="home-decoders-title"
+      intro="Beneath the engine sit two pure-TypeScript decoders, each published on its own and exact against the reference codecs. Both cores run in the browser: no node: imports, no ambient I/O, no WASM."
+    />
+
+    <ul class="home-decoders__cards">
+      {decoders.map((decoder) => (
+        <li>
+          <a href={decoder.href}>
+            <code>{decoder.install}</code>
+            <strong>{decoder.title}</strong>
+            <span>{decoder.detail}</span>
+            <small>Read the {decoder.name} docs <span aria-hidden="true">→</span></small>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* 05 is the dense two-card coda on the bare page ground — compressed
+     cadence before the closing band opens. */
+  .home-decoders {
+    padding-block: clamp(3.5rem, 6vw, 5.5rem);
+  }
+
+  .home-decoders__cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    list-style: none;
+  }
+
+  .home-decoders__cards li + li {
+    border-inline-start: 1px solid var(--rule);
+  }
+
+  .home-decoders__cards a {
+    display: grid;
+    gap: 0.55rem;
+    align-content: start;
+    height: 100%;
+    padding: 1.35rem 1.4rem;
+    color: var(--ink);
+    background: var(--surface);
+  }
+
+  .home-decoders__cards a:hover {
+    background: var(--surface-accent);
+    text-decoration: none;
+  }
+
+  .home-decoders__cards code {
+    color: var(--accent);
+    font: 600 0.72rem/1.5 var(--mono);
+  }
+
+  .home-decoders__cards strong {
+    font: 700 1.15rem/1.25 var(--sans);
+  }
+
+  .home-decoders__cards span {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .home-decoders__cards small {
+    margin-block-start: 0.3rem;
+    color: var(--accent);
+    font: 600 0.66rem/1.4 var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 44rem) {
+    .home-decoders__cards {
+      grid-template-columns: 1fr;
+    }
+
+    .home-decoders__cards li + li {
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--rule);
+    }
+  }
+</style>

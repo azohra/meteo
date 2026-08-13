@@ -1,0 +1,68 @@
+---
+import HomeClosing from "../components/home/HomeClosing.astro";
+import HomeDecoders from "../components/home/HomeDecoders.astro";
+import HomeForecastData from "../components/home/HomeForecastData.astro";
+import HomeHero from "../components/home/HomeHero.astro";
+import HomeIndex from "../components/home/HomeIndex.astro";
+import HomeLiveStation from "../components/home/HomeLiveStation.astro";
+import HomePath from "../components/home/HomePath.astro";
+import HomeTeachingMeteogram from "../components/home/HomeTeachingMeteogram.astro";
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="meteo by Azohra — publish the weather for your launches"
+  description="Open packages that read the weather models, derive soaring conditions, and show live launch wind — published by you, on your site, for your pilots."
+  hideFooter
+>
+  <main id="main-content" class="home-main">
+    <HomeHero />
+    <HomeIndex />
+    <HomePath />
+    <HomeTeachingMeteogram />
+    <HomeLiveStation />
+    <HomeForecastData />
+    <HomeDecoders />
+    <HomeClosing />
+  </main>
+</Base>
+
+<style>
+  .home-main {
+    overflow: clip;
+  }
+
+  .home-main :global(section[id]) {
+    scroll-margin-top: 8.5rem;
+  }
+
+  /* ---- the scroll's alternation, stated once ----
+     The homepage alternates bare page ground and full-bleed bands so each
+     boundary is felt: hero and 01 on --page, 02 dips to the sunken band,
+     03 returns to --page, 04 turns to the accent-tinted band, 05 closes
+     compressed on --page, and the teal colophon ends the page. The 02 band
+     lives here (not in HomeTeachingMeteogram) because that component's
+     markup and inner styles belong to the scenario exhibit; the id-keyed
+     rule outranks its scoped section rule. */
+  .home-main :global(#briefing) {
+    padding-block: clamp(5.5rem, 10vw, 9rem);
+    background: var(--surface-sunken);
+    border-block: 1px solid var(--rule-strong);
+  }
+
+  /* 02's number chip — the same device SectionHeader draws for the other
+     sections (keep the two in step); painted from here for the same reason
+     as the band above. The empty alt keeps it decorative. */
+  .home-main :global(#briefing .home-section-head__eyebrow::before) {
+    content: "02" / "";
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.75rem;
+    padding: 0.22rem 0.3rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--rule));
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    font-weight: 700;
+    line-height: 1;
+  }
+</style>

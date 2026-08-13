@@ -1,0 +1,126 @@
+---
+title: "Seven forecast-data failures that passed parsing"
+summary: "Forecast-data failures caught by independent checks"
+section: "Data validation"
+kind: "case-study"
+published: 2026-08-08
+updated: 2026-08-08
+status: "current"
+order: 2
+scenarios:
+  - "missing-versus-zero"
+thumbnail: "validation-witnesses"
+---
+
+import FailureAtlas from "../../components/logbook/FailureAtlas.astro";
+import Incident from "../../components/logbook/Incident.astro";
+import MissingVersusZero from "../../components/logbook/MissingVersusZero.astro";
+import ValidationWitness from "../../components/logbook/ValidationWitness.astro";
+
+# Seven forecast-data failures that passed parsing
+
+Seven times, a forecast payload arrived looking like success: HTTP 200, decoded cleanly as GRIB or
+GeoTIFF, values a chart could draw. Seven times it was wrong anyway — about the place, the
+direction, the time interval, the model, or the run state. Parsing proved each payload was
+readable; it took an independent witness to prove what it actually represented.
+
+Every incident below has the same anatomy: what arrived looking fine, the witness that disagreed,
+and the rule the platform keeps. The atlas pairs them; the cases follow.
+
+<FailureAtlas />
+
+## A WCS crop sampled the wrong cells
+
+<Incident
+  arrived="A correctly shaped terrain crop at the requested “native” resolution. The sampled RDPS elevation — 1,426 geopotential metres — was a perfectly plausible number for a mountain site."
+  witness="GeoMet's point query reported 1,168 gpm for the same model cell, and 2 m temperatures differed by up to 2.5 °C at half the test sites. A finely oversampled crop reproduced the point values — the fault was the crop's sampling, not the model."
+  rule="A crop is a rendered coverage, not proof of nearest-cell sampling."
+>
+  While the pipeline read WCS, the builders compared several crop values with an independent point
+  query before trusting the georeferencing. The transport is retired; the rule is not.
+</Incident>
+
+## A broken WCS request returned valid zeros
+
+<Incident
+  arrived="DescribeCoverage advertised `long` and `lat` axes. Subsetting with those names returned HTTP 200 and a valid GeoTIFF — filled entirely with zeros."
+  witness="Zero sensible heat flux on a sunny afternoon implies no convection across the entire crop. That is not weather; it is a broken request. The shape actually required the undocumented `x`/`y` axes and an explicit `SUBSETTINGCRS=EPSG:4326`."
+  rule="Check physical plausibility wherever zero can mean either a measurement or a broken request."
+>
+  As true of a decoded GRIB field as of a rendered crop — and the same distinction the contract
+  keeps on the wire:
+
+  <MissingVersusZero />
+</Incident>
+
+## Grid-relative winds were not rotated
+
+<Incident
+  arrived="U and V components decoded normally and produced realistic wind speeds."
+  witness="Speed is exactly the property rotation preserves, so a believable magnitude vouches for nothing about direction. In one REPS verification, the unrotated member read 261° where the transformed value was 236.6° — bracketed by deterministic forecasts at 250° and 238°. HRRR errors at these longitudes ran 10–15°."
+  rule="A correct magnitude does not prove a correct direction."
+>
+  HRRR's Lambert grid and REPS's rotated latitude–longitude grid define their components along grid
+  axes rather than true east and north. The rotation was checked three ways — ecCodes geolocation to
+  about 10⁻⁶ degrees, member-for-member speed against GeoMet, and directional comparison with
+  sibling models — and the builders now read each grid's vector convention from GRIB projection
+  metadata before deriving direction.
+
+  <ValidationWitness mode="projection" />
+</Incident>
+
+## A model URL returned another model's grid
+
+<Incident
+  arrived="A GEPS orography URL returned 4.3 MB of decodable GRIB."
+  witness="The grid inside was REPS-shaped. The one external tell: the body length disagreed with the server's declared Content-Length and ETag. An immediate retry returned the expected bytes; the upstream cause remains unknown."
+  rule="A valid file format cannot identify the model inside it."
+>
+  The download client now checks every full response against its declared length and retries
+  mismatches.
+</Incident>
+
+## Flux fields used different time intervals
+
+<Incident
+  arrived="Several models expose sensible heat flux in units reducible to W/m² — the same variable, the same unit, believable values everywhere."
+  witness="The shared unit hides three different clocks. HRRR and REPS publish instantaneous values; GFS publishes averages over growing windows that reset every six hours; GEPS publishes accumulations that require differencing. Treat all three as instantaneous and afternoon heating smears into the morning."
+  rule="A variable name and unit do not define its time semantics."
+>
+  The builders read product-definition and time-range metadata, then test sequences across window
+  resets.
+
+  <ValidationWitness mode="time" />
+</Incident>
+
+## A model run was only partly published
+
+<Incident
+  arrived="Early forecast hours for a new cycle downloaded cleanly while the provider was still publishing later hours."
+  witness="The final scheduled hour was absent. A build started then would have failed after thousands of requests."
+  rule="A run does not exist until its last expected product answers."
+>
+  The forecast engine probes the final required forecast hour first.
+</Incident>
+
+## Provider paths changed before their documentation
+
+<Incident
+  arrived="Documentation, examples, and old forum answers all pointed to layer families such as `GDPS.ETA_*`, `RDPS.ETA_*`, and legacy ensemble directory trees."
+  witness="The live capabilities and directory listings had moved on: some names returned 404; others survived as aliases with different availability."
+  rule="Provider identifiers are dated observations; the service outranks its prose."
+>
+  The [forecast model feed reference](/docs/forecast/forecast-model-feeds/) records what was
+  live-verified and when.
+</Incident>
+
+## What parsing can never prove
+
+Schema validation proves shape. Each trust boundary also compares the payload with an independent
+fact about identity, location, projection, or time semantics — and the check lives beside the code
+that crosses the boundary.
+
+The provider's relevant vector warning is explicit in the
+[ECCC RDPS data specification](https://eccc-msc.github.io/open-data/msc-data/nwp_rdps/readme_rdps-datamart_en/):
+U and V must be resolved relative to the defined grid. The incident-specific countermeasures live in
+the builders and shared download clients.

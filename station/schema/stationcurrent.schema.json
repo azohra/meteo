@@ -1,0 +1,641 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meteo.azohra.com/schema/stationcurrent.schema.json",
+  "title": "StationCurrent",
+  "description": "The single-station light document served at /current. Reuses the station shape with history null so clients need one decoder.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 2
+    },
+    "servedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "station": {
+      "$ref": "#/$defs/Station"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "servedAt",
+    "station"
+  ],
+  "$defs": {
+    "Station": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sourceLabel": {
+              "type": "string"
+            },
+            "pageUrl": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "latitude": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "longitude": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -180,
+                  "exclusiveMaximum": 180
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timeZone": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "elevationM": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "capabilities": {
+              "$ref": "#/$defs/StationCapabilities"
+            },
+            "samplingWindowSeconds": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "recommendedPollSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "status": {
+              "type": "string",
+              "const": "ok"
+            },
+            "reading": {
+              "$ref": "#/$defs/Reading"
+            },
+            "history": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/History"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "sourceLabel",
+            "pageUrl",
+            "latitude",
+            "longitude",
+            "timeZone",
+            "elevationM",
+            "capabilities",
+            "samplingWindowSeconds",
+            "recommendedPollSeconds",
+            "status",
+            "reading",
+            "history"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sourceLabel": {
+              "type": "string"
+            },
+            "pageUrl": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "latitude": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "longitude": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": -180,
+                  "exclusiveMaximum": 180
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "timeZone": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "elevationM": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "capabilities": {
+              "$ref": "#/$defs/StationCapabilities"
+            },
+            "samplingWindowSeconds": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "recommendedPollSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "status": {
+              "type": "string",
+              "const": "unavailable"
+            },
+            "reason": {
+              "type": "string",
+              "enum": [
+                "upstream_error",
+                "timeout",
+                "rate_limited",
+                "contract_break",
+                "not_configured"
+              ]
+            },
+            "reading": {
+              "type": "null"
+            },
+            "history": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "sourceLabel",
+            "pageUrl",
+            "latitude",
+            "longitude",
+            "timeZone",
+            "elevationM",
+            "capabilities",
+            "samplingWindowSeconds",
+            "recommendedPollSeconds",
+            "status",
+            "reason",
+            "reading",
+            "history"
+          ]
+        }
+      ]
+    },
+    "StationCapabilities": {
+      "type": "object",
+      "properties": {
+        "gustLull": {
+          "type": "boolean"
+        },
+        "temperature": {
+          "type": "boolean"
+        },
+        "conditions": {
+          "type": "boolean"
+        },
+        "history": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "gustLull",
+        "temperature",
+        "conditions",
+        "history"
+      ],
+      "description": "Declared from what the hardware carries, never inferred from data. Capabilities gate client UI structure; a dark sensor keeps its structure and reports null."
+    },
+    "Reading": {
+      "type": "object",
+      "properties": {
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "windAvgMps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Wind speed in m/s, averaged over samplingWindowSeconds. Absence is null, never zero."
+        },
+        "windDirectionDeg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Bearing the wind blows FROM, degrees [0, 360). null exactly when calm (windAvgMps below the WMO 0.5 m/s threshold) — calm carries no direction; a null on a blowing reading is a dead vane."
+        },
+        "windGustMps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Peak m/s within the sampling window; null ≠ zero."
+        },
+        "windLullMps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Minimum m/s within the sampling window; null ≠ zero."
+        },
+        "temperatureC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windChillC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "conditions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AirConditions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "observedAt",
+        "windAvgMps",
+        "windDirectionDeg",
+        "windGustMps",
+        "windLullMps",
+        "temperatureC",
+        "windChillC",
+        "conditions"
+      ]
+    },
+    "AirConditions": {
+      "type": "object",
+      "properties": {
+        "dewPointC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastLightningStrikeAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastLightningStrikeDistanceKm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lightningStrikeCountLastHour": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precipitationMinutesToday": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precipitationRateMmPerHour": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precipitationTodayMm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pressureTrend": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "falling",
+                "rising",
+                "steady",
+                "unknown"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "relativeHumidityPercent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureHpa": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "solarRadiationWm2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uvIndex": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "dewPointC",
+        "lastLightningStrikeAt",
+        "lastLightningStrikeDistanceKm",
+        "lightningStrikeCountLastHour",
+        "precipitationMinutesToday",
+        "precipitationRateMmPerHour",
+        "precipitationTodayMm",
+        "pressureTrend",
+        "relativeHumidityPercent",
+        "seaLevelPressureHpa",
+        "solarRadiationWm2",
+        "uvIndex"
+      ],
+      "description": "Extended air data. null means 'not reported here' — it does not distinguish a missing sensor from a dark one; the station-level conditions capability gates whether a client allocates UI structure."
+    },
+    "History": {
+      "type": "object",
+      "properties": {
+        "periodMinutes": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Minutes each point covers. Wind run, vane thinning, and dropout detection are functions of it."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HistoryPoint"
+          },
+          "description": "A dropout is an ABSENT record, never a zeroed one — gaps carry no points."
+        }
+      },
+      "required": [
+        "periodMinutes",
+        "points"
+      ]
+    },
+    "HistoryPoint": {
+      "type": "object",
+      "properties": {
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "windAvgMps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mean m/s over the record's period."
+        },
+        "windGustMps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windLullMps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windDirectionDeg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Degrees FROM; null exactly when the period was calm (below 0.5 m/s)."
+        },
+        "temperatureC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureHpa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "observedAt",
+        "windAvgMps",
+        "windGustMps",
+        "windLullMps",
+        "windDirectionDeg",
+        "temperatureC"
+      ]
+    }
+  }
+}

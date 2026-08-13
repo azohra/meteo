@@ -1,0 +1,533 @@
+/* The platform skin — instrument panels on cold morning air.
+ *
+ * One system, two arms: every colour is a light-dark() pair resolved by
+ * color-scheme, so the OS preference picks the arm and the site's theme
+ * toggle pins it with data-theme on <html>. Where a token states the same
+ * fact as the station capability's --meteo-* skin (surface, ink, muted,
+ * border, accent, freshness, the band ramp) the values are identical —
+ * one brand, stated twice only because the package must render with no
+ * site present. Dark mode is depth, not tint: same hues, heavier shadow. */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- ground and surfaces ---- */
+  --page: light-dark(#eef1f5, #0d1319);
+  --surface: light-dark(#ffffff, #10161d); /* = --meteo-surface */
+  --surface-raised: light-dark(#f4f6f9, #212d3a); /* = --meteo-surface-raised */
+  --surface-sunken: light-dark(#e4e9ef, #0a0e13);
+  --surface-accent: light-dark(#e2eff3, #14262f); /* accent-tinted hover ground */
+
+  /* ---- ink ---- */
+  --ink: light-dark(#17232e, #e7edf3); /* = --meteo-ink */
+  --ink-soft: light-dark(#3b4a58, #c2cdd8);
+  /* One step darker than --meteo-muted's light arm: station muted text
+     always sits on a panel; site muted text often sits on the page ground,
+     and #62717f is 4.43:1 there. #5b6a79 clears 4.5 on every ground. */
+  --ink-mute: light-dark(#5b6a79, #95a4b3);
+
+  /* ---- rules ---- */
+  --rule: light-dark(#dbe2e9, #2b3844); /* = --meteo-border */
+  --rule-strong: light-dark(#aebbc7, #405061);
+
+  /* ---- the accent: glacier teal ---- */
+  --accent: light-dark(#0f7490, #45c3e0); /* = --meteo-accent */
+  --accent-strong: light-dark(#0b5b71, #7fd7ec);
+  --accent-ink: light-dark(#ffffff, #0d1319); /* text on the accent */
+
+  /* ---- freshness / status: live, aging, stale (= --meteo-freshness-*) ---- */
+  --status-good: light-dark(#12813d, #34d399);
+  --status-warning: light-dark(#b45309, #fbbf24);
+  --status-serious: light-dark(#bb1d1d, #f87171);
+
+  /* ---- the grade: the five-band ramp every chart judges wind with,
+     and the platform's signature mark (= --meteo-band-0..4) ---- */
+  --band-0: light-dark(#56a2cc, #5fb2e0);
+  --band-1: light-dark(#2e9e63, #34d17b);
+  --band-2: light-dark(#d9a013, #eab308);
+  --band-3: light-dark(#e2662c, #f4732c);
+  --band-4: light-dark(#c22727, #ef4444);
+  /* The ramp as one sweep — every "grade" signature (title underlines,
+     .band-rule) paints this gradient instead of restating the five stops. */
+  --band-gradient: linear-gradient(
+    to right,
+    var(--band-0),
+    var(--band-1),
+    var(--band-2),
+    var(--band-3),
+    var(--band-4)
+  );
+
+  /* ---- the Meteogram plate's chrome. The chart is a printed plate whose
+     face — the stability ramp, field fills, series — never restyles: those
+     tokens get no ancestor values, so they hold the package defaults on any
+     ground. The chrome around the print — canvas, strip grounds, label ink,
+     rules, halos — follows the page theme through the same ancestor tokens
+     any downstream site uses. The dark arm is the package's own documented
+     dark override. ---- */
+  --meteo-gram-surface: light-dark(#fffdf8, #14181c);
+  --meteo-gram-strip-bg: light-dark(#f2f4f1, #1b2126);
+  --meteo-gram-ink: light-dark(#152529, #f0ede4);
+  --meteo-gram-ink-soft: light-dark(#2f454a, #d9d3c4);
+  --meteo-gram-ink-mute: light-dark(#40565a, #b7afa0);
+  --meteo-gram-rule: light-dark(#776956, #5a6672);
+  --meteo-gram-halo: light-dark(#fffdf8, #14181c);
+  --meteo-gram-halo-barb: light-dark(#355963, #0d1114);
+
+  /* ---- the terminal: a dark instrument face in either theme, like the
+     dial's own bezel. Theme-invariant by design. ---- */
+  --term-bg: #0d151d;
+  --term-border: #22303d;
+  --term-ink: #d7e2ec;
+  --term-muted: #7c8b99;
+  --term-key: #56a2cc;
+  --term-string: #4fbf7f;
+  --term-number: #e3b341;
+
+  /* ---- data encoding — one fixed set, chart-only, never themed. These
+     live on light figure plates (see .figure-shell) in both themes. ---- */
+  --model-1: #1f5f9b;
+  --model-2: #9a480d;
+  --model-3: #16694f;
+  --model-4: #805500;
+  --model-5: #934568;
+  --model-6: #3f7028;
+  --chart-pressure: #963f36;
+  --chart-rain: #207a83;
+  --chart-cloud: #5b6969;
+  --chart-lift: #9a7500;
+  --chart-usable: #2179ad;
+  --chart-boundary: #a46b10;
+  --chart-wind: #355963;
+  --chart-freezing: #2b748f;
+
+  /* logbook accents — the collection derives an accent name per article
+     kind (method → blue, experiment → amber, case-study → green); this is
+     the one translation from that name to a hue. Every consumer (article
+     meta, thumbnails) reads --doc-accent through these classes. */
+  --doc-accent: var(--accent);
+
+  /* stability palette — the discrete 8-class lapse-rate ramp has ONE home:
+     STABILITY_TOKEN_DEFAULTS in gram/svg. Base.astro generates the --stab-*
+     custom properties from that export at build time, so figures and legends
+     here read the same hexes the package renders without restating them. */
+
+  /* The Meteogram renderer (--meteo-gram-*) is a scientific artifact with
+     its own reference palette and type — the site frames it and takes NO
+     position on its tokens. See the design doc's "the instrument's output
+     is the instrument's". */
+
+  /* ---- type ----
+     One face: Instrument Sans Variable carries display and body through
+     weight and tracking, not through a second family. The mono is the
+     machine's own — the wire carries no prose, and the site ships no mono
+     webfont to pretend otherwise. */
+  --sans: "Instrument Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: var(--sans);
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- shape, depth, focus ---- */
+  --radius: 12px; /* = --meteo-radius */
+  --radius-small: 8px;
+  --shadow:
+    0 1px 2px light-dark(rgb(23 35 46 / 0.06), rgb(0 0 0 / 0.35)),
+    0 8px 24px light-dark(rgb(23 35 46 / 0.05), rgb(0 0 0 / 0.3));
+  --header-h: 60px;
+}
+
+/* The toggle pins the scheme light-dark() resolves against. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Station components declare `color-scheme: light dark` on .meteo-root;
+   the site's pin must carry into them so exhibits follow the page theme.
+   (Unlayered, so it outranks the package's @layer meteo rule.) */
+[data-theme="light"] .meteo-root {
+  color-scheme: light;
+}
+
+[data-theme="dark"] .meteo-root {
+  color-scheme: dark;
+}
+
+.accent-amber {
+  --doc-accent: var(--status-warning);
+}
+.accent-blue {
+  --doc-accent: var(--accent);
+}
+.accent-green {
+  --doc-accent: var(--status-good);
+}
+
+/* ---- the signature: the grade ----
+   The same five-band scale every chart paints its speed zones with,
+   drawn once per page as the title's underline. Information first:
+   calm blue through green and amber to red — the platform's judgment
+   ramp, signing the page. */
+.band-rule {
+  display: block;
+  width: 7rem;
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--band-gradient);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--page);
+  color: var(--ink);
+}
+body {
+  font-family: var(--sans);
+  font-size: 16.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.shell {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 28px 100px;
+}
+
+/* ---- site header: wordmark, destinations, the theme toggle ---- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--rule);
+  background: light-dark(rgba(238, 241, 245, 0.92), rgba(13, 19, 25, 0.92));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.site-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  min-height: var(--header-h);
+  padding: 8px 24px;
+  max-width: 1188px;
+  margin: 0 auto;
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.site-brand:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.site-nav {
+  display: flex;
+  gap: 4px 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.site-nav a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.site-nav a[aria-current="page"] {
+  color: var(--ink);
+}
+/* Three registers: the products cluster tight beside the mark, Docs
+   stands primary, the meanwhile links go quiet, GitHub is an exit. */
+.site-nav__products {
+  display: flex;
+  gap: 4px 12px;
+}
+.site-nav__products a {
+  color: var(--ink-soft);
+}
+.site-nav__docs {
+  padding-inline-start: 20px;
+  color: var(--ink);
+  border-inline-start: 1px solid var(--rule);
+}
+.site-nav__quiet {
+  display: flex;
+  gap: 4px 14px;
+}
+.site-nav__quiet a {
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+.site-nav__github {
+  display: inline-flex;
+  align-items: center;
+  padding-inline-start: 20px;
+  color: var(--ink-mute);
+  border-inline-start: 1px solid var(--rule);
+}
+
+@media (max-width: 40rem) {
+  .site-nav {
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.5rem;
+  }
+}
+
+/* ---- the shared band column ----
+   Every full-bleed band (home sections, the station page's bands) centres
+   this one measure; narrower gutters under 32rem. */
+.section-inner {
+  width: min(70rem, calc(100% - 3.5rem));
+  margin-inline: auto;
+}
+
+@media (max-width: 32rem) {
+  .section-inner {
+    width: min(100% - 2rem, 70rem);
+  }
+}
+
+.site-footer {
+  border-top: 1px solid var(--rule);
+  padding: 28px 24px 60px;
+  max-width: 1188px;
+  margin: 0 auto;
+  font-size: 13px;
+  color: var(--ink-mute);
+}
+.site-footer a {
+  color: var(--ink-mute);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+}
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+/* ---- the theme toggle: a pill that names its state ---- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.42rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-mute);
+  font: 600 12px/1 var(--sans);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.theme-toggle .theme-toggle-icon {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+/* ---- figure plates ----
+   Charts and teaching figures are printed plates: they keep one light
+   chart face in either theme, like a topo sheet on a bench. Pinning
+   color-scheme resolves every token inside the plate to its light arm;
+   the frame around the plate stays in the page's own theme. */
+.figure-shell {
+  color-scheme: light;
+}
+
+/* docs prose (non-Starlight pages) */
+.prose {
+  max-width: 840px;
+  font-size: 17px;
+  line-height: 1.68;
+  padding-top: 28px;
+}
+.prose h1 {
+  position: relative;
+  font-size: clamp(34px, 5vw, 46px);
+  letter-spacing: -0.025em;
+  margin: 0 0 22px;
+  padding-bottom: 18px;
+  line-height: 1.08;
+}
+/* The page signs itself once: the grade under the title. */
+.prose h1::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 7rem;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--band-gradient);
+  content: "";
+}
+.prose h2 {
+  font-size: 26px;
+  margin: 54px 0 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink);
+}
+.prose h3 {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-size: 19px;
+  margin: 28px 0 8px;
+}
+.prose .back-link {
+  margin: 0 0 2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.035em;
+}
+.prose p,
+.prose li {
+  color: var(--ink-soft);
+}
+.prose p {
+  margin: 0 0 20px;
+}
+.prose ul,
+.prose ol {
+  margin: 0 0 20px;
+  padding-left: 25px;
+}
+.prose li {
+  margin-bottom: 8px;
+}
+.prose li:last-child {
+  margin-bottom: 0;
+}
+.prose li > ul,
+.prose li > ol {
+  margin-top: 8px;
+}
+.prose strong {
+  color: var(--ink);
+}
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: var(--surface-sunken);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+.prose pre {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin: 20px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+.prose pre code {
+  background: none;
+  padding: 0;
+}
+.prose a {
+  color: var(--accent);
+}
+.prose blockquote {
+  font-size: 19px;
+  line-height: 1.5;
+  font-weight: 500;
+  font-style: italic;
+  border-left: 2px solid var(--accent);
+  margin: 28px 0;
+  padding: 2px 0 2px 18px;
+  color: var(--ink);
+}
+.prose blockquote p {
+  margin: 0;
+}
+.prose table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 22px 0 30px;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.prose th,
+.prose td {
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+.prose thead th {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.prose tbody td {
+  color: var(--ink-soft);
+}
+.prose hr {
+  margin: 48px 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+@media (max-width: 560px) {
+  .site-header-bar {
+    padding-inline: 18px;
+  }
+  .shell {
+    padding-inline: 18px;
+  }
+  .prose {
+    font-size: 16px;
+    line-height: 1.64;
+  }
+}

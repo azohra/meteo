@@ -1,0 +1,20 @@
+---
+import { plateTokensStyle } from "../../lib/plate-tokens";
+import { THEME_PIN_SCRIPT } from "../../lib/theme-pin";
+
+// The docs pages' plate tokens and theme pin, from the same shared modules
+// Base.astro inlines (src/lib/plate-tokens.ts, src/lib/theme-pin.ts).
+// Consumed by figure legends and diagrams (StabilityGuide, QuantityHomes)
+// on docs pages. Starlight's own picker is not rendered; its core script
+// may still expect the provider object, so the pin gains the stub here.
+const stabilityStyle = plateTokensStyle();
+const themeScript = `${THEME_PIN_SCRIPT}
+window.StarlightThemeProvider = { updatePickers() {} };`;
+---
+
+{/* The theme provider for docs pages: resolves the visitor's stored choice
+    (or the system preference) to a data-theme pin on <html> before first
+    paint. Every colour on the site is a light-dark() pair resolved by
+    color-scheme, so the pin is the entire mechanism. */}
+<style set:html={stabilityStyle}></style>
+<script is:inline set:html={themeScript} />

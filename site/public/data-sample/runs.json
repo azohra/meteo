@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "runs": {
+    "hrdps-continental": {
+      "referenceTime": "2026-08-12T12:00:00Z",
+      "generatedAt": "2026-08-12T18:22:29.601Z"
+    }
+  }
+}

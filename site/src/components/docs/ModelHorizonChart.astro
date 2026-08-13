@@ -1,0 +1,101 @@
+---
+import { MODELS } from "../../lib/catalogue";
+import Figure from "../figure/Figure.astro";
+
+const maxHours = 384;
+const ticks = [0, 48, 84, 240, 384];
+const chartModels = MODELS.filter((model) => model.kind === "deterministic")
+  .map((model, colorIndex) => ({ model, colorIndex: colorIndex + 1 }))
+  .sort(
+    (left, right) =>
+      left.model.horizonHours - right.model.horizonHours || left.model.gridKm - right.model.gridKm,
+  );
+const description = chartModels
+  .map(({ model }) => `${model.label}: ${model.gridKm} kilometre grid and ${model.horizonHours} hour horizon.`)
+  .join(" ");
+---
+
+<Figure
+  id="model-horizon-chart"
+  title="Resolution versus horizon"
+  lesson="Grid spacing and forecast reach trade differently across the catalogue; one number cannot stand in for model suitability."
+  {description}
+  caption="Deterministic models only, read from the discovery catalogue."
+  units="grid spacing km · forecast horizon h"
+>
+  <div class="chart-body">
+    <div class="tick-grid" aria-hidden="true">
+      {ticks.map((tick) => <i style={`left:${(tick / maxHours) * 100}%`} />)}
+    </div>
+    {
+      chartModels.map(({ model, colorIndex }) => (
+        <div class="model-row">
+          <div class="model-label">
+            <strong>{model.label}</strong>
+          </div>
+          <div class="bar-track">
+            <div
+              class={`model-bar model-${colorIndex}${model.horizonHours === maxHours ? " is-max" : ""}`}
+              style={`width:${(model.horizonHours / maxHours) * 100}%`}
+            >
+              <span>{model.horizonHours} h</span>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+    <div class="tick-labels" aria-hidden="true">
+      <span style="left:0%">now</span>
+      <span style={`left:${(48 / maxHours) * 100}%`}>2 d</span>
+      <span style={`left:${(84 / maxHours) * 100}%`}>3.5 d</span>
+      <span style={`left:${(240 / maxHours) * 100}%`}>10 d</span>
+      <span style="left:100%">16 d</span>
+    </div>
+  </div>
+</Figure>
+
+<style>
+  .chart-body { position: relative; padding: 22px 18px 46px; background: var(--surface); }
+  .tick-grid { position: absolute; inset: 0 0 24px 165px; }
+  .tick-grid i { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--rule); }
+  .model-row { position: relative; display: grid; grid-template-columns: 150px 1fr; gap: 15px; align-items: center; margin-bottom: 8px; }
+  .model-label { min-width: 0; }
+  .model-label strong { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
+  .bar-track { height: 28px; }
+  .model-bar { height: 100%; display: flex; align-items: center; justify-content: flex-end; padding: 0 7px; background: var(--bar-color); color: var(--surface); }
+  .model-bar span { font-family: var(--mono); font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .model-1 { --bar-color: var(--model-1); } .model-2 { --bar-color: var(--model-2); }
+  .model-3 { --bar-color: var(--model-3); } .model-4 { --bar-color: var(--model-4); }
+  .model-5 { --bar-color: var(--model-5); } .model-6 { --bar-color: var(--model-6); }
+  .tick-labels { position: absolute; left: 165px; right: 0; bottom: 0; height: 16px; }
+  .tick-labels span { position: absolute; transform: translateX(-50%); font-family: var(--mono); font-size: 11px; color: var(--ink-mute); white-space: nowrap; }
+  .tick-labels span:first-child { transform: none; }
+  .tick-labels span:last-child { transform: translateX(-100%); }
+  @media (max-width: 640px) {
+    .model-row { grid-template-columns: 105px 1fr; gap: 9px; }
+    .tick-grid, .tick-labels { left: 114px; }
+    .model-label strong { font-size: 11px; }
+    .model-bar {
+      position: relative;
+      min-width: 0;
+      padding: 0;
+      overflow: visible;
+    }
+    .model-bar span {
+      position: absolute;
+      left: calc(100% + 5px);
+      color: var(--ink-soft);
+    }
+    .model-bar.is-max span {
+      right: 6px;
+      left: auto;
+      color: var(--surface);
+    }
+    .tick-grid i:nth-child(2),
+    .tick-grid i:nth-child(3),
+    .tick-labels span:nth-child(2),
+    .tick-labels span:nth-child(3) {
+      display: none;
+    }
+  }
+</style>

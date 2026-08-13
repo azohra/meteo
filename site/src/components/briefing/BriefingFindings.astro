@@ -1,0 +1,153 @@
+---
+/* From URL to briefing: the call a consumer writes, then everything it
+   returned. The code panel's values and every row below interpolate the
+   package's own output (exhibit.ts), so neither can drift from it. */
+import { escapeHtml } from "../../lib/forecast-exhibit";
+import { briefingDay, DAY_WIND_CEILINGS, findingRows } from "./exhibit";
+
+const { analysis } = briefingDay();
+const rows = findingRows(analysis);
+
+const kw = (text: string) => `<span class="t-key">${escapeHtml(text)}</span>`;
+const str = (text: string) => `<span class="t-str">"${escapeHtml(text)}"</span>`;
+const num = (value: number) => `<span class="t-num">${value}</span>`;
+
+const codeHtml = [
+  `${kw("import")} { parseSiteForecastJson } ${kw("from")} ${str("@azohra/meteo.briefing/contract")};`,
+  `${kw("import")} { analyzeForecast } ${kw("from")} ${str("@azohra/meteo.briefing/analyze")};`,
+  "",
+  `${kw("const")} response = ${kw("await")} fetch(forecastUrl);`,
+  `${kw("const")} forecast = parseSiteForecastJson(${kw("await")} response.text());`,
+  `${kw("if")} (!forecast) ${kw("throw new")} Error(${str("failed contract validation")});`,
+  "",
+  `${kw("const")} { findings } = analyzeForecast(forecast, {`,
+  `  launch: { elevationM: ${num(analysis.site.launchAltitudeM ?? 0)} },`,
+  `  windCeilings: { surfaceMps: ${num(DAY_WIND_CEILINGS.surfaceMps)}, bandMps: ${num(DAY_WIND_CEILINGS.bandMps)} },`,
+  "});",
+].join("\n");
+---
+
+<section class="bf-findings" aria-labelledby="briefing-findings-title">
+  <div class="bf-findings-inner section-inner">
+    <h2 id="briefing-findings-title">From URL to briefing</h2>
+    <p class="bf-section-lede">
+      The hero card above is this call and nothing else — fetch a published
+      forecast, validate it, analyze it against your launch:
+    </p>
+    <pre class="bf-call" set:html={codeHtml} />
+    <p class="bf-section-lede">
+      Here is everything that call returned for the sample day
+      — {rows.length} findings, each written out from its own fields:
+    </p>
+    <dl class="bf-finding-rows">
+      {
+        rows.map((row) => (
+          <div>
+            <dt>
+              {row.term} <code>{row.kind}</code>
+            </dt>
+            <dd>{row.statement}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="bf-findings-note">
+      Each row is a typed object — a <code>kind</code>, its numbers, the hours
+      it cites, and the thresholds it was computed with — so your site decides
+      what to show and how. The two wind ceilings
+      ({DAY_WIND_CEILINGS.surfaceMps} and {DAY_WIND_CEILINGS.bandMps} m/s)
+      came from the call above: the package ships no safe-wind numbers, and
+      with no ceiling there is no exceedance finding. The thermal-window
+      thresholds ({analysis.thresholds.thermalWindow.wstarMinMps} m/s of climb
+      over at least {analysis.thresholds.thermalWindow.depthMinM} m) are
+      defaults you can override per call.
+    </p>
+  </div>
+</section>
+
+<style>
+  .bf-findings {
+    border-block-end: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--surface) 48%, transparent);
+  }
+
+  .bf-findings-inner {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .bf-findings h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .bf-call {
+    max-width: 46rem;
+    margin: 1.2rem 0 0;
+    padding: 0.9rem 1.1rem;
+    font: 0.78rem/1.6 var(--mono);
+    color: var(--term-ink);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+
+  .bf-call :global(.t-key) {
+    color: var(--term-key);
+  }
+
+  .bf-call :global(.t-num) {
+    color: var(--term-number);
+  }
+
+  .bf-call :global(.t-str) {
+    color: var(--term-string);
+  }
+
+  .bf-finding-rows {
+    display: grid;
+    gap: 1.1rem;
+    max-width: 52rem;
+    margin: 1.8rem 0 0;
+  }
+
+  .bf-finding-rows div {
+    padding-left: clamp(0.9rem, 2vw, 1.25rem);
+    border-left: 1px solid var(--rule);
+  }
+
+  .bf-finding-rows dt {
+    font-weight: 650;
+    font-size: 0.92rem;
+    color: var(--ink);
+  }
+
+  .bf-finding-rows dt code {
+    margin-left: 0.35rem;
+    font: 500 0.75rem/1.5 var(--mono);
+    color: var(--ink-mute);
+  }
+
+  .bf-finding-rows dd {
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--ink-mute);
+  }
+
+  .bf-findings-note {
+    max-width: 46rem;
+    margin: 1.8rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--ink-mute);
+  }
+</style>

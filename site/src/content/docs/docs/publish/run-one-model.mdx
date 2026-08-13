@@ -1,0 +1,267 @@
+---
+title: Run one model
+description: "Build your first forecast: one model, your launches, one CLI command."
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+The supported publisher interface is `meteo forecast build` — the CLI
+`@azohra/meteo.forecast` installs (`pnpm exec meteo forecast build`).
+Model-specific builder modules
+remain implementation details; downstream automation should use
+the CLI so external site and output paths are scoped consistently.
+
+<Steps>
+
+1. **Confirm the model declaration.** Read [Choose models](/docs/models/choosing/)
+   and [Model capabilities](/docs/forecast/model-capabilities/). The slug in
+   `models.json` is its identity.
+2. **Preflight paths and selection.** This performs no network access or
+   writes:
+
+   ```sh title="Terminal"
+   pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
+   ```
+
+3. **Use a short smoke cap when appropriate.** `--max-steps 2` selects the
+   first two scheduled steps. It limits forecast steps, not sites or fields.
+4. **Run the build.** Remove `--dry-run`; remove the cap for the full declared
+   horizon.
+5. **Inspect output before deploying it.** Confirm the model manifest and each
+   expected site profile validate and share the same `referenceTime`.
+
+</Steps>
+
+## Complete command surface
+
+```text
+meteo forecast build (--model SLUG | --all) --sites PATH
+               [--output PATH]
+               [--max-steps N]
+               [--history | --no-history]
+               [--dry-run]
+
+meteo forecast terrain --sites PATH [--output PATH]
+
+meteo forecast migrate --model SLUG [--site ID ...] [--sites PATH]
+                 [--members N] [--apply]
+
+meteo forecast runs-index [--output PATH]
+
+meteo forecast freshness --model SLUG --manifest PATH
+
+meteo forecast catalogue [--output PATH]
+```
+
+A site catalogue is required — `--sites` or `METEO_SITES`; which sites an
+operator publishes is their decision, so there is no default. The output
+root defaults to `./data`. `--model` and `--all` are mutually exclusive.
+Unknown model slugs, missing or unreadable site files, invalid site
+catalogues, and unusable output paths fail with an actionable error.
+
+History publication is the operator's flag: `--history` is the default —
+the **static history profile**, where every successful build also appends
+the [append-only month archives](/docs/briefing/history-archives/) and their sidecar
+indexes — and `--no-history` publishes current documents only.
+
+`terrain` regenerates the
+[site context catalogue](/docs/publish/configure-launches/); `migrate` is the
+one-time [wire v2](/docs/briefing/versioning/) cutover of a model's published
+documents — its runbook is [below](#runbook-the-wire-v2-archive-cutover);
+`runs-index` regenerates `runs.json` wholesale from the published
+manifests; `freshness` prints exactly `fresh` or `stale` so an upload flow
+can refuse to publish backwards; `catalogue` emits the packaged
+`models.json`. Teaching-scenario generation is source-checkout tooling
+(`pnpm scenarios:generate`), not engine surface.
+
+<Aside type="caution" title="A full build is a data job">
+  Builders fetch real provider files. Whole-domain ECCC deterministic runs can
+  move several GiB; ensembles can move substantially more. NOAA builders use
+  indexed byte ranges but still fetch many records. Per-model transfer costs
+  are recorded in the
+  [forecast feed reference](/docs/forecast/forecast-model-feeds/). Do not
+  remove a smoke cap casually or schedule a model more often than it
+  publishes.
+</Aside>
+
+Each builder detects the latest complete provider run and exits without
+rewriting output when that `referenceTime` is already published. "Already
+published" is read from the published dataset itself: point `METEO_DATA_BASE`
+at your own published root for a public-HTTPS read, or leave it unset with
+the R2 upload credentials present and the engine reads the bucket directly
+through the S3 API (`METEO_R2_BUCKET`) so no CDN mediates its own reads.
+There is no default root — where your instance publishes is your decision,
+and the engine refuses to guess. The same source seeds
+the month archives that history appends continue. A successful
+new run writes current profiles, appends history, and writes the model
+manifest. [Schedule builds](/docs/publish/schedule-builds/) applies the
+catalogued publication cadence to recurring jobs.
+
+## Runbook: the wire v2 archive cutover
+
+`meteo forecast migrate` rewrites one profile model's published
+[wire v1 documents as wire v2](/docs/briefing/versioning/) in place — the
+current `sites/<site>.json` documents and every line of every month history
+archive. Manifests and `runs.json` are untouched: their shapes did not
+change. Run it by hand, once per model, with the upload credentials — never
+from the scheduled build, and never concurrently with the same model's
+scheduled build.
+
+<Steps>
+
+1. **Dry-run first — it is the default posture.**
+
+   ```sh title="Terminal"
+   pnpm exec meteo forecast migrate --model hrrr-conus
+   ```
+
+   fetches every published document for the catalogued sites (`--site`
+   narrows the set), migrates and verifies everything in memory, reports
+   per archive and in total — N archives, M lines, K already v2 — and
+   writes nothing.
+2. **Trust the verification, and stop on its failures.** Before anything
+   may upload, every output archive must keep its exact line count, and
+   every output document must say `schemaVersion: 2` and validate against
+   `briefing/schema/profile.schema.json` — which is why the command covers profile
+   models only; a smoke or observation dataset fails that verification
+   loudly instead of migrating wrong. A stored pre-declaration ensemble
+   document (percentile blocks without `run.members`) refuses to migrate
+   rather than be misread as deterministic: declare the run's member count
+   with `--members N` (REPS and GEPS carry the control member plus 20
+   perturbations — 21). The count is checked against the documents
+   themselves — a percentile block reporting more contributing members
+   than declared stops the migration.
+3. **Apply with the upload credentials.** Add `--apply` with `R2_ENDPOINT`,
+   `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` in the environment and
+   `METEO_DATA_BASE` unset, so reads and writes both go through the
+   authenticated S3 endpoint and no stale CDN copy can seed an upload. Just
+   before each upload the published object is fetched again and must still
+   equal the bytes the migration read; a scheduled build publishing
+   mid-migration aborts the migration instead of being overwritten. Each
+   rewritten month archive republishes its sidecar byte-offset index beside
+   it, on the same open/closed TTL arithmetic the upload script uses.
+4. **Re-run to confirm convergence.** The migration is idempotent:
+   already-v2 documents pass through untouched (unchanged gzip members keep
+   their exact bytes), so a second run reports every line already v2 and
+   uploads nothing.
+
+</Steps>
+
+## Render a published profile into your own page
+
+Everything below runs against the committed sample dataset — one real
+HRDPS run captured by the engine and served by this site, byte-for-byte
+the document shapes any operator's instance publishes. Mirror the
+model's manifest and one launch profile into your project's static tree:
+
+```sh title="Terminal"
+mkdir -p public/data/hrdps-continental/sites
+curl -sS -o public/data/hrdps-continental/manifest.json \
+  https://meteo.azohra.com/data-sample/hrdps-continental/manifest.json
+curl -sS -o public/data/hrdps-continental/sites/test-hill.json \
+  https://meteo.azohra.com/data-sample/hrdps-continental/sites/test-hill.json
+curl -sS -o public/data/site-context.json \
+  https://meteo.azohra.com/data-sample/site-context.json
+pnpm add @azohra/meteo.briefing
+```
+
+Then `render.mjs` is the whole publisher: validate the documents against the
+contract, confirm manifest and profile describe the same model run, build the
+scene in the launch's own declared timezone with the measured launch
+elevation from the site context, and write a self-contained page. The
+profile carries no launch elevation — documents are launch-agnostic — so the
+renderer supplies it from `site-context.json`'s `elevation` pick.
+
+```ts
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+
+import {
+  parseSiteContextJson,
+  parseForecastManifestJson,
+  parseSiteForecastJson,
+} from "@azohra/meteo.briefing/contract";
+import {
+  buildKeySpec,
+  buildMeteogramScene,
+  renderKeySvg,
+  renderMeteogramSvg,
+} from "@azohra/meteo.briefing/meteogram";
+import { runsConsistent } from "@azohra/meteo.briefing/transport";
+
+const model = "hrdps-continental";
+const launch = "test-hill";
+
+const profile = parseSiteForecastJson(
+  await readFile(`public/data/${model}/sites/${launch}.json`, "utf8"),
+);
+if (!profile) throw new Error("profile failed the contract");
+
+const manifest = parseForecastManifestJson(
+  await readFile(`public/data/${model}/manifest.json`, "utf8"),
+);
+if (!manifest) throw new Error("manifest failed the contract");
+if (!runsConsistent(manifest, profile)) {
+  throw new Error("manifest and profile do not describe the same model run");
+}
+
+const context = parseSiteContextJson(
+  await readFile("public/data/site-context.json", "utf8"),
+);
+if (!context) throw new Error("site context failed the contract");
+const ground = context.sites[launch];
+if (!ground) throw new Error(`site-context.json has no entry for ${launch}`);
+
+const timeZone = profile.site.timeZone;
+if (!timeZone) throw new Error("profile does not declare the launch timezone");
+
+const scene = buildMeteogramScene(profile, {
+  timeZone,
+  launch: { name: profile.site.name, elevationM: ground.elevation.elevationM },
+  widthPx: 1080,
+});
+await mkdir("public/assets", { recursive: true });
+await writeFile(`public/assets/${profile.site.id}.svg`, `${renderMeteogramSvg(scene)}\n`);
+await writeFile(
+  `public/assets/${profile.site.id}-key.svg`,
+  `${renderKeySvg(buildKeySpec(scene))}\n`,
+);
+
+const page = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${profile.site.name} — Meteogram</title>
+    <style>
+      body { max-width: 78rem; margin: 0 auto; padding: 2rem; font-family: system-ui, sans-serif; }
+      img { display: block; width: 100%; height: auto; margin-block: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>${profile.site.name}</h1>
+    <img src="assets/${profile.site.id}.svg" alt="Meteogram for ${profile.site.name}">
+    <img src="assets/${profile.site.id}-key.svg" alt="Meteogram key">
+    <p>
+      <a href="data/${model}/sites/${launch}.json">Profile JSON</a> ·
+      <a href="data/${model}/manifest.json">Manifest JSON</a>
+    </p>
+  </body>
+</html>
+`;
+await writeFile("public/index.html", page);
+```
+
+`node render.mjs` leaves `public/` as a complete static tree — page, chart,
+scene-derived key, and the inspectable contract documents it was rendered
+from. Copy it to any static host; you supply the access,
+presentation, and retention policy. The sample is a frozen run, so to
+publish current forecasts for your own launches, run the
+[builder CLI](#complete-command-surface) with your catalogue and point the
+fetch at your own output.
+
+`analyzeForecast()` from `@azohra/meteo.briefing/analyze` can turn the validated profile into
+typed, evidence-carrying findings. Those findings are not publisher artifacts:
+their thresholds are reader conventions, and a publisher must supply their
+context and limitations.
+
+The [SVG guide](/docs/briefing/svg/) defines scene-derived key semantics.

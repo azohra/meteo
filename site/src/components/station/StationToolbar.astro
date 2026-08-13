@@ -1,0 +1,134 @@
+---
+/* The sticky toolbar: section anchors left, the global controls right.
+   The page's client script wires the unit group and #station-live by id;
+   the segmented-pill chrome is shared (station.css). */
+
+interface Props {
+  sections: { id: string; nav: string }[];
+}
+
+const { sections } = Astro.props;
+---
+
+<div class="station-toolbar" id="station-toolbar">
+  <div class="station-toolbar-inner section-inner">
+    <nav class="station-toolbar-nav" aria-label="Sections">
+      {sections.map((section) => <a href={`#${section.id}`}>{section.nav}</a>)}
+    </nav>
+    <div class="station-toolbar-controls">
+      <div class="station-segmented" role="group" aria-label="Display unit">
+        <button type="button" data-unit="kmh" aria-pressed="true">km/h</button>
+        <button type="button" data-unit="knots" aria-pressed="false">kn</button>
+        <button type="button" data-unit="mph" aria-pressed="false">mph</button>
+        <button type="button" data-unit="mps" aria-pressed="false">m/s</button>
+      </div>
+      <button
+        type="button"
+        class="station-live-toggle"
+        id="station-live"
+        aria-pressed="true"
+        data-live="true"
+      >
+        <span class="station-live-dot" aria-hidden="true"></span>
+        <span id="station-live-label">Live</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ---- the toolbar: section anchors left, the global controls right ---- */
+  .station-toolbar {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 20;
+    border-block: 1px solid var(--rule);
+    background: light-dark(rgba(238, 241, 245, 0.92), rgba(13, 19, 25, 0.92));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .station-toolbar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding-block: 0.5rem;
+  }
+
+  .station-toolbar-nav {
+    display: flex;
+    gap: 1rem;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .station-toolbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .station-toolbar-nav a {
+    color: var(--ink-mute);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .station-toolbar-nav a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .station-toolbar-controls {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .station-live-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.48rem 0.9rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-mute);
+    font: 600 0.75rem/1.2 var(--sans);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .station-live-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .station-live-dot {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: var(--ink-mute);
+  }
+
+  .station-live-toggle[data-live="true"] {
+    border-color: color-mix(in srgb, var(--status-good) 45%, var(--rule));
+    color: var(--status-good);
+  }
+
+  .station-live-toggle[data-live="true"] .station-live-dot {
+    background: var(--status-good);
+    animation: station-live-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes station-live-pulse {
+    50% {
+      opacity: 0.35;
+    }
+  }
+</style>

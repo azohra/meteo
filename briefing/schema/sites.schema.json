@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meteo.azohra.com/schema/sites.schema.json",
+  "title": "meteo by Azohra site catalogue, sites.json",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 2
+    },
+    "sites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Lowercase hyphenated slug — the identity of models and sites everywhere."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "timeZone": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The site's IANA timezone (e.g. \"America/Vancouver\") — required; the catalogue is its home. Local time is load-bearing for reading a Meteogram, and builders echo it per-profile as the optional site.timeZone."
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "latitude",
+          "longitude",
+          "timeZone"
+        ],
+        "description": "One catalogued site: identity and build selection only — humans author WHERE, and nothing physical. The pipeline measures WHAT at these coordinates and publishes it in site-context.json."
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "sites"
+  ],
+  "description": "sites.json — the hand-maintained site catalogue: every site the builders publish documents for. Identity and build selection only: humans author WHERE; the pipeline measures WHAT (site-context.json). Published to the dataset root verbatim."
+}

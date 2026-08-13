@@ -1,0 +1,253 @@
+---
+/* The history exhibit: the sample dataset's own month archive, split by
+   the package's reader (exhibit.ts). Every byte count, offset, and run
+   stamp in the panel is read from the archive and its sidecar index —
+   the two are cross-checked, so the panel fails the build before it
+   could show a stale offset. */
+import { formatBytes } from "../../lib/forecast-exhibit";
+import { sampleArchive } from "./exhibit";
+
+const archive = sampleArchive();
+
+const KINDS: { kind: string; gloss: string }[] = [
+  {
+    kind: "existenceTrajectory",
+    gloss: "every run's vote on the day — window, quiet, or an abstention with its stated reason",
+  },
+  {
+    kind: "timingTrajectory",
+    gloss: "window edges across runs; a horizon-clipped edge reads “open since at least”, never as timing",
+  },
+  {
+    kind: "magnitudeTrajectory",
+    gloss: "peak climb, launch-relative peak lift, and window duration per run — the deltas state themselves",
+  },
+  {
+    kind: "identityDrift",
+    gloss: "republications and changed model facts, so a publisher fix is never read as weather",
+  },
+  {
+    kind: "settled",
+    gloss: "whether the newest runs' lift magnitudes sit within one stated band — stability, not skill",
+  },
+];
+---
+
+<section class="bf-history" aria-labelledby="briefing-history-title">
+  <div class="bf-history-inner section-inner">
+    <h2 id="briefing-history-title">Has the forecast settled?</h2>
+    <p class="bf-section-lede">
+      <code>compareRuns</code> answers by lining up what each successive run
+      said about the same local day, newest first. The runs come out of the
+      month archive every engine build appends to — one gzip member per
+      build, existing bytes never rewritten
+      — via <code>loadForecastHistory</code>:
+    </p>
+
+    <div class="bf-history-grid">
+      <figure class="bf-archive" id="briefing-archive">
+        <div class="bf-term">
+          <p class="bf-term-title">{archive.path} · {formatBytes(archive.bytes)}</p>
+          <ul class="bf-archive-members">
+            {archive.runs.map((run) => (
+              <li>
+                <span class="bf-archive-member__span">
+                  gzip member @ byte {run.byteOffset} · {formatBytes(run.byteLength)} · {run.lines}{" "}
+                  {run.lines === 1 ? "line" : "lines"}
+                </span>
+                <span class="bf-archive-member__run">
+                  → {run.model} · run {run.referenceTime} · generated {run.generatedAt}
+                </span>
+                <span class="bf-archive-member__doc">
+                  the whole published document: {run.siteName}, {run.hours} hours
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p class="bf-archive-index">
+            sidecar {archive.indexPath} lists each member's byte offset and
+            length, so a reader can fetch only the runs it is missing with a
+            Range request — advisory, never authoritative
+          </p>
+        </div>
+        <figcaption class="bf-caption">
+          {archive.runs.length === 1
+            ? "one run so far this month — each new build appends one more member"
+            : `${archive.runs.length} runs this month — one member per build`}
+        </figcaption>
+      </figure>
+
+      <div class="bf-history-kinds">
+        <h3>What <code>compareRuns</code> states</h3>
+        <dl>
+          {KINDS.map((entry) => (
+            <div>
+              <dt><code>{entry.kind}</code></dt>
+              <dd>{entry.gloss}</dd>
+            </div>
+          ))}
+        </dl>
+        <p class="bf-history-refusals">
+          It never editorializes: no "trending better", no weighting one run
+          over another, no agreement grades — just the series and the
+          arithmetic, for you to present as you see
+          fit. <a href="/docs/briefing/history/">History and run
+          convergence</a> documents every kind.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bf-history {
+    border-block-end: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--surface) 48%, transparent);
+  }
+
+  .bf-history-inner {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .bf-history h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .bf-history-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+    margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .bf-archive {
+    min-width: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .bf-term {
+    border-radius: var(--radius);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    overflow: hidden;
+  }
+
+  .bf-term-title {
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+    font: 600 0.7rem/1.4 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--term-muted);
+    border-block-end: 1px solid var(--term-border);
+    overflow-wrap: anywhere;
+  }
+
+  .bf-archive-members {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    list-style: none;
+    display: grid;
+    gap: 0.7rem;
+    font: 0.76rem/1.55 var(--mono);
+    overflow-x: auto;
+  }
+
+  .bf-archive-members li {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .bf-archive-member__span {
+    color: var(--term-ink);
+    font-weight: 600;
+  }
+
+  .bf-archive-member__run {
+    color: var(--term-key);
+  }
+
+  .bf-archive-member__doc {
+    color: var(--term-muted);
+    font-style: italic;
+  }
+
+  .bf-archive-index {
+    margin: 0;
+    padding: 0.55rem 0.9rem 0.7rem;
+    border-block-start: 1px dashed var(--term-border);
+    font: 0.7rem/1.5 var(--mono);
+    color: var(--term-muted);
+  }
+
+  .bf-archive-index code {
+    color: var(--term-string);
+    font-size: 1em;
+  }
+
+  .bf-caption {
+    font-size: 0.82rem;
+    font-style: italic;
+    color: var(--ink-mute);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .bf-history-kinds h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+
+  .bf-history-kinds h3 code {
+    font-size: 0.92em;
+  }
+
+  .bf-history-kinds dl {
+    display: grid;
+    gap: 0.85rem;
+    margin: 1.1rem 0 0;
+  }
+
+  .bf-history-kinds dl div {
+    padding-left: clamp(0.9rem, 2vw, 1.25rem);
+    border-left: 1px solid var(--rule);
+  }
+
+  .bf-history-kinds dt code {
+    font: 600 0.8rem/1.5 var(--mono);
+    color: var(--ink);
+  }
+
+  .bf-history-kinds dd {
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--ink-mute);
+  }
+
+  .bf-history-refusals {
+    max-width: 40rem;
+    margin: 1.4rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--ink-mute);
+  }
+
+  @media (max-width: 58rem) {
+    .bf-history-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

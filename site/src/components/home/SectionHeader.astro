@@ -1,0 +1,103 @@
+---
+interface Props {
+  /** Optional kicker above the title — used only when it carries real
+      information a reader can act on, such as the package name. */
+  eyebrow?: string;
+  /** The section's index in the sticky Explore bar ("01"–"05"), drawn as a
+      chip beside the eyebrow so the nav and the section visibly correspond.
+      #briefing paints the identical chip from index.astro's global style —
+      its markup belongs to the scenario exhibit. */
+  number?: string;
+  title: string;
+  intro: string;
+  titleId: string;
+  align?: "left" | "split";
+}
+
+const { eyebrow, number, title, intro, titleId, align = "split" } = Astro.props;
+---
+
+<header class:list={["home-section-head", `home-section-head--${align}`]}>
+  <div>
+    {
+      (eyebrow || number) && (
+        <p class="home-section-head__eyebrow">
+          {number && (
+            <span class="home-section-head__num" aria-hidden="true">
+              {number}
+            </span>
+          )}
+          {eyebrow}
+        </p>
+      )
+    }
+    <h2 id={titleId}>{title}</h2>
+  </div>
+  <p class="home-section-head__intro">{intro}</p>
+</header>
+
+<style>
+  .home-section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 1.1fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: end;
+    margin-block-end: clamp(1.6rem, 4vw, 2.8rem);
+    padding-block-end: 1.25rem;
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .home-section-head--left {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.8rem;
+    align-items: start;
+  }
+
+  .home-section-head__eyebrow {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin: 0 0 0.55rem;
+    color: var(--accent);
+    font: 600 0.72rem/1.4 var(--mono);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  /* The Explore bar's number, restated at the section head. index.astro
+     paints the same chip for #briefing — keep the two in step. */
+  .home-section-head__num {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.75rem;
+    padding: 0.22rem 0.3rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--rule));
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  h2 {
+    max-width: 30ch;
+    margin: 0;
+    font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+    line-height: 1.12;
+  }
+
+  .home-section-head__intro {
+    max-width: 42rem;
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: clamp(1rem, 1.6vw, 1.13rem);
+    line-height: 1.62;
+  }
+
+  @media (max-width: 44rem) {
+    .home-section-head {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+  }
+</style>

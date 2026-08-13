@@ -1,0 +1,127 @@
+---
+/* "Two ways in": the same summer-midday points as the object windRose()
+   returns and as the component that draws it. The page's script fills
+   #ways-output and #ways-rose from one shared slice. */
+
+/* The headless snippet, hand-tinted for the terminal's fixed dark face —
+   no highlighter library rides along. */
+const WAYS_SNIPPET_HTML = [
+  '<span class="term-kw">import</span> { windRose, filterByMonth, filterByTimeOfDay,',
+  '         METEOROLOGICAL_SEASON_MONTHS } <span class="term-kw">from</span> <span class="term-str">&quot;@azohra/meteo.station&quot;</span>;',
+  "",
+  '<span class="term-kw">const</span> summer = filterByMonth(history, METEOROLOGICAL_SEASON_MONTHS.summer);',
+  '<span class="term-kw">const</span> midday = filterByTimeOfDay(summer, 9 * 60, 15 * 60);',
+  '<span class="term-kw">const</span> rose   = windRose(midday, 16); <span class="term-cmt">// ↓ the object below</span>',
+].join("\n");
+
+const WAYS_RENDER_SNIPPET_HTML =
+  '&lt;meteo-wind-rose id=<span class="term-str">&quot;rose&quot;</span>&gt;&lt;/meteo-wind-rose&gt;   rose.points = midday;';
+---
+
+<section class="station-section" id="ways" aria-labelledby="ways-title">
+  <h2 id="ways-title">Two ways in</h2>
+  <p class="station-note">
+    The same summer-midday points, once as the
+    object <code>windRose()</code> returns and once as the component that
+    draws it — the headless core and the bindings are peers; take
+    either.
+  </p>
+  <div class="station-ways">
+    <div class="station-way">
+      <h3>Headless — the object</h3>
+      <div class="station-terminal">
+        <pre class="station-terminal-code" set:html={WAYS_SNIPPET_HTML} />
+        <pre class="station-terminal-output" id="ways-output"></pre>
+      </div>
+    </div>
+    <div class="station-way">
+      <h3>Headed — the same data, drawn</h3>
+      <div class="station-panel station-way-panel">
+        <pre class="station-way-code" set:html={WAYS_RENDER_SNIPPET_HTML} />
+        <div class="station-rose">
+          <meteo-wind-rose id="ways-rose"></meteo-wind-rose>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ---- "Two ways in": the terminal beside the drawing ---- */
+  .station-ways {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 1.1rem;
+    align-items: stretch;
+  }
+
+  .station-way {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* The terminal: one fixed dark instrument face in either theme. */
+  .station-terminal {
+    flex: 1;
+    overflow: hidden;
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    border-radius: var(--radius);
+  }
+
+  .station-terminal-code {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    color: var(--term-ink);
+    font: 0.74rem/1.6 var(--mono);
+  }
+
+  .station-terminal-code :global(.term-kw) {
+    color: var(--term-key);
+  }
+
+  .station-terminal-code :global(.term-str) {
+    color: var(--term-string);
+  }
+
+  .station-terminal-code :global(.term-cmt) {
+    color: var(--term-muted);
+    font-style: italic;
+  }
+
+  .station-terminal-output {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    border-top: 1px dashed var(--term-border);
+    color: var(--term-string);
+    font: 0.74rem/1.6 var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .station-way-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .station-way-code {
+    align-self: stretch;
+    margin: 0;
+    overflow-x: auto;
+    color: var(--ink-mute);
+    font: 0.74rem/1.6 var(--mono);
+  }
+
+  .station-way-code :global(.term-str) {
+    color: var(--accent);
+  }
+
+  .station-rose {
+    width: 100%;
+    max-width: 24rem;
+  }
+</style>

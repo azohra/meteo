@@ -1,0 +1,74 @@
+---
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+import Figure from "../figure/Figure.astro";
+import { onlyOverlays } from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const sources = [
+  scenarioById("ensemble-tight"),
+  scenarioById("ensemble-wide"),
+  scenarioById("ensemble-column-censored"),
+] as const;
+const overlays = onlyOverlays("boundaryLayerTop", "usableLiftTop", "launch", "selectedHour");
+const panels = sources.map((scenario) => ({
+  scenario,
+  svg: renderMeteogramSvg(
+    buildMeteogramScene(scenario.profile, {
+      timeZone: scenario.timeZone,
+      overlays,
+      smooth: false,
+      columnWidthPx: 58,
+      plotHeightPx: 260,
+    }),
+    { idPrefix: `spread-${scenario.id}` },
+  ),
+}));
+---
+
+<Figure
+  id="spread-diagram"
+  title="Spread and column censoring are different signals"
+  lesson="A narrow percentile band can mean member agreement, or it can mean every member reached the same source-column ceiling."
+  description="Three ensemble Meteograms: tightly grouped members, widely spread members, and a profile whose boundary-layer percentiles are all capped at the source-column top."
+  caption="Every band is serialized from the scenario's published percentile blocks. The censored profile declares ceiledMembers rather than asking line width to carry that warning alone."
+  units="altitude m and ft · percentile bands p25–p75 · time UTC"
+>
+  <div class="spread-panels">
+    {panels.map(({ scenario, svg }) => (
+      <section>
+        <header>
+          <h4>{scenario.label}</h4>
+          <p>{scenario.lesson}</p>
+        </header>
+        <div
+          class="chart"
+          role="region"
+          tabindex="0"
+          aria-label={`Scrollable ${scenario.label} ensemble spread chart`}
+          set:html={svg}
+        ></div>
+      </section>
+    ))}
+  </div>
+</Figure>
+
+<style>
+  .spread-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); }
+  section { min-width: 0; }
+  section + section { border-left: 1px solid var(--rule); }
+  section > header { min-height: 110px; padding: 12px 13px; border-bottom: 1px solid var(--rule); }
+  h4 { margin: 0; color: var(--ink); font: 700 15px/1.2 var(--sans); }
+  p { margin: 6px 0 0; color: var(--ink-mute); font-size: 11px; line-height: 1.45; }
+  .chart { min-width: 0; overflow-x: auto; }
+  .chart :global(svg) { display: block; width: 100%; min-width: 330px; height: auto; }
+  @media (max-width: 720px) {
+    .spread-panels { grid-template-columns: 1fr; }
+    section + section { border-left: 0; border-top: 1px solid var(--rule); }
+    section > header { min-height: 0; }
+    .chart :global(svg) { min-width: 0; }
+  }
+  @media print {
+    .spread-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .chart :global(svg) { min-width: 0; }
+  }
+</style>

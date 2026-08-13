@@ -1,0 +1,53 @@
+---
+/* History, graded and plain — plus the History Lab, whose window-hours and
+   compare-offset-days segmented groups the page's script wires by data
+   attribute. */
+---
+
+<section class="station-section" id="charts" aria-labelledby="charts-title">
+  <h2 id="charts-title">History, graded and plain</h2>
+  <p class="station-note">
+    The same six hours with your thresholds banding the
+    trace, and with <code>thresholds="none"</code> opting out into
+    the neutral accent. The third panel holds four days of history
+    alone: <code>window-hours</code> re-slices it to 6/12/24 h,
+    and <code>compare-offset-days</code> overlays a prior day&rsquo;s trace
+    shifted onto today&rsquo;s own x-axis, both a plain client-side
+    re-slice of the same fetched points.
+  </p>
+  <div class="station-grid station-grid-charts">
+    <div class="station-panel">
+      <h3>With thresholds — 12 · 20 · 28 km/h</h3>
+      <meteo-wind-history-chart station-id="summit-logger"></meteo-wind-history-chart>
+    </div>
+    <div class="station-panel">
+      <h3>Without thresholds</h3>
+      <meteo-wind-history-chart
+        station-id="summit-logger"
+        thresholds="none"
+      ></meteo-wind-history-chart>
+    </div>
+  </div>
+  <div class="station-filter-row">
+    <div class="station-segmented" role="group" aria-label="Window">
+      <button type="button" data-window="6" aria-pressed="true">6 h</button>
+      <button type="button" data-window="12" aria-pressed="false">12 h</button>
+      <button type="button" data-window="24" aria-pressed="false">24 h</button>
+    </div>
+    <div class="station-segmented" role="group" aria-label="Compare to a prior day">
+      <button type="button" data-compare="0" aria-pressed="true">Off</button>
+      <button type="button" data-compare="1" aria-pressed="false">vs. -1 day</button>
+      <button type="button" data-compare="2" aria-pressed="false">vs. -2 days</button>
+      <button type="button" data-compare="3" aria-pressed="false">vs. -3 days</button>
+    </div>
+  </div>
+  <div class="station-grid station-grid-charts">
+    <div class="station-panel">
+      <h3>History Lab — four days fetched, window-hours + compare-offset-days</h3>
+      <meteo-wind-history-chart
+        id="history-lab"
+        window-hours="6"
+      ></meteo-wind-history-chart>
+    </div>
+  </div>
+</section>

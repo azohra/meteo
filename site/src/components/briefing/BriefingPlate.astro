@@ -1,0 +1,122 @@
+---
+/* The meteogram tier: the day the findings read, drawn once — a static
+   plate rendered from the same cloud-base-limits-lift profile the
+   analysis exhibit stated, so the chart is the liftCeiling finding made
+   visible. No layer controls here: the interactive layer-toggle exhibit
+   is the homepage's; this page shows the tier in its place among the
+   others. */
+import Figure from "../figure/Figure.astro";
+import MeteogramAnnotations from "../meteogram/MeteogramAnnotations.astro";
+import MeteogramKey from "../meteogram/MeteogramKey.astro";
+import SyntheticMeteogram from "../meteogram/SyntheticMeteogram.astro";
+import { onlyOverlays, overlayAvailability, renderSyntheticMeteogram } from "../../lib/example-meteogram";
+import { briefingDay, fail } from "./exhibit";
+
+const { scenario, ceiling } = briefingDay();
+const segment = ceiling.segments[0] ?? fail("the plate lost its ceiling segment");
+
+/* No stability field here: over this uniformly unstable column it paints
+   one solid ramp that buries the exhibit's three lines. The lines ARE the
+   finding — lift pinned to cloud base under a boundary layer arcing away. */
+const overlays = onlyOverlays(
+  "temperature",
+  "wind",
+  "clouds",
+  "thermalStrength",
+  "precipitation",
+  "boundaryLayerTop",
+  "usableLiftTop",
+  "cloudBase",
+  "launch",
+  "selectedHour",
+  "surfaceTemperature",
+);
+const availability = overlayAvailability(scenario);
+for (const [overlay, enabled] of Object.entries(overlays)) {
+  if (enabled && !availability[overlay as keyof typeof availability]) {
+    fail(`the plate scenario no longer provides the ${overlay} layer`);
+  }
+}
+const idPrefix = "briefing-meteogram";
+const { scene } = renderSyntheticMeteogram(scenario, { overlays }, idPrefix);
+---
+
+<section class="bf-plate" aria-labelledby="briefing-plate-title">
+  <div class="bf-plate-inner section-inner">
+    <h2 id="briefing-plate-title">When the answer should be a chart</h2>
+    <p class="bf-section-lede">
+      The meteogram tier draws the same document the findings above read:
+      the profile laid out as a renderer-independent scene graph, then
+      serialized to SVG. It is one tier of the package, not the package
+      — <a href="/docs/briefing/reading-a-meteogram/">Reading a Meteogram</a> explains
+      every mark, and <a href="/docs/briefing/render-first-meteogram/">Render
+      your first Meteogram</a> gets you to this chart from a URL.
+    </p>
+
+    <div class="bf-plate-frame">
+      <Figure
+        id="briefing-meteogram-figure"
+        title={scenario.label}
+        lesson={scenario.lesson}
+        description={scenario.accessibilityDescription}
+        caption={`Usable lift rides the ${segment.evidence.cloudBaseM} m cloud base all afternoon while the boundary layer arcs far above it — ${segment.evidence.boundaryLayerTopM} m at the peak-lift hour. The liftCeiling finding, drawn.`}
+        units="altitude m and ft · wind km/h · temperature °C · precipitation mm · w* m/s"
+        {scenario}
+        headingLevel="h3"
+        size="content"
+      >
+        <MeteogramAnnotations {scenario} {scene} mode="summary" />
+        <SyntheticMeteogram
+          {scenario}
+          {idPrefix}
+          {overlays}
+          columnWidthPx={92}
+          plotHeightPx={400}
+          scrollLabel="Scrollable Meteogram rendered from the cloud-base-limits-lift profile"
+        />
+        <MeteogramKey
+          slot="legend"
+          {scene}
+          chartIdPrefix={idPrefix}
+          scrollLabel="Scrollable key for the rendered Meteogram"
+        />
+      </Figure>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bf-plate {
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .bf-plate-inner {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .bf-plate h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  /* The plate sits centred on its own column — the figure frame is capped
+     and auto-margined, and the chart centres inside the frame, so neither
+     the frame nor the SVG can hug the section's left edge. */
+  .bf-plate-frame :global(.meteo-gram-figure) {
+    width: min(100%, 56rem);
+    margin-inline: auto;
+  }
+
+  .bf-plate-frame :global(.synthetic-meteogram__mount) {
+    display: grid;
+    justify-items: center;
+  }
+</style>

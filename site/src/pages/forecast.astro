@@ -1,0 +1,67 @@
+---
+import Base from "../layouts/Base.astro";
+import EngineCli from "../components/forecast/EngineCli.astro";
+import FlowFigures from "../components/forecast/FlowFigures.astro";
+import ForecasterHero from "../components/forecast/ForecasterHero.astro";
+import SampleDataset from "../components/forecast/SampleDataset.astro";
+
+/* The engine's exhibit is its output. Every number, size, and JSON line on
+   this page is read at build time from the committed sample dataset
+   (site/public/data-sample — one real HRDPS continental run the engine
+   captured), the two diagrams are the ones committed in
+   forecast/docs/figures/, and the commands are the verified forms from
+   forecast/README.md and the sample's own README. Nothing is fetched at
+   runtime; nothing is a mock-up. */
+---
+
+<Base
+  title="Forecast — the forecast engine and meteo CLI — meteo by Azohra"
+  description="Point @azohra/meteo.forecast at your launches: it fetches each model's newest run, derives the soaring numbers, and publishes plain JSON wherever you host it. Your schedule, one CLI."
+  activeNav="forecast"
+>
+  <main id="main-content" class="forecaster-main">
+    <ForecasterHero />
+    <SampleDataset />
+    <FlowFigures />
+    <EngineCli />
+
+    <section id="boundary" class="fc-boundary" aria-labelledby="boundary-title">
+      <div class="section-inner">
+        <h2 id="boundary-title">Engine, not instance</h2>
+        <p>
+          The engine is a package, not a hosted service. A running instance — the cron schedule
+          that triggers builds, the site catalogue it builds from, the bucket the documents land
+          in and its credentials — is yours to own; none of it ships in the
+          package. <a href="https://acrophobia.ca">acrophobia.ca</a> runs the reference
+          instance. To stand up your
+          own, <a href="/docs/publish/run-one-model/">Run one model</a> walks the first build
+          end to end; the engine's reference is
+          the <a href="/docs/forecast/">forecast documentation</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .forecaster-main {
+    padding-block-end: 72px;
+  }
+
+  .fc-boundary {
+    padding-block: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 2vw, 1.5rem);
+  }
+
+  .fc-boundary h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .fc-boundary p {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.65;
+  }
+</style>

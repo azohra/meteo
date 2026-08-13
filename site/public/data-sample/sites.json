@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "sites": [
+    {
+      "slug": "test-hill",
+      "name": "Test Hill",
+      "latitude": 49.4581,
+      "longitude": -117.3956,
+      "timeZone": "America/Vancouver"
+    },
+    {
+      "slug": "test-ridge",
+      "name": "Test Ridge",
+      "latitude": 49.76,
+      "longitude": -117.18,
+      "timeZone": "America/Vancouver"
+    },
+    {
+      "slug": "test-valley",
+      "name": "Test Valley",
+      "latitude": 49.2964,
+      "longitude": -117.6325,
+      "timeZone": "America/Vancouver"
+    }
+  ]
+}

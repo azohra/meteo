@@ -1,0 +1,79 @@
+---
+/* A season, not a window: All/Month/Season × time-of-day controls the
+   page's script wires by data attribute, re-slicing one generated season
+   into #season-rose and counting into #season-count. */
+---
+
+<section class="station-section" id="seasons" aria-labelledby="seasons-title">
+  <h2 id="seasons-title">A season, not a window</h2>
+  <p class="station-note">
+    Fourteen months of history behind one
+    rose and one typical day — All/Month/Season pick
+    what <code>filterByMonth</code> narrows to (a season is just a
+    fixed three-month group), <code>filterByTimeOfDay</code> narrows
+    further; <code>&lt;meteo-daily-pattern&gt;</code> vector-averages
+    the lot into a day.
+  </p>
+  <div class="station-filter-row">
+    <div class="station-segmented" role="group" aria-label="Filter">
+      <button type="button" data-filter-mode="all" aria-pressed="true">All</button>
+      <button type="button" data-filter-mode="month" aria-pressed="false">Month</button>
+      <button type="button" data-filter-mode="season" aria-pressed="false">Season</button>
+    </div>
+    <select class="station-select" id="season-month" aria-label="Month" hidden>
+      <option value="1">January</option>
+      <option value="2">February</option>
+      <option value="3">March</option>
+      <option value="4">April</option>
+      <option value="5">May</option>
+      <option value="6">June</option>
+      <option value="7">July</option>
+      <option value="8">August</option>
+      <option value="9">September</option>
+      <option value="10">October</option>
+      <option value="11">November</option>
+      <option value="12">December</option>
+    </select>
+    <div
+      class="station-segmented"
+      role="group"
+      aria-label="Season"
+      id="season-season"
+      hidden
+    >
+      <button type="button" data-season="winter" aria-pressed="true">Winter</button>
+      <button type="button" data-season="spring" aria-pressed="false">Spring</button>
+      <button type="button" data-season="summer" aria-pressed="false">Summer</button>
+      <button type="button" data-season="fall" aria-pressed="false">Fall</button>
+    </div>
+    <div class="station-segmented" role="group" aria-label="Time of day">
+      <button type="button" data-time-of-day="all" aria-pressed="true">All day</button>
+      <button type="button" data-time-of-day="midday" aria-pressed="false">
+        Midday · 09–15
+      </button>
+      <button type="button" data-time-of-day="night" aria-pressed="false">
+        Night · 21–06
+      </button>
+    </div>
+  </div>
+  <div class="station-grid station-grid-roses">
+    <div class="station-panel">
+      <h3>
+        <code>&lt;meteo-wind-rose&gt;</code> — <span id="season-count"></span> of the
+        year&rsquo;s samples
+      </h3>
+      <meteo-wind-rose id="season-rose"></meteo-wind-rose>
+    </div>
+    <div class="station-panel">
+      <h3><code>&lt;meteo-daily-pattern&gt;</code> — the whole 14 months, vector-averaged</h3>
+      <meteo-daily-pattern id="station-pattern"></meteo-daily-pattern>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* hidden must beat the segmented display rules. */
+  [hidden] {
+    display: none !important;
+  }
+</style>

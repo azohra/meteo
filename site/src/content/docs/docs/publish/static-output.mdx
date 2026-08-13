@@ -1,0 +1,87 @@
+---
+title: Publish static output
+description: Move a build's manifests and forecast documents to storage you control.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+import PublishingFlow from '../../../../components/docs/PublishingFlow.astro';
+
+A Meteogram publisher produces files ahead of page view time. A website can
+host those files directly or render them during its own build.
+
+<PublishingFlow />
+
+## Responsibility sequence
+
+<Steps>
+
+1. **Generate model-dependent values in the forecast engine.** Quantities that require inputs beyond the published document stay in the engine.
+2. **Validate the document boundary.** Consumers accept only profile documents that satisfy the exported contract.
+3. **Publish static artifacts.** Put versioned JSON and generated assets on infrastructure the publisher controls.
+4. **Render from the artifact.** Build a scene and serialize SVG in Node, a worker, or another non-DOM runtime.
+
+</Steps>
+
+## Know the output tree
+
+The CLI writes one directory per selected model beneath `--output`:
+
+```text
+public/data/
+  <model-slug>/
+    manifest.json
+    sites/
+      <site-slug>.json
+    history/
+      <site-slug>/
+        <YYYY-MM>.jsonl.gz
+        <YYYY-MM>.index.json
+```
+
+The `<YYYY-MM>.index.json` beside each month archive is its
+[advisory byte-offset sidecar index](/docs/briefing/history-archives/#the-sidecar-index),
+rewritten from the archive bytes on every append — publish it beside the
+archive it describes. Forecast models archive one whole document per run per
+line; observation datasets archive one observation object per line instead,
+each instant written once the first time it enters the rolling window.
+
+`runs.json` at the published dataset's root is a cross-model index
+regenerated wholesale from the published manifests by
+`meteo forecast runs-index`; a build does not write it as a side effect, so
+an upload flow that wants it runs that command as its own step. Treat the manifest and each profile as one publication
+pair. Their `referenceTime` values must agree before rendering; the
+[`@azohra/meteo.briefing/transport` loader](/docs/briefing/transport/) performs that
+check for TypeScript consumers.
+
+## Put the tree on static storage
+
+Copy or sync the output directory only after a successful builder exit. Keep
+paths stable, preserve JSON content types and gzip encoding, and let caches
+expire independently without assuming an atomic multi-file deployment. That
+last condition is why consumers validate the manifest/profile pair.
+
+Possible destinations include a club's existing static site, object storage,
+or a private member-gated application. They are deployment choices, not
+meteo features. Do not add credentials, launch membership, or access policy
+to the profile contract.
+
+## Validate before rendering
+
+```ts title="render-profile.ts"
+import { readFile } from "node:fs/promises";
+import { parseSiteForecastJson } from "@azohra/meteo.briefing/contract";
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+
+const source = await readFile("./public/data/hrrr-conus/sites/test-hill.json", "utf8");
+const profile = parseSiteForecastJson(source);
+
+if (!profile) throw new Error("profile failed contract validation");
+
+const scene = buildMeteogramScene(profile, { timeZone: "America/Vancouver" });
+const svg = renderMeteogramSvg(scene, { idPrefix: "club-profile" });
+```
+
+The package contract, scene, and SVG tests exercise this validation → scene →
+serialization chain. The input path, timezone, rendering options, palette,
+hosting destination, and audience remain downstream configuration. A publisher
+can change them without copying formulas or renderer internals.

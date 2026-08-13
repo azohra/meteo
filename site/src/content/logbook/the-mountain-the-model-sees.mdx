@@ -1,0 +1,144 @@
+---
+title: "The mountain the model sees"
+summary: "Why model terrain sits far from the real launch, and what relief and land cover add"
+section: "Terrain diagnostics"
+kind: "case-study"
+published: 2026-08-10
+updated: 2026-08-10
+status: "current"
+order: 8
+scenarios: []
+thumbnail: "terrain-smoothing"
+---
+
+import ElevationLadderFigure from "../../components/docs/ElevationLadderFigure.astro";
+import LandCoverFractionsFigure from "../../components/docs/LandCoverFractionsFigure.astro";
+import ReliefPercentileFigure from "../../components/docs/ReliefPercentileFigure.astro";
+
+# The mountain the model sees
+
+Two elevations describe the same place, and they live in different
+documents on purpose. The
+[site context document](/docs/briefing/site-context-document/) carries
+the **measured launch elevation** — its `elevation` pick, sampled from
+ground observations at the catalogued coordinates. Every profile carries
+`site.modelElevationM` — the elevation of the model's own terrain at
+that grid point. At the launches in this project's catalogue the two
+routinely disagree by tens to hundreds of metres — and that disagreement
+is not an error to fix but a fact to read. This article is about reading
+it: where the gap comes from, and what the context document adds about
+the real mountain — the relief the launch sits in and the ground its
+thermals feed on.
+
+## Why the model's mountain is smoother than yours
+
+A weather model does not know your launch. It knows one terrain height
+per grid cell, and a 2.5–10 km cell averages the ridge into the valleys
+beside it, so a launch on a summit almost always sits **above** the
+model's terrain. The effect is resolution, not model quality — the same
+smoothing appears in elevation datasets themselves: the 90 m Copernicus
+DEM already reads ridge-top launches lower than its 30 m sibling, and a
+weather grid a hundred times coarser smooths far harder. The measured
+sizes of those effects are in the
+[source facts](/docs/briefing/site-context-document/#sources-and-licences--verified-2026-08-10)
+of the reference page.
+
+How well is the *real* mountain known? Within metres. For each catalogued
+launch, independent measurements — the catalogue's elevation pick from
+bare-earth lidar or the national DTM, and the 30 m Copernicus surface
+model — land on a scale where a few metres are visible:
+
+<ElevationLadderFigure />
+
+The one number deliberately missing from that ladder is the model's:
+`site.modelElevationM` is live data that changes with the model you pick,
+so it stays in the profiles. Open any current
+[profile document](/docs/briefing/profile-document/) and put its
+`site.modelElevationM` against the ladder — that distance is the
+smoothing, per model, at your launch.
+
+## What the gap means on a Meteogram
+
+A Meteogram draws both worlds on one altitude axis, and the gap sits
+between them:
+
+- **The launch marker is the measured launch** — the ladder's diamond,
+  site-context's `elevation` pick. The renderer draws it from the
+  consumer-supplied `MeteogramOptions.launch`; the profile document itself
+  carries no launch, because one grid sample serves every launch its
+  cell covers.
+- **"Surface" is the model's ground** — surface temperature, heat fluxes,
+  w\*, surface wind, and gusts are all referenced to the model's smoothed
+  terrain at `site.modelElevationM`, which can be hundreds of metres
+  below the marker. The forecast engine also uses model elevation, not launch
+  elevation, for pressure-level filtering and the model-column
+  derivations ([why](/docs/forecast/derivation-science/)).
+
+So "usable lift reaches the launch marker" is a statement that crosses
+the gap: the model's thermal column, rooted at model ground, must grow
+tall enough to pass a launch the model cannot see.
+[Reading a Meteogram](/docs/briefing/reading-a-meteogram/) builds the full
+checklist on that footing.
+
+## Relief percentile: trigger and topology
+
+Knowing the launch's elevation is not the same as knowing what it sits
+on. The context document's relief discs rank the launch against every
+piece of terrain within 1, 3, and 10 km — and the percentiles, read
+together, are a compact topology:
+
+<ReliefPercentileFigure />
+
+The three catalogued sites give the grammar its range:
+
+- **`test-hill` (73 / 60 / 52)** is a **local high point inside bigger
+  country**: proud of its own kilometre, ordinary against everything
+  within 10 km. Its top is gentle — 2.7° of slope — so its recorded
+  `aspectDeg` of 14° is genuinely low-confidence: ground that barely
+  falls away barely has a downslope direction. The
+  [reference caveats](/docs/briefing/site-context-document/#reading-caveats--verified-2026-08-10)
+  measure how ambiguous.
+- **`test-ridge` (64 / 52 / 75)** reads inverted: mid-pack against its
+  own ridgeline at 1 and 3 km, yet above three quarters of the terrain
+  within 10 km — an **alpine shoulder on a massif** that stands over its
+  region. Here the downslope bearing is trustworthy — a real 9.9° slope
+  falling away west-southwest (251°) — and the trigger is the heated
+  slope below the launch rather than the launch itself.
+- **`test-valley` (60 / 43 / 12)** is the **valley floor**: a modest
+  rise inside its own flat kilometre, with nearly everything within
+  10 km standing higher. Nothing about the site itself triggers; the
+  day is organized by the walls around it.
+
+## Land cover: what the thermal catchment is made of
+
+Thermals are made downstream of the ground: forest canopies hold heat
+back, clearcut, rock, and grass release it readily, and water kills it.
+The context document measures that character as class fractions of the 1
+and 3 km discs around each launch:
+
+<LandCoverFractionsFigure />
+
+The catalogue's clearest teaching case is **`test-valley`**: its launch
+pixel reads built-up, while the 1 km disc around it is nearly half
+grassland, with forest behind and 6.5% water crossing the catchment — a
+cold surface that suppresses whatever tries to build over it, at a scale
+no 2.5 km wind profile resolves. That is why the disc fractions outrank
+the single launch pixel: one 10 m pixel answers "what is under the
+ramp"; the fractions answer "what feeds the climb". The other two sites
+bracket the catchment's character — **`test-hill`'s 1 km disc is 95%
+tree cover**, a canopy that holds the morning's heat back, while
+**`test-ridge`'s alpine mosaic** of bare ground, forest, grass, and moss
+releases it readily.
+
+## Known limits
+
+The context is static geography from open data, each source with its
+licence and its measured error — the surface model includes canopy, the
+land-cover map is 76.7% accurate globally, vertical datums differ by
+decimetres, and summit aspects are ambiguous. All of it is stated, with
+dated verification stamps, in the
+[site context reference](/docs/briefing/site-context-document/), along
+with the document's shape and the code to join it to a profile by slug.
+What the context can never do is change with the weather: it tells you
+what the mountain is, so the Meteogram can tell you what today's
+atmosphere does with it.

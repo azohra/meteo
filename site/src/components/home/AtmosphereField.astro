@@ -1,0 +1,52 @@
+<!-- A quiet field of model columns and rising streamlines. This is a brand
+     texture, not a data figure, and is hidden from assistive technology. -->
+<svg
+  viewBox="0 0 1200 720"
+  preserveAspectRatio="none"
+  aria-hidden="true"
+  focusable="false"
+>
+  <g class="atmosphere-grid">
+    <path d="M120 72V648" />
+    <path d="M360 72V648" />
+    <path d="M600 72V648" />
+    <path d="M840 72V648" />
+    <path d="M1080 72V648" />
+  </g>
+  <g class="atmosphere-streams">
+    <path d="M-80 534C170 472 318 612 548 528S896 292 1280 372" />
+    <path d="M-80 576C170 514 318 654 548 570S896 334 1280 414" />
+    <path d="M-80 618C170 556 318 696 548 612S896 376 1280 456" />
+    <path d="M-80 660C170 598 318 738 548 654S896 418 1280 498" />
+  </g>
+  <g class="atmosphere-fix">
+    <circle cx="896" cy="334" r="5" />
+    <circle cx="896" cy="334" r="13" />
+    <path d="M896 305V317M896 351V363M867 334H879M913 334H925" />
+  </g>
+</svg>
+
+<style>
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+  }
+
+  .atmosphere-grid path {
+    stroke-dasharray: 2 11;
+    stroke-width: 0.8;
+  }
+
+  .atmosphere-streams path {
+    stroke-width: 1.15;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .atmosphere-fix {
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+</style>

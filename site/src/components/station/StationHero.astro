@@ -1,0 +1,247 @@
+---
+/* The hero band: the whole thesis on one raised surface — copy and value
+   props on the left, the wire-to-pixels demo on the right, the docrail as
+   the band's footnote. The page's client script feeds #station-hero-feed
+   and prints the wire object into #station-wire-json. */
+---
+
+<header class="station-hero" aria-labelledby="station-title">
+  <div class="station-hero-inner section-inner">
+    <div class="station-hero-grid">
+      <div class="station-hero-copy">
+        <h1 id="station-title">Live wind from launch stations</h1>
+        <div class="band-rule" aria-hidden="true"></div>
+        <p class="station-lede">
+          Vendor adapters read whatever hardware you run into one documented
+          contract. Build your own UI on the data, or render it with
+          components that live natively in your design system.
+        </p>
+        <div class="station-cta-row">
+          <a class="station-cta" href="/docs/station/getting-started/">Get started</a>
+          <a class="station-cta station-cta-quiet" href="https://github.com/azohra/meteo/tree/main/station">GitHub ↗</a>
+        </div>
+      </div>
+      <div class="station-values" role="list">
+        <div role="listitem">
+          <h2>Any vendor</h2>
+          <p>WindNerd anemometer kits, WeatherFlow Tempest, Campbell Scientific dataloggers — or your own loader on the same wire.</p>
+        </div>
+        <div role="listitem">
+          <h2>Headless core</h2>
+          <p>The contract, derivations, chart geometry, and polling stores are framework-free — components optional.</p>
+        </div>
+        <div role="listitem">
+          <h2>Rendered natively</h2>
+          <p>Dial, graded history, wind rose, daily pattern — the full station-page vocabulary, no iframe.</p>
+        </div>
+        <div role="listitem">
+          <h2>Two peer bindings</h2>
+          <p>React or framework-free custom elements. Byte-identical DOM; neither is the reference.</p>
+        </div>
+      </div>
+      <figure class="station-wire-demo">
+        <div class="station-term" aria-hidden="false">
+          <div class="station-term-bar">stations[0].reading</div>
+          <pre class="station-term-body" id="station-wire-json">loading…</pre>
+        </div>
+        <div class="station-wire-connector" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="meteo-root station-wire-instrument">
+          <meteo-station-feed id="station-hero-feed" station-id="launch-ridge">
+            <meteo-current-conditions station-id="launch-ridge"></meteo-current-conditions>
+          </meteo-station-feed>
+        </div>
+        <figcaption class="station-caption">
+          the same object, drawn — with Live on, both tick
+        </figcaption>
+      </figure>
+    </div>
+    <nav class="station-docrail" aria-label="Station documentation">
+      <span class="station-docrail-label">Documentation</span>
+      <a href="/docs/station/getting-started/">Getting started</a>
+      <a href="/docs/station/wire-contract/">Wire contract</a>
+      <a href="/docs/station/adapters/">Adapters</a>
+      <a href="/docs/station/client-data/">Client data</a>
+      <a href="/docs/station/react/">React</a>
+      <a href="/docs/station/elements/">Elements</a>
+      <a href="/docs/station/theming/">Theming</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  /* ---- zone one: the hero band ----
+     The whole thesis lives on one raised surface — copy and value props on
+     the left, the wire-to-pixels demo on the right — so the first ground
+     change on the page is the hero itself ending. */
+  .station-hero {
+    background: var(--surface);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .station-hero-inner {
+    padding-block: clamp(2.75rem, 6vw, 4.5rem) clamp(1.5rem, 3vw, 2rem);
+  }
+
+  /* The wire and the pixels: copy over values on the left, the demo
+     spanning both rows on the right — the value props fill the column the
+     CTAs used to strand. */
+  .station-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    grid-template-areas:
+      "copy demo"
+      "values demo";
+    column-gap: clamp(2.5rem, 6vw, 4.5rem);
+    align-items: start;
+  }
+  .station-hero-copy {
+    grid-area: copy;
+  }
+  .station-hero h1 {
+    max-width: 16ch;
+    font-size: clamp(2.3rem, 4.8vw, 3.3rem);
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+    margin: 0 0 0.9rem;
+  }
+  .station-lede {
+    max-width: 32rem;
+    margin: 1.1rem 0 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--ink-soft, var(--ink));
+  }
+  .station-cta-row { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
+  .station-cta {
+    display: inline-block;
+    padding: 0.55rem 1.2rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 0.92rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .station-cta:hover {
+    background: var(--accent-strong);
+    text-decoration: none;
+  }
+  .station-cta-quiet {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+  }
+  .station-cta-quiet:hover {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .station-wire-demo {
+    grid-area: demo;
+    align-self: center;
+    margin: 0;
+    display: grid;
+    justify-items: center;
+    gap: 0;
+  }
+  .station-term {
+    width: 100%;
+    max-width: 26rem;
+    border-radius: var(--radius);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    overflow: hidden;
+  }
+  .station-term-bar {
+    padding: 0.5rem 0.9rem;
+    font: 600 0.72rem/1 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--term-muted);
+    border-bottom: 1px solid var(--term-border);
+  }
+  .station-term-body {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    font: 0.8rem/1.55 var(--mono);
+    color: var(--term-ink);
+    overflow-x: auto;
+  }
+  .station-term-body :global(.t-key) { color: var(--term-muted); }
+  .station-term-body :global(.t-num) { color: var(--term-number); }
+  .station-term-body :global(.t-str) { color: var(--term-string); }
+  /* The wire itself: readings flow down the dotted connector into the
+     instrument — the one place ambient motion depicts the subject. */
+  .station-wire-connector { display: grid; gap: 4px; padding: 0.6rem 0; }
+  .station-wire-connector span {
+    width: 4px; height: 4px; border-radius: 999px;
+    background: var(--accent);
+    opacity: 0.65;
+    animation: station-wire-flow 1.6s ease-in-out infinite;
+  }
+  .station-wire-connector span:nth-child(2) { animation-delay: 0.25s; }
+  .station-wire-connector span:nth-child(3) { animation-delay: 0.5s; }
+  @keyframes station-wire-flow {
+    50% { opacity: 0.2; }
+  }
+  .station-wire-instrument { width: 100%; max-width: 22rem; }
+  .station-wire-demo .station-caption {
+    margin-top: 0.55rem;
+    font-style: italic;
+    text-align: center;
+    text-wrap: balance;
+  }
+  /* The value props ride the copy column as a 2×2, under one hairline. */
+  .station-values {
+    grid-area: values;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem clamp(1.25rem, 3vw, 2rem);
+    margin-top: 2rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--rule);
+  }
+  .station-values h2 { margin: 0; font-size: 0.92rem; letter-spacing: -0.01em; }
+  .station-values p { margin: 0.3rem 0 0; font-size: 0.83rem; line-height: 1.55; color: var(--ink-mute); }
+
+  /* The band's footnote: one quiet line of reference links. */
+  .station-docrail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1.2rem;
+    margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+  .station-docrail-label {
+    margin-inline-end: 0.4rem;
+    font: 600 0.66rem/1.6 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .station-docrail a {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .station-docrail a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 900px) {
+    .station-hero-grid {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "copy"
+        "demo"
+        "values";
+      row-gap: 2.25rem;
+    }
+    .station-values { margin-top: 0; }
+  }
+  @media (max-width: 520px) {
+    .station-values { grid-template-columns: 1fr; }
+  }
+</style>

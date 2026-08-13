@@ -1,0 +1,171 @@
+---
+/* The hero: what the engine is, in the README's own words, and the
+   smallest document it publishes — runs.json, printed whole from the
+   committed sample. The panel's bytes are parsed and re-rendered at build
+   time from site/public/data-sample/runs.json; regenerating the sample
+   regenerates the panel. */
+import { statSync } from "node:fs";
+import { publicDir } from "astro:config/server";
+import runs from "../../../public/data-sample/runs.json";
+import { formatBytes, renderJsonHtml } from "../../lib/forecast-exhibit";
+
+const runsBytes = statSync(new URL("data-sample/runs.json", publicDir)).size;
+const runsHtml = renderJsonHtml(runs);
+
+const DOC_LINKS = [
+  { label: "Architecture", href: "/docs/forecast/architecture/" },
+  { label: "Meteogram derivations", href: "/docs/forecast/derivation-science/" },
+  { label: "Builder contract", href: "/docs/forecast/builder-contract/" },
+  { label: "Provider transports", href: "/docs/forecast/provider-transports/" },
+  { label: "Add a model", href: "/docs/forecast/adding-a-model/" },
+];
+---
+
+<header class="fc-hero" aria-labelledby="forecaster-title">
+  <div class="fc-hero-inner section-inner">
+    <div class="fc-hero-grid">
+      <div class="fc-hero-copy">
+        <h1 id="forecaster-title">The forecast engine</h1>
+        <div class="band-rule" aria-hidden="true"></div>
+        <p class="fc-lede">
+          Point <code>@azohra/meteo.forecast</code> at your launches and it publishes the
+          forecasts: it fetches each model's newest run, derives the soaring numbers
+          for every site in your catalogue, and writes plain JSON files wherever you
+          host them — on a schedule you own, with one CLI.
+        </p>
+        <p class="fc-lede">
+          Below is one of its runs — an HRDPS forecast for three sites. Browse any
+          file in it.
+        </p>
+      </div>
+      <figure class="fc-runs" id="runs-json">
+        <div class="fc-term">
+          <p class="fc-term-title">
+            data-sample/runs.json · {formatBytes(runsBytes)} · the whole file
+          </p>
+          <pre class="fc-term-body" set:html={runsHtml} />
+        </div>
+        <figcaption class="fc-caption">
+          the smallest published document: the newest run per model, written
+          by <code>meteo forecast runs-index</code>
+        </figcaption>
+      </figure>
+    </div>
+    <nav class="fc-docrail" aria-label="Forecast documentation">
+      <span class="fc-docrail-label">Documentation</span>
+      {DOC_LINKS.map(({ label, href }) => <a href={href}>{label}</a>)}
+    </nav>
+  </div>
+</header>
+
+<style>
+  .fc-hero {
+    background: var(--surface);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .fc-hero-inner {
+    padding-block: clamp(2.75rem, 6vw, 4.5rem) clamp(1.5rem, 3vw, 2rem);
+  }
+
+  .fc-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    column-gap: clamp(2.5rem, 6vw, 4.5rem);
+    align-items: center;
+  }
+
+  .fc-hero h1 {
+    margin: 0 0 0.9rem;
+    font-size: clamp(2.3rem, 4.8vw, 3.3rem);
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+  }
+
+  .fc-lede {
+    max-width: 36rem;
+    margin: 1.1rem 0 0;
+    font-size: 1.02rem;
+    line-height: 1.65;
+    color: var(--ink-soft, var(--ink));
+  }
+
+  .fc-runs {
+    margin: 0;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .fc-term {
+    border-radius: var(--radius);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    overflow: hidden;
+  }
+
+  .fc-term-title {
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+    font: 600 0.7rem/1.4 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--term-muted);
+    border-block-end: 1px solid var(--term-border);
+  }
+
+  .fc-term-body {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    font: 0.8rem/1.55 var(--mono);
+    color: var(--term-ink);
+    overflow-x: auto;
+  }
+
+  .fc-term-body :global(.t-key) { color: var(--term-key); }
+  .fc-term-body :global(.t-num) { color: var(--term-number); }
+  .fc-term-body :global(.t-str) { color: var(--term-string); }
+  .fc-term-body :global(.t-nul) { color: var(--term-muted); font-style: italic; }
+
+  .fc-caption {
+    font-size: 0.82rem;
+    font-style: italic;
+    color: var(--ink-mute);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .fc-docrail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1.2rem;
+    margin-top: clamp(1.75rem, 3.5vw, 2.5rem);
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .fc-docrail-label {
+    margin-inline-end: 0.4rem;
+    font: 600 0.66rem/1.6 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  .fc-docrail a {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .fc-docrail a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 900px) {
+    .fc-hero-grid {
+      grid-template-columns: 1fr;
+      row-gap: 2.25rem;
+    }
+  }
+</style>

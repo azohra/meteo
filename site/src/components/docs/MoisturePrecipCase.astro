@@ -1,0 +1,82 @@
+---
+import { isDeterministicProfile } from "@azohra/meteo.briefing/contract";
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+import Figure from "../figure/Figure.astro";
+import Legend from "../figure/Legend.astro";
+import { onlyOverlays } from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const scenario = scenarioById("front-arrival");
+const profile = scenario.profile;
+if (!isDeterministicProfile(profile)) throw new Error("front-arrival must be deterministic");
+const hourIndices = profile.hours.map((_, index) => index).slice(-6);
+const overlays = onlyOverlays(
+  "precipitation",
+  "clouds",
+  "temperature",
+  "dewPoint",
+  "launch",
+  "selectedHour",
+);
+const scene = buildMeteogramScene(profile, {
+  timeZone: scenario.timeZone,
+  hourIndices,
+  overlays,
+  smooth: false,
+  columnWidthPx: 72,
+  plotHeightPx: 360,
+});
+const svg = renderMeteogramSvg(scene, { idPrefix: "moisture-precip-front" });
+const maxPrecip = Math.max(...hourIndices.map((index) => profile.hours[index].surface.precipitationMmHr));
+---
+
+<Figure
+  id="moisture-precip-case"
+  title="Precipitation amount and phase are separate questions"
+  lesson="A precipitation-rate strip and a freezing contour provide evidence, but neither alone classifies what reaches the ground."
+  description={`The final six hours of a controlled front reach ${maxPrecip.toFixed(1)} millimetres per hour. Temperature and dew-point geometry show the atmospheric fall path while the profile declares instantaneous-rate precipitation semantics.`}
+  caption="The plot exposes rate, temperature, moisture, and launch height without making a precipitation-phase verdict."
+  units="precipitation mm/h · temperature °C · altitude m and ft · time UTC"
+  {scenario}
+>
+  <div
+    class="chart"
+    role="region"
+    tabindex="0"
+    aria-label="Scrollable moisture and precipitation chart"
+    style={`--chart-width: ${scene.width}px`}
+    set:html={svg}
+  ></div>
+  <div class="phase-rule">
+    <strong aria-hidden="true">0 °C</strong>
+    <p>
+      <b>The contour is evidence, not a verdict.</b> Phase depends on the temperature and moisture
+      through the complete fall path, including melting and refreezing layers that a single height
+      cannot summarize.
+    </p>
+  </div>
+  <Legend
+    slot="legend"
+    label="Evidence shown"
+    items={[
+      { label: "Precipitation", description: "Instantaneous rate", color: "var(--chart-rain)" },
+      { label: "Freezing contour", description: "0 °C dry-bulb height", color: "var(--chart-freezing)" },
+      { label: "Moisture", description: "Dew-point isolines", color: "var(--chart-cloud)" },
+    ]}
+  />
+</Figure>
+
+<style>
+  .chart { min-width: 0; overflow-x: auto; background: var(--surface); }
+  .chart :global(svg) { display: block; width: var(--chart-width); max-width: none; height: auto; margin-inline: auto; }
+  .phase-rule { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 18px; align-items: center; padding: 13px 16px; border-top: 1px solid var(--rule); }
+  .phase-rule strong { color: var(--chart-freezing); font: 700 28px/1 var(--display); text-align: center; border-right: 1px solid var(--rule); }
+  .phase-rule p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+  .phase-rule b { color: var(--ink); }
+  @media (max-width: 620px) {
+    .phase-rule { grid-template-columns: 62px minmax(0, 1fr); gap: 12px; }
+  }
+  @media print {
+    .chart :global(svg) { min-width: 0; }
+  }
+</style>

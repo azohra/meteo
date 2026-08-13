@@ -1,0 +1,25 @@
+<section class="station-section" id="air" aria-labelledby="air-title">
+  <h2 id="air-title">Air and precipitation</h2>
+  <p class="station-note">
+    The whole atmosphere folds into
+    <code>&lt;meteo-air-matrix&gt;</code>
+    behind a live trigger line; only the conditions-capable station
+    earns a column.
+  </p>
+  <div
+    class="station-scroll-region"
+    role="region"
+    tabindex="0"
+    aria-label="Scrollable air and precipitation matrix"
+  >
+    <meteo-air-matrix></meteo-air-matrix>
+  </div>
+</section>
+
+<style>
+  /* Wide exhibits scroll themselves, never the page. */
+  .station-scroll-region {
+    overflow-x: auto;
+    padding-block-end: 0.25rem;
+  }
+</style>

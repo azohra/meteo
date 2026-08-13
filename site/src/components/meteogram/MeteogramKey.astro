@@ -1,0 +1,114 @@
+---
+import { buildKeySpec, renderKeySvg, type MeteogramScene } from "@azohra/meteo.briefing/meteogram";
+
+interface Props {
+  scene: MeteogramScene;
+  chartIdPrefix: string;
+  scrollLabel?: string;
+  class?: string;
+}
+
+const {
+  scene,
+  chartIdPrefix,
+  scrollLabel = "Scrollable key for the rendered Meteogram",
+  class: className,
+} = Astro.props;
+const keyIdPrefix = `${chartIdPrefix}-key`;
+const svg = renderKeySvg(buildKeySpec(scene), { idPrefix: keyIdPrefix });
+const keyWidth = Number(svg.match(/viewBox="0 0 ([\d.]+)/)?.[1]);
+if (!Number.isFinite(keyWidth)) throw new Error(`Unable to read the ${keyIdPrefix} key width`);
+---
+
+<div
+  class:list={["meteogram-key", className]}
+  data-meteogram-key
+  data-chart-id-prefix={chartIdPrefix}
+>
+  <div
+    class="meteo-gram-scroll meteogram-key__scroll"
+    role="region"
+    tabindex="0"
+    aria-label={scrollLabel}
+  >
+    <div
+      class="meteogram-key__mount"
+      data-meteogram-key-mount
+      style={`--meteogram-key-width: ${keyWidth}px`}
+      set:html={svg}
+    />
+  </div>
+  <span class="meteo-gram-visually-hidden" role="status" data-meteogram-key-status></span>
+</div>
+
+<script>
+  import { buildKeySpec, type MeteogramScene } from "@azohra/meteo.briefing/meteogram";
+  import { renderKeySvg } from "@azohra/meteo.briefing/meteogram";
+
+  interface SceneChangeDetail {
+    idPrefix: string;
+    scene: MeteogramScene;
+  }
+
+  for (const key of document.querySelectorAll<HTMLElement>("[data-meteogram-key]")) {
+    if (key.dataset.meteogramKeyReady === "true") continue;
+    key.dataset.meteogramKeyReady = "true";
+
+    const figure = key.closest<HTMLElement>("[data-figure]");
+    const mount = key.querySelector<HTMLElement>("[data-meteogram-key-mount]");
+    const status = key.querySelector<HTMLElement>("[data-meteogram-key-status]");
+    const chartIdPrefix = key.dataset.chartIdPrefix;
+    if (!figure || !mount || !chartIdPrefix) continue;
+    let hasSynchronized = false;
+    const syncWidth = () => {
+      const width = mount.querySelector<SVGSVGElement>("svg")?.viewBox.baseVal.width;
+      if (width) mount.style.setProperty("--meteogram-key-width", `${width}px`);
+    };
+
+    figure.addEventListener("meteogram:scenechange", (event) => {
+      const detail = (event as CustomEvent<SceneChangeDetail>).detail;
+      if (!detail || detail.idPrefix !== chartIdPrefix) return;
+      mount.innerHTML = renderKeySvg(buildKeySpec(detail.scene), {
+        idPrefix: `${chartIdPrefix}-key`,
+      });
+      syncWidth();
+      if (hasSynchronized && status) {
+        status.textContent = "Key updated to match the visible Meteogram layers.";
+      }
+      hasSynchronized = true;
+    });
+
+    // The chart also publishes its current scene after it attaches. This
+    // request makes synchronization independent of component script order.
+    key.dispatchEvent(new CustomEvent("meteogram:keyrequest", {
+      bubbles: true,
+      detail: { idPrefix: chartIdPrefix },
+    }));
+  }
+</script>
+
+<style>
+  .meteogram-key {
+    min-width: 0;
+  }
+
+  /* Shared meteo-gram-scroll contract; the key keeps its outside focus ring. */
+  .meteo-gram-scroll.meteogram-key__scroll:focus-visible {
+    outline-offset: 2px;
+  }
+
+  .meteogram-key__mount :global(svg) {
+    display: block;
+    width: var(--meteogram-key-width);
+    max-width: none;
+    height: auto;
+    margin-inline: auto;
+  }
+
+  @media print {
+    .meteogram-key__mount :global(svg) {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+</style>

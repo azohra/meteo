@@ -1,0 +1,109 @@
+---
+/* The repeated anatomy of a validation incident: what arrived looking
+   fine, the independent witness that disagreed, and the rule the platform
+   keeps. Elaboration and embedded figures go in the default slot, between
+   the witness and the rule. */
+interface Props {
+  arrived: string;
+  witness: string;
+  rule: string;
+}
+const { arrived, witness, rule } = Astro.props;
+const hasBody = Astro.slots.has("default");
+---
+
+<div class="incident">
+  <div class="incident__row">
+    <p class="incident__label">Arrived</p>
+    <p class="incident__text">{arrived}</p>
+  </div>
+  <div class="incident__row incident__row--witness">
+    <p class="incident__label">Witness</p>
+    <p class="incident__text">{witness}</p>
+  </div>
+  {
+    hasBody && (
+      <div class="incident__body">
+        <slot />
+      </div>
+    )
+  }
+  <div class="incident__row incident__row--rule">
+    <p class="incident__label">Rule</p>
+    <p class="incident__text incident__rule">{rule}</p>
+  </div>
+</div>
+
+<style>
+  .incident {
+    margin: 1.4rem 0 2.2rem;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--surface) 55%, transparent);
+    overflow: hidden;
+  }
+
+  .incident__row {
+    display: grid;
+    grid-template-columns: 5.2rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+  }
+
+  .incident__row + .incident__row,
+  .incident__body + .incident__row {
+    border-top: 1px solid var(--rule);
+  }
+
+  .incident__label {
+    margin: 0;
+    font: 600 0.66rem/1.9 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  .incident__text {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.6;
+    color: var(--ink-soft, var(--ink));
+  }
+
+  .incident__row--rule {
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+  }
+
+  .incident__row--rule .incident__label {
+    color: var(--accent);
+  }
+
+  .incident__rule {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .incident__body {
+    border-top: 1px solid var(--rule);
+    padding: 0.9rem 1.1rem;
+  }
+
+  .incident__body :global(p) {
+    font-size: 0.94rem;
+  }
+
+  .incident__body :global(p:first-child) {
+    margin-top: 0;
+  }
+
+  .incident__body :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 40rem) {
+    .incident__row {
+      grid-template-columns: 1fr;
+      gap: 0.15rem;
+    }
+  }
+</style>

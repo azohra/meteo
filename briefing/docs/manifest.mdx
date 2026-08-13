@@ -1,0 +1,64 @@
+---
+title: Model manifest
+description: Read the identity, extent, sites, and build accounting of one static model publication.
+---
+
+Each published model directory contains `manifest.json`. It is the small
+discovery document paired with the larger site profiles.
+
+## On the wire
+
+| Fact | Value |
+| --- | --- |
+| **Published at** | `<model>/manifest.json` |
+| **Parse** | `parseForecastManifestJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
+| **Zod authority** | `forecastManifestSchema` |
+| **JSON Schema** | [`manifest.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/manifest.schema.json) |
+| **Discovery** | one per published model directory; `runs.json` at the data root indexes every current manifest's publication identity |
+
+## Stable fields
+
+| Field | Meaning |
+| --- | --- |
+| `schemaVersion` | Manifest contract version |
+| `model` | Catalogue slug and directory identity |
+| `referenceTime` | Provider model initialization time |
+| `generatedAt` | Time this publication was generated |
+| `firstForecastHour`, `lastForecastHour`, `forecastHours` | Published step extent and count (forecast and smoke models) |
+| `memberCount` | Ensemble membership; absent on deterministic manifests |
+| `sites` | Published site name/slug pairs for this model run |
+| `stats` | Stable accounting core plus optional transport-specific numbers |
+
+The stable stats core is `downloads`, `downloadBytes`, `retries`, and
+`durationMs`. Other numeric keys can change; use them for
+diagnostics, not application logic.
+
+## Publication identity
+
+Treat `(referenceTime, generatedAt)` as the publication identity. A new
+`generatedAt` with the same `referenceTime` is a corrected republication and
+should be re-ingested. It is not a schema release.
+
+The manifest and a selected profile must describe the same model and
+`referenceTime`. Independently cached static files can briefly disagree during
+deployment, so TypeScript consumers use
+[`loadForecast()` from `@azohra/meteo.briefing/transport`](/docs/briefing/transport/)
+rather than composing two unguarded fetches.
+
+## Validate the document
+
+Use `parseForecastManifestJson` from `@azohra/meteo.briefing/contract`. A 404 means the model
+is not published at that root; an invalid document is also unavailable, not an
+invitation for view code to guess missing fields.
+
+The observation datasets (`goes18-dsr`, `goes18-aod`) publish a manifest
+variant: it keeps the identity and `stats` fields but carries
+`firstObservedAt`, `lastObservedAt`, and `observationCount` in place of the
+forecast-hour extent (its `referenceTime` equals `lastObservedAt`), so
+`parseForecastManifestJson` does not accept it — the
+[observation document reference](/docs/briefing/observation-document/)
+covers that dataset family.
+
+`runs.json` at the data root indexes each current manifest's publication identity across
+models in one document. It does not replace the manifest's site inventory or
+forecast extent.

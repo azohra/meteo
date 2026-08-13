@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+dist/
+site/.astro/
+site/playwright-report/
+site/test-results/
+.wrangler/
+.claude/
+/notes/
+CLAUDE.md
+AGENTS.md
+/data/
+BRAND.md
+/CONTRIBUTING.md
+HISTORY.md

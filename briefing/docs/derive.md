@@ -1,0 +1,268 @@
+---
+title: Pure derivations
+description: Use published state for pure quantities, local-day projection, and valid-time alignment.
+---
+
+`@azohra/meteo.briefing/derive` owns calculations that are pure functions of published
+documents: moisture conversions, vector wind, lapse and stability, thermal
+index, shear, the B/S ratio, local-day grouping, projection, valid-time
+alignment, units, run freshness, parameterized usable lift, the
+smoke-correction chain, and measured-irradiance interpretation — display
+smoothing belongs to `@azohra/meteo.briefing/meteogram`'s `smooth121`. It does not
+duplicate forecast engine derivations that require raw model inputs; that split is
+defined in the [project overview](/docs/overview/#authority-by-quantity).
+
+Usable lift shows the boundary at its cleanest:
+`usableLiftTopM(inputs, sinkRateMps)` is the single implementation — the
+forecast engine imports this very function and stores its answer at the fixed
+`1.0` m/s sink rate — so projecting the published inputs for another sink
+rate is the same arithmetic as the stored default, and at `1.0` m/s it
+reproduces the engine's parity fixture exactly. The scene does not apply that p50
+recomputation to ensembles because it would not equal a per-member
+derivation aggregated to percentiles.
+
+![A Meteogram whose solid usable-lift line is the forecast engine's stored 1.0 m/s series, overlaid with a dashed line recomputed at 2 m/s sink by the package's usableLiftTopM from the document's own published inputs.](figures/derive-sink-rate.svg)
+
+## Deterministic and ensemble inputs
+
+Derivation functions take numbers. Select a percentile before passing an
+ensemble scalar:
+
+```ts title="median-lapse.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { p50, surfaceLapseCPer1000Ft, stabilityClass } from "@azohra/meteo.briefing/derive";
+
+export function firstStability(profile: SiteForecast): string | null {
+  const hour = profile.hours[0];
+  const level = hour?.levels[0];
+  if (!hour || !level) return null;
+
+  const surfaceTemperatureC = p50(hour.surface.temperatureC);
+  const heightM = p50(level.heightM);
+  const temperatureC = p50(level.temperatureC);
+  if (surfaceTemperatureC === null || heightM === null || temperatureC === null) return null;
+
+  const lapse = surfaceLapseCPer1000Ft(
+    surfaceTemperatureC,
+    profile.site.modelElevationM,
+    { heightM, temperatureC },
+  );
+  return lapse === null ? null : stabilityClass(lapse);
+}
+```
+
+`p50` returns `null` for a full ensemble dropout, so numeric derivations guard
+the selected percentile before use.
+
+## Choose shear for the terrain
+
+`surfaceToBoundaryLayerShearMps` subtracts the surface and boundary-layer-top
+wind vectors. That construction assumes both vectors sample one air mass. A
+mountain valley can place thermally driven surface flow beneath separate flow
+aloft, making the ratio low even on a deeply convective day.
+
+`buoyancyShearRatio` returns `Infinity` when nonzero buoyancy faces zero shear
+and `null` for 0/0. Use the height-resolved `windShear` field when terrain
+separates the surface circulation from the winds aloft. The
+[valley B/S case study](/logbook/bs-ratio-valley/) records the measured case.
+
+## Window in the site's timezone
+
+Profiles publish all forecast hours in UTC; the optional
+[`site.timeZone` echo](/docs/briefing/profile-document/#run-site-and-semantics)
+may be absent on an older document, so callers still need an explicit
+fallback.
+
+```ts title="local-days.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { groupByLocalDay } from "@azohra/meteo.briefing/derive";
+import { meteogramDisplayHours } from "@azohra/meteo.briefing/meteogram";
+
+export function displayDays(profile: SiteForecast, olderProfileTimeZone?: string) {
+  const timeZone = profile.site.timeZone ?? olderProfileTimeZone;
+  if (!timeZone) throw new Error("older profile needs an explicit IANA timezone");
+  const display = meteogramDisplayHours(profile.hours, { timeZone });
+  return groupByLocalDay(display, timeZone);
+}
+```
+
+`groupByLocalDay` and `meteogramDisplayHours` are tested across timezones,
+custom bounds, short days, and empty input. Pass a returned day's `hours`
+directly to `buildMeteogramScene`.
+
+## Subtract fields with `projectForecast`
+
+`projectForecast` reduces a document to the hours and fields a reader needs.
+It can select one local calendar day, replace every `levels` array with `[]`,
+and keep named field subsets. Every retained value is copied unchanged: the
+function applies no threshold, aggregation, interpolation, or judgment.
+
+```ts title="project-profile.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { projectForecast } from "@azohra/meteo.briefing/derive";
+
+export function compactTeachingInput(profile: SiteForecast, day: string) {
+  return projectForecast(profile, {
+    day,
+    dropLevels: true,
+    fields: {
+      surface: ["windSpeedMps", "windGustMps"],
+      derived: ["thermalVelocityMps", "usableLiftTopM"],
+    },
+  });
+}
+```
+
+Day selection uses `options.timeZone` first and `profile.site.timeZone`
+second. If neither exists, `projectForecast` throws instead of guessing which
+UTC hours belong to the requested local day. Projection without a `day` needs
+no timezone.
+
+With no field selection, the result remains a full contract-shaped document;
+`dropLevels` also remains valid because an empty levels array is allowed.
+Selecting fields produces `ProjectedSiteForecast`, whose hour blocks are
+partial by design. Do not pass that partial projection back through the full
+profile parser or into `buildMeteogramScene`.
+
+## Derate thermals for smoke
+
+`@azohra/meteo.briefing/derive` carries the smoke-correction chain as small pure
+functions over published values, with the physics constants exported as
+named, cited claims (`SMOKE_MASS_EXTINCTION_M2_PER_G` — Reid et al.
+2005; `SMOKE_TRANSMITTANCE_K_MIDDAY` / `K_VERTICAL` — Donaldson 2021,
+Chubarova 2012, McKendry 2019):
+
+```ts title="smoke-adjusted-w.ts"
+import type { SmokeDocument, SiteForecast } from "@azohra/meteo.briefing/contract";
+import {
+  cosSolarZenith,
+  isSmokeAwareProfile,
+  p50,
+  smokeAdjustedThermalVelocityMps,
+  smokeAotFromColumn,
+  smokeHoursByValidAt,
+  smokeTransmittance,
+} from "@azohra/meteo.briefing/derive";
+
+export function adjustedWStar(
+  profile: SiteForecast,
+  smoke: SmokeDocument,
+  hourIndex: number,
+): number | null {
+  // Already smoke-aware (HRRR): the published w* includes the model's own
+  // smoke attenuation, and derating it again would double-count.
+  if (isSmokeAwareProfile(profile)) return null;
+  const hour = profile.hours[hourIndex];
+  const joined = hour && smokeHoursByValidAt(smoke).get(hour.validAt);
+  if (!hour || !joined) return null;
+
+  const columnMgm2 = p50(joined.smokePlumeColumnMgm2);
+  const wStar = p50(hour.derived.thermalVelocityMps);
+  if (columnMgm2 === null || wStar === null) return null;
+
+  const transmittance = smokeTransmittance(
+    smokeAotFromColumn(columnMgm2),
+    cosSolarZenith(hour.validAt, profile.site.latitude, profile.site.longitude),
+  );
+  return smokeAdjustedThermalVelocityMps(wStar, transmittance);
+}
+```
+
+The guard comes first for a reason: on models whose fluxes already feel
+their own smoke (`isSmokeAwareProfile` — HRRR), the published w* is
+already derated and applying the correction again double-counts. The
+adjustment itself is one multiply — `w* × ∛f` — because Deardorff's w*
+is the cube root of the heat flux; no flux re-derivation is needed or
+performed. Scope and derivation narrative:
+[Smoke and thermals](/logbook/smoke-and-thermals/).
+
+One caveat rides `smokeAotFromColumn`'s **input**: the RAQDPS
+`smokePlumeColumnMgm2` field is currently
+[quarantined from derived optics](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)
+— the arithmetic is sound (it reproduced HRRR's own optics to 5 %), the
+provider's column content is not. For profiles with their own smoke
+block, prefer the published `aot` directly.
+
+## Interpret measured irradiance
+
+Observation documents carry measured W/m²; three functions make that
+number mean something beside a forecast. `clearSkyGhiWm2` is the cited
+expectation — Haurwitz (1945), chosen per Reno, Hansen & Stein 2012
+(SAND2012-2389) as the best clear-sky model needing only the sun's
+zenith — and `observedTransmittance` is measured over expected: 1 is a
+textbook sky, ~0.85 a moderate smoke plume, well under 0.5 serious
+cloud, null near the horizon where the ratio means nothing.
+`nearestObservation` is the join: observations live at the product's
+native cadence (GOES scan starts), so an exact-key match against a
+forecast `validAt` never hits.
+
+```ts title="measured-transmittance.ts"
+import type { ObservationDocument, SiteForecast } from "@azohra/meteo.briefing/contract";
+import {
+  cosSolarZenith,
+  nearestObservation,
+  observedTransmittance,
+} from "@azohra/meteo.briefing/derive";
+
+export function transmittanceAtHour(
+  profile: SiteForecast,
+  observed: ObservationDocument,
+  hourIndex: number,
+): number | null {
+  const hour = profile.hours[hourIndex];
+  const nearest = hour && nearestObservation(observed, hour.validAt);
+  // Entry shapes differ by product; transmittance wants the DSR kind.
+  if (!hour || !nearest || !("downwardShortwaveWm2" in nearest.observation)) return null;
+  return observedTransmittance(
+    nearest.observation.downwardShortwaveWm2,
+    cosSolarZenith(hour.validAt, profile.site.latitude, profile.site.longitude),
+  );
+}
+```
+
+Put that beside `smokeTransmittance(aot)` from the same site's smoke
+document and you are running the comparison the smoke correction's
+constants were fitted from — measurement against claim, per hour.
+
+## Intersect instants with `alignByValidAt`
+
+`alignByValidAt` returns only the UTC `validAt` instants shared by every input
+profile. Each row keeps each model's original hour, keyed by its slug.
+
+```ts title="align-hours.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { alignByValidAt, p50 } from "@azohra/meteo.briefing/derive";
+
+export function sharedSurfaceWind(profiles: readonly SiteForecast[]) {
+  return alignByValidAt(profiles).map((row) => ({
+    validAt: row.validAt,
+    values: Object.entries(row.byModel).map(([model, hour]) => ({
+      model,
+      windSpeedMps: p50(hour.surface.windSpeedMps),
+    })),
+  }));
+}
+```
+
+The join performs string equality on published UTC instants and preserves each
+model's original values, elevation, semantics, and run identity. Empty input
+returns no rows; duplicate model slugs throw. Use
+[`compareForecasts`](/docs/briefing/compare/) for cross-model findings.
+
+## Judge run freshness
+
+`runFreshness(runsEntry, model, now, thresholds)` grades one runs.json entry
+`"current" | "delayed" | "stale"`, split deliberately along the fact/policy
+line. The facts come from the model's catalogue entry — `runIntervalHours`
+(how often a successor run appears) and `typicalPublicationLagHours` (the
+upper end of normal for this dataset's publish after `referenceTime`) — and
+the thresholds are the consumer's: both count run intervals of age beyond the
+lag, and they are required parameters because how much lateness a product
+tolerates before warning its users is display policy, never a dataset
+property. Age is `now − referenceTime` — `generatedAt` is accepted so a
+runs.json entry drops in unchanged, but a republish of the same run never
+makes the forecast younger — and an unparseable instant throws a `RangeError`
+rather than returning a plausible-but-wrong grade. Observation datasets never
+come here: they have no runs; judge them against their catalogue
+`cadenceMinutes`. The polling loop around this function is the
+[ingest recipe](/docs/briefing/run-an-ingest/#judge-freshness-with-runfreshness).

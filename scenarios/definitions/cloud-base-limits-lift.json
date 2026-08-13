@@ -1,0 +1,269 @@
+{
+  "$schema": "../scenario.schema.json",
+  "schemaVersion": 1,
+  "id": "cloud-base-limits-lift",
+  "title": "Cloud base limits an otherwise deep climb",
+  "lesson": "A saturated layer pins usable lift at cloud base even while the heated boundary layer extends higher.",
+  "kind": "deterministic",
+  "modelShape": "hourly-core",
+  "timeZone": "Etc/UTC",
+  "site": {
+    "id": "synthetic-cloudy-ridge",
+    "name": "Synthetic Cloudy Ridge",
+    "synthetic": true,
+    "latitude": 49,
+    "longitude": -123,
+    "modelElevationM": 900
+  },
+  "launch": {
+    "elevationM": 1050
+  },
+  "clock": {
+    "referenceTime": "2000-01-01T06:00:00Z",
+    "generatedAt": "2000-01-01T06:00:00Z",
+    "startAt": "2000-01-01T12:00:00Z",
+    "stepHours": 1,
+    "hourCount": 6,
+    "seed": 14004
+  },
+  "baseline": {
+    "type": "synthetic",
+    "path": "baselines/synthetic-five-level-day.source.json"
+  },
+  "transforms": [
+    {
+      "type": "surface-field-curve",
+      "field": "temperatureC",
+      "points": [
+        {
+          "hourOffset": 0,
+          "value": 23
+        },
+        {
+          "hourOffset": 3,
+          "value": 27
+        },
+        {
+          "hourOffset": 5,
+          "value": 24
+        }
+      ]
+    },
+    {
+      "type": "surface-field-curve",
+      "field": "dewPointDepressionC",
+      "points": [
+        {
+          "hourOffset": 0,
+          "value": 18
+        },
+        {
+          "hourOffset": 5,
+          "value": 18
+        }
+      ]
+    },
+    {
+      "type": "surface-field-curve",
+      "field": "sensibleHeatFluxWm2",
+      "points": [
+        {
+          "hourOffset": 0,
+          "value": 220
+        },
+        {
+          "hourOffset": 3,
+          "value": 360
+        },
+        {
+          "hourOffset": 5,
+          "value": 180
+        }
+      ]
+    },
+    {
+      "type": "dew-point-depression-offset",
+      "altitudeBandM": {
+        "bottomM": 2000,
+        "topM": 2200
+      },
+      "offsetC": -6
+    },
+    {
+      "type": "surface-field-curve",
+      "field": "windSpeedMps",
+      "points": [
+        {
+          "hourOffset": 0,
+          "value": 2.2
+        },
+        {
+          "hourOffset": 3,
+          "value": 3.2
+        },
+        {
+          "hourOffset": 4,
+          "value": 6.3
+        },
+        {
+          "hourOffset": 5,
+          "value": 6.9
+        }
+      ]
+    },
+    {
+      "type": "wind-speed-scale",
+      "altitudeBandM": {
+        "bottomM": 1050,
+        "topM": 1200
+      },
+      "factor": {
+        "byHour": [
+          {
+            "hourOffset": 3,
+            "value": 1
+          },
+          {
+            "hourOffset": 4,
+            "value": 2.2
+          },
+          {
+            "hourOffset": 5,
+            "value": 2.2
+          }
+        ]
+      }
+    }
+  ],
+  "semantics": {
+    "precipitation": "instantRate"
+  },
+  "capabilities": {
+    "levels": true,
+    "pressureLevels": [
+      925,
+      850,
+      800,
+      700,
+      600
+    ],
+    "verticalVelocity": false,
+    "heatFluxes": true,
+    "gust": false,
+    "cape": false,
+    "cin": false,
+    "pblHeight": false,
+    "cloudLayers": false,
+    "cloudProfile": false
+  },
+  "assertions": [
+    {
+      "id": "deep-mixed-layer",
+      "description": "Peak heating carries the boundary-layer top above the synthetic cloud base.",
+      "actual": {
+        "field": "derived.boundaryLayerTopM",
+        "hour": 3
+      },
+      "operator": "greater-than",
+      "expected": {
+        "field": "derived.cloudBaseM",
+        "hour": 3
+      }
+    },
+    {
+      "id": "usable-lift-present",
+      "description": "The heated column produces usable lift below the saturated layer.",
+      "actual": {
+        "field": "derived.usableLiftTopM",
+        "hour": 3
+      },
+      "operator": "present"
+    },
+    {
+      "id": "lift-pinned-to-cloud",
+      "description": "The usable-lift top is exactly limited by the diagnosed cloud base.",
+      "actual": {
+        "field": "derived.usableLiftTopM",
+        "hour": 3
+      },
+      "operator": "equal",
+      "expected": {
+        "field": "derived.cloudBaseM",
+        "hour": 3
+      },
+      "tolerance": 0.01
+    },
+    {
+      "id": "launch-wind-light-at-window-open",
+      "description": "The wind nearest launch height stays at or below 3.1 m/s (11 km/h) as the day opens.",
+      "actual": {
+        "field": "levels.windSpeedMps",
+        "hour": 0,
+        "level": {
+          "nearestHeightM": 1100
+        }
+      },
+      "operator": "less-than-or-equal",
+      "expected": 3.1
+    },
+    {
+      "id": "climb-band-wind-gentle-at-peak",
+      "description": "The wind nearest the cloud-base lift top stays at or below 5.6 m/s (20 km/h) at peak heating - a flyable climb, not a wind story.",
+      "actual": {
+        "field": "levels.windSpeedMps",
+        "hour": 3,
+        "level": {
+          "nearestHeightM": 2100
+        }
+      },
+      "operator": "less-than-or-equal",
+      "expected": 5.6
+    },
+    {
+      "id": "column-top-wind-believable",
+      "description": "The 600 hPa wind stays at or below 7.5 m/s (27 km/h) at peak heating - no synthetic gale above the capped climb.",
+      "actual": {
+        "field": "levels.windSpeedMps",
+        "hour": 3,
+        "level": {
+          "pressureHpa": 600
+        }
+      },
+      "operator": "less-than-or-equal",
+      "expected": 7.5
+    },
+    {
+      "id": "evening-surface-wind-crosses-six",
+      "description": "The evening valley wind carries the surface past a 6 m/s ceiling in the day's final hour - the briefing exhibit's surface exceedance.",
+      "actual": {
+        "field": "surface.windSpeedMps",
+        "hour": 5
+      },
+      "operator": "greater-than-or-equal",
+      "expected": 6
+    },
+    {
+      "id": "evening-band-wind-crosses-eight",
+      "description": "The shallow evening jet at launch height carries the climb band past an 8 m/s ceiling in the day's final hour - the briefing exhibit's band exceedance.",
+      "actual": {
+        "field": "levels.windSpeedMps",
+        "hour": 5,
+        "level": {
+          "nearestHeightM": 1125
+        }
+      },
+      "operator": "greater-than-or-equal",
+      "expected": 8
+    },
+    {
+      "id": "midday-surface-stays-under-ceiling",
+      "description": "Through peak heating the surface wind stays below the 6 m/s ceiling, so the exceedance is an evening event, not the whole day.",
+      "actual": {
+        "field": "surface.windSpeedMps",
+        "hour": 3
+      },
+      "operator": "less-than",
+      "expected": 6
+    }
+  ]
+}

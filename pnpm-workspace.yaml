@@ -1,0 +1,14 @@
+packages:
+  - core
+  - briefing
+  - station
+  - grib
+  - j2k
+  - forecast
+  - site
+
+allowBuilds:
+  esbuild: true
+  # Cloudflare's runtime binary, installed by wrangler (the site deploys
+  # to Workers); its postinstall fetches the platform binary.
+  workerd: true

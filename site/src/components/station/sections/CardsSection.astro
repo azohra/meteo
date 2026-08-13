@@ -1,0 +1,16 @@
+<section class="station-section" id="cards" aria-labelledby="cards-title">
+  <h2 id="cards-title">The station card</h2>
+  <p class="station-note">
+    Childless, <code>&lt;meteo-station-card&gt;</code> composes the
+    full card; give it children and you pick the pieces — the
+    second card is chart and summary only.
+  </p>
+  <div class="station-grid station-grid-cards">
+    <meteo-station-card station-id="launch-ridge"></meteo-station-card>
+    <meteo-station-card station-id="summit-logger">
+      <meteo-station-card-header></meteo-station-card-header>
+      <meteo-station-card-chart></meteo-station-card-chart>
+      <meteo-station-card-summary></meteo-station-card-summary>
+    </meteo-station-card>
+  </div>
+</section>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://meteo.azohra.com/sitemap-index.xml

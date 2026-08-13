@@ -1,0 +1,24 @@
+{
+  "comment": "See README.md beside this file for provenance and how these answers were recorded.",
+  "source": "https://dd.weather.gc.ca/20260812/WXO-DD/model_rdps/10km/12/001/20260812T12Z_MSC_RDPS_CAPE_Sfc_RLatLon0.09_PT001H.grib2",
+  "harvested": "2026-08-12",
+  "encoder": "JasPer (COM marker); tile-part QCC override, 25 precincts at r=5",
+  "codestream": {
+    "width": 813275,
+    "height": 1,
+    "bitsPerSample": 24,
+    "isSigned": false,
+    "guardBits": 2,
+    "exponents": [24, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0],
+    "codeblockTasks": 12711
+  },
+  "rawSamples": {
+    "count": 813275,
+    "sha256OfInt32Le": "8059100c6d2247398266d4e50d60e9cb226bb7c9cda3c174f300581de375c894"
+  },
+  "decodedField": {
+    "gridPoints": 1191300,
+    "missingCount": 378025,
+    "sha256OfFloat64Le": "714d2b54cb33133dee621938d9fcbccac9e040ea71e37d6981151bde3c039c56"
+  }
+}

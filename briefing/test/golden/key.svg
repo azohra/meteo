@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 718 78" role="img" aria-label="Meteogram key: line styles for Usable lift, Cloud base, Boundary layer, Model boundary layer, 0 °C, Condensation and the lapse-rate stability ramp." class="meteo-gram meteo-gram-key">
+<style>
+.meteo-gram text { font-family: var(--meteo-gram-font, "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif); }
+.meteo-gram .meteo-gram-mono { font-family: var(--meteo-gram-font-mono, "IBM Plex Mono", ui-monospace, monospace); }
+.meteo-gram-frame { fill: var(--meteo-gram-surface, #fffdf8); stroke: var(--meteo-gram-rule, #776956); }
+.meteo-gram-strip-frame { fill: var(--meteo-gram-strip-bg, #f2f4f1); stroke: var(--meteo-gram-rule, #776956); }
+.meteo-gram-gridline { stroke: var(--meteo-gram-rule, #776956); }
+.meteo-gram-hourline { stroke: var(--meteo-gram-ink, #152529); }
+.meteo-gram-text { fill: var(--meteo-gram-ink, #152529); }
+.meteo-gram-text-soft { fill: var(--meteo-gram-ink-soft, #2f454a); }
+.meteo-gram-text-mute { fill: var(--meteo-gram-ink-mute, #40565a); }
+.meteo-gram-strip-name { fill: var(--meteo-gram-ink, #152529); font-size: var(--meteo-gram-text-strip-name, 10.5px); font-weight: 700; }
+.meteo-gram-strip-unit { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-strip-unit, 9.5px); }
+.meteo-gram-strip-scale { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-strip-scale, 8px); }
+.meteo-gram-tick { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-tick, 10.5px); }
+.meteo-gram-hour-tick { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-hour-tick, 11px); }
+.meteo-gram-series-label { font-size: var(--meteo-gram-text-series-label, 10.5px); font-weight: 700; }
+.meteo-gram-launch-label { fill: var(--meteo-gram-ink, #152529); font-size: var(--meteo-gram-text-launch, 10.5px); font-weight: 600; }
+.meteo-gram-surface-temp { fill: var(--meteo-gram-temp, #913b0c); font-size: var(--meteo-gram-text-surface-temp, 9.5px); font-weight: 700; }
+.meteo-gram-haloed-text { stroke: var(--meteo-gram-halo-text, var(--meteo-gram-halo, #fffdf8)); paint-order: stroke; }
+.meteo-gram-halo { stroke: var(--meteo-gram-halo-series, transparent); }
+.meteo-gram-selected-column { fill: var(--meteo-gram-accent, #913b0c); opacity: 0.05; }
+.meteo-gram-selected-line { stroke: var(--meteo-gram-accent, #913b0c); }
+.meteo-gram-selection-column { fill: var(--meteo-gram-selection, #913b0c); opacity: 0.07; }
+.meteo-gram-selection-line { stroke: var(--meteo-gram-selection, #913b0c); }
+.meteo-gram-selection-ring { stroke: var(--meteo-gram-selection, #913b0c); }
+.meteo-gram-launch-line { stroke: var(--meteo-gram-ink, #152529); }
+.meteo-gram-strip-pressure { stroke: var(--meteo-gram-pressure, #963f36); }
+.meteo-gram-strip-pressure-area, .meteo-gram-strip-pressure-band { fill: var(--meteo-gram-pressure, #963f36); }
+.meteo-gram-strip-precipitation { stroke: var(--meteo-gram-rain, #207a83); }
+.meteo-gram-strip-precipitation-area, .meteo-gram-strip-precipitation-band { fill: var(--meteo-gram-rain, #207a83); }
+.meteo-gram-strip-cloudCover { stroke: var(--meteo-gram-cloud, #5b6969); }
+.meteo-gram-strip-cloudCover-area, .meteo-gram-strip-cloudCover-band { fill: var(--meteo-gram-cloud, #5b6969); }
+.meteo-gram-strip-thermalStrength { stroke: var(--meteo-gram-lift, #9a7500); }
+.meteo-gram-strip-thermalStrength-area, .meteo-gram-strip-thermalStrength-band { fill: var(--meteo-gram-lift, #9a7500); }
+.meteo-gram-strip-buoyancyShear { stroke: var(--meteo-gram-bs, #6d597a); }
+.meteo-gram-strip-buoyancyShear-area, .meteo-gram-strip-buoyancyShear-band { fill: var(--meteo-gram-bs, #6d597a); }
+.meteo-gram-strip-smoke { stroke: var(--meteo-gram-smoke, #8c5a3c); }
+.meteo-gram-strip-smoke-area, .meteo-gram-strip-smoke-band { fill: var(--meteo-gram-smoke, #8c5a3c); }
+.meteo-gram-smoke-cell { fill: var(--meteo-gram-smoke, #8c5a3c); }
+.meteo-gram-strip-observedIrradiance { stroke: var(--meteo-gram-sun, #b07a1a); }
+.meteo-gram-strip-observedIrradiance-area, .meteo-gram-strip-observedIrradiance-band { fill: var(--meteo-gram-sun, #b07a1a); }
+.meteo-gram-dim-cell { fill: var(--meteo-gram-sun-dim, #43404a); }
+.meteo-gram-strip-observedAot { stroke: var(--meteo-gram-smoke, #8c5a3c); }
+.meteo-gram-strip-observedAot-area, .meteo-gram-strip-observedAot-band { fill: var(--meteo-gram-smoke, #8c5a3c); }
+.meteo-gram-strip-source { fill: var(--meteo-gram-ink-mute, #40565a); font-size: 8px; font-style: italic; }
+.meteo-gram-strip-divider { stroke: var(--meteo-gram-rule, #776956); stroke-dasharray: 2 3; stroke-width: 0.8; }
+.meteo-gram-strip-divider-label { fill: var(--meteo-gram-ink-mute, #40565a); font-size: 8px; font-style: italic; letter-spacing: 0.04em; }
+.meteo-gram-strip-cape { stroke: var(--meteo-gram-cape, #8a4a08); }
+.meteo-gram-strip-cape-area, .meteo-gram-strip-cape-band { fill: var(--meteo-gram-cape, #8a4a08); }
+.meteo-gram-cape-calm { fill: var(--meteo-gram-cape-calm, #dde3d5); opacity: 0.6; }
+.meteo-gram-cape-watch { fill: var(--meteo-gram-cape-watch, #e7c46c); opacity: 0.6; }
+.meteo-gram-cape-risk { fill: var(--meteo-gram-cape-risk, #d98243); opacity: 0.6; }
+.meteo-gram-cape-severe { fill: var(--meteo-gram-cape-severe, #c04f3a); opacity: 0.6; }
+.meteo-gram-cape-capped { opacity: 0.28; }
+.meteo-gram-bs-unopposed { fill: var(--meteo-gram-bs, #6d597a); opacity: 0.18; }
+.meteo-gram-cloud-cell { fill: var(--meteo-gram-cloud, #5b6969); }
+.meteo-gram-strip-row-label { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-row-tag, 7.5px); }
+.meteo-gram-gust { fill: var(--meteo-gram-gust, #355963); font-size: var(--meteo-gram-text-gust, 9.5px); font-weight: 700; }
+.meteo-gram-series-pbl { stroke: var(--meteo-gram-pbl, #56609b); }
+.meteo-gram-series-pbl-band { fill: var(--meteo-gram-pbl, #56609b); opacity: 0.16; }
+.meteo-gram-stab-very-unstable { fill: var(--meteo-gram-stab-very-unstable, #d95f52); }
+.meteo-gram-stab-unstable { fill: var(--meteo-gram-stab-unstable, #de8f3a); }
+.meteo-gram-stab-conditional-strong { fill: var(--meteo-gram-stab-conditional-strong, #c67eb6); }
+.meteo-gram-stab-conditional { fill: var(--meteo-gram-stab-conditional, #aeaad9); }
+.meteo-gram-stab-near-neutral { fill: var(--meteo-gram-stab-near-neutral, #d7b29b); }
+.meteo-gram-stab-stable { fill: var(--meteo-gram-stab-stable, #768bb9); }
+.meteo-gram-stab-inverted { fill: var(--meteo-gram-stab-inverted, #9aa19d); }
+.meteo-gram-stab-strong-inversion { fill: var(--meteo-gram-stab-strong-inversion, #b3b9b6); }
+.meteo-gram-cloud-hatch-line { stroke: var(--meteo-gram-ink-soft, #2f454a); }
+.meteo-gram-cloud-medium { fill: var(--meteo-gram-cloud, #5b6969); opacity: 0.22; }
+.meteo-gram-cloud-light { fill: var(--meteo-gram-cloud, #5b6969); opacity: 0.1; }
+.meteo-gram-ti-weak { fill: var(--meteo-gram-ti-weak, #f4e3c0); opacity: 0.55; }
+.meteo-gram-ti-fair { fill: var(--meteo-gram-ti-fair, #ecc57e); opacity: 0.55; }
+.meteo-gram-ti-good { fill: var(--meteo-gram-ti-good, #de9b4e); opacity: 0.55; }
+.meteo-gram-ti-strong { fill: var(--meteo-gram-ti-strong, #c96a33); opacity: 0.55; }
+.meteo-gram-shear-light { fill: var(--meteo-gram-shear-light, #cfc3de); opacity: 0.5; }
+.meteo-gram-shear-moderate { fill: var(--meteo-gram-shear-moderate, #a58ec4); opacity: 0.5; }
+.meteo-gram-shear-strong { fill: var(--meteo-gram-shear-strong, #7b5ea7); opacity: 0.5; }
+.meteo-gram-rh-60 { fill: var(--meteo-gram-rh-60, #d3e0e3); opacity: 0.5; }
+.meteo-gram-rh-80 { fill: var(--meteo-gram-rh-80, #a9c7cf); opacity: 0.5; }
+.meteo-gram-rh-95 { fill: var(--meteo-gram-rh-95, #7fadbb); opacity: 0.5; }
+.meteo-gram-omega-lift { fill: var(--meteo-gram-omega-lift, #8dc2a0); opacity: 0.4; }
+.meteo-gram-omega-lift-strong { fill: var(--meteo-gram-omega-lift-strong, #56a377); opacity: 0.5; }
+.meteo-gram-omega-sink { fill: var(--meteo-gram-omega-sink, #d3a68f); opacity: 0.4; }
+.meteo-gram-omega-sink-strong { fill: var(--meteo-gram-omega-sink-strong, #bd7d5c); opacity: 0.5; }
+.meteo-gram-series-boundary { stroke: var(--meteo-gram-boundary, #a46b10); }
+.meteo-gram-series-boundary-band { fill: var(--meteo-gram-boundary, #a46b10); opacity: 0.16; }
+.meteo-gram-series-cloud-base { stroke: var(--meteo-gram-cloud-base, #355963); }
+.meteo-gram-series-cloud-base-band { fill: var(--meteo-gram-cloud-base, #355963); opacity: 0.16; }
+.meteo-gram-series-usable { stroke: var(--meteo-gram-usable, #2179ad); }
+.meteo-gram-series-usable-band { fill: var(--meteo-gram-usable, #2179ad); opacity: 0.16; }
+.meteo-gram-isotherm { stroke: var(--meteo-gram-ink, #152529); }
+.meteo-gram-isotherm-freezing { stroke: var(--meteo-gram-freezing, #2b748f); }
+.meteo-gram-isotherm-label { fill: var(--meteo-gram-ink, #152529); }
+.meteo-gram-isotherm-label-freezing { fill: var(--meteo-gram-freezing, #2b748f); }
+.meteo-gram-dewpoint-isoline { stroke: var(--meteo-gram-dewpoint, #3a7d4f); }
+.meteo-gram-dewpoint-label { fill: var(--meteo-gram-dewpoint, #3a7d4f); }
+.meteo-gram-barb { stroke: var(--meteo-gram-wind, #ffffff); }
+.meteo-gram-barb-fill { fill: var(--meteo-gram-wind, #ffffff); stroke: var(--meteo-gram-wind, #ffffff); }
+.meteo-gram-barb-halo { stroke: var(--meteo-gram-halo-barb, #355963); }
+.meteo-gram-barb-fill-halo { fill: var(--meteo-gram-halo-barb, #355963); stroke: var(--meteo-gram-halo-barb, #355963); }
+.meteo-gram-marker-wing { fill: var(--meteo-gram-usable, #2179ad); stroke: var(--meteo-gram-usable, #2179ad); }
+.meteo-gram-marker-cloud { fill: var(--meteo-gram-cloud-marker, #f8f3d8); stroke: var(--meteo-gram-cloud-base, #355963); }
+.meteo-gram-marker-halo { fill: var(--meteo-gram-halo-marker, var(--meteo-gram-halo, #fffdf8)); stroke: var(--meteo-gram-halo-marker, var(--meteo-gram-halo, #fffdf8)); }
+.meteo-gram-key-label { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-tick, 10.5px); }
+.meteo-gram-key-title { fill: var(--meteo-gram-ink, #152529); font-size: var(--meteo-gram-text-key-title, 9px); font-weight: 700; letter-spacing: 0.08em; }
+.meteo-gram-key-boundary { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-key-boundary, 8px); }
+.meteo-gram-key-group { fill: var(--meteo-gram-key-group-ink, #ffffff); stroke: var(--meteo-gram-key-group-halo, #00000066); paint-order: stroke; font-size: var(--meteo-gram-text-key-group, 8px); font-weight: 700; }
+.meteo-gram-key-band { fill: var(--meteo-gram-ink-mute, #40565a); opacity: 0.16; }
+.meteo-gram-key-frame { fill: none; stroke: var(--meteo-gram-rule, #776956); }
+</style>
+<defs><pattern id="meteo-gram-key-cloud-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" class="meteo-gram-cloud-hatch-line" stroke-width="1.2"/></pattern></defs>
+<path d="M12 19 H38" class="meteo-gram-series-usable" fill="none" stroke-width="2" stroke-linecap="round"/>
+<text x="44" y="22.5" class="meteo-gram-key-label">Usable lift</text>
+<path d="M126 19 H152" class="meteo-gram-series-cloud-base" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 5"/>
+<text x="158" y="22.5" class="meteo-gram-key-label">Cloud base</text>
+<path d="M234 19 H260" class="meteo-gram-series-boundary" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="10 5"/>
+<text x="266" y="22.5" class="meteo-gram-key-label">Boundary layer</text>
+<path d="M366 19 H392" class="meteo-gram-series-pbl" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>
+<text x="398" y="22.5" class="meteo-gram-key-label">Model boundary layer</text>
+<path d="M532 19 H558" class="meteo-gram-isotherm meteo-gram-isotherm-freezing" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="7 3 1 3"/>
+<text x="564" y="22.5" class="meteo-gram-key-label">0 °C</text>
+<rect x="606" y="14.5" width="24" height="9" fill="url(#meteo-gram-key-cloud-hatch)"/>
+<rect x="606" y="14.5" width="24" height="9" class="meteo-gram-key-frame" stroke-width="0.7"/>
+<text x="636" y="22.5" class="meteo-gram-key-label">Condensation</text>
+<g role="img" aria-label="Lapse-rate stability ramp: very unstable at the left through strong inversion at the right; boundary values in °C per 1,000 ft"><text x="12" y="60" class="meteo-gram-key-title">LAPSE RATE</text><rect x="85" y="46" width="77.63" height="22" class="meteo-gram-stab-very-unstable"><title>Very unstable</title></rect><rect x="162.63" y="46" width="77.63" height="22" class="meteo-gram-stab-unstable"><title>Unstable</title></rect><rect x="240.25" y="46" width="77.63" height="22" class="meteo-gram-stab-conditional-strong"><title>Conditional strong</title></rect><rect x="317.88" y="46" width="77.63" height="22" class="meteo-gram-stab-conditional"><title>Conditional</title></rect><rect x="395.5" y="46" width="77.63" height="22" class="meteo-gram-stab-near-neutral"><title>Near neutral</title></rect><rect x="473.13" y="46" width="77.63" height="22" class="meteo-gram-stab-stable"><title>Stable</title></rect><rect x="550.75" y="46" width="77.63" height="22" class="meteo-gram-stab-inverted"><title>Inverted</title></rect><rect x="628.38" y="46" width="77.63" height="22" class="meteo-gram-stab-strong-inversion"><title>Strong inversion</title></rect><text x="162.63" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">-3</text><text x="240.25" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">-2.5</text><text x="317.88" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">-2</text><text x="395.5" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">-1.5</text><text x="473.13" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">-1.2</text><text x="550.75" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">0</text><text x="628.38" y="42" text-anchor="middle" class="meteo-gram-key-boundary meteo-gram-mono">0.5</text><text x="162.63" y="60" text-anchor="middle" class="meteo-gram-key-group" stroke-width="2">Unstable</text><text x="356.69" y="60" text-anchor="middle" class="meteo-gram-key-group" stroke-width="2">Conditional instability</text><text x="511.94" y="60" text-anchor="middle" class="meteo-gram-key-group" stroke-width="2">Stable</text><text x="628.38" y="60" text-anchor="middle" class="meteo-gram-key-group" stroke-width="2">Inverted</text></g>
+</svg>

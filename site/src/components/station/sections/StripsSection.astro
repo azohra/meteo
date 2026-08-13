@@ -1,0 +1,33 @@
+<section class="station-section" id="strips" aria-labelledby="strips-title">
+  <h2 id="strips-title">Strips</h2>
+  <p class="station-note">
+    The table row as a standalone one-liner —
+    <code>&lt;meteo-station-strip&gt;</code>, provider-fed here,
+    and the outage keeps its line at full height.
+  </p>
+  <div
+    class="station-strips"
+    role="region"
+    tabindex="0"
+    aria-label="Scrollable one-line station strips"
+  >
+    <meteo-station-strip station-id="launch-ridge"></meteo-station-strip>
+    <meteo-station-strip station-id="summit-logger"></meteo-station-strip>
+    <meteo-station-strip station-id="north-bluff"></meteo-station-strip>
+  </div>
+</section>
+
+<style>
+  .station-strips {
+    display: grid;
+    gap: 0.7rem;
+    /* A strip is deliberately one line that never wraps; on a phone it
+       scrolls in its own region instead of widening the page. */
+    overflow-x: auto;
+    padding-block-end: 0.25rem;
+  }
+
+  .station-strips :global(meteo-station-strip) {
+    min-width: max-content;
+  }
+</style>

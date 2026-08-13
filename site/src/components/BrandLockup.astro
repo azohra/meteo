@@ -1,0 +1,124 @@
+---
+import MeteoMark from "./MeteoMark.astro";
+
+interface Props {
+  context?: string;
+  showDescriptor?: boolean;
+}
+
+const { context, showDescriptor = false } = Astro.props;
+---
+
+<span class="brand-lockup">
+  <span class="brand-lockup__mark" aria-hidden="true"><MeteoMark /></span>
+  <span class="brand-lockup__identity">
+    <span class="brand-lockup__name-line">
+      <strong class="brand-lockup__name">meteo</strong>
+      <span class="brand-lockup__endorsement">by <b>Azohra</b></span>
+    </span>
+    {
+      showDescriptor && (
+        <span class="brand-lockup__descriptor">Open meteorology for mountain flying</span>
+      )
+    }
+  </span>
+  {context && <span class="brand-lockup__context">{context}</span>}
+</span>
+
+<style>
+  .brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    color: inherit;
+  }
+
+  .brand-lockup__mark {
+    display: grid;
+    flex: 0 0 auto;
+    width: 2.7rem;
+    margin-inline-end: 0.72rem;
+    color: var(--accent);
+  }
+
+  .brand-lockup__mark :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .brand-lockup__identity {
+    display: grid;
+    min-width: 0;
+    line-height: 1;
+  }
+
+  .brand-lockup__name-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .brand-lockup__name {
+    font-family: var(--display);
+    font-size: 1.27rem;
+    font-weight: 720;
+    letter-spacing: -0.045em;
+    line-height: 1.1;
+  }
+
+  .brand-lockup__endorsement {
+    color: var(--ink-mute);
+    font: 600 0.49rem/1 var(--mono);
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+  }
+
+  .brand-lockup__endorsement b {
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+
+  .brand-lockup__descriptor {
+    margin-block-start: 0.22rem;
+    color: var(--ink-mute);
+    font: 600 0.49rem/1 var(--mono);
+    letter-spacing: 0.085em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .brand-lockup__context {
+    flex: 0 0 auto;
+    margin-inline-start: 0.72rem;
+    padding-inline-start: 0.72rem;
+    border-inline-start: 1px solid var(--rule);
+    color: var(--ink-mute);
+    font: 650 0.66rem/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 72rem) {
+    .brand-lockup__descriptor {
+      display: none;
+    }
+  }
+
+  @media (max-width: 24rem) {
+    .brand-lockup__mark {
+      width: 2.45rem;
+      margin-inline-end: 0.55rem;
+    }
+
+    .brand-lockup__name {
+      font-size: 1.12rem;
+    }
+
+    .brand-lockup__context {
+      display: none;
+    }
+  }
+</style>

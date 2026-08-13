@@ -1,0 +1,112 @@
+---
+title: Profile document
+description: Map the portable boundary between provider-aware generation and headless rendering.
+---
+
+A profile is the portable boundary between generation and rendering. It
+identifies its contract version, model, publication, site, optional provider
+semantics, and every chronological forecast hour. Day windows and local time
+remain consumer choices, with the site's timezone echoed for new documents.
+
+```text
+profile
+├── schemaVersion + model
+├── run { referenceTime, generatedAt, members? }
+├── site { identity, coordinates, model elevation, timeZone? }
+├── semantics? { gust?, precipitation?, smoke? }
+└── hours[]
+    ├── validAt
+    ├── surface
+    ├── levels[]
+    ├── derived
+    └── smoke? { surfaceUgm3, columnMgm2, aot }
+```
+
+## On the wire
+
+| Fact | Value |
+| --- | --- |
+| **Published at** | `<model>/sites/<site>.json` — and each [history archive](/docs/briefing/history-archives/) line is the same document |
+| **Parse** | `parseSiteForecastJson` (raw text) / `parseSiteForecast` (parsed value) from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
+| **Zod authority** | `siteForecastSchema`, pinning `SITE_FORECAST_SCHEMA_VERSION` (2 — wire v2) |
+| **JSON Schema** | [`profile.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/profile.schema.json) |
+| **Discovery** | the [model catalogue](/docs/briefing/catalogue/)'s `models` array names every model that publishes profiles |
+
+## Hour blocks
+
+| Block | Representative values | Contract rule |
+| --- | --- | --- |
+| `surface` | pressure, temperature, moisture, winds, heat fluxes, precipitation, and declared optional science fields | Optional capability fields are absent, never filled with zero |
+| `levels` | height, temperature, dew point, wind, and optional omega/cloud fraction | Entries are ascending by height; pressure is the isobaric coordinate |
+| `derived` | boundary-layer top, thermal velocity, cloud base, usable-lift top | Computed by the forecast engine from the full required inputs |
+
+## Run, site, and semantics
+
+`run.referenceTime` is model initialization; `run.generatedAt` identifies the
+publication. Ensemble documents also declare total membership once at
+`run.members`.
+
+The `site` block is **sample provenance**: where the atmosphere was sampled
+(`id`, `name`, `latitude`, `longitude`, optional `timeZone`) and what the
+model thinks the ground there is (`site.modelElevationM` — the plot floor and
+physics reference). It carries no launch elevation: the launch-decoupling
+redesign removed `altitudeM`, because a baked-in launch silently bound a
+grid forecast to one launch. The measured launch elevation lives in
+[site-context.json](/docs/briefing/site-context-document/)'s `elevation`
+pick, and consumers pass it at render time as `MeteogramOptions.launch` — one
+document serves every launch its cell covers. Documents published before
+the removal may still carry the field; current parsers ignore it.
+
+The v0.4 publication wave added optional `site.timeZone`, echoed from the
+site catalogue's required IANA zone. New documents therefore carry their own
+local-time context without a catalogue join. The field remains optional so
+older schema-1 profiles stay valid; absence means the document predates the
+echo — never that the launch uses UTC — and requires a caller-owned timezone
+choice. This paragraph is the semantics' one home; the
+[contract guide](/docs/briefing/contract/#site-timezone-propagation) lists
+each API's documented fallback behaviour.
+
+The optional `semantics` block lets a stored document retain gust,
+precipitation, and smoke meaning without joining the catalogue. Its absence
+creates no default. Where a model declares smoke (`radiativelyCoupled` or
+`passive`), each hour may also carry an optional `smoke` block (`surfaceUgm3`, `columnMgm2`, `aot` —
+all three required within it); the
+[smoke document reference](/docs/briefing/smoke-document/) covers the
+semantics.
+
+## Deterministic and ensemble values
+
+Every numeric position can contain a number or an ensemble percentile object. Consumers switch on the value shape, not a model name.
+
+```ts title="read-wind.ts"
+import { isEnsembleDropout, isEnsembleValue, type SiteForecast } from "@azohra/meteo.briefing/contract";
+
+export function firstWindSpeed(profile: SiteForecast): number | null | undefined {
+  const speed = profile.hours[0]?.surface.windSpeedMps;
+
+  return speed === undefined
+    ? undefined
+    : isEnsembleValue(speed)
+      ? isEnsembleDropout(speed) ? null : speed.p50
+      : speed;
+}
+```
+
+Per-position contributor counts and censoring are explained in
+[Ensemble values](/docs/briefing/ensemble-values/).
+
+## Validate before use
+
+Use `parseSiteForecastJson` for raw stored text or
+`parseSiteForecast` for an already-parsed value. Both return `null` on a
+rejected boundary. The package schemas and generated JSON Schema define every
+field constraint.
+
+## Discover capabilities
+
+`models.json` is the machine-readable catalogue. It declares which models exist, their cadence and levels, and the semantics of optional capabilities. A consumer should render those declarations instead of assuming every model supplies the same fields.
+
+See the [contract guide's unit boundary map](/docs/briefing/contract/#unit-boundary-map)
+for the integration crosswalk. The full field-by-field contract and generated
+JSON Schema live with the
+[`@azohra/meteo.briefing` package](https://github.com/azohra/meteo).

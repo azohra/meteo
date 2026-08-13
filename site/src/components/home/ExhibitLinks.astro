@@ -1,0 +1,54 @@
+---
+/* One link row shared by both exhibits, so their closing gestures
+   stay structurally parallel: a live-exhibit destination and a docs path,
+   styled identically for the Meteogram and Station sections. */
+interface Props {
+  label: string;
+  links: Array<{ text: string; href: string }>;
+}
+
+const { label, links } = Astro.props;
+---
+
+<nav class="exhibit-links" aria-label={label}>
+  {links.map((link) => (
+    <a href={link.href}>{link.text} <span aria-hidden="true">→</span></a>
+  ))}
+</nav>
+
+<style>
+  .exhibit-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  a {
+    display: inline-flex;
+    gap: 0.7rem;
+    align-items: center;
+    min-height: 2.8rem;
+    padding: 0.65rem 1.2rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font: 600 0.85rem/1.2 var(--sans);
+  }
+
+  a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 43rem) {
+    .exhibit-links {
+      display: grid;
+    }
+
+    a {
+      justify-content: space-between;
+    }
+  }
+</style>

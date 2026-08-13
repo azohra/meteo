@@ -1,0 +1,118 @@
+---
+import { STABILITY_CLASSES } from "@azohra/meteo.briefing/derive";
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+import Figure from "../figure/Figure.astro";
+import { onlyOverlays } from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const sources = [
+  scenarioById("morning-inversion-erodes"),
+  scenarioById("persistent-inversion"),
+  scenarioById("convective-cycle"),
+] as const;
+const overlays = onlyOverlays(
+  "stability",
+  "thermalStrength",
+  "boundaryLayerTop",
+  "usableLiftTop",
+  "launch",
+  "selectedHour",
+);
+const panels = sources.map((scenario) => ({
+  scenario,
+  svg: renderMeteogramSvg(
+    buildMeteogramScene(scenario.profile, {
+      timeZone: scenario.timeZone,
+      overlays,
+      smooth: false,
+      columnWidthPx: 54,
+      plotHeightPx: 280,
+    }),
+    { idPrefix: `stability-guide-${scenario.id}` },
+  ),
+}));
+const classLabels: Record<string, string> = {
+  "very-unstable": "Very unstable",
+  unstable: "Unstable",
+  "conditional-strong": "Conditional · strong",
+  conditional: "Conditional",
+  "near-neutral": "Near neutral",
+  stable: "Stable",
+  inverted: "Inversion",
+  "strong-inversion": "Strong inversion",
+};
+---
+
+<Figure
+  id="stability-guide"
+  title="Read stability as a vertical sequence through time"
+  lesson="Similar surface heating can erode an inversion, remain trapped below one, or build a deep mixed layer."
+  description="Three profiles compare an eroding morning inversion, a persistent inversion, and a complete convective cycle using the reference stability field and default package tokens."
+  caption="The package derives field geometry from each validated scenario and classifies every lapse interval with STABILITY_CLASSES. Colour identifies a layer; w* identifies the surface forcing active at that hour."
+  units="lapse °C per 1,000 ft · altitude m and ft · w* m/s"
+>
+  <div class="stability-panels">
+    {panels.map(({ scenario, svg }) => (
+      <section>
+        <header>
+          <h4>{scenario.label}</h4>
+          <p>{scenario.lesson}</p>
+        </header>
+        <div
+          class="chart"
+          role="region"
+          tabindex="0"
+          aria-label={`Scrollable ${scenario.label} stability chart`}
+          set:html={svg}
+        ></div>
+      </section>
+    ))}
+  </div>
+
+  <ol class="class-scale" role="region" tabindex="0" aria-label="Scrollable package stability class order">
+    {STABILITY_CLASSES.map((entry) => (
+      <li>
+        <i class={entry.className} aria-hidden="true"></i>
+        <span>{classLabels[entry.className] ?? entry.className}</span>
+        <small>{Number.isFinite(entry.maxLapse) ? `≤ ${entry.maxLapse} °C/1,000 ft` : "highest class"}</small>
+      </li>
+    ))}
+  </ol>
+</Figure>
+
+<style>
+  .stability-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); }
+  section { min-width: 0; }
+  section + section { border-left: 1px solid var(--rule); }
+  section > header { min-height: 110px; padding: 12px 13px; border-bottom: 1px solid var(--rule); }
+  h4 { margin: 0; color: var(--ink); font: 700 15px/1.2 var(--sans); }
+  p { margin: 6px 0 0; color: var(--ink-mute); font-size: 11px; line-height: 1.45; }
+  .chart { min-width: 0; overflow-x: auto; }
+  .chart :global(svg) { display: block; width: 100%; min-width: 330px; height: auto; }
+  .class-scale { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); margin: 0; padding: 12px; list-style: none; border-top: 1px solid var(--rule); overflow-x: auto; }
+  .class-scale li { min-width: 90px; padding: 0 7px; border-left: 1px solid var(--rule); }
+  .class-scale li:first-child { border-left: 0; }
+  .class-scale i { display: block; height: 10px; margin-bottom: 6px; background: var(--stability-colour); border: 1px solid var(--ink); }
+  .class-scale .very-unstable { --stability-colour: var(--stab-very-unstable); }
+  .class-scale .unstable { --stability-colour: var(--stab-unstable); }
+  .class-scale .conditional-strong { --stability-colour: var(--stab-conditional-strong); }
+  .class-scale .conditional { --stability-colour: var(--stab-conditional); }
+  .class-scale .near-neutral { --stability-colour: var(--stab-near-neutral); }
+  .class-scale .stable { --stability-colour: var(--stab-stable); }
+  .class-scale .inverted { --stability-colour: var(--stab-inverted); }
+  .class-scale .strong-inversion { --stability-colour: var(--stab-strong-inversion); }
+  .class-scale span, .class-scale small { display: block; font-family: var(--mono); }
+  .class-scale span { color: var(--ink); font-size: 10px; font-weight: 700; }
+  .class-scale small { margin-top: 2px; color: var(--ink-mute); font-size: 9px; }
+  @media (max-width: 720px) {
+    .stability-panels { grid-template-columns: 1fr; }
+    section + section { border-left: 0; border-top: 1px solid var(--rule); }
+    section > header { min-height: 0; }
+    .chart :global(svg) { min-width: 0; }
+  }
+  @media print {
+    .stability-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .chart :global(svg) { min-width: 0; }
+    .class-scale { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  }
+</style>

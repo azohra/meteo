@@ -1,0 +1,103 @@
+---
+/* The two committed diagrams from forecast/docs/figures/, unmodified —
+   read through the docs symlink so this page and the docs pages share
+   one file. Each plate is inlined as a real <svg> (the same treatment
+   rehype-inline-figures gives the docs pages): served through <img> the
+   plates' var(--meteo-gram-*) chrome tokens could never receive the
+   page's values, so they would stay light on a dark page. Inlined, the
+   :root chrome tokens in theme.css reach them and the chrome follows
+   the theme while the printed face keeps its package defaults. Alt text
+   is each figure's own alt from the doc that carries it
+   (architecture.md, provider-transports.md). */
+import publicationFlowRaw from "../../content/docs/docs/forecast/figures/publication-flow.svg?raw";
+import twoTransportsRaw from "../../content/docs/docs/forecast/figures/two-transports.svg?raw";
+
+function escapeAttribute(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+}
+
+function inlineFigure(raw: string, alt: string): string {
+  const svg = raw.trim();
+  const openTag = /^<svg\b[^>]*>/.exec(svg);
+  if (!openTag) throw new Error("Figure is not a single-root <svg> document");
+  let open = openTag[0];
+  /* The generated figures carry role="img" plus aria-labelledby onto
+     their own <title>/<desc>, which keeps precedence where present. */
+  if (!/\brole\s*=/.test(open)) open = open.replace("<svg", '<svg role="img"');
+  if (alt && !/\baria-label\s*=/.test(open)) {
+    open = open.replace("<svg", `<svg aria-label="${escapeAttribute(alt)}"`);
+  }
+  return open + svg.slice(openTag[0].length);
+}
+
+const publicationFlow = inlineFigure(
+  publicationFlowRaw,
+  "A five-stage sequence from upstream forecast publication through completeness probing, model-specific building, one static publication, and a consumer consistency check.",
+);
+const twoTransports = inlineFigure(
+  twoTransportsRaw,
+  "A comparison of NOAA indexed byte ranges and ECCC whole-domain streaming. Four HRRR records are located at byte offsets read from the repository index fixture; ECCC builders stream one whole-domain file at a time, sample configured sites in memory, and discard the file.",
+);
+---
+
+<section id="flow" class="fc-flow" aria-labelledby="flow-title">
+  <div class="section-inner">
+    <h2 id="flow-title">From model cycle to browser</h2>
+
+    <figure class="fc-figure">
+      <Fragment set:html={publicationFlow} />
+      <figcaption>
+        The upstream model publishes a cycle; the engine probes it for completeness, builds, and
+        publishes once — the consumer's consistency check closes the loop. The walk-through
+        is <a href="/docs/forecast/architecture/">Forecast architecture</a>.
+      </figcaption>
+    </figure>
+
+    <figure class="fc-figure">
+      <Fragment set:html={twoTransports} />
+      <figcaption>
+        How the provider bytes arrive: NOAA models are read as <code>.idx</code>-indexed byte
+        ranges; ECCC models stream one whole-domain file at a time, sampled in memory and
+        discarded. The reference
+        is <a href="/docs/forecast/provider-transports/">Provider transports</a>.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .fc-flow {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .fc-flow h2 {
+    margin: 0 0 clamp(1.25rem, 3vw, 2rem);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .fc-figure {
+    margin: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .fc-figure + .fc-figure {
+    margin-top: clamp(1.75rem, 4vw, 2.75rem);
+  }
+
+  .fc-figure :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+  }
+
+  .fc-figure figcaption {
+    max-width: 46rem;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--ink-mute);
+  }
+</style>

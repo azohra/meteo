@@ -1,0 +1,156 @@
+---
+import {
+  CANADARASP_RAMP,
+  CLASS_LABELS,
+  CLASS_NAMES,
+  DEFAULT_RAMP,
+  luminanceGray,
+  oklabLightness,
+} from "./ramp-math";
+import Figure from "../figure/Figure.astro";
+
+/* The shipped palette arrives from the package export at build time (the
+   same authority pattern as Base.astro's --stab-* generation); the
+   canadarasp palette is the article's cited lineage. Each is drawn as a
+   contiguous swatch strip on the surface it was designed against, with a
+   luminance-matched grayscale row beneath — what a grayscale print or a
+   fully desaturated display keeps of each design. */
+
+const LEFT = 168;
+const RIGHT = 1016;
+const COL = (RIGHT - LEFT) / 8;
+
+const ramps = [DEFAULT_RAMP, CANADARASP_RAMP].map((ramp) => {
+  const lightness = ramp.hexes.map(oklabLightness);
+  return {
+    ...ramp,
+    grays: ramp.hexes.map(luminanceGray),
+    surfaceGray: luminanceGray(ramp.surface),
+    monotone: lightness.every((value, i) => i === 0 || value < lightness[i - 1]),
+  };
+});
+
+const labelLines = CLASS_NAMES.map((name) =>
+  (CLASS_LABELS[name] ?? name).replace(" · ", " ").split(" "),
+);
+
+const LABELS_H = 44;
+const SWATCH_H = 40;
+const GRAY_H = 24;
+const PAD = 7;
+const panelHeight = 24 + (SWATCH_H + 2 * PAD) + 3 + (GRAY_H + 2 * PAD) + 20 + 26;
+const panelTop = (index: number) => LABELS_H + index * panelHeight;
+const svgHeight = LABELS_H + ramps.length * panelHeight - 14;
+
+const description = ramps
+  .map(
+    (ramp) =>
+      `The ${ramp.name} strip runs ${ramp.hexes.join(", ")} on its design surface ${ramp.surface}; ` +
+      `its luminance-matched grays are ${ramp.grays.join(", ")}, ` +
+      (ramp.monotone
+        ? "strictly darkening from most unstable to most stable, so the grayscale row keeps the class order."
+        : "which do not darken in class order, so the grayscale row loses the sequence."),
+  )
+  .join(" ");
+---
+
+<Figure
+  id="stability-ramp-strips"
+  title="A background palette and its lineage"
+  lesson="A quiet field spends its lightness budget on the chart content drawn above it; the key and readouts carry class order."
+  {description}
+  caption="The shipped ramp comes from the package export; the canadarasp row records its cited lineage. Neither grayscale row preserves class order, so hue, the key, readouts, and field geometry carry that meaning."
+  units="sRGB colours and luminance-matched grayscale"
+>
+
+  <div class="meteo-gram-scroll meteo-gram-scroll--plate graphic-scroll" role="region" tabindex="0" aria-label="Scrollable comparison of the two stability palettes with grayscale rows">
+    <svg
+      viewBox={`0 0 1040 ${svgHeight}`}
+      role="img"
+      aria-labelledby="ramp-strips-svg-title ramp-strips-svg-desc"
+    >
+      <title id="ramp-strips-svg-title">
+        The default stability ramp and the historical canadarasp palette as swatch strips, each above its
+        luminance-matched grayscale row
+      </title>
+      <desc id="ramp-strips-svg-desc">
+        Eight stability classes from very unstable to strong inversion, left to right. {description}
+        In the canadarasp strip the stable swatch matches the design surface exactly, in colour and
+        in grayscale.
+      </desc>
+
+      {labelLines.map((lines, column) =>
+        lines.map((line, lineIndex) => (
+          <text
+            x={LEFT + column * COL + COL / 2}
+            y={lines.length === 2 ? 18 + lineIndex * 12 : 30}
+            class="rs-colhead"
+          >
+            {line}
+          </text>
+        )),
+      )}
+
+      {ramps.map((ramp, index) => {
+        const top = panelTop(index);
+        const swatchTop = top + 24 + PAD;
+        const grayTop = swatchTop + SWATCH_H + PAD + 3 + PAD;
+        return (
+          <g>
+            <text x="0" y={top + 14} class="rs-name">{ramp.name}</text>
+            <rect
+              x={LEFT - 14}
+              y={top + 24}
+              width={RIGHT - LEFT + 28}
+              height={SWATCH_H + 2 * PAD}
+              fill={ramp.surface}
+              class="rs-backing"
+            />
+            <rect
+              x={LEFT - 14}
+              y={top + 24 + SWATCH_H + 2 * PAD + 3}
+              width={RIGHT - LEFT + 28}
+              height={GRAY_H + 2 * PAD}
+              fill={ramp.surfaceGray}
+              class="rs-backing"
+            />
+            <text x={LEFT - 22} y={swatchTop + SWATCH_H / 2 + 4} class="rs-rowlabel">colour</text>
+            <text x={LEFT - 22} y={grayTop + GRAY_H / 2 + 4} class="rs-rowlabel">grayscale</text>
+            {ramp.hexes.map((hex, column) => (
+              <rect x={LEFT + column * COL} y={swatchTop} width={COL} height={SWATCH_H} fill={hex}>
+                <title>{`${CLASS_LABELS[CLASS_NAMES[column]]}: ${hex} on ${ramp.surface}`}</title>
+              </rect>
+            ))}
+            {ramp.grays.map((gray, column) => (
+              <rect x={LEFT + column * COL} y={grayTop} width={COL} height={GRAY_H} fill={gray}>
+                <title>{`${CLASS_LABELS[CLASS_NAMES[column]]} as grayscale: ${gray}`}</title>
+              </rect>
+            ))}
+            {ramp.hexes.map((hex, column) => (
+              <text x={LEFT + column * COL + COL / 2} y={grayTop + GRAY_H + PAD + 16} class="rs-hex">
+                {hex}
+              </text>
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  </div>
+
+</Figure>
+
+<style>
+  /* meteo-gram-scroll / meteo-gram-scroll--plate carry the scroll-region contract. */
+  .graphic-scroll {
+    padding: 14px 10px;
+  }
+  svg { display: block; width: 100%; min-width: 880px; height: auto; font-family: var(--mono); }
+  .rs-colhead { fill: var(--ink-soft); font-size: 10px; font-weight: 700; letter-spacing: .02em; text-anchor: middle; }
+  .rs-name { fill: var(--ink); font-family: var(--display); font-size: 17px; font-weight: 700; text-transform: uppercase; }
+  .rs-backing { stroke: var(--rule); stroke-width: 1; }
+  .rs-rowlabel { fill: var(--ink-mute); font-size: 10.5px; text-anchor: end; }
+  .rs-hex { fill: var(--ink-mute); font-size: 10px; text-anchor: middle; }
+  @media (max-width: 720px) {
+    .graphic-scroll { margin-inline: -8px; }
+  }
+</style>

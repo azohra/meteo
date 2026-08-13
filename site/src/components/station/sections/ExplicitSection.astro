@@ -1,0 +1,17 @@
+---
+/* Rendered outside <meteo-station-feed> on purpose: the page's script
+   hands #explicit-conditions its station, clocks, thresholds, and unit as
+   direct properties — the provider is an ambient default, not a
+   requirement. */
+---
+
+<section class="station-section" id="explicit" aria-labelledby="explicit-title">
+  <h2 id="explicit-title">No provider, explicit props</h2>
+  <p class="station-note">
+    This instrument renders outside the provider: station, clocks,
+    thresholds, and unit all arrive as props.
+  </p>
+  <div class="station-grid station-grid-instruments">
+    <meteo-current-conditions id="explicit-conditions"></meteo-current-conditions>
+  </div>
+</section>

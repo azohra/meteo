@@ -1,0 +1,44 @@
+{
+  "name": "@azohra/meteo.j2k",
+  "version": "0.1.1",
+  "description": "The JPEG 2000 decoder of meteo by Azohra: a pure-TypeScript ITU-T T.800 implementation scoped to exactly the codestream subset ECCC's GRIB2 feeds ship - single tile, single grayscale component, reversible 5/3 wavelet, single quality layer, default precincts, MQ-coded EBCOT. Everything outside that subset fails loudly by design. Validated bit-for-bit against the OpenJPEG oracles over the golden fixture corpus.",
+  "keywords": [
+    "jpeg2000",
+    "j2k",
+    "jp2",
+    "codestream",
+    "decoder",
+    "grib2"
+  ],
+  "author": "Justin Watts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azohra/meteo.git",
+    "directory": "j2k"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "test": "vp test",
+    "typecheck": "pnpm run build && tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "homepage": "https://meteo.azohra.com"
+}

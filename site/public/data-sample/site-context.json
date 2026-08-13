@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-12T18:19:20Z",
+  "sources": [
+    {
+      "id": "glo30",
+      "product": "Copernicus GLO-30 DEM",
+      "kind": "surfaceModel",
+      "resolutionM": 30,
+      "licence": "Copernicus DEM licence",
+      "attribution": "produced using Copernicus WorldDEM-30 \u00a9 DLR e.V. 2010-2014 and \u00a9 Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved",
+      "url": "https://registry.opendata.aws/copernicus-dem/"
+    },
+    {
+      "id": "lidarbc",
+      "product": "LidarBC 1 m bare-earth DEM",
+      "kind": "bareEarthModel",
+      "resolutionM": 1,
+      "licence": "OGL-BC",
+      "attribution": "Contains information licensed under the Open Government Licence \u2013 British Columbia.",
+      "url": "https://lidar.gov.bc.ca"
+    },
+    {
+      "id": "mrdem30",
+      "product": "NRCan MRDEM 30 m DTM (CanElevation)",
+      "kind": "bareEarthModel",
+      "resolutionM": 30,
+      "licence": "OGL-Canada",
+      "attribution": "Contains information licensed under the Open Government Licence \u2013 Canada.",
+      "url": "https://registry.opendata.aws/canelevation-dem/"
+    },
+    {
+      "id": "worldcover2021",
+      "product": "ESA WorldCover 10 m 2021 v200",
+      "kind": "landCover",
+      "resolutionM": 10,
+      "licence": "CC-BY 4.0",
+      "attribution": "\u00a9 ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium",
+      "url": "https://zenodo.org/records/7254221"
+    }
+  ],
+  "sites": {
+    "test-hill": {
+      "elevation": {
+        "source": "lidarbc",
+        "elevationM": 1225.1
+      },
+      "terrain": {
+        "source": "glo30",
+        "elevationM": 1237.5,
+        "slopeDeg": 2.7,
+        "aspectDeg": 14,
+        "relief": [
+          {
+            "radiusKm": 1,
+            "minM": 994,
+            "maxM": 1335,
+            "percentile": 73
+          },
+          {
+            "radiusKm": 3,
+            "minM": 531,
+            "maxM": 1725,
+            "percentile": 60
+          },
+          {
+            "radiusKm": 10,
+            "minM": 448,
+            "maxM": 2237,
+            "percentile": 52
+          }
+        ]
+      },
+      "landCover": {
+        "source": "worldcover2021",
+        "atLaunch": "treeCover",
+        "fractions": [
+          {
+            "radiusKm": 1,
+            "byClass": {
+              "treeCover": 0.951,
+              "grassland": 0.049
+            }
+          },
+          {
+            "radiusKm": 3,
+            "byClass": {
+              "treeCover": 0.932,
+              "grassland": 0.066,
+              "builtUp": 0.001,
+              "water": 0.001,
+              "shrubland": 0.001
+            }
+          }
+        ]
+      }
+    },
+    "test-ridge": {
+      "elevation": {
+        "source": "mrdem30",
+        "elevationM": 2177.8
+      },
+      "terrain": {
+        "source": "glo30",
+        "elevationM": 2175.5,
+        "slopeDeg": 9.9,
+        "aspectDeg": 251,
+        "relief": [
+          {
+            "radiusKm": 1,
+            "minM": 1964,
+            "maxM": 2676,
+            "percentile": 64
+          },
+          {
+            "radiusKm": 3,
+            "minM": 1546,
+            "maxM": 2784,
+            "percentile": 52
+          },
+          {
+            "radiusKm": 10,
+            "minM": 1053,
+            "maxM": 2796,
+            "percentile": 75
+          }
+        ]
+      },
+      "landCover": {
+        "source": "worldcover2021",
+        "atLaunch": "mossLichen",
+        "fractions": [
+          {
+            "radiusKm": 1,
+            "byClass": {
+              "bareSparse": 0.269,
+              "treeCover": 0.255,
+              "grassland": 0.237,
+              "mossLichen": 0.19,
+              "snowIce": 0.033,
+              "water": 0.015
+            }
+          },
+          {
+            "radiusKm": 3,
+            "byClass": {
+              "bareSparse": 0.339,
+              "treeCover": 0.305,
+              "mossLichen": 0.127,
+              "grassland": 0.119,
+              "snowIce": 0.092,
+              "water": 0.019
+            }
+          }
+        ]
+      }
+    },
+    "test-valley": {
+      "elevation": {
+        "source": "lidarbc",
+        "elevationM": 495.5
+      },
+      "terrain": {
+        "source": "glo30",
+        "elevationM": 495,
+        "slopeDeg": 0.3,
+        "aspectDeg": 306,
+        "relief": [
+          {
+            "radiusKm": 1,
+            "minM": 416,
+            "maxM": 587,
+            "percentile": 60
+          },
+          {
+            "radiusKm": 3,
+            "minM": 416,
+            "maxM": 1269,
+            "percentile": 43
+          },
+          {
+            "radiusKm": 10,
+            "minM": 412,
+            "maxM": 2061,
+            "percentile": 12
+          }
+        ]
+      },
+      "landCover": {
+        "source": "worldcover2021",
+        "atLaunch": "builtUp",
+        "fractions": [
+          {
+            "radiusKm": 1,
+            "byClass": {
+              "grassland": 0.468,
+              "treeCover": 0.285,
+              "builtUp": 0.162,
+              "water": 0.065,
+              "bareSparse": 0.018,
+              "cropland": 0.002
+            }
+          },
+          {
+            "radiusKm": 3,
+            "byClass": {
+              "treeCover": 0.621,
+              "grassland": 0.212,
+              "builtUp": 0.088,
+              "water": 0.067,
+              "bareSparse": 0.012
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+# @azohra/meteo.forecast
+
+The forecast engine: the write side of the contract whose read side is
+`@azohra/meteo.briefing`. It fetches provider bytes (ECCC Datamart whole-file
+GRIB2, NOAA `.idx`-indexed byte ranges, NOAA object-store NetCDF),
+samples gridpoints through `@azohra/meteo.grib`, derives site forecasts, and
+publishes the versioned JSON documents, gzip history archives, and
+sidecar indexes that `@azohra/meteo.briefing`'s transport and history
+subpaths load.
+
+The engine is the package; an operator's pipeline — the cron schedule,
+the site catalogue it builds from, the bucket and its credentials — is
+the operator's own repository. This platform ships no production instance;
+the reference deployment lives with its operator.
+
+It began as a module-by-module port of a Python pipeline; each ported
+module's spec was the Python test that pinned it, and each builder's
+acceptance gate was a published-JSON dual-run diff against the Python
+builder for the same run. The dual-run harness retired with the
+Python side.
+
+## The documents
+
+The reference lives in [`docs/`](docs/) and is served at
+<https://meteo.azohra.com/docs/forecast/>.
+
+- [Forecast architecture](docs/architecture.md) — the flow from
+  provider bytes to published documents, and which module owns what.
+- [Meteogram derivations](docs/derivation-science.mdx) — the equations,
+  constants, and fallbacks behind every published derived quantity.
+- [Builder contract](docs/builder-contract.md) — the eight invariants
+  every builder must honour. These are the binding rules.
+- [Provider transports](docs/provider-transports.md) — whole-file ECCC
+  sampling, indexed NOAA byte ranges, whole-file GOES granules.
+- [Add a forecast model](docs/adding-a-model.md) — the
+  verify-before-code workflow from live feed to registered builder.
+
+## The CLI
+
+The package ships the `meteo` binary in the platform grammar
+(`meteo <capability> <command>`):
+
+```sh
+pnpm add @azohra/meteo.forecast
+pnpm exec meteo forecast build --model hrrr-conus --sites ./club-sites.json --output ./public/data --dry-run
+pnpm exec meteo forecast terrain --sites ./club-sites.json
+pnpm exec meteo forecast migrate --model gfs   # dry-run by default
+```
+
+From a workspace checkout, the same commands run as
+`node forecast/dist/cli.js forecast ...` after `pnpm --dir forecast build`.
+
+## Deliberately not ported
+
+- `repack.py` — the one-time year-file→month-file history repack already
+  ran in production; its output is the published dataset itself, so the
+  code had nothing left to do and died with `python/`. Its TTL
+  arithmetic survives in [`src/migrate.ts`](src/migrate.ts), its only
+  TypeScript consumer. (`migrate.py` was originally on this list for the
+  same reason, but the decision was reversed: the cutover machinery —
+  probe, migrate, verify against the published contract, race-check,
+  upload — is what any future wire version will need again, so it is
+  ported with the document map as the pluggable part.)
+
+- `rangedfile.py` — the block-cached seekable HTTP file existed to serve
+  h5py's C callbacks; the TypeScript GOES reader reads whole granules,
+  so the module has no consumer here. The posture and the one rule that
+  survives are recorded in
+  [Provider transports](docs/provider-transports.md).

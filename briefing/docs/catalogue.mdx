@@ -1,0 +1,105 @@
+---
+title: Model catalogue
+description: Discover models and render their declared capabilities from the catalogue.
+---
+
+`models.json` is the machine-readable declaration of which models exist
+in the dataset; provider evidence lives in the dated
+[forecast feed reference](/docs/forecast/forecast-model-feeds/).
+
+## On the wire
+
+| Fact | Value |
+| --- | --- |
+| **Published at** | `models.json` at the dataset root, beside `sites.json` and `site-context.json` |
+| **Parse** | `parseModelCatalogueJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
+| **Zod authority** | `modelCatalogueSchema` |
+| **JSON Schema** | [`models.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/models.schema.json) |
+| **Discovery** | this document *is* discovery — `models`, plus the optional `smokeModels` and `observationModels` arrays |
+
+## Entry structure
+
+| Group | Fields | Consumer use |
+| --- | --- | --- |
+| Identity | `slug`, `label`, `provider` | Path identity and reader-facing label |
+| Schedule | `stepHours`, `horizonHours`, `runIntervalHours`, `typicalPublicationLagHours` | Time sampling, horizon, publication cadence, and the upper end of normal publish lag |
+| Grid | `gridKm` | Declared horizontal resolution |
+| Lifecycle | `experimental`, optional `sunset` | Availability context and machine-readable retirement |
+| Kind | `deterministic` or `ensemble` | Document interpretation without a named-model branch |
+| Capabilities | levels, omega provenance, heat fluxes, gust/precipitation semantics, smoke coupling, convection, PBL and cloud fields | Declared feature presence and labels |
+
+`stepHours` declares the finest published step, not a whole-horizon promise: NAM drops from hourly
+to three-hourly output after 36 hours and GEPS from three-hourly to six-hourly after 192 hours. The
+dated [forecast feed reference](/docs/forecast/forecast-model-feeds/) records each model's full
+cadence.
+
+`typicalPublicationLagHours` is the upper end of normal for *this dataset's*
+publish of a run after its `referenceTime` — the provider's
+complete-availability time plus publisher overhead, rounded up. It is a fact,
+not a policy: judge a run's lateness against `runIntervalHours` plus it with
+[`runFreshness`](/docs/briefing/derive/#judge-run-freshness), whose
+current/delayed/stale thresholds stay consumer-owned. The values were seeded
+2026-08-10, drawing on the dated `[verified]` availability times the
+[forecast feed reference](/docs/forecast/forecast-model-feeds/) records, and
+are to be re-verified against the accumulated run archive around
+September 2026.
+
+## Discover models from the catalogue
+
+```ts title="read-models.ts"
+import { parseModelCatalogueJson } from "@azohra/meteo.briefing/contract";
+
+export function modelLabels(text: string): string[] {
+  const catalogue = parseModelCatalogueJson(text);
+  if (!catalogue) throw new Error("unsupported model catalogue");
+
+  return catalogue.models.map(
+    (model) => `${model.slug}: ${model.label} (${model.capabilities.gust})`,
+  );
+}
+```
+
+Non-profile datasets discover separately: the optional `smokeModels`
+array lists smoke-document models (RAQDPS today) with the same identity
+and cadence metadata but no profile capabilities. It is deliberately not
+part of `models` — a capabilities-less entry there would fail every
+already-deployed catalogue guard, while an unknown top-level key is
+stripped harmlessly. Absence of the array means the catalogue predates
+smoke documents; see the
+[smoke document reference](/docs/briefing/smoke-document/). The optional
+`observationModels` array follows the same compatibility logic for
+observation datasets (GOES-18 DSR and AOD today): identity, `gridKm`, and a
+`cadenceMinutes` freshness yardstick in place of run scheduling — see the
+[observation document reference](/docs/briefing/observation-document/).
+
+A new catalogue entry is not a package enum change.
+
+## Site context beside the catalogues
+
+`site-context.json` is the third catalogue-root file, published at the
+dataset root beside `models.json` and `sites.json`: static,
+machine-measured ground truth for every catalogued site — the launch
+`elevation` pick, terrain analysis, and land cover. The division of labour
+is deliberate: `sites.json` (schemaVersion 2) is **identity only** — slug,
+name, coordinates, timezone, published verbatim — and everything physical
+is measured from those coordinates by `meteo forecast terrain` and published
+here. Adding a site is authoring identity plus one terrain run, committed
+together — the [configure-launches guide](/docs/publish/configure-launches/)
+is the flow. Fetch the context once, guard it with `parseSiteContextJson`,
+and join its entries against `sites.json` by slug — it echoes no
+coordinates of its own. It has no cadence and no runs; it changes only
+when the site catalogue does. Its shape, sources, and licences live in the
+[site context reference](/docs/briefing/site-context-document/).
+
+## Absence and semantics are declarations
+
+Capability booleans state whether a family exists. Gust and precipitation go
+further by declaring meaning: readers must not label two different windows as
+the same measurement. Vertical velocity declares both provenance and the
+subset of levels that carries it.
+
+Render the declaration. Do not infer features from the provider, grid size,
+kind, slug, or another model in the same family. See
+[Model capabilities](/docs/forecast/model-capabilities/) for the reading
+consequences and [Choose models](/docs/models/choosing/) for task-oriented
+selection.

@@ -1,0 +1,153 @@
+---
+title: Load published documents
+description: Fetch published documents as consistent publications — pairs and whole site sets — with misses discriminated and staleness reported.
+---
+
+`@azohra/meteo.briefing/transport` fetches published documents correctly. Its problem is
+the torn read: a model's manifest and its site documents are separately cached
+static files, so around a publish, a pair fetched together can describe two
+different runs. `loadForecast()` performs the consistency check a consumer
+would otherwise have to hand-write; `loadSiteSet()` extends it to a whole
+set of sites.
+
+![A sequence diagram of the transport's reference-time skew dance. A publish refreshes the manifest cache entry before the profile cache entry, so a consumer fetching both receives a manifest from the 06Z run and a profile from the 00Z run. loadForecast compares the pair's reference times with runsConsistent, waits 1.5 seconds, refetches, and returns either a consistent pair, the freshest complete pair marked stale, or a discriminated DocumentMiss.](figures/torn-read.svg)
+
+## Load a manifest/profile pair
+
+```ts title="load-profile.ts"
+import { loadForecast, type LoadedForecast } from "@azohra/meteo.briefing/transport";
+
+export async function loadTestHill(): Promise<LoadedForecast | null> {
+  const result = await loadForecast({
+    fetch,
+    baseUrl: "https://meteo.azohra.com/data-sample",
+    modelSlug: "hrdps-continental",
+    siteSlug: "test-hill",
+  });
+
+  if ("miss" in result) {
+    // "absent" is routine: the model or site is not published here.
+    if (result.miss === "invalid") console.error(`contract break at ${result.url}`);
+    return null;
+  }
+  return result; // result.stale reports a pair still torn after the retry
+}
+```
+
+`loadForecast` fetches both documents, validates each with its contract guard,
+and compares them with `runsConsistent`. On disagreement it waits (1500 ms by
+default, configurable and injectable through `retry`) and refetches the pair
+once. It resolves to one of three shapes:
+
+- `{ manifest, profile, stale: false }` — a consistent pair; render it.
+- `{ manifest, profile, stale: true }` — the freshest complete pair seen,
+  still torn after the retry. A publish is in flight; render with a “still
+  syncing” note or fall back to a pair you cached earlier. Never mix the two
+  documents as if they were one forecast.
+- a `DocumentMiss` — nothing to render, with the reason discriminated.
+
+## One dance for every run-stamped kind
+
+`loadForecast` is the profile-typed face of `loadDocument`, which runs the
+same dance for any site document that carries the run stamp — `model` plus
+`run.referenceTime`, the exported `RunStampedDocument` interface. Its `guard`
+parameter types the site document (`parseSiteForecastJson`,
+`parseSmokeDocumentJson`, …); the manifest side of the pair is always guarded
+by the forecast-manifest guard, because one manifest shape anchors every
+forecast document kind. `loadSmoke` is the smoke-typed wrapper, with exactly
+the semantics above: skew dance, single retry, explicit `stale`, discriminated
+misses.
+
+## Load a site set as one publication
+
+Pair consistency does not compose: two pairs can each be internally
+consistent yet span two runs, so a consumer ingesting many sites needs a
+stronger anchor. `loadSiteSet({ fetch, baseUrl, modelSlug, siteSlugs, guard })`
+fetches the model's manifest **once** as the commit point, then every site
+document, and requires each document to carry that manifest's run. On a
+mid-publish mix it retries once, refetching the manifest and only the
+disagreeing documents. The result discriminates on `syncing`:
+
+- `{ syncing: false, referenceTime, manifest, documents, misses }` — one
+  coherent publication: every document in `documents` (site slug → document)
+  carries the manifest's run. Per-site misses stay discriminated in `misses`
+  and never poison the set. A coherent set may be the *previous*
+  publication — all-old is not syncing, it is the newest complete forecast
+  there is.
+- `{ syncing: true, runsSeen }` — the set still mixed runs after the retry: a
+  publish is mid-flight, and `runsSeen` lists the distinct reference times
+  observed. Ingest nothing; the next poll reads coherently.
+
+A manifest miss returns that `DocumentMiss` directly — the model not
+publishing at all is the root cause of every site missing. The store-and-serve
+loop around this verb is the [ingest recipe](/docs/briefing/run-an-ingest/).
+
+## Observations: one guarded fetch, no dance
+
+`loadObservation({ fetch, baseUrl, modelSlug, siteSlug })` fetches one site's
+observation document alone — no manifest, no retry option. That is a proof,
+not an omission. There is no pair invariant to defend: an observation
+document has no run — it is a self-contained rolling window of measured
+instants, its identity carried by its own `observed` block, and the
+observation manifest's `referenceTime` is the newest instant across *all* the
+dataset's sites (a max), so manifest-versus-document skew is the normal state
+for every site that is not the newest. The forecast-manifest guard cannot
+even parse an observation manifest, so a pair dance would report every load
+as invalid. And the worst case is harmless and un-retryable: at most one
+internally-consistent granule behind, timestamped by
+`observed.lastObservedAt`, healed by the next poll — a retry cannot beat the
+CDN's cache anyway. Misses discriminate absent/invalid exactly as below.
+
+## `absent` is routine; `invalid` is loud
+
+A `DocumentMiss` separates two situations that would otherwise present
+identically as “no chart”:
+
+| `miss` | Meaning | Treat it as |
+| --- | --- | --- |
+| `"absent"` | HTTP 404 — the model or site is not published at this root | Routine; a site outside a model's domain reads this way |
+| `"invalid"` | The document exists but failed its contract guard | Never routine — a contract break or prototype data; log the `url` loudly |
+
+Discriminate with `"miss" in result`. Any non-404 HTTP failure throws
+`TransportHttpError` (carrying `status` and `url`) instead of masking itself
+as absence. When both documents miss, the manifest's miss wins: a model not
+publishing at all is the root cause of its site documents missing too.
+
+## Check freshness with `loadRuns`
+
+`loadRuns({ fetch, baseUrl })` fetches `runs.json` from the data root, the cross-model run
+index — each published model's current `(referenceTime, generatedAt)`, keyed
+by slug. It is a single document, so there is no pair to tear; it exists so
+run discovery gets the same miss semantics as `loadForecast`. Judge its
+entries with [`runFreshness`](/docs/briefing/derive/#judge-run-freshness)
+from `@azohra/meteo.briefing/derive`: the facts are the catalogue's `runIntervalHours` and
+`typicalPublicationLagHours`; the current/delayed/stale boundaries are yours.
+
+The pure pair check is exported too: `runsConsistent(manifest, profile)` is
+true exactly when both documents name the same model and run — useful when
+documents arrive through your own storage rather than these loaders.
+
+## The caller owns fetch and storage
+
+`fetch` is a parameter, not an import. Pass the runtime's own WHATWG-shaped
+fetch — browser, Node, workers, undici, or a test stub — which keeps this
+module runtime-agnostic. The one other subpath that fetches,
+[`@azohra/meteo.briefing/history`](/docs/briefing/history/), follows the same manners
+(injected fetch, discriminated misses, `TransportHttpError` as the only
+throw) but is server-side by construction — its gzip reader needs
+`node:zlib`. Every remaining subpath of the package is I/O-free; the
+`station/*` subpaths are a separate capability with their own
+[client/server split](/docs/station/client-data/).
+
+The transport performs no caching and no storage writes, because no storage
+API is portable across runtimes. Cache keys, quotas, invalidation, and
+stale-pair policy belong to the consumer: the transport reports `stale`; what
+happens next is yours. `TransportResponse`, `TransportFetch`, `RetryOptions`,
+`RunStampedDocument`, `LoadDocumentOptions`/`LoadedDocument`,
+`LoadForecastOptions`/`LoadedForecast`, `LoadSmokeOptions`/`LoadedSmoke`,
+`LoadObservationOptions`, `LoadSiteSetOptions`/`LoadedSiteSet`, and
+`LoadRunsOptions` type those seams.
+
+Where these files come from and how they are deployed is the publisher's
+side of the story: [Publish static output](/docs/publish/static-output/) and
+[Downstream access](/docs/publish/downstream-access/).

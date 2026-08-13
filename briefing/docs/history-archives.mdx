@@ -1,0 +1,118 @@
+---
+title: History archives
+description: Consume append-only monthly gzip archives of published profiles and observations.
+---
+
+Every dataset whose operator publishes with the default `--history`
+flag — the **static history profile** — archives what it publishes to
+monthly gzip archives at one path shape:
+
+```text
+<model>/history/<site>/<YYYY-MM>.jsonl.gz
+```
+
+The path shape is shared; **the line grammar is not**. Profile history
+archives whole documents per run; observation history archives single
+observation objects per instant. Know which kind of dataset an archive
+belongs to before reading it — a line from one grammar does not parse as
+the other. This page is the archive format;
+[`@azohra/meteo.briefing/history`](/docs/briefing/history/) is the API that
+reads these archives.
+
+History is the operator's flag: `meteo forecast build --no-history`
+publishes current documents only, and an archive simply does not exist
+for that deployment. Absence of an archive is a publication choice,
+never data loss.
+
+## Profile history — one document per line
+
+Each successful new run appends the complete site profile as one line.
+The month comes from `run.referenceTime`. Each line is the same profile
+document accepted by `parseSiteForecast`; the archive has no reduced
+history-only shape.
+
+## Storage properties
+
+- One JSON line represents one model run for one site.
+- Appends are independent gzip members, so existing archive bytes do not need
+  to be rewritten.
+- Archives retain the run, site, semantics, hours, and derived values as
+  published at that time.
+- Current catalogue values do not retroactively reinterpret an archived
+  profile.
+- A corrected re-publication **appends** a new line for the same
+  `run.referenceTime` with a later `run.generatedAt` — it never rewrites
+  the earlier line. A republication is a fact the archive states; readers
+  dedupe by `referenceTime`, keeping the latest `generatedAt`.
+
+## The sidecar index
+
+Every archive publishes an advisory byte-offset index beside it:
+
+```text
+<model>/history/<site>/<YYYY-MM>.index.json
+```
+
+One entry per gzip member, in archive order: `byteOffset`, `byteLength`,
+`lines`, and the member's identity — `referenceTime` and `generatedAt`
+for a profile run, `firstObservedAt` / `lastObservedAt` for an
+observation batch. With it, a reader wanting "runs since T" or "the last
+N runs" Range-fetches only the members it needs instead of the whole
+month — provided the storage the operator publishes to serves `Range`
+requests, which object stores and CDNs commonly do; verify yours does
+before building a reader on it.
+
+The index is recomputed from the archive bytes after every append — a
+pure function of the file — and it is **advisory, never authoritative**:
+a missing, stale, or unparsable index degrades a reader to the
+full-archive fetch, silently correct. Because the archives are
+append-only, fetching from a member offset to end-of-file can never miss
+a member the index had not yet seen.
+
+## Observation history — one observation per line
+
+The [observation datasets](/docs/briefing/observation-document/)
+(`goes18-dsr`, `goes18-aod`) use the same path shape and the same
+independent-gzip-member appends, but each line is a **single observation
+object** — `{"observedAt": …, "downwardShortwaveWm2": …}` or
+`{"observedAt": …, "aot": …}` — not an observation document, and
+`parseObservationDocument` does not accept a line.
+
+The grammar differs because the publish cadence does: a profile is
+published once per run, but an observation document is a rolling window
+rebuilt every ~15 minutes, so archiving whole documents would store each
+instant roughly 290 times over. Instead each instant is archived exactly
+once — when it first enters the window — under the month of its own
+`observedAt`, so an instant near a month boundary lands in its own
+month, not the build's.
+
+The provider's bucket remains the deep archive of raw granules; this
+archive is the curated per-site record of exactly what was published —
+gate, rounding, and absences included.
+
+## Read for analysis
+
+```sh title="Terminal"
+curl -sS https://meteo.azohra.com/data-sample/hrdps-continental/history/test-hill/2026-08.jsonl.gz \
+  | gzip -cd | jq -r '.run.referenceTime'
+```
+
+For an observation archive, the same pipeline works with `.observedAt` —
+each line is one measured instant, not one run.
+
+Use an equivalent gzip reader when `gzip` or `jq` is unavailable — but
+know that the archives are **multi-member** gzip: command-line `gzip`
+handles concatenated members, while WHATWG
+`DecompressionStream("gzip")` does not (the runtimes disagree on *how*
+it fails, which is worse). TypeScript consumers should read archives
+through the [`@azohra/meteo.briefing/history` loaders](/docs/briefing/history/),
+which split members correctly, dedupe republished runs
+keep-latest-`generatedAt`, and use the sidecar index for since-narrowed
+Range reads. Applications should stream lines rather than inflate an
+entire long archive into memory.
+
+History supports reproducible analysis, calibration audits, and downstream
+archives. Archived output can also calibrate scenario-profile ranges offline.
+
+Publishers choose retention, indexing, query APIs, and access control outside
+the profile schema.

@@ -1,0 +1,102 @@
+---
+/* Start building: install, then a complete first read against the hosted
+   sample run. The fence's launch elevation is the sample's own
+   site-context pick, read from the committed document rather than typed
+   in. */
+import siteContext from "../../../public/data-sample/site-context.json";
+import { fail } from "./exhibit";
+
+const contextSites = siteContext.sites as Record<
+  string,
+  { elevation?: { elevationM?: number } } | undefined
+>;
+const launchElevationM =
+  contextSites["test-hill"]?.elevation?.elevationM ??
+  fail("site-context.json no longer states a test-hill elevation");
+
+const installCode = "pnpm add @azohra/meteo.briefing";
+const readCode = `import { loadForecast } from "@azohra/meteo.briefing/transport";
+import { analyzeForecast } from "@azohra/meteo.briefing/analyze";
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+
+const loaded = await loadForecast({
+  fetch,
+  baseUrl: "https://meteo.azohra.com/data-sample",
+  modelSlug: "hrdps-continental",
+  siteSlug: "test-hill",
+});
+if ("miss" in loaded) throw new Error(\`no forecast: \${loaded.miss}\`);
+
+const { findings } = analyzeForecast(loaded.profile, {
+  launch: { elevationM: ${launchElevationM} }, // site-context.json's elevation pick
+});
+const svg = renderMeteogramSvg(
+  buildMeteogramScene(loaded.profile, { timeZone: "America/Vancouver" }),
+);`;
+---
+
+<section class="bf-surfaces" aria-labelledby="briefing-surfaces-title">
+  <div class="bf-surfaces-inner section-inner">
+    <h2 id="briefing-surfaces-title">Start building</h2>
+    <p class="bf-section-lede">
+      Install it, point it at a forecast URL, and you have findings and a
+      chart. This example runs against a sample forecast hosted by this
+      site, so it works as pasted:
+    </p>
+    <pre class="bf-code" tabindex="0"><code>{installCode}</code></pre>
+    <pre class="bf-code" tabindex="0"><code>{readCode}</code></pre>
+    <p class="bf-surfaces-docs">
+      Each capability is its own subpath — <code>contract</code>,{" "}
+      <code>transport</code>, <code>derive</code>, <code>analyze</code>,{" "}
+      <code>compare</code>, <code>history</code>, <code>meteogram</code> —
+      and each has its own page in
+      the <a href="/docs/briefing/">briefing documentation</a>.
+    </p>
+  </div>
+</section>
+
+<style>
+  .bf-surfaces-inner {
+    padding-block: clamp(2.5rem, 5vw, 4rem) 0;
+  }
+
+  .bf-surfaces h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .bf-code {
+    max-width: 52rem;
+    margin: 1.2rem 0 0;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius);
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    overflow-x: auto;
+  }
+
+  .bf-code code {
+    font: 0.8rem/1.55 var(--mono);
+    color: var(--term-ink);
+  }
+
+  .bf-surfaces-docs {
+    max-width: 46rem;
+    margin: 1.4rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--ink-mute);
+  }
+
+  .bf-surfaces-docs code {
+    font-size: 0.92em;
+  }
+</style>

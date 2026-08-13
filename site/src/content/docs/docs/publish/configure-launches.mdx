@@ -1,0 +1,94 @@
+---
+title: Configure launches
+description: Define the launch catalogue the engine builds forecasts for.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Every builder reads the same site catalogue. Pass its path with `--sites`;
+the CLI resolves it to an absolute path for that dispatch, so the file lives
+wherever your project keeps it.
+
+## Catalogue shape
+
+Since schemaVersion 2 the catalogue is **identity and build selection
+only** — humans author WHERE, and nothing physical. The forecast engine measures
+elevation, terrain, and land cover at those coordinates and publishes them
+in [`site-context.json`](/docs/briefing/site-context-document/).
+
+```json title="sites.json"
+{
+  "schemaVersion": 2,
+  "sites": [
+    {
+      "slug": "test-hill",
+      "name": "Test Hill",
+      "latitude": 49.0,
+      "longitude": -117.0,
+      "timeZone": "America/Vancouver"
+    }
+  ]
+}
+```
+
+The catalogue must satisfy `sitesCatalogueSchema` from `@azohra/meteo.briefing/contract` or
+the generated `briefing/schema/sites.schema.json` artifact, and is published
+to the dataset root **verbatim**.
+
+| Field | Meaning |
+| --- | --- |
+| `schemaVersion` | Site-catalogue contract version; `2` |
+| `slug` | Stable lowercase, hyphenated identity used in output paths |
+| `name` | Reader-facing launch name |
+| `latitude`, `longitude` | Decimal degrees |
+| `timeZone` | IANA timezone used to read local days and clock times |
+
+<Aside type="note" title="No elevation of any kind lives here">
+  v1 carried a hand-typed `elevationM`; the forecast engine now rejects any file
+  that includes it (or any other unknown field) with a pointer to the
+  measured replacement. The launch elevation is `site-context.json`'s
+  `elevation` pick, measured from ground observations at the catalogued
+  coordinates; each profile records the sampled grid terrain separately as
+  `site.modelElevationM`.
+</Aside>
+
+## Add a site safely
+
+<Steps>
+
+1. Choose a stable slug. Renaming it changes every profile and history path.
+2. Record coordinates from an appropriate source for your launches. Do not
+   record elevation anywhere — the engine measures it in the next step.
+3. Declare the launch's IANA timezone. Local time changes day windows and the
+   meaning of timing findings, so builders echo this value into each profile
+   as `site.timeZone`; do not infer it from longitude in presentation code.
+4. Run the one-shot terrain measurement and commit `site-context.json`
+   together with the catalogue change, so the published elevation, terrain,
+   and land-cover context stays joined to the sites it describes:
+
+   ```sh title="Terminal"
+   pnpm exec meteo forecast terrain --sites ./sites.json --output ./site-context.json
+   ```
+
+   The geospatial stack loads only when this command runs — a scheduled
+   `forecast build` never pays for it. The command reads the `--sites`
+   catalogue and rewrites the `--output` site-context file. Its shape,
+   the elevation-pick priority, and its sources are in the
+   [site context reference](/docs/briefing/site-context-document/).
+
+5. Validate the whole file without fetching provider data:
+
+   ```sh title="Terminal"
+   pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
+   ```
+
+6. Run the chosen model. If any configured site falls outside that model's
+   sampling guard, the build fails with an out-of-grid error rather than
+   publishing a clamped boundary value. Use a site catalogue appropriate to
+   the selected model domain.
+
+</Steps>
+
+The catalogue chooses sampling locations and their local clocks. It does not
+choose audience, launch suitability, display windows, or access policy. Those
+belong to the downstream publisher.

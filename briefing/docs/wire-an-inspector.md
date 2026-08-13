@@ -1,0 +1,162 @@
+---
+title: Wire an inspector
+description: Connect pointer, keyboard, and pinned selections to the scene's pure queries — the recipe for the state the package deliberately does not ship.
+---
+
+An inspector — the readout that follows a pointer, pins on a click, and
+steps with the arrow keys — is two different kinds of code. The geometry
+questions ("which hour is under this pixel", "which drawn barb is nearest",
+"where does this instant fall") are pure functions of the scene, and the
+package answers every one of them. The state between events — preview
+versus pin, what a touch does, what survives a model switch — is a small
+machine whose shape belongs to the consumer and its framework. The first
+production consumer's machine is two-dimensional, never empty, and
+keyboard-driven; a second consumer's will differ. This page is the recipe
+for wiring one, not a module to import.
+
+![A rendered Meteogram whose build received a consumer selection. The serializer drew the tinted selection column with its centre hairline, and a ring on the drawn wind barb the requested altitude snapped to. The scene's own computed best-hour highlight is visible on a different column.](figures/inspector-selection.svg)
+
+## From pointer to selection
+
+Every consumer needs the same three-step pipeline: client pixels into scene
+coordinates, an hour column, and a snap to something actually drawn. All
+three are package queries, so the whole resolver is a dozen lines with no
+renderer facts in it:
+
+```ts title="selection-at-point.ts"
+import type { MountRect, MeteogramScene } from "@azohra/meteo.briefing/meteogram";
+import { clientPointToScene, hourIndexForX, nearestDrawnBarb } from "@azohra/meteo.briefing/meteogram";
+
+/** Keyed by validAt, not index — see "Carry or reset" below. */
+export interface InspectorSelection {
+  validAt: string;
+  altitudeM: number | null;
+}
+
+export function selectionAtPoint(
+  scene: MeteogramScene,
+  rect: MountRect,
+  clientX: number,
+  clientY: number,
+): InspectorSelection | null {
+  const point = clientPointToScene(scene, rect, clientX, clientY);
+  if (point === null) return null; // zero-area rect: a hidden tab
+  const hourIndex = hourIndexForX(scene, point.x, { clamp: true });
+  if (hourIndex === null) return null; // empty scene
+  const { plotTop, plotHeight } = scene.scales;
+  const inPlot = point.y >= plotTop && point.y <= plotTop + plotHeight;
+  const barb = inPlot ? nearestDrawnBarb(scene, hourIndex, point.y) : null;
+  return {
+    validAt: scene.hourValidAts[hourIndex],
+    altitudeM: barb === null ? null : barb.altitudeM,
+  };
+}
+```
+
+Three decisions in that code are worth making deliberately. The `clamp`
+means the strips and margins still select an hour — a pointer over the
+pressure strip is asking about that hour, not about nothing. The snap goes
+to *drawn* barbs: `nearestDrawnBarb` already knows about the barb stride,
+the min-gap thinning, and the surface row's lifted position
+(`scales.surfaceWindY`), so the selection ring can never circle a glyph
+that is not there. And above or below the plot the selection degrades to
+the hour alone rather than inventing an altitude.
+
+For continuous readouts — temperature, wind, lapse rate at the exact
+cursor altitude — call `cursorReading(scene, point.x, point.y)` with the
+same converted point. The interpolated reading and the discrete snap
+answer different questions; inspectors usually want both.
+
+## Preview, pin, touch
+
+![A three-state diagram: Resting, Previewing, and Pinned. Pointer movement with a non-touch pointer previews; leaving the chart clears the preview; a click or tap pins from any state; clicking the pinned target again, or Escape, unpins; a model or day swap exits the machine entirely, where the consumer chooses reset or carry.](figures/pointer-states.svg)
+
+The machine has three states and a policy per edge. Hover previews only
+for pointers that can hover: `pointerType === "touch"` skips straight to
+the pin, because a finger that must touch the chart to point at it should
+not fight a phantom hover state. Leaving the chart clears a preview but
+never a pin. Clicking the already-pinned target unpins; clicking anywhere
+else re-pins. Escape unpins. Written as a reducer it is a handful of
+cases over `{ selection, preview, pinned }` — small enough that owning it
+outright costs less than adapting a shipped one to your framework's
+rendering model, which is why it ships here as a recipe and not as code.
+
+The worked example behind this page makes three further choices a second
+consumer might make differently, all consumer policy, none scene facts:
+its selection is never empty (it initializes to the first hour at the
+site's altitude, so the inspector always reads a real place in the
+forecast); unpinning requires clicking the same hour *and* level, so a
+click at a different altitude re-pins instead; and the arrow keys form a
+second input axis — left and right step hours, up and down walk the drawn
+ladder from `drawnBarbsForHour`, with the readout's `aria-live` enabled
+only while pinned so hover motion never spams a screen reader.
+
+## Render the pin through the scene
+
+A pinned selection is worth a rebuild: pass it as the `selection` option
+and the reference serializer draws the column, hairline, and barb ring
+from the same scales as everything else — the figure above is exactly that
+output. Pixels and readout cannot disagree, and the marks retheme with one
+token (`--meteo-gram-selection`).
+
+```ts title="render-pinned.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
+
+export function renderPinned(
+  profile: SiteForecast,
+  timeZone: string,
+  selection: { hourIndex: number; altitudeM?: number | null },
+): string {
+  const scene = buildMeteogramScene(profile, { timeZone, selection });
+  return renderMeteogramSvg(scene, { idPrefix: "club-main" });
+}
+```
+
+Pins change on clicks and key presses, so rebuilding on each is cheap.
+Hover previews fire per pointer event; if a rebuild per move measures too
+hot on your target hardware, draw the preview as a consumer overlay and
+reserve the scene option for the pin. Position the overlay with
+`resolveSelection(scene, { hourIndex, altitudeM })` — the same function
+`buildMeteogramScene` runs for its `selection` option — so the preview and the
+serializer-drawn pin resolve through one implementation and cannot
+disagree about where the selection is.
+
+## Carry or reset across a swap
+
+Hour windows renumber. The same afternoon hour is index 9 on one model's
+window and index 3 on another's, so an index-keyed pin silently moves when
+the consumer swaps models or days. Key stored selections by `validAt` and
+re-resolve against every freshly built scene:
+
+```ts title="carry-selection.ts"
+import type { MeteogramScene } from "@azohra/meteo.briefing/meteogram";
+import { hourIndexForValidAt } from "@azohra/meteo.briefing/meteogram";
+
+export function carrySelection(
+  scene: MeteogramScene,
+  stored: { validAt: string; altitudeM: number | null },
+): { hourIndex: number; altitudeM: number | null } | null {
+  const hourIndex = hourIndexForValidAt(scene, stored.validAt);
+  if (hourIndex === null) return null; // the hour left the window
+  return { hourIndex, altitudeM: stored.altitudeM };
+}
+```
+
+Whether to carry at all is a product decision, not a correctness one. The
+worked example deliberately resets its pin on every model and day switch
+and carries only overlay toggles — a pilot who turned on the thermal
+index is asking a question of the day, and the answer should survive the
+switch; a pin on 2 p.m. may not deserve to. If you do carry, carry by
+`validAt` as above, and decide explicitly what a `null` answer means for
+your inspector: fall back to the initial selection, or the nearest
+rendered hour.
+
+## Time cursors
+
+For marks that live between columns — a "now" line, sunrise and sunset
+ticks — `xForTime(scene, instant)` interpolates between hour centres and
+is null outside the rendered window; `xForTime(scene, instant, { clamp:
+true })` pins it to the frame edge instead, which is what a shading band
+that starts before the window wants. `xForHour` stays the right call for
+anything that names a whole column.

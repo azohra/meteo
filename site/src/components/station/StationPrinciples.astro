@@ -1,0 +1,70 @@
+---
+/* The doctrine rail: the station capability's four maxims, displayed as
+   product copy — station/docs/index.md carries them in full. */
+---
+
+<section class="station-principles" aria-label="Principles">
+  <div class="station-principles-inner section-inner">
+    <span class="station-principles-label">Principles</span>
+    <ul class="station-maxims">
+      <li><strong>Capabilities are declared, never inferred.</strong> Absence stays absent.</li>
+      <li><strong>Degrade, don&rsquo;t lie.</strong> An outage renders with a reason, not stale numbers.</li>
+      <li><strong>No prose on the wire.</strong> Codes and degrees travel; words and colours are yours.</li>
+      <li><strong>Your thresholds, your palette.</strong> Banding follows your limits and your tokens.</li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* ---- zone two: the doctrine rail ----
+     The four maxims as one horizontal plate on the page ground between the
+     hero band and the toolbar — hairline dividers, no accent. */
+  .station-principles-inner {
+    display: grid;
+    grid-template-columns: max-content repeat(4, minmax(0, 1fr));
+    gap: clamp(1.1rem, 2.5vw, 1.75rem);
+    align-items: center;
+    padding-block: clamp(1.6rem, 3.5vw, 2.4rem);
+  }
+  .station-principles-label {
+    font: 600 0.66rem/1.6 var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .station-maxims {
+    display: contents;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .station-maxims li {
+    align-self: stretch;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--ink-mute);
+    padding-left: clamp(1.1rem, 2.5vw, 1.75rem);
+    border-left: 1px solid var(--rule);
+  }
+  .station-maxims strong { color: var(--ink); display: block; }
+
+  @media (max-width: 1000px) {
+    .station-principles-inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      row-gap: 1.25rem;
+      align-items: start;
+    }
+    .station-principles-label { grid-column: 1 / -1; }
+    .station-maxims li:nth-child(odd) {
+      border-left: none;
+      padding-left: 0;
+    }
+  }
+  @media (max-width: 520px) {
+    .station-principles-inner { grid-template-columns: 1fr; row-gap: 1rem; }
+    .station-maxims li {
+      border-left: none;
+      padding-left: 0;
+    }
+  }
+</style>

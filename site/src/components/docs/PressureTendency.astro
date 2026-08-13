@@ -1,0 +1,103 @@
+---
+import Figure from "../figure/Figure.astro";
+import SyntheticMeteogram from "../meteogram/SyntheticMeteogram.astro";
+import MeteogramAnnotations from "../meteogram/MeteogramAnnotations.astro";
+import {
+  onlyOverlays,
+  renderSyntheticMeteogram,
+} from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const scenario = scenarioById("front-arrival");
+const idPrefix = "pressure-front-arrival";
+const overlays = onlyOverlays(
+  "pressure",
+  "precipitation",
+  "clouds",
+  "wind",
+  "gusts",
+  "launch",
+  "selectedHour",
+);
+const { scene } = renderSyntheticMeteogram(
+  scenario,
+  { overlays, columnWidthPx: 75, plotHeightPx: 340 },
+  idPrefix,
+);
+---
+
+<Figure
+  id="pressure-tendency"
+  title="Pressure tendency is one clue in a sequence"
+  lesson={scenario.lesson}
+  description={scenario.accessibilityDescription}
+  caption="Point pressure falls ahead of thickening cloud, stronger wind, and precipitation. Its G values are instantaneous gust diagnostics, as declared by the profile—not hour maxima. The trace is not a spatial pressure-gradient map."
+  units="pressure kPa · instant precipitation rate mm/h · cloud % · wind and instantaneous gust km/h · altitude m and ft"
+  {scenario}
+>
+  <MeteogramAnnotations {scenario} {scene} mode="pressure" />
+  <SyntheticMeteogram
+    {scenario}
+    {idPrefix}
+    {overlays}
+    columnWidthPx={75}
+    plotHeightPx={340}
+    scrollLabel="Scrollable frontal sequence with pressure, cloud, wind, and precipitation"
+  />
+
+  <dl class="tendency-meanings" slot="legend" aria-label="Pressure-tendency reading limits">
+    <div>
+      <dt><span aria-hidden="true">↘</span> Falling</dt>
+      <dd>Can accompany an approaching low, trough, or front; companion fields establish the sequence.</dd>
+    </div>
+    <div>
+      <dt><span aria-hidden="true">↗</span> Rising</dt>
+      <dd>Can follow a system or mark a building ridge; it does not guarantee useful mixing.</dd>
+    </div>
+    <div>
+      <dt><span aria-hidden="true">→</span> Flat</dt>
+      <dd>Reports little pressure evolution at that point, not a weak spatial gradient.</dd>
+    </div>
+  </dl>
+</Figure>
+
+<style>
+  .tendency-meanings {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem 1.5rem;
+    margin: 0;
+  }
+
+  .tendency-meanings div {
+    padding-block-start: 0.5rem;
+    border-block-start: 2px solid var(--rule-strong);
+  }
+
+  dt,
+  dd {
+    margin: 0;
+  }
+
+  dt {
+    color: var(--ink);
+    font: 700 0.75rem/1.4 var(--mono);
+  }
+
+  dt span {
+    color: var(--chart-pressure);
+  }
+
+  dd {
+    margin-block-start: 0.25rem;
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 44rem) {
+    .tendency-meanings {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

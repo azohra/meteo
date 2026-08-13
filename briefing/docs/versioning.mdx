@@ -1,0 +1,238 @@
+---
+title: Data and package versioning
+description: The independent dataset and npm package versions, their compatibility rules, and the files that own them.
+---
+
+import { Aside } from '../../site/src/components/docs/starlight';
+import { SCHEMA_VERSION, SITE_FORECAST_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
+import { BRIEFING_PACKAGE_VERSION } from '../../site/src/components/docs/package-info';
+
+meteo by Azohra has two public version axes. They describe different boundaries and
+do not advance in lockstep. The package value in this table is imported
+from its authority when the site builds, so it cannot go stale here.
+
+| Axis | Current value | Authority | What it versions |
+| --- | ---: | --- | --- |
+| Site-forecast schema | <code>{SITE_FORECAST_SCHEMA_VERSION}</code> | `SITE_FORECAST_SCHEMA_VERSION` and the zod contract in `briefing/src/contract.ts` | Site-forecast and history documents (wire v2: the `Mps` suffix grammar and `seaLevelPressureHpa`) |
+| Other document schemas | <code>{SCHEMA_VERSION}</code> | `SCHEMA_VERSION` in the same contract | Manifests, smoke, observation, and run-index documents, unchanged by wire v2; the site catalogue and site context carry their own `schemaVersion: 2` (`SITES_SCHEMA_VERSION`, `SITE_CONTEXT_SCHEMA_VERSION`) |
+| `@azohra/meteo.briefing` npm package | <code>{BRIEFING_PACKAGE_VERSION}</code> | `briefing/package.json` | Contract guards, derivations, single-profile analysis, cross-model comparison, transport, history loaders and run comparison, scene graph, SVG renderer, tokens, and scene-derived key |
+
+Every platform package carries its own version; `@azohra/meteo.briefing` is the
+axis this page tracks because it owns the wire's read side. The
+forecast engine's boundary is [what it publishes](#forecast-compatibility)
+plus its documented CLI, not its internal modules.
+
+The scenario-definition contract also carries `schemaVersion: 1`. That
+internal authoring format belongs to `scenarios/scenario.schema.json` and is
+independent of the published dataset schema.
+
+<Aside type="caution" title="Do not compare the numbers">
+  An npm `0.x` release does not mean profile schema `0.x`, and the
+  package version never names the schema. A consumer checks the document's
+  `schemaVersion` with the parser from the package version it has chosen.
+</Aside>
+
+## Published document compatibility
+
+Current site-forecast and history documents use `schemaVersion: 2` (wire
+v2); manifests, the model catalogue, smoke and observation documents, and
+the run index stay at `schemaVersion: 1`, their shapes untouched by the
+vocabulary change. `sites.json` and `site-context.json` use
+`schemaVersion: 2` since the launch-decoupling wave. Stored v1 forecast
+documents migrate mechanically — `forecast/src/migrate.ts`, behind
+`meteo forecast migrate`, is the executable map. The generated JSON Schemas under
+each capability package's `schema/` directory describe the inputs accepted by the released
+package (npm <code>{BRIEFING_PACKAGE_VERSION}</code>); the zod schemas and
+their parse guards are the behavioural authority.
+
+From the 0.3 contract onward, compatibility follows these rules:
+
+- adding an optional field, enum-independent metadata, or a new model catalogue
+  entry can remain schema 1;
+- absence of an optional capability field means **not published**, never zero;
+- changing a stored profile or manifest field's unit or meaning, removing or
+  renaming one, changing its required shape, or making an optional field
+  required needs a schema-version change and explicit migration handling;
+- catalogue guards may become stricter at a documented pre-1.0 npm minor
+  boundary only when the released package names the rejected older shape and
+  the repository publishes the matching catalogue in the same tagged state;
+- readers should tolerate unknown additive keys but must reject an unsupported
+  `schemaVersion`;
+- model identity is an open slug from `models.json`, not a package enum;
+  adding a model is not a schema break; and
+- stored documents retain their own run, site, optional semantics, and optional
+  timezone echo. Consumers do not reinterpret old files using later catalogue
+  values.
+
+Version 1 had three compatibility boundaries during its lifetime, all from
+the Windgram era (npm `windgram`, whose releases remain in the
+[`azohra/meteo.forecast` archive](https://github.com/azohra/meteo.forecast)'s
+changelog). They
+are history, not present-tense guarantees: the current parser rejects every
+`schemaVersion: 1` profile by its version literal, and stored v1 documents
+reach v2 through the forecast engine's `meteo forecast migrate`. The
+boundaries were:
+
+- npm 0.3.0 accepted pre-0.3 profiles because `semantics` and ensemble
+  `run.members` remained optional, but rejected the old unversioned
+  bare-array `sites.json` and model catalogues that lacked
+  `runIntervalHours` or precipitation semantics;
+- npm 0.4.0 still accepted pre-0.4 profiles because profile `site.timeZone`
+  was optional, but rejected site catalogues whose entries lacked the
+  now-required IANA `timeZone`. The [profile reference](/docs/briefing/profile-document/#run-site-and-semantics)
+  defines the timezone echo's semantics; and
+- the launch-decoupling wave removed `site.altitudeM` from the profile
+  contract while keeping `schemaVersion: 1` — a deliberate, documented
+  exception to the removal rule above, taken while this repository was the
+  contract's only consumer. The launch elevation now lives in
+  `site-context.json`'s `elevation` pick and is supplied at render time.
+  The same wave replaced `sites.json` with the identity-only
+  `schemaVersion: 2` (v1 is rejected by its version literal) and advanced
+  `site-context.json` to `schemaVersion: 2`.
+
+The published catalogues changed in the matching `v0.3.0` and `v0.4.0`
+repository states. Therefore `schemaVersion: 1` identifies the document
+family; the selected npm package is the exact executable compatibility test.
+
+Use the raw-text guards at every storage or network boundary:
+
+```ts title="validate-profile.ts"
+import { parseSiteForecastJson } from "@azohra/meteo.briefing/contract";
+
+export function requireProfile(text: string) {
+  const profile = parseSiteForecastJson(text);
+  if (!profile) throw new Error("unsupported or invalid profile");
+  return profile;
+}
+```
+
+Do not patch a rejected document in presentation code. Upgrade the publisher,
+choose a compatible package, or perform a named migration before validation.
+
+## npm package compatibility
+
+The npm package follows semantic-versioning intent. While the package remains
+below 1.0:
+
+- patch releases in one minor line are intended to be backwards-compatible
+  corrections;
+- a minor release may change a public TypeScript or JavaScript API and must
+  describe that change in the changelog and the TypeScript docs; and
+- a deprecation names the replacement and the release boundary at which the
+  old export may disappear.
+
+Package version does not govern the provider catalogue or force a dataset
+schema bump. For example, adding a pure derivation can advance the package
+without changing stored JSON. Conversely, adding a model entry can change the
+catalogue without changing package code.
+
+Consumers should pin an npm range appropriate to their tolerance, validate all
+external documents, and test deterministic and ensemble examples. Switch on
+the scalar value shape and declared capabilities, never a hard-coded model
+name.
+
+The current release (npm <code>{BRIEFING_PACKAGE_VERSION}</code>, the
+first under the `@azohra/meteo.briefing` name) publishes site-forecast documents
+at `schemaVersion: 2` and carries forward these Windgram-era post-0.6
+boundaries, with the surfaces named by their current `@azohra/meteo.briefing`
+subpaths:
+
+- 0.7 accepts full ensemble dropout (`members: 0` with null percentiles),
+  makes `p50()` return `number | null`, and advances the analyze vocabulary to
+  version 3 with horizon coverage and clipped-window edges;
+- 0.8 adds `@azohra/meteo.briefing/compare` and `COMPARE_VOCABULARY_VERSION` 1;
+- 0.9 distinguishes unopposed buoyancy from an unavailable B/S ratio,
+  documents the ratio's same-air-mass terrain assumption, and changes
+  `sampledFieldPaths` to accept ordered banding and emit interpolated
+  iso-band paths filled with the even-odd rule (the 0.10–0.20 line's other
+  changes live in the
+  [archive's changelog](https://github.com/azohra/meteo.forecast), which
+  marks 0.19.0 as retracted — do not use it);
+- 0.21 advances `ANALYZE_VOCABULARY_VERSION` to 4 (the `flyableWindow`
+  finding kind is renamed `thermalWindow`; six kinds are added and the
+  diurnal-artifact verdicts removed) and `COMPARE_VOCABULARY_VERSION` to 2
+  (a comparison member is a `(model, referenceTime)` run, and the
+  envelope's `analyses` record is re-keyed by the composite member key —
+  a documented breaking change); and
+- 0.22 rides under both vocabularies — no vocabulary event. The analysis
+  envelope becomes self-describing (`thresholds`, `deterministic`,
+  `coveredDays`); the extraction frame goes public (`AnalysisFrame`,
+  `ANALYSIS_FRAME_VERSION` 1, with the `extensions` door for third-party
+  extractors); `compareAnalyses` validates and compares cached envelopes;
+  and `@azohra/meteo.briefing/history` lands (the month-archive loaders and
+  `compareRuns`, with its own sibling
+  `RUN_COMPARISON_VOCABULARY_VERSION` 1). The release's one type-level
+  break: both `vocabularyVersion` fields widen from their literals to
+  `number` under the tolerant-reader convention — zero wire change.
+  The since-retired pipeline's 0.9.0 rode beside it, introducing the
+  advisory `<YYYY-MM>.index.json` byte-offset sidecar next to every
+  month archive — a publication the forecast engine's `meteo forecast build`
+  carries forward — and performing the one-time repack of the legacy
+  year archives into the month scheme.
+
+Treat each package release tag as an API and SVG snapshot boundary while
+validating each document's independent `schemaVersion`. The
+[scene guide](/docs/briefing/scene/) defines the current presentation
+options and scene fields; the [SVG guide](/docs/briefing/svg/) defines
+rendering, tokens, and the scene-derived key.
+
+Windgram-era npm 0.5.0 changed the default rendered height and added the scene-derived key,
+surface-temperature row, and presentation controls. It did not change the
+accepted profile shape or finding vocabulary.
+
+The Windgram-era 0.4.0 package added two contract surfaces without changing
+profile schema version:
+
+- `ANALYZE_VOCABULARY_VERSION` versions the closed set of typed finding kinds
+  emitted by `@azohra/meteo.briefing/analyze`; it began at `1` and is independent of the
+  published JSON `schemaVersion`; and
+- `@azohra/meteo.briefing/meteogram` no longer re-exports `msToKmh`. That compatibility export
+  was deprecated through v0.3 and removed at the documented v0.4 boundary;
+  import it from `@azohra/meteo.briefing/derive`.
+
+See [Analyze a profile](/docs/briefing/analyze/) for the finding vocabulary
+and [Compare model profiles](/docs/briefing/compare/) for the cross-document
+vocabulary. The [package changelog](https://github.com/azohra/meteo/blob/main/briefing/CHANGELOG.md)
+records release comparisons.
+
+## Forecast compatibility
+
+The forecast engine is the `@azohra/meteo.forecast` package (Node 20 or later),
+versioned and released like every other platform package. Its supported
+operational boundary is the documents it publishes and the documented
+CLI invocations (`pnpm exec meteo forecast ...`). Internal modules under
+`forecast/src/` are not a separately promised library API. The retired
+Python pipeline's PyPI releases (`windgram`; the planned `azohra-meteo`
+name retired unreleased) remain published history; no new versions
+appear under either name.
+
+A scientific change to a derived value that leaves the JSON shape untouched
+is a package release; a change to a
+stored field's unit, null meaning, or contract shape follows
+[published document compatibility](#published-document-compatibility).
+
+## Publication identity
+
+A published run is identified by the pair
+`(run.referenceTime, run.generatedAt)`. A later `generatedAt` for the same
+`referenceTime` is a corrected re-publication that consumers should re-ingest;
+it is not a schema or package release. `runs.json` at the data root is
+regenerated from manifests and exposes those pairs across the published models.
+
+Forecast archives contain the complete profile document as it was published.
+They do not inherit later catalogue or package metadata.
+
+## Releases
+
+Releases publish to [npmjs.com](https://www.npmjs.com/) under the
+`@azohra` scope, each one tagged `@azohra/<name>@x.y.z` and published by
+the maintainer under two-factor auth. No registry token exists, in the
+repository or anywhere else.
+
+Earlier JavaScript releases shipped under a retired name: versions
+through 0.22.1 were published to npmjs.com as `windgram`, and from
+0.10.0 also to JSR as `@azohra/windgram` in lockstep. Both registries
+are retired for new releases, their names deprecated with pointers here
+and kept parked; the published history remains where it is. The retired
+Python pipeline's PyPI `windgram` history is noted under
+[forecast compatibility](#forecast-compatibility).

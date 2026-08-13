@@ -1,0 +1,52 @@
+---
+import { DEFAULT_OVERLAYS } from "@azohra/meteo.briefing/meteogram";
+import Figure from "../figure/Figure.astro";
+import SyntheticMeteogram from "../meteogram/SyntheticMeteogram.astro";
+import MeteogramAnnotations from "../meteogram/MeteogramAnnotations.astro";
+import MeteogramKey from "../meteogram/MeteogramKey.astro";
+import MeteogramLayerControls from "../meteogram/MeteogramLayerControls.astro";
+import {
+  overlayAvailability,
+  renderSyntheticMeteogram,
+} from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+
+const scenario = scenarioById("convective-cycle");
+const idPrefix = "example-convective-cycle";
+const availability = overlayAvailability(scenario);
+const { scene } = renderSyntheticMeteogram(scenario, { overlays: {} }, idPrefix);
+---
+
+<Figure
+  id="example-meteogram"
+  title="Read one complete convective cycle"
+  lesson={scenario.lesson}
+  description={scenario.accessibilityDescription}
+  caption="A controlled, model-shaped profile. Toggle layers to isolate an encoding; unavailable controls declare fields this scenario intentionally omits."
+  units="altitude m and ft · wind km/h · temperature °C · pressure kPa · precipitation mm · w* m/s"
+  {scenario}
+  headingLevel="h2"
+>
+  <MeteogramLayerControls
+    slot="controls"
+    {availability}
+    overlays={DEFAULT_OVERLAYS}
+  />
+
+  <MeteogramAnnotations {scenario} {scene} mode="summary" />
+  <SyntheticMeteogram
+    {scenario}
+    {idPrefix}
+    interactive
+    overlays={DEFAULT_OVERLAYS}
+    columnWidthPx={78}
+    plotHeightPx={430}
+  />
+
+  <MeteogramKey
+    slot="legend"
+    {scene}
+    chartIdPrefix={idPrefix}
+    scrollLabel="Scrollable key for the complete Meteogram"
+  />
+</Figure>

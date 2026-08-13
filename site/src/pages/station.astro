@@ -1,0 +1,373 @@
+---
+import Base from "../layouts/Base.astro";
+import "@azohra/meteo.station/styles.css";
+import "../components/station/station.css";
+import StationHero from "../components/station/StationHero.astro";
+import StationPrinciples from "../components/station/StationPrinciples.astro";
+import StationToolbar from "../components/station/StationToolbar.astro";
+import AirSection from "../components/station/sections/AirSection.astro";
+import CardsSection from "../components/station/sections/CardsSection.astro";
+import ChartsSection from "../components/station/sections/ChartsSection.astro";
+import ExplicitSection from "../components/station/sections/ExplicitSection.astro";
+import InstrumentsSection from "../components/station/sections/InstrumentsSection.astro";
+import PrimitivesSection from "../components/station/sections/PrimitivesSection.astro";
+import RosesSection from "../components/station/sections/RosesSection.astro";
+import SeasonsSection from "../components/station/sections/SeasonsSection.astro";
+import StripsSection from "../components/station/sections/StripsSection.astro";
+import TableSection from "../components/station/sections/TableSection.astro";
+import TrendsSection from "../components/station/sections/TrendsSection.astro";
+import WaysSection from "../components/station/sections/WaysSection.astro";
+
+/* The living station showcase: every <meteo-*> tag on this page is the real
+   custom-elements binding from @azohra/meteo.station/elements, upgraded by
+   the client script at the bottom and fed a synthetic fleet generated in
+   the visitor's browser (src/lib/station-exhibit.ts). Nothing is fetched;
+   nothing is a screenshot.
+
+   The twelve sections are the reference dashboard's own registry (the
+   retired demo app's SECTIONS, in the import's history), ported section
+   for section — one component per section under
+   src/components/station/sections/ — with the registry's own notes as each
+   section's lead. The only edits are grammar: where a note names a react
+   identifier (StationCard, thresholds={null}, windowHours) this page speaks
+   the same fact in this binding's spelling (<meteo-station-card>,
+   thresholds="none", window-hours). */
+
+const SECTIONS: { id: string; nav: string }[] = [
+  { id: "ways", nav: "Two ways" },
+  { id: "cards", nav: "Cards" },
+  { id: "instruments", nav: "Instruments" },
+  { id: "charts", nav: "Charts" },
+  { id: "roses", nav: "Roses" },
+  { id: "seasons", nav: "Seasons" },
+  { id: "trends", nav: "Trends" },
+  { id: "air", nav: "Air" },
+  { id: "table", nav: "Table" },
+  { id: "strips", nav: "Strips" },
+  { id: "primitives", nav: "Primitives" },
+  { id: "explicit", nav: "Explicit" },
+];
+---
+
+<Base
+  title="Station — live weather-station components — meteo by Azohra"
+  description="Live wind from launch stations: vendor adapters read any weather station into one documented contract, and framework-free components render it live — dials, history, roses, the whole page vocabulary."
+  activeNav="station"
+>
+  <main id="main-content" class="station-main">
+    <StationHero />
+
+    <StationPrinciples />
+
+    <StationToolbar sections={SECTIONS} />
+
+    <div class="meteo-root station-gallery" id="station-gallery">
+      <meteo-station-feed
+        id="station-feed"
+        thresholds='{"unit":"kmh","values":[12,20,28]}'
+      >
+        <div class="station-gallery-inner section-inner">
+          <WaysSection />
+          <CardsSection />
+          <InstrumentsSection />
+          <ChartsSection />
+          <RosesSection />
+          <SeasonsSection />
+          <TrendsSection />
+          <AirSection />
+          <TableSection />
+          <StripsSection />
+          <PrimitivesSection />
+        </div>
+      </meteo-station-feed>
+
+      {/* Outside the provider on purpose: everything arrives as explicit
+          properties, proving the provider is an ambient default, not a
+          requirement. */}
+      <div class="station-gallery-inner station-gallery-tail section-inner">
+        <ExplicitSection />
+      </div>
+    </div>
+
+
+    <footer class="station-footer section-inner">
+      <p>
+        Build the same page against your own stations: <a href="/docs/station/">the station
+        documentation</a> covers the wire contract, adapters, the feed handler, and both bindings —
+        and carries these principles in full.
+      </p>
+    </footer>
+  </main>
+</Base>
+
+<script>
+  /* The wiring the elements demo models, in the order a hermetic page
+     needs: set every data property FIRST (the lazy-upgrade pattern captures
+     assignments made before definition), then define the tags — so no
+     element ever upgrades against an empty feed and throws. Republishing
+     once a minute keeps the freshness badges tracking the clock without a
+     poll loop — the fixture is a deterministic function of the clock; the
+     toolbar's Live control pauses and resumes that loop. */
+  import {
+    METEOROLOGICAL_SEASON_MONTHS,
+    filterByMonth,
+    filterByTimeOfDay,
+    windRose,
+  } from "@azohra/meteo.station";
+  import type { HistoryPoint, SpeedThresholds } from "@azohra/meteo.station";
+  import { defineMeteoElements } from "@azohra/meteo.station/elements";
+  import type {
+    BandChipElement,
+    CurrentConditionsElement,
+    DailyPatternElement,
+    StationFeedElement,
+    WindHistoryChartElement,
+    WindRoseElement,
+  } from "@azohra/meteo.station/elements";
+  import { buildExhibitFeed, buildHistoryLabStation, buildSeason } from "../lib/station-exhibit";
+
+  const THRESHOLDS: SpeedThresholds = { unit: "kmh", values: [12, 20, 28] };
+
+  const feed = document.querySelector("#station-feed") as StationFeedElement;
+  const heroFeed = document.querySelector("#station-hero-feed") as StationFeedElement;
+  const wireJson = document.querySelector("#station-wire-json") as HTMLPreElement;
+  const explicitConditions = document.querySelector(
+    "#explicit-conditions",
+  ) as CurrentConditionsElement;
+
+  /* The hero's terminal: the primary station's reading, printed as the wire
+     carries it — the instrument below draws the same object. */
+  const escapeHtml = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const renderWire = (document_: ReturnType<typeof buildExhibitFeed>) => {
+    const station = document_.stations[0];
+    const reading = station?.reading;
+    if (!reading) return;
+    const entries: Array<[string, string | number]> = [
+      ["observedAt", reading.observedAt],
+      ["windAvgMps", reading.windAvgMps],
+    ];
+    if (reading.windDirectionDeg != null) entries.push(["windDirectionDeg", reading.windDirectionDeg]);
+    if (reading.windGustMps != null) entries.push(["windGustMps", reading.windGustMps]);
+    if (reading.windLullMps != null) entries.push(["windLullMps", reading.windLullMps]);
+    if (reading.temperatureC != null) entries.push(["temperatureC", reading.temperatureC]);
+    const lines = entries.map(([key, value], index) => {
+      const printed =
+        typeof value === "string"
+          ? `<span class="t-str">"${escapeHtml(value)}"</span>`
+          : `<span class="t-num">${value}</span>`;
+      const comma = index < entries.length - 1 ? "," : "";
+      return `  <span class="t-key">"${key}"</span>: ${printed}${comma}`;
+    });
+    wireJson.innerHTML = `{\n${lines.join("\n")}\n}`;
+  };
+
+  /* One publish feeds the providers AND the explicit-props instrument — the
+     latter receives the same facts as direct properties, no ancestor. */
+  const publish = () => {
+    const now = Date.now();
+    const document_ = buildExhibitFeed(now);
+    feed.feed = document_;
+    feed.receivedAtMs = now;
+    heroFeed.feed = document_;
+    heroFeed.receivedAtMs = now;
+    renderWire(document_);
+    explicitConditions.station = document_.stations.find(
+      (station) => station.id === "summit-logger",
+    );
+    explicitConditions.servedAt = document_.servedAt;
+    explicitConditions.receivedAtMs = now;
+  };
+  explicitConditions.thresholds = THRESHOLDS;
+  publish();
+
+  /* Settled history: the season and the History Lab's four days are built
+     once, not per republish. */
+  const season = buildSeason();
+  const historyLab = document.querySelector("#history-lab") as WindHistoryChartElement;
+  historyLab.station = buildHistoryLabStation(Date.now());
+
+  /* "Two ways in": one fixed slice of the long history feeds both panels —
+     the object windRose() returns and the component that draws it — so the
+     section's claim ("same data") is literally true, not staged. */
+  const midday = filterByTimeOfDay(
+    filterByMonth(season, METEOROLOGICAL_SEASON_MONTHS.summer),
+    9 * 60,
+    15 * 60,
+  );
+  const waysRose = windRose(midday, 16);
+  const busiest = waysRose.sectors.reduce((top, sector) =>
+    sector.frequency > top.frequency ? sector : top,
+  );
+  (document.querySelector("#ways-output") as HTMLElement).textContent =
+    `{\n  sampleCount: ${waysRose.sampleCount},\n  calmFraction: ${waysRose.calmFraction.toFixed(2)},\n` +
+    `  sectors: [ /* 16 */ ],\n  // busiest:\n` +
+    `  { bearingDeg: ${busiest.bearingDeg}, frequency: ${busiest.frequency.toFixed(2)},\n` +
+    `    meanSpeedMps: ${busiest.meanSpeedMps?.toFixed(1) ?? "null"}, count: ${busiest.count} }\n}`;
+  (document.querySelector("#ways-rose") as WindRoseElement).points = midday;
+
+  /* The launch's favorable window rides the rose as a property. */
+  (document.querySelector("#roses-ridge") as WindRoseElement).favorableDirections = [
+    { fromDeg: 260, toDeg: 340 },
+  ];
+
+  /* Seasons: the rose narrows; the typical day always averages the lot. */
+  const seasonRose = document.querySelector("#season-rose") as WindRoseElement;
+  const seasonCount = document.querySelector("#season-count") as HTMLElement;
+  (document.querySelector("#station-pattern") as DailyPatternElement).points = season;
+
+  /* Band words are the consumer's vocabulary — five words, four bounds. */
+  for (const chip of document.querySelectorAll<BandChipElement>("meteo-band-chip")) {
+    (chip as BandChipElement & { labels?: readonly string[] }).labels = [
+      "calm",
+      "light",
+      "fine",
+      "strong",
+      "nuked",
+    ];
+  }
+
+  /* All/Month/Season × time of day — the same filteredHistory the react
+     demo computes, over the same generated season. */
+  type FilterMode = "all" | "month" | "season";
+  type Season = "winter" | "spring" | "summer" | "fall";
+  type TimeOfDay = "all" | "midday" | "night";
+  let filterMode: FilterMode = "all";
+  let month = 1;
+  let seasonPick: Season = "winter";
+  let timeOfDay: TimeOfDay = "all";
+
+  const applySeasonFilter = () => {
+    const byMonth: HistoryPoint[] =
+      filterMode === "all"
+        ? season
+        : filterMode === "month"
+          ? filterByMonth(season, [month])
+          : filterByMonth(season, METEOROLOGICAL_SEASON_MONTHS[seasonPick]);
+    const narrowed =
+      timeOfDay === "all"
+        ? byMonth
+        : timeOfDay === "midday"
+          ? filterByTimeOfDay(byMonth, 9 * 60, 15 * 60)
+          : filterByTimeOfDay(byMonth, 21 * 60, 6 * 60);
+    seasonRose.points = narrowed;
+    seasonCount.textContent = narrowed.length.toLocaleString();
+  };
+  applySeasonFilter();
+
+  /* Data in place — define and upgrade in place. Elements defer their
+     first render until connectedCallback has wired the ambient context,
+     so the spec-ordered attribute reactions during an in-document
+     upgrade are harmless no-ops. */
+  defineMeteoElements();
+
+  /* One segmented-control behaviour for every group. */
+  const press = (buttons: HTMLButtonElement[], active: HTMLButtonElement) => {
+    for (const button of buttons) {
+      button.setAttribute("aria-pressed", String(button === active));
+    }
+  };
+  const wireGroup = (attribute: string, apply: (value: string) => void) => {
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>(`[data-${attribute}]`)];
+    for (const button of buttons) {
+      button.addEventListener("click", () => {
+        apply(button.getAttribute(`data-${attribute}`) as string);
+        press(buttons, button);
+      });
+    }
+  };
+
+  /* The display unit: one attribute on the feed for every provider-fed
+     element, and the same attribute on the explicit-props instrument. */
+  wireGroup("unit", (unit) => {
+    feed.setAttribute("unit", unit);
+    explicitConditions.setAttribute("unit", unit);
+  });
+
+  /* Live / paused: the minute republish loop is the thing being toggled. */
+  const liveToggle = document.querySelector("#station-live") as HTMLButtonElement;
+  const liveLabel = document.querySelector("#station-live-label") as HTMLElement;
+  let timer: ReturnType<typeof setInterval> | undefined = setInterval(publish, 5_000);
+  liveToggle.addEventListener("click", () => {
+    if (timer == null) {
+      publish();
+      timer = setInterval(publish, 5_000);
+    } else {
+      clearInterval(timer);
+      timer = undefined;
+    }
+    const live = timer != null;
+    liveToggle.setAttribute("aria-pressed", String(live));
+    liveToggle.dataset.live = String(live);
+    liveLabel.textContent = live ? "Live" : "Paused";
+  });
+
+  /* History Lab: window-hours and compare-offset-days are plain attributes. */
+  wireGroup("window", (hours) => {
+    historyLab.setAttribute("window-hours", hours);
+  });
+  wireGroup("compare", (days) => {
+    if (days === "0") historyLab.removeAttribute("compare-offset-days");
+    else historyLab.setAttribute("compare-offset-days", days);
+  });
+
+  /* Seasons controls: mode reveals its own picker; every change re-slices
+     the same points. */
+  const monthSelect = document.querySelector("#season-month") as HTMLSelectElement;
+  const seasonGroup = document.querySelector("#season-season") as HTMLElement;
+  wireGroup("filter-mode", (mode) => {
+    filterMode = mode as FilterMode;
+    monthSelect.hidden = filterMode !== "month";
+    seasonGroup.hidden = filterMode !== "season";
+    applySeasonFilter();
+  });
+  monthSelect.addEventListener("change", () => {
+    month = Number(monthSelect.value);
+    applySeasonFilter();
+  });
+  wireGroup("season", (pick) => {
+    seasonPick = pick as Season;
+    applySeasonFilter();
+  });
+  wireGroup("time-of-day", (pick) => {
+    timeOfDay = pick as TimeOfDay;
+    applySeasonFilter();
+  });
+</script>
+
+<style>
+  .station-main {
+    padding-block-end: 72px;
+  }
+
+  /* The exhibit ground. The library themes itself through light-dark();
+     the site's data-theme pin cascades into .meteo-root (theme.css), so the
+     exhibits and the page chrome flip together under one toggle. */
+  .station-gallery {
+    color: var(--ink);
+    border-block-end: 1px solid var(--rule);
+    background: color-mix(in srgb, var(--surface) 48%, transparent);
+  }
+
+  .station-gallery-inner {
+    display: grid;
+    gap: clamp(2.8rem, 6vw, 4.5rem);
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  /* The explicit-props section rides the same column but its own container
+     — it must sit OUTSIDE <meteo-station-feed>. */
+  .station-gallery-tail {
+    padding-block-start: 0;
+  }
+
+  .station-footer {
+    padding-block-start: clamp(2rem, 4vw, 3rem);
+  }
+
+  .station-footer p {
+    max-width: 46rem;
+    margin: 0;
+    color: var(--ink-soft);
+  }
+</style>

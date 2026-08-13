@@ -1,0 +1,57 @@
+{/* The theme toggle: one pill that names its state — Auto (the system
+    preference), Light, or Dark — and cycles on activation. State lives in
+    localStorage("meteo-theme") via the window.__meteoTheme provider that
+    Base.astro and the docs ThemeProvider install before paint; the pill
+    only reads and requests. Declared, never inferred: the control always
+    says which mode is in effect. */}
+
+<meteo-theme-toggle>
+  <button type="button" class="theme-toggle" aria-live="polite">
+    <span class="theme-toggle-icon" aria-hidden="true"></span>
+    <span data-theme-label>Theme</span>
+  </button>
+</meteo-theme-toggle>
+
+<script>
+  type Mode = "auto" | "light" | "dark";
+  const ORDER: Mode[] = ["auto", "light", "dark"];
+  const LABELS: Record<Mode, string> = { auto: "Auto", light: "Light", dark: "Dark" };
+
+  interface ThemeApi {
+    readonly mode: Mode;
+    set(next: Mode): void;
+  }
+
+  const api = (): ThemeApi | undefined =>
+    (window as unknown as { __meteoTheme?: ThemeApi }).__meteoTheme;
+
+  class MeteoThemeToggle extends HTMLElement {
+    button = this.querySelector("button")!;
+    label = this.querySelector("[data-theme-label]")!;
+
+    constructor() {
+      super();
+      this.button.addEventListener("click", () => {
+        const provider = api();
+        if (!provider) return;
+        const next = ORDER[(ORDER.indexOf(provider.mode) + 1) % ORDER.length];
+        provider.set(next);
+      });
+      window.addEventListener("meteo-theme-change", () => this.render());
+      this.render();
+    }
+
+    render() {
+      const mode = api()?.mode ?? "auto";
+      this.label.textContent = LABELS[mode];
+      this.button.setAttribute(
+        "aria-label",
+        `Colour theme: ${LABELS[mode]}. Activate to change.`,
+      );
+    }
+  }
+
+  if (!customElements.get("meteo-theme-toggle")) {
+    customElements.define("meteo-theme-toggle", MeteoThemeToggle);
+  }
+</script>

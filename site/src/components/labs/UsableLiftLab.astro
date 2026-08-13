@@ -1,0 +1,137 @@
+---
+import ControlGroup from "../figure/ControlGroup.astro";
+import Figure from "../figure/Figure.astro";
+import Legend from "../figure/Legend.astro";
+import {
+  renderUsableLiftChart,
+  usableLiftSummary,
+  type LabScenarioSource,
+} from "../../lib/labs";
+import { scenarioById } from "../../lib/scenarios";
+
+/* gusts-after-heating, deliberately: its column holds both regimes at
+   once — the midday hours stay cloud-base-capped at any sink rate while
+   the shoulder hours are sink-limited — so the slider visibly moves what
+   it can move and visibly cannot move what cloud base owns. (The
+   cloud-base-limits-lift scenario is capped at EVERY hour, which pins
+   the line across the whole slider range — a dead control.) */
+const scenario = scenarioById("gusts-after-heating");
+const source: LabScenarioSource = {
+  profile: scenario.profile,
+  timeZone: scenario.timeZone,
+  launch: scenario.launch,
+};
+const initialSinkRateMs = 1;
+const initialSummary = usableLiftSummary(source.profile, initialSinkRateMs);
+const { scene: initialScene, svg: initialSvg } = renderUsableLiftChart(source, initialSinkRateMs);
+---
+
+<Figure
+  id="usable-lift-lab"
+  title="What stops usable lift first?"
+  lesson="Change only sink rate while the atmospheric column, parcel top, and cloud base remain fixed: some hours answer 'cloud base', others answer 'your sink rate' — and the slider moves the boundary between them."
+  description="An interactive Meteogram applying the package's parameterized usable-lift derivation to a convective column whose hours trade between the cloud-base cap and the sink-rate limit."
+  caption="The control invokes @azohra/meteo.briefing/derive usableLiftTopM for every hour; the same sink-rate option rebuilds the package scene."
+  units="sink m/s · height m MSL · time UTC"
+  {scenario}
+>
+  <ControlGroup slot="controls" label="Usable-lift laboratory controls">
+    <label for="usable-lift-sink-rate">
+      Sink rate
+      <span class="meteo-gram-lab__range-row">
+        <input
+          id="usable-lift-sink-rate"
+          data-usable-sink
+          type="range"
+          min="0.5"
+          max="6"
+          value={initialSinkRateMs}
+          step="0.1"
+        />
+        <output for="usable-lift-sink-rate" data-usable-sink-output>
+          {initialSinkRateMs.toFixed(1)} m/s
+        </output>
+      </span>
+    </label>
+  </ControlGroup>
+
+  <div class="meteo-gram-lab" data-usable-lab>
+    <script
+      is:inline
+      type="application/json"
+      data-usable-source
+      set:html={JSON.stringify(source)}
+    />
+    <div class="meteo-gram-lab__readout" aria-live="polite" aria-atomic="true">
+      <span>Derived hours <strong data-usable-count>{initialSummary.derivedCount}/{initialSummary.hourCount}</strong></span>
+      <span>Highest usable top <strong data-usable-peak>{initialSummary.peakM === null ? "none" : `${Math.round(initialSummary.peakM)} m`}</strong></span>
+    </div>
+    <div
+      class="meteo-gram-lab__chart-scroll"
+      tabindex="0"
+      role="region"
+      aria-label="Scrollable usable-lift chart"
+    >
+      <div
+        class="meteo-gram-lab__mount"
+        data-usable-mount
+        style={`--meteo-gram-lab-scene-width: ${initialScene.width}px`}
+        set:html={initialSvg}
+      />
+    </div>
+    <p class="meteo-gram-lab__conclusion">
+      <strong>Conclusion.</strong> The strongest midday hours are cloud-base-capped: no sink rate the
+      slider offers moves them, because condensation stops the climb before the glider does. The
+      shoulder hours are sink-limited: raising the sink rate pulls their usable top down and finally
+      erases them. One derivation, two regimes — and the slider walks each hour across the boundary.
+    </p>
+  </div>
+
+  <Legend
+    slot="legend"
+    label="Lift figure legend"
+    items={[
+      { label: "Parcel boundary-layer top", color: "var(--chart-lift)", mark: "line" },
+      { label: "Cloud base", color: "var(--meteo-gram-cloud-base)", mark: "line" },
+      { label: "Parameterized usable top", color: "var(--chart-usable)", mark: "line" },
+    ]}
+  />
+</Figure>
+
+<script>
+  import {
+    renderUsableLiftChart,
+    usableLiftSummary,
+    type LabScenarioSource,
+  } from "../../lib/labs";
+
+  for (const figure of document.querySelectorAll<HTMLElement>("#usable-lift-lab[data-figure]")) {
+    if (figure.dataset.usableReady === "true") continue;
+    figure.dataset.usableReady = "true";
+    const source = figure.querySelector<HTMLScriptElement>("[data-usable-source]");
+    const sink = figure.querySelector<HTMLInputElement>("[data-usable-sink]");
+    const output = figure.querySelector<HTMLOutputElement>("[data-usable-sink-output]");
+    const count = figure.querySelector<HTMLElement>("[data-usable-count]");
+    const peak = figure.querySelector<HTMLElement>("[data-usable-peak]");
+    const mount = figure.querySelector<HTMLElement>("[data-usable-mount]");
+    if (!source?.textContent || !sink || !output || !count || !peak || !mount) continue;
+
+    const scenario = Object.freeze(
+      JSON.parse(source.textContent),
+    ) as Readonly<LabScenarioSource>;
+
+    const render = () => {
+      const sinkRateMps = Number(sink.value);
+      output.value = `${sinkRateMps.toFixed(1)} m/s`;
+      const summary = usableLiftSummary(scenario.profile, sinkRateMps);
+      count.textContent = `${summary.derivedCount}/${summary.hourCount}`;
+      peak.textContent = summary.peakM === null ? "none" : `${Math.round(summary.peakM)} m`;
+      const { scene, svg } = renderUsableLiftChart(scenario, sinkRateMps);
+      mount.innerHTML = svg;
+      mount.style.setProperty("--meteo-gram-lab-scene-width", `${scene.width}px`);
+    };
+
+    sink.addEventListener("input", render);
+    figure.addEventListener("figure:reset", render);
+  }
+</script>

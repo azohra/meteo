@@ -1,0 +1,1141 @@
+/* The default skin.
+ *
+ * Token convention, in two prefixes:
+ * - `--meteo-*` is the SHARED skin — surfaces, ink, muted text, borders,
+ *   grid lines, the accent, the gap hatch, typography, radius, shadow, and
+ *   the freshness states (live/aging/stale). Any meteo capability's
+ *   components (wind today, forecast tomorrow) wear these.
+ * - `--meteo-wind-*` is genuinely wind-scoped — the lull–gust band fill, the mean
+ *   trace, vanes, the inspection cursor, the meteo-band-0..4 ramp, and the
+ *   rose's favorable/unfavorable judgment ring.
+ *
+ * Every colour rides a token with a light-theme fallback baked into the
+ * var() call, so components render sensibly with no wrapper at all. Wrap
+ * consumers' markup in .meteo-root to get the token set; override any token
+ * on any ancestor to retheme. Tokens are defined ONCE via light-dark(): the
+ * root declares `color-scheme: light dark`, so the system preference picks
+ * the arm, and a manual toggle is a one-line color-scheme pin via
+ * data-theme="dark" (or "light") on .meteo-root.
+ *
+ * The whole sheet lives in @layer meteo, so any unlayered consumer rule
+ * outranks it without specificity games.
+ *
+ * meteo-band-0..4 is a placeholder ramp — calm blue through green and amber to
+ * red. What a band means (flyable, marginal, nuked) and what colour it wears
+ * belong to the consumer. */
+
+@layer meteo {
+
+:where(.meteo-root) {
+  color-scheme: light dark;
+  --meteo-surface: light-dark(#ffffff, #10161d);
+  --meteo-surface-raised: light-dark(#f4f6f9, #212d3a);
+  --meteo-ink: light-dark(#17232e, #e7edf3);
+  --meteo-muted: light-dark(#62717f, #95a4b3);
+  --meteo-border: light-dark(#dbe2e9, #2b3844);
+  --meteo-grid: light-dark(#e5eaef, #28333e);
+  --meteo-accent: light-dark(#0f7490, #45c3e0);
+  --meteo-gap: light-dark(rgba(98, 113, 127, 0.5), rgba(149, 164, 179, 0.45));
+  --meteo-freshness-live: light-dark(#12813d, #34d399);
+  --meteo-freshness-aging: light-dark(#b45309, #fbbf24);
+  --meteo-freshness-stale: light-dark(#bb1d1d, #f87171);
+  --meteo-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --meteo-radius: 12px;
+  /* The dark shadow is heavier: a dark card separates by depth, not tint. */
+  --meteo-shadow:
+    0 1px 2px light-dark(rgb(23 35 46 / 0.06), rgb(0 0 0 / 0.35)),
+    0 8px 24px light-dark(rgb(23 35 46 / 0.05), rgb(0 0 0 / 0.3));
+  --meteo-wind-band-fill: light-dark(rgba(15, 116, 144, 0.22), rgba(69, 195, 224, 0.22));
+  --meteo-wind-mean: light-dark(#0f7490, #45c3e0);
+  /* The day-over-day overlay: a muted, desaturated echo of the mean trace's
+   * own accent, so "today" always reads as the stronger line. */
+  --meteo-wind-compare: light-dark(#8a97a3, #6b7885);
+  --meteo-wind-vane: light-dark(#3b4a58, #b8c6d3);
+  --meteo-cursor: light-dark(#d97706, #f5a623);
+  /* The rose's judgment ring: green for a favorable direction sector, a
+   * muted red for the rest — quieter than the band ramp on purpose. */
+  --meteo-wind-favorable: light-dark(#2e9e63, #34d17b);
+  --meteo-wind-unfavorable: light-dark(#c98a80, #a06058);
+  --meteo-band-0: light-dark(#56a2cc, #5fb2e0);
+  --meteo-band-1: light-dark(#2e9e63, #34d17b);
+  --meteo-band-2: light-dark(#d9a013, #eab308);
+  --meteo-band-3: light-dark(#e2662c, #f4732c);
+  --meteo-band-4: light-dark(#c22727, #ef4444);
+}
+
+/* A manual toggle beats the system preference by pinning the scheme
+ * light-dark() resolves against. */
+:where(.meteo-root[data-theme="light"]) {
+  color-scheme: light;
+}
+
+:where(.meteo-root[data-theme="dark"]) {
+  color-scheme: dark;
+}
+
+/* ---------- shared ---------- */
+
+.meteo-station-card,
+.meteo-current,
+.meteo-wind-chart,
+.meteo-daily-pattern,
+.meteo-daily-pattern-na,
+.meteo-trend,
+.meteo-station-table,
+.meteo-wind-rose,
+.meteo-wind-rose-na {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--meteo-ink, #17232e);
+}
+
+.meteo-wind-arrow {
+  display: inline-block;
+  vertical-align: -0.08em;
+  color: var(--meteo-accent, #0f7490);
+}
+
+/* One voice for every caption-grade label: flank labels, summary terms,
+ * table headers. */
+.meteo-microlabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--meteo-muted, #62717f);
+}
+
+/* ---------- freshness badge ---------- */
+
+.meteo-freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  /* Tinted from the state colour itself so themed states stay paired. */
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-freshness-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.meteo-freshness[data-freshness="live"] {
+  color: var(--meteo-freshness-live, #12813d);
+}
+.meteo-freshness[data-freshness="aging"] {
+  color: var(--meteo-freshness-aging, #b45309);
+}
+.meteo-freshness[data-freshness="stale"] {
+  color: var(--meteo-freshness-stale, #bb1d1d);
+}
+
+/* ---------- text atoms ---------- */
+
+/* Inline reading fragments; no layout opinions beyond inline display. */
+
+.meteo-value,
+.meteo-direction,
+.meteo-updated,
+.meteo-band-chip {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: var(--meteo-ink, #17232e);
+}
+
+/* The unit hangs quieter beside the number, like the dial hub's unit line. */
+.meteo-value .meteo-unit {
+  font-size: 0.72em;
+  font-weight: 500;
+  color: var(--meteo-muted, #62717f);
+}
+
+/* A timestamp is context, not a reading — it speaks in the muted voice. */
+.meteo-updated {
+  color: var(--meteo-muted, #62717f);
+}
+
+/* Chip chrome mirrors the freshness badge: the band colour is the text and
+ * the background is tinted from it, so themed bands stay paired. The em-dash
+ * and calm chips (no data-band) keep the muted fallback; bands beyond 4 do
+ * too — the default ramp defines five colours, a consumer with more bands
+ * themes its own via [data-band] selectors. */
+.meteo-band-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-band-chip[data-band="0"] { color: var(--meteo-band-0, #56a2cc); }
+.meteo-band-chip[data-band="1"] { color: var(--meteo-band-1, #2e9e63); }
+.meteo-band-chip[data-band="2"] { color: var(--meteo-band-2, #d9a013); }
+.meteo-band-chip[data-band="3"] { color: var(--meteo-band-3, #e2662c); }
+.meteo-band-chip[data-band="4"] { color: var(--meteo-band-4, #c22727); }
+
+/* ---------- current conditions: the instrument ---------- */
+
+.meteo-current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  background: var(--meteo-surface, #ffffff);
+  border: 1px solid var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px);
+  box-shadow: var(--meteo-shadow, 0 1px 2px rgb(23 35 46 / 0.06), 0 8px 24px rgb(23 35 46 / 0.05));
+}
+
+/* Wraps rather than overflows: LULL/dial/GUST needs more width than a
+ * narrow card can promise, and a flank spilling into whatever sits beside
+ * the card reads as a broken layout, not a compact one. */
+.meteo-current-instrument {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.meteo-current-flank {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 3ch;
+}
+
+.meteo-current-flank strong {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: var(--meteo-ink, #17232e);
+}
+
+.meteo-wind-dial-face {
+  fill: var(--meteo-surface-raised, #f4f6f9);
+  stroke: none;
+}
+
+/* Radial shading over the face; the stop colours carry the tokens. */
+.meteo-wind-dial-bezel-in {
+  stop-color: var(--meteo-surface-raised, #f4f6f9);
+  stop-opacity: 0;
+}
+
+.meteo-wind-dial-bezel-out {
+  stop-color: var(--meteo-ink, #17232e);
+  stop-opacity: 0.1;
+}
+
+.meteo-wind-dial-ring {
+  fill: none;
+  stroke: var(--meteo-border, #dbe2e9);
+  stroke-width: 1.5;
+}
+
+/* The speed arc: the current reading's share of the dial scale, wearing the
+ * reading's band when thresholds grade it. */
+.meteo-wind-dial-arc {
+  fill: none;
+  stroke: var(--meteo-accent, #0f7490);
+  stroke-width: 5.5;
+  stroke-linecap: round;
+}
+
+.meteo-wind-dial-arc.meteo-band-0 { stroke: var(--meteo-band-0, #56a2cc); }
+.meteo-wind-dial-arc.meteo-band-1 { stroke: var(--meteo-band-1, #2e9e63); }
+.meteo-wind-dial-arc.meteo-band-2 { stroke: var(--meteo-band-2, #d9a013); }
+.meteo-wind-dial-arc.meteo-band-3 { stroke: var(--meteo-band-3, #e2662c); }
+.meteo-wind-dial-arc.meteo-band-4 { stroke: var(--meteo-band-4, #c22727); }
+
+.meteo-wind-dial-tick {
+  stroke: var(--meteo-muted, #62717f);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+
+.meteo-wind-dial-tick-cardinal {
+  stroke: var(--meteo-ink, #17232e);
+  stroke-width: 2;
+  opacity: 0.9;
+}
+
+.meteo-wind-dial-letter {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--meteo-muted, #62717f);
+}
+
+.meteo-wind-needle-blade {
+  fill: var(--meteo-accent, #0f7490);
+  stroke: none;
+}
+
+.meteo-wind-needle-counterweight {
+  fill: var(--meteo-accent, #0f7490);
+  stroke: none;
+}
+
+.meteo-wind-dial-hub {
+  fill: var(--meteo-surface-raised, #f4f6f9);
+  stroke: var(--meteo-border, #dbe2e9);
+  stroke-width: 1.5;
+}
+
+.meteo-wind-dial-speed {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 37px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  fill: var(--meteo-ink, #17232e);
+}
+
+.meteo-wind-dial-unit {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 10px;
+  fill: var(--meteo-muted, #62717f);
+}
+
+.meteo-wind-dial-reason {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 10.5px;
+  fill: var(--meteo-muted, #62717f);
+}
+
+.meteo-wind-dial-unavailable {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.meteo-current-direction {
+  margin: 0;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: var(--meteo-ink, #17232e);
+  min-height: 1.4em;
+}
+
+.meteo-current[data-status="unavailable"] .meteo-current-direction {
+  color: var(--meteo-muted, #62717f);
+  font-style: italic;
+}
+
+.meteo-current-from-label {
+  color: var(--meteo-muted, #62717f);
+  font-size: 0.8em;
+}
+
+.meteo-current-temp {
+  margin: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: var(--meteo-muted, #62717f);
+  min-height: 1.3em;
+}
+
+.meteo-current-footer {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.78rem;
+  color: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ---------- history chart ---------- */
+
+.meteo-wind-chart,
+.meteo-daily-pattern {
+  width: 100%;
+}
+
+.meteo-wind-chart-na,
+.meteo-daily-pattern-na,
+.meteo-trend-na,
+.meteo-wind-rose-na {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--meteo-muted, #62717f);
+  background: var(--meteo-surface-raised, #f4f6f9);
+  border: 1px dashed var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px);
+}
+
+/* Fixed minimum height so pinning and unpinning never moves the chart. The
+ * daily-pattern caption is static — no pin state — but shares the line so
+ * it never wears a different rhythm than the chart above it. */
+.meteo-wind-chart-readout,
+.meteo-daily-pattern-caption,
+.meteo-trend-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35em 0.7em;
+  min-height: 1.5em;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-wind-chart-readout strong,
+.meteo-trend-readout strong {
+  color: var(--meteo-accent, #0f7490);
+  font-weight: 700;
+}
+
+.meteo-wind-chart-svg,
+.meteo-daily-pattern-svg,
+.meteo-trend-svg {
+  display: block;
+}
+
+.meteo-wind-chart-svg text,
+.meteo-daily-pattern-svg text,
+.meteo-trend-svg text {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 10.5px;
+  fill: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-grid-line {
+  stroke: var(--meteo-grid, #e5eaef);
+  stroke-width: 1;
+}
+
+/* Band zones: each band's territory tinted at a whisper behind the plot. */
+.meteo-wind-zone {
+  stroke: none;
+  fill-opacity: 0.05;
+}
+
+.meteo-wind-zone.meteo-band-0 { fill: var(--meteo-band-0, #56a2cc); }
+.meteo-wind-zone.meteo-band-1 { fill: var(--meteo-band-1, #2e9e63); }
+.meteo-wind-zone.meteo-band-2 { fill: var(--meteo-band-2, #d9a013); }
+.meteo-wind-zone.meteo-band-3 { fill: var(--meteo-band-3, #e2662c); }
+.meteo-wind-zone.meteo-band-4 { fill: var(--meteo-band-4, #c22727); }
+
+/* Threshold guides wear the band they open. */
+.meteo-wind-threshold {
+  stroke: var(--meteo-muted, #62717f);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  opacity: 0.7;
+}
+
+.meteo-wind-threshold.meteo-band-0 { stroke: var(--meteo-band-0, #56a2cc); }
+.meteo-wind-threshold.meteo-band-1 { stroke: var(--meteo-band-1, #2e9e63); }
+.meteo-wind-threshold.meteo-band-2 { stroke: var(--meteo-band-2, #d9a013); }
+.meteo-wind-threshold.meteo-band-3 { stroke: var(--meteo-band-3, #e2662c); }
+.meteo-wind-threshold.meteo-band-4 { stroke: var(--meteo-band-4, #c22727); }
+
+.meteo-wind-chart-svg text.meteo-wind-threshold-label {
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.meteo-wind-threshold-label.meteo-band-0 { fill: var(--meteo-band-0, #56a2cc); }
+.meteo-wind-threshold-label.meteo-band-1 { fill: var(--meteo-band-1, #2e9e63); }
+.meteo-wind-threshold-label.meteo-band-2 { fill: var(--meteo-band-2, #d9a013); }
+.meteo-wind-threshold-label.meteo-band-3 { fill: var(--meteo-band-3, #e2662c); }
+.meteo-wind-threshold-label.meteo-band-4 { fill: var(--meteo-band-4, #c22727); }
+
+.meteo-wind-guide {
+  stroke: var(--meteo-grid, #e5eaef);
+  stroke-width: 1;
+  stroke-dasharray: 1 4;
+}
+
+.meteo-wind-gap-hatch {
+  stroke: var(--meteo-gap, rgba(98, 113, 127, 0.5));
+  stroke-width: 1.25;
+}
+
+.meteo-wind-band {
+  fill: var(--meteo-wind-band-fill, rgba(15, 116, 144, 0.22));
+  stroke: none;
+}
+
+.meteo-wind-mean {
+  fill: none;
+  stroke: var(--meteo-wind-mean, #0f7490);
+  stroke-width: 3.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.meteo-wind-mean-segment {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.meteo-wind-mean-segment.meteo-band-0 { stroke: var(--meteo-band-0, #56a2cc); }
+.meteo-wind-mean-segment.meteo-band-1 { stroke: var(--meteo-band-1, #2e9e63); }
+.meteo-wind-mean-segment.meteo-band-2 { stroke: var(--meteo-band-2, #d9a013); }
+.meteo-wind-mean-segment.meteo-band-3 { stroke: var(--meteo-band-3, #e2662c); }
+.meteo-wind-mean-segment.meteo-band-4 { stroke: var(--meteo-band-4, #c22727); }
+
+/* The day-over-day overlay: dashed and behind the main trace on purpose —
+ * "today" reads as the stronger, unbroken line. */
+.meteo-wind-compare {
+  fill: none;
+  stroke: var(--meteo-wind-compare, #8a97a3);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 3;
+}
+
+.meteo-wind-calm-note {
+  font-size: 12px;
+  font-style: italic;
+}
+
+.meteo-wind-row-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.meteo-wind-vane {
+  fill: none;
+  stroke: var(--meteo-wind-vane, #3b4a58);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The persistent compass letter above every vane, and the persistent Avg
+ * number below it — both small, tabular, and quieter than the vane row's
+ * own "TO" caption; text.meteo-wind-chart-svg's base rule already sets
+ * font-family/fill, so these only carry the size and number-friendly tabular
+ * figures the value row wants. */
+.meteo-wind-vane-label {
+  font-size: 9px;
+}
+
+.meteo-wind-vane-value {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-cursor {
+  stroke: var(--meteo-cursor, #d97706);
+  stroke-width: 1;
+}
+
+.meteo-cursor-dot {
+  fill: var(--meteo-cursor, #d97706);
+}
+
+.meteo-hit {
+  cursor: crosshair;
+  /* A vertical swipe over the chart must stay a scroll. */
+  touch-action: pan-y;
+}
+
+/* ---------- sparkline ---------- */
+
+/* The history chart at word size. Inline content (a table cell, a
+ * sentence), so it carries display/vertical-align; the trace is a 1.5px
+ * whisper where the big chart's mean is a 3.5px voice, so it cannot reuse
+ * .meteo-wind-mean / .meteo-wind-mean-segment. Colours all ride the existing tokens. */
+
+.meteo-sparkline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* The em-dash placeholder holds the exact box the glyph would, so a station
+ * going quiet never twitches the row's layout. */
+.meteo-sparkline-na {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 0.85rem;
+  color: var(--meteo-muted, #62717f);
+}
+
+/* The lull–gust band behind the trace, in the big chart's fill. */
+.meteo-sparkline-band {
+  fill: var(--meteo-wind-band-fill, rgba(15, 116, 144, 0.22));
+  stroke: none;
+}
+
+/* The average trace: the mean line's colour at sparkline weight. */
+.meteo-sparkline-line {
+  fill: none;
+  stroke: var(--meteo-wind-mean, #0f7490);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* A one-sample run between gaps: still a measurement, drawn as a dot. */
+.meteo-sparkline-dot {
+  fill: var(--meteo-wind-mean, #0f7490);
+}
+
+.meteo-sparkline-dot.meteo-band-0 { fill: var(--meteo-band-0, #56a2cc); }
+.meteo-sparkline-dot.meteo-band-1 { fill: var(--meteo-band-1, #2e9e63); }
+.meteo-sparkline-dot.meteo-band-2 { fill: var(--meteo-band-2, #d9a013); }
+.meteo-sparkline-dot.meteo-band-3 { fill: var(--meteo-band-3, #e2662c); }
+.meteo-sparkline-dot.meteo-band-4 { fill: var(--meteo-band-4, #c22727); }
+
+/* Per-segment grading when thresholds are given — the meteo-band-N pattern
+ * at sparkline weight. */
+.meteo-sparkline-segment {
+  fill: none;
+  stroke: var(--meteo-wind-mean, #0f7490);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.meteo-sparkline-segment.meteo-band-0 { stroke: var(--meteo-band-0, #56a2cc); }
+.meteo-sparkline-segment.meteo-band-1 { stroke: var(--meteo-band-1, #2e9e63); }
+.meteo-sparkline-segment.meteo-band-2 { stroke: var(--meteo-band-2, #d9a013); }
+.meteo-sparkline-segment.meteo-band-3 { stroke: var(--meteo-band-3, #e2662c); }
+.meteo-sparkline-segment.meteo-band-4 { stroke: var(--meteo-band-4, #c22727); }
+
+/* ---------- trend chart ---------- */
+
+.meteo-trend {
+  width: 100%;
+}
+
+/* The trace speaks in the mean line's voice, a step quieter — a trend is a
+ * background fact, not the wind. */
+.meteo-trend-line {
+  fill: none;
+  stroke: var(--meteo-wind-mean, #0f7490);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* A one-sample run between gaps: still a measurement, drawn as a dot. */
+.meteo-trend-dot {
+  fill: var(--meteo-wind-mean, #0f7490);
+}
+
+/* ---------- rose ---------- */
+
+/* flex, not inline-flex: the rose's own SVG is fixed-size, but the rose
+ * sits in a card sized by its consumer, same as .meteo-current. inline-flex
+ * shrank this to the SVG's width and left it hugging the card's left edge,
+ * with the rest of the card empty. */
+.meteo-wind-rose {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.meteo-wind-rose-svg {
+  display: block;
+}
+
+.meteo-wind-rose-grid {
+  fill: none;
+  stroke: var(--meteo-grid, #e5eaef);
+  stroke-width: 1;
+}
+
+/* The judgment ring: favorable arcs paint over the unfavorable circle. The
+ * ring judges direction; the petals report distribution. */
+.meteo-wind-rose-ring-unfavorable {
+  fill: none;
+  stroke: var(--meteo-wind-unfavorable, #c98a80);
+  stroke-width: 3;
+  opacity: 0.55;
+}
+
+.meteo-wind-rose-ring-favorable {
+  fill: none;
+  stroke: var(--meteo-wind-favorable, #2e9e63);
+  stroke-width: 3;
+  stroke-linecap: butt;
+}
+
+.meteo-wind-rose-tick {
+  stroke: var(--meteo-muted, #62717f);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+.meteo-wind-rose-letter {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 12.5px;
+  font-weight: 650;
+  fill: var(--meteo-ink, #17232e);
+}
+
+.meteo-wind-rose-ring-label {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 8.5px;
+  fill: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+}
+
+.meteo-wind-rose-petal {
+  fill: var(--meteo-accent, #0f7490);
+  fill-opacity: 0.85;
+  stroke: color-mix(in srgb, var(--meteo-accent, #0f7490) 72%, black);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.meteo-wind-rose-petal.meteo-band-0 {
+  fill: var(--meteo-band-0, #56a2cc);
+  stroke: color-mix(in srgb, var(--meteo-band-0, #56a2cc) 72%, black);
+}
+.meteo-wind-rose-petal.meteo-band-1 {
+  fill: var(--meteo-band-1, #2e9e63);
+  stroke: color-mix(in srgb, var(--meteo-band-1, #2e9e63) 72%, black);
+}
+.meteo-wind-rose-petal.meteo-band-2 {
+  fill: var(--meteo-band-2, #d9a013);
+  stroke: color-mix(in srgb, var(--meteo-band-2, #d9a013) 72%, black);
+}
+.meteo-wind-rose-petal.meteo-band-3 {
+  fill: var(--meteo-band-3, #e2662c);
+  stroke: color-mix(in srgb, var(--meteo-band-3, #e2662c) 72%, black);
+}
+.meteo-wind-rose-petal.meteo-band-4 {
+  fill: var(--meteo-band-4, #c22727);
+  stroke: color-mix(in srgb, var(--meteo-band-4, #c22727) 72%, black);
+}
+
+.meteo-wind-rose-hub {
+  fill: var(--meteo-surface, #ffffff);
+  stroke: var(--meteo-border, #dbe2e9);
+  stroke-width: 1;
+}
+
+.meteo-wind-rose-dot {
+  fill: var(--meteo-muted, #62717f);
+}
+
+/* The calm share is a caption, not hub fine print. */
+.meteo-wind-rose-calm {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ---------- station table ---------- */
+
+.meteo-station-table {
+  background: var(--meteo-surface, #ffffff);
+  border: 1px solid var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px);
+  overflow: hidden;
+  font-size: 0.88rem;
+  box-shadow: var(--meteo-shadow, 0 1px 2px rgb(23 35 46 / 0.06), 0 8px 24px rgb(23 35 46 / 0.05));
+}
+
+.meteo-station-table-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.7fr) 0.9fr 0.7fr 0.7fr 1.2fr 1fr 1.2fr;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+}
+
+.meteo-station-table-head {
+  background: var(--meteo-surface-raised, #f4f6f9);
+  border-bottom: 1px solid var(--meteo-border, #dbe2e9);
+}
+
+.meteo-station-table-body .meteo-station-table-row + .meteo-station-table-row {
+  border-top: 1px solid var(--meteo-grid, #e5eaef);
+}
+
+.meteo-station-table-station {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.meteo-station-table-station strong {
+  font-weight: 650;
+}
+
+.meteo-station-table-station a {
+  color: var(--meteo-accent, #0f7490);
+  text-decoration: none;
+}
+
+.meteo-station-table-station a:hover {
+  text-decoration: underline;
+}
+
+.meteo-station-table-station small {
+  font-size: 0.72rem;
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-station-table-wind strong {
+  font-size: 1.4rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-station-table-wind small {
+  margin-left: 0.3em;
+  font-size: 0.7rem;
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-station-table-lull,
+.meteo-station-table-gust,
+.meteo-station-table-from,
+.meteo-station-table-temp {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 600;
+}
+
+.meteo-station-table-updated {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Reason words span every data column so the row keeps its geometry. */
+.meteo-station-table-reason {
+  grid-column: 2 / -1;
+  color: var(--meteo-muted, #62717f);
+  font-style: italic;
+}
+
+@media (max-width: 560px) {
+  .meteo-station-table-row {
+    grid-template-columns: minmax(110px, 1.4fr) 0.9fr 0.7fr 0.7fr 1.1fr;
+  }
+  .meteo-station-table-temp,
+  .meteo-station-table-updated,
+  .meteo-station-table-head span:nth-child(6),
+  .meteo-station-table-head span:nth-child(7) {
+    display: none;
+  }
+  .meteo-station-table-reason {
+    display: block;
+  }
+}
+
+/* ---------- station card ---------- */
+
+.meteo-station-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  background: var(--meteo-surface, #ffffff);
+  border: 1px solid var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px);
+  box-shadow: var(--meteo-shadow, 0 1px 2px rgb(23 35 46 / 0.06), 0 8px 24px rgb(23 35 46 / 0.05));
+}
+
+/* The card supplies the chrome; the instrument inside sheds its own. */
+.meteo-station-card .meteo-current {
+  border: none;
+  padding: 0.25rem 0 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* The header is a raised strip across the card's full width. */
+.meteo-station-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: -1.1rem -1.25rem 0;
+  padding: 0.8rem 1.25rem;
+  background: var(--meteo-surface-raised, #f4f6f9);
+  border-bottom: 1px solid var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px) var(--meteo-radius, 12px) 0 0;
+}
+
+.meteo-station-card-name {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.meteo-station-card-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.meteo-station-card-name a:hover {
+  color: var(--meteo-accent, #0f7490);
+}
+
+.meteo-station-card-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--meteo-grid, #e5eaef);
+}
+
+.meteo-summary-item dd {
+  margin: 0.1rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  color: var(--meteo-ink, #17232e);
+}
+
+/* ---------- air matrix ---------- */
+
+.meteo-air {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--meteo-ink, #17232e);
+  background: var(--meteo-surface, #ffffff);
+  border: 1px solid var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px);
+  overflow: hidden;
+  box-shadow: var(--meteo-shadow, 0 1px 2px rgb(23 35 46 / 0.06), 0 8px 24px rgb(23 35 46 / 0.05));
+}
+
+/* The trigger is the whole top strip; the live summary rides beside the
+ * title so the fold never hides whether anything is happening. */
+.meteo-air-trigger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35em 0.9em;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: none;
+  background: var(--meteo-surface-raised, #f4f6f9);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.meteo-air[data-expanded="true"] .meteo-air-trigger {
+  border-bottom: 1px solid var(--meteo-border, #dbe2e9);
+}
+
+/* Disclosure caret drawn from the border colour; rotates open. */
+.meteo-air-trigger::before {
+  content: "";
+  align-self: center;
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid var(--meteo-muted, #62717f);
+  border-bottom: 2px solid var(--meteo-muted, #62717f);
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+
+.meteo-air[data-expanded="true"] .meteo-air-trigger::before {
+  transform: rotate(45deg);
+}
+
+.meteo-air-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.meteo-air-summary {
+  font-size: 0.78rem;
+  color: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-air-panel {
+  padding: 0.25rem 0.9rem 0.7rem;
+}
+
+.meteo-air-row {
+  display: grid;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.35rem 0;
+}
+
+.meteo-air-matrix .meteo-air-row + .meteo-air-row {
+  border-top: 1px solid var(--meteo-grid, #e5eaef);
+}
+
+.meteo-air-head {
+  padding-top: 0.5rem;
+}
+
+/* Row labels speak in the shared micro-label voice; the unit hangs off the
+ * label so cells hold bare numbers. */
+.meteo-air-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--meteo-ink, #17232e);
+}
+
+.meteo-air-label small {
+  margin-left: 0.4em;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-air-cell {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-air-note {
+  margin: 0.6rem 0 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--meteo-muted, #62717f);
+}
+
+/* ---------- station strip ---------- */
+
+/* One station, one line. Geometry is fixed per station: absent values print
+ * the em dash in place and only a capability the station lacks omits a cell
+ * — a strip stands alone, with no fleet column grid to hold. min-height
+ * keeps the unavailable arm the same height as a reading. */
+.meteo-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  min-height: 2.6rem;
+  padding: 0.4rem 0.9rem;
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 0.88rem;
+  color: var(--meteo-ink, #17232e);
+  background: var(--meteo-surface, #ffffff);
+  border: 1px solid var(--meteo-border, #dbe2e9);
+  border-radius: var(--meteo-radius, 12px);
+  box-shadow: var(--meteo-shadow, 0 1px 2px rgb(23 35 46 / 0.06), 0 8px 24px rgb(23 35 46 / 0.05));
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* The name is the one cell allowed to give ground: it ellipsizes so the
+ * reading cells never wrap the line. */
+.meteo-strip-station {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 650;
+}
+
+.meteo-strip-station a {
+  color: var(--meteo-accent, #0f7490);
+  text-decoration: none;
+}
+
+.meteo-strip-station a:hover {
+  text-decoration: underline;
+}
+
+.meteo-strip-wind {
+  white-space: nowrap;
+}
+
+.meteo-strip-wind strong {
+  font-size: 1.15rem;
+  font-weight: 750;
+}
+
+.meteo-strip-wind small {
+  margin-left: 0.3em;
+  font-size: 0.7rem;
+  color: var(--meteo-muted, #62717f);
+}
+
+/* Lull and gust wear the shared micro-label voice: on a headerless line the
+ * bare numbers would be ambiguous. */
+.meteo-strip-lull,
+.meteo-strip-gust {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.meteo-strip-from,
+.meteo-strip-temp {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.meteo-strip-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--meteo-muted, #62717f);
+  white-space: nowrap;
+}
+
+/* Reason words stand in for the reading cells; the held min-height keeps an
+ * outage the same size as a reading. */
+.meteo-strip-reason {
+  color: var(--meteo-muted, #62717f);
+  font-style: italic;
+}
+
+} /* @layer meteo */

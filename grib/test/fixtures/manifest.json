@@ -1,0 +1,266 @@
+{
+  "eccodesVersion": "2.48.0",
+  "harvestedAt": "2026-08-12T03:57:46Z",
+  "generator": "python/tools/harvest_grib_fixtures.py",
+  "fixtures": [
+    {
+      "name": "gdps-tmp-2m",
+      "model": "gdps",
+      "grib2Bytes": 997819,
+      "expectBytes": 14710,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "geps-orog-m00",
+      "model": "geps",
+      "grib2Bytes": 92311,
+      "expectBytes": 14534,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "geps-tmp-2m-m00",
+      "model": "geps",
+      "grib2Bytes": 146824,
+      "expectBytes": 14459,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "geps-tmp-2m-m01",
+      "model": "geps",
+      "grib2Bytes": 156999,
+      "expectBytes": 14676,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "gfs-shtfl-ave-0-6h",
+      "model": "gfs",
+      "grib2Bytes": 853361,
+      "expectBytes": 15119,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "gfs-tmp-850mb",
+      "model": "gfs",
+      "grib2Bytes": 853683,
+      "expectBytes": 14621,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "gfs-ugrd-850mb",
+      "model": "gfs",
+      "grib2Bytes": 963284,
+      "expectBytes": 14761,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "gfs-vgrd-850mb",
+      "model": "gfs",
+      "grib2Bytes": 972612,
+      "expectBytes": 14755,
+      "gridDefinitionTemplateNumber": 0,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "hrdps-continental-tmp-2m",
+      "model": "hrdps-continental",
+      "grib2Bytes": 3648199,
+      "expectBytes": 13027,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "hrdps-west-tmp-2m",
+      "model": "hrdps-west",
+      "grib2Bytes": 1110357,
+      "expectBytes": 12942,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "hrrr-tmp-850mb",
+      "model": "hrrr-conus",
+      "grib2Bytes": 569141,
+      "expectBytes": 15595,
+      "gridDefinitionTemplateNumber": 30,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "nam-nest-tmp-bitmap",
+      "model": "nam-conus-nest",
+      "grib2Bytes": 2160373,
+      "expectBytes": 13687,
+      "gridDefinitionTemplateNumber": 30,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": true,
+      "fieldCount": 1
+    },
+    {
+      "name": "nam-tmp-850mb",
+      "model": "nam",
+      "grib2Bytes": 109780,
+      "expectBytes": 15097,
+      "gridDefinitionTemplateNumber": 30,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "nam-uv-10m",
+      "model": "nam",
+      "grib2Bytes": 383374,
+      "expectBytes": 37498,
+      "gridDefinitionTemplateNumber": 30,
+      "dataRepresentationTemplateNumber": 3,
+      "packingType": "grid_complex_spatial_differencing",
+      "bitmapPresent": false,
+      "fieldCount": 2
+    },
+    {
+      "name": "raqdps-pm25-sfc",
+      "model": "raqdps",
+      "grib2Bytes": 499936,
+      "expectBytes": 15568,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "rdps-tmp-2m",
+      "model": "rdps",
+      "grib2Bytes": 617185,
+      "expectBytes": 14730,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "reps-tmp-2m-m00",
+      "model": "reps",
+      "grib2Bytes": 404956,
+      "expectBytes": 14541,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "reps-tmp-2m-m01",
+      "model": "reps",
+      "grib2Bytes": 421886,
+      "expectBytes": 14754,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "reps-ugrd-10m-m00",
+      "model": "reps",
+      "grib2Bytes": 543525,
+      "expectBytes": 12728,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    },
+    {
+      "name": "reps-vgrd-10m-m00",
+      "model": "reps",
+      "grib2Bytes": 549374,
+      "expectBytes": 12634,
+      "gridDefinitionTemplateNumber": 1,
+      "dataRepresentationTemplateNumber": 40,
+      "packingType": "grid_jpeg",
+      "bitmapPresent": false,
+      "fieldCount": 1
+    }
+  ],
+  "oversized": [],
+  "gaps": [],
+  "findings": {
+    "noaaPackingTemplates": {
+      "gfs-tmp-850mb": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "gfs-ugrd-850mb": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "gfs-vgrd-850mb": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "gfs-shtfl-ave-0-6h": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "hrrr-tmp-850mb": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "nam-uv-10m": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "nam-tmp-850mb": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      },
+      "nam-nest-tmp-bitmap": {
+        "packingType": "grid_complex_spatial_differencing",
+        "dataRepresentationTemplateNumber": 3
+      }
+    },
+    "gfsUVStorage": "pgrb2.0p25 stores UGRD and VGRD as SEPARATE idx records (distinct byte offsets), not paired submessages"
+  }
+}

@@ -1,0 +1,108 @@
+---
+import Search from "@astrojs/starlight/components/Search.astro";
+import { GITHUB_URL, NAV_LINKS } from "../../lib/nav";
+import ThemeToggle from "../ThemeToggle.astro";
+import SiteTitle from "./SiteTitle.astro";
+---
+
+<div class="docs-header">
+  <div class="title-wrapper"><SiteTitle /></div>
+  <div class="search"><Search /></div>
+  <nav class="global-nav" aria-label="Project">
+    {
+      NAV_LINKS.map(({ label, href }) => (
+        <a href={href} aria-current={Astro.url.pathname.startsWith(href) ? "page" : undefined}>
+          {label}
+        </a>
+      ))
+    }
+    <a class="global-nav__github" href={GITHUB_URL} aria-label="GitHub repository">
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+        />
+      </svg>
+    </a>
+    <ThemeToggle />
+  </nav>
+</div>
+
+<style>
+  @layer starlight.components {
+    .docs-header {
+      display: grid;
+      grid-template-columns: auto minmax(12rem, 22rem) 1fr;
+      align-items: center;
+      gap: clamp(0.75rem, 2vw, 1.5rem);
+      height: 100%;
+    }
+
+    .title-wrapper {
+      min-width: 0;
+      overflow: clip;
+      padding: 0.25rem;
+      margin: -0.25rem;
+    }
+
+    .search {
+      min-width: 0;
+      width: 100%;
+      justify-self: start;
+    }
+
+    .global-nav {
+      justify-self: end;
+      /* Align the nav cluster's right edge with the homepage header bar
+         (max-width 1188px, centered, 24px padding) so the links do not
+         jump when moving between the homepage and the docs. */
+      margin-inline-end: max(0px, calc((100vw - 1188px) / 2 + 24px - var(--sl-nav-pad-x)));
+      display: flex;
+      align-items: center;
+      gap: 1.05rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .global-nav a {
+      color: var(--ink-mute);
+      text-decoration: none;
+      text-underline-offset: 0.25em;
+    }
+
+    .global-nav a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .global-nav a[aria-current="page"] {
+      color: var(--ink);
+    }
+
+    .global-nav__github {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    @media (max-width: 71.99rem) {
+      .docs-header {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .search {
+        justify-self: end;
+      }
+
+      .global-nav {
+        display: none;
+      }
+    }
+
+    @media (max-width: 49.99rem) {
+      .search {
+        width: 2.5rem;
+      }
+    }
+  }
+</style>
