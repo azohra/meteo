@@ -19,6 +19,7 @@ function fixture(name: string): string {
 const hrrrRecords = () => parseIdx(fixture("hrrr.t12z.wrfprsf24.excerpt.idx"));
 const gfsRecords = () => parseIdx(fixture("gfs.t12z.pgrb2.0p25.f024.excerpt.idx"));
 const nestRecords = () => parseIdx(fixture("nam.t12z.conusnest.hiresf24.tm00.excerpt.idx"));
+const rrfsRecords = () => parseIdx(fixture("rrfs.t06z.2dfld.3km.f012.conus.excerpt.idx"));
 
 describe("parseIdx", () => {
   it("parses idx lines into offsets and lengths", () => {
@@ -70,6 +71,51 @@ describe("findRecord", () => {
       MissingRecordError,
     );
     expect(() => findRecord(gfsRecords(), "DPT", "850 mb", "24 hour fcst")).toThrow(/DPT:850 mb/);
+  });
+});
+
+describe("qualified records (RRFS-SD's speciated aerosols)", () => {
+  const SMOKE = "aerosol=Particulate organic matter dry:aerosol_size <2.5e-06";
+  const DUST = "aerosol=Dust dry:aerosol_size <2.5e-06";
+
+  it("parses the tokens past the forecast field into qualifier", () => {
+    const records = rrfsRecords();
+    const smoke = records.find((record) => record.qualifier === SMOKE);
+    expect(smoke).toBeDefined();
+    expect(smoke!.variable).toBe("MASSDEN");
+    // Ordinary records carry an empty qualifier, not an absent one.
+    const ordinary = findRecord(records, "TMP", "2 m above ground", "12 hour fcst");
+    expect(ordinary.qualifier).toBe("");
+  });
+
+  it("selects a species by qualifier where variable, level, and forecast collide", () => {
+    const records = rrfsRecords();
+    const smoke = findRecord(records, "MASSDEN", "8 m above ground", "12 hour fcst", SMOKE);
+    const dust = findRecord(records, "MASSDEN", "8 m above ground", "12 hour fcst", DUST);
+    expect(smoke.offset).not.toBe(dust.offset);
+  });
+
+  it("an empty qualifier demands an unqualified record", () => {
+    const records = rrfsRecords();
+    // AOTK is published unqualified — the empty qualifier finds it.
+    findRecord(
+      records,
+      "AOTK",
+      "entire atmosphere (considered as a single layer)",
+      "12 hour fcst",
+      "",
+    );
+    // Every MASSDEN record is speciated, so demanding an unqualified one fails.
+    expect(() => findRecord(records, "MASSDEN", "8 m above ground", "12 hour fcst", "")).toThrow(
+      MissingRecordError,
+    );
+  });
+
+  it("omitting the qualifier keeps the first-match behaviour", () => {
+    const records = rrfsRecords();
+    const first = findRecord(records, "MASSDEN", "8 m above ground", "12 hour fcst");
+    const bySpecies = findRecord(records, "MASSDEN", "8 m above ground", "12 hour fcst", SMOKE);
+    expect(first.offset).toBe(bySpecies.offset); // smoke happens to be listed first
   });
 });
 

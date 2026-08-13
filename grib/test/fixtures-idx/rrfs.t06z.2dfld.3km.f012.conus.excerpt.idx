@@ -1,0 +1,33 @@
+10:11947398:d=2026081206:GUST:surface:12 hour fcst:
+14:14184695:d=2026081206:MSLET:mean sea level:12 hour fcst:
+32:28371943:d=2026081206:HGT:surface:12 hour fcst:
+74:79085346:d=2026081206:TMP:2 m above ground:12 hour fcst:
+76:82551179:d=2026081206:DPT:2 m above ground:12 hour fcst:
+83:93325457:d=2026081206:MASSDEN:8 m above ground:12 hour fcst:aerosol=Particulate organic matter dry:aerosol_size <2.5e-06
+84:94017207:d=2026081206:MASSDEN:8 m above ground:12 hour fcst:aerosol=Dust dry:aerosol_size <2.5e-06
+85:94311563:d=2026081206:MASSDEN:8 m above ground:11-12 hour ave fcst:aerosol=Total aerosol:aerosol_size <2.5e-06
+86:94987471:d=2026081206:MASSDEN:8 m above ground:11-12 hour ave fcst:aerosol=Total aerosol:aerosol_size <1e-05
+87:95677822:d=2026081206:MASSDEN:8 m above ground:12 hour fcst:aerosol=Dust dry:aerosol_size >=2.5e-06,<1e-05
+88:95758116:d=2026081206:UGRD:10 m above ground:12 hour fcst:
+89:97590077:d=2026081206:VGRD:10 m above ground:12 hour fcst:
+95:103171075:d=2026081206:PRATE:surface:12 hour fcst:
+96:103512037:d=2026081206:PRATE:surface:11-12 hour max fcst:
+97:104026144:d=2026081206:APCP:surface:11-12 hour acc fcst:
+98:104187093:d=2026081206:APCP:surface:0-12 hour acc fcst:
+122:107699710:d=2026081206:LHTFL:surface:11-12 hour ave fcst:
+123:110129943:d=2026081206:SHTFL:surface:11-12 hour ave fcst:
+130:117941824:d=2026081206:SHTFL:surface:12 hour fcst:
+131:120227165:d=2026081206:LHTFL:surface:12 hour fcst:
+144:130698437:d=2026081206:CAPE:surface:12 hour fcst:
+145:132567999:d=2026081206:CIN:surface:12 hour fcst:
+147:134601019:d=2026081206:AOTK:entire atmosphere (considered as a single layer):12 hour fcst:
+148:136653292:d=2026081206:COLMD:entire atmosphere (considered as a single layer):12 hour fcst:aerosol=Particulate organic matter dry:aerosol_size <2.5e-06
+149:137636193:d=2026081206:COLMD:entire atmosphere (considered as a single layer):12 hour fcst:aerosol=Dust dry:aerosol_size <2.5e-06
+150:138051977:d=2026081206:COLMD:entire atmosphere (considered as a single layer):12 hour fcst:aerosol=Dust dry:aerosol_size >=2.5e-06,<1e-05
+151:138265513:d=2026081206:COLMD:entire atmosphere (considered as a single layer):12 hour fcst:aerosol=Dust dry:aerosol_size <1e-05
+158:144217909:d=2026081206:LCDC:low cloud layer:12 hour fcst:
+159:144805682:d=2026081206:MCDC:middle cloud layer:12 hour fcst:
+160:145242814:d=2026081206:HCDC:high cloud layer:12 hour fcst:
+161:145686756:d=2026081206:TCDC:entire atmosphere (considered as a single layer):12 hour fcst:
+162:146351466:d=2026081206:TCDC:entire atmosphere (considered as a single layer):11-12 hour ave fcst:
+271:301892213:d=2026081206:HPBL:surface:12 hour fcst:

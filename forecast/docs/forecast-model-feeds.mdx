@@ -9,6 +9,7 @@ export const feedFacts = {
   "hrdps-west": { transport: "Alpha Datamart, whole-domain GRIB2", verified: "—" },
   "hrdps-continental": { transport: "Datamart, whole-domain GRIB2", verified: "2026-08-08" },
   "hrrr-conus": { transport: "Cloud bucket, byte-ranged GRIB2", verified: "2026-08-11" },
+  rrfs: { transport: "noaa-rrfs-pds, byte-ranged GRIB2, two files", verified: "2026-08-13" },
   rdps: { transport: "Datamart, whole-domain GRIB2", verified: "2026-08-08" },
   gdps: { transport: "Datamart, whole-domain GRIB2", verified: "2026-08-08" },
   gfs: { transport: "Cloud bucket, byte-ranged GRIB2", verified: "2026-08-11" },
@@ -22,18 +23,6 @@ export const feedFacts = {
 };
 
 export const extraFeeds = [
-  {
-    label: "RRFS",
-    slug: "rrfs",
-    provider: "NOAA",
-    kind: "deterministic",
-    grid: "3 km",
-    cadence: "hourly cycles",
-    horizon: "84 h (00/06/12/18Z), 18 h others",
-    transport: "noaa-rrfs-pds prototype, byte-ranged GRIB2",
-    verified: "2026-08-08",
-    status: "adoption staged",
-  },
   {
     label: "IFS open data",
     slug: "—",
@@ -82,7 +71,7 @@ and field semantics vary by model; each model's curated pressure-level set
 and science-field capabilities are declared in
 [`models.json`](https://github.com/azohra/meteo/blob/main/forecast/models.json).
 
-Measurements use live service responses checked through 2026-08-11. When provider
+Measurements use live service responses checked through 2026-08-13. When provider
 documentation and live capabilities disagree, use the live response and update
 the verification date.
 
@@ -424,8 +413,8 @@ NOAA's North American Mesoscale system supplies two catalogue entries.
 operational and NAM, HREF, SREF, and HiresW (except Guam) are terminated —
 [SCN 26-48 Updated](https://www.weather.gov/media/notification/pdf_2026/SCN26-048-Updated_RRFS_and_REFS_Implementation.aaa.pdf),
 originally "on or about" 2026-08-31 and since
-[rescheduled to October 6](https://gribstream.com/blog/noaa-rrfs-refs-operational-august-2026),
-with a parallel NOMADS feed expected ~2026-08-11. Both catalogue entries
+[rescheduled to October 6](https://gribstream.com/blog/noaa-rrfs-refs-operational-august-2026);
+the parallel NOMADS feed went live 2026-08-11 as scheduled. Both catalogue entries
 declare the machine-readable `sunset` (date 2026-10-06, successor `rrfs`);
 the RRFS section below records the verified successor.
 
@@ -482,39 +471,96 @@ Quirks:
   (plus mixed-layer/most-unstable variants), `HPBL`, and the 2 m/10 m
   surface set are present at every hour including f00 as analysis records.
 
-## RRFS 3 km — adoption staged
+## RRFS 3 km — supported, experimental
 
-The Rapid Refresh Forecast System is the verified NAM successor: at cutover
-the two NAM entries collapse into a single `rrfs` leg carrying the nest's
-3 km resolution and the parent's 84 h horizon.
+The Rapid Refresh Forecast System is the verified NAM successor: the two
+NAM entries collapse into a single `rrfs` leg carrying the nest's 3 km
+resolution and the parent's 84 h horizon. The parallel feed went live on
+NOMADS 2026-08-11 per
+[SCN 26-48 Updated](https://www.weather.gov/media/notification/pdf_2026/scn26-048_RRFS_and_REFS_Implementation.aab.pdf);
+production implementation is 2026-10-06. The entry stays `experimental`
+until the operational feed lands and a real scheduled run survives.
 
 | Fact | Value |
 | --- | --- |
-| **Transport** | the `noaa-rrfs-pds` prototype bucket, which already uses the operational naming from SCN 26-48: `rrfs.tCCz.prslev.3km.fFFF.conus.grib2` plus a `2dfld` companion, both with `.idx` |
-| **Cycles** | hourly; 00/06/12/18Z run to **84 h**, the others to 18 h |
-| **Availability** | prototype 12Z f084 landed ≈ T+3:31 |
-| **Verified** | 2026-08-08 |
+| **Transport** | the `noaa-rrfs-pds` bucket: `rrfs.tCCz.prslev.3km.fFFF.conus.grib2` plus the `rrfs.tCCz.2dfld.3km.fFFF.conus.grib2` science companion, both with `.idx`, fetched by byte range — the operational naming from SCN 26-48, verified byte-identical in layout on the parallel and prototype trees. `METEO_RRFS_BASE` re-points the base prefix |
+| **Cycles** | hourly, but **only 00/06/12/18Z publish the isobaric `prslev` files**, to **84 h**; the other cycles publish sub-hourly `2dfld` output to 18 h and nothing a profile can build from (verified live 2026-08-13 on the para tree). The catalogue declares the 6-hour cadence |
+| **Availability** | t00z f084 landed ≈ **T+3:33** (bucket object timestamps, 2026-08-12) |
+| **Cost** | ~588 MB per whole prslev file (675 records) — ranged reads are not an optimization but the difference between ~70 records and ~50 GiB per run |
+| **Verified** | 2026-08-13, against the live parallel feed and the last prototype cycles |
+
+The transport during the parallel phase, verified 2026-08-13: the NOMADS
+para tree (`nomads…/com/rrfs/para/`) carries **no `.idx` sidecars** — and
+NOMADS is rate-limited web dissemination, not a bulk transport. The
+`noaa-rrfs-pds` bucket carries `.idx` beside every GRIB2 and mirrored the
+prototype in near-real-time until that feed froze at 2026-08-12 ~13Z, the
+documented end of the prototype;
+[the AWS registry entry](https://registry.opendata.aws/noaa-rrfs/) commits
+that pre-implementation and operational data will be accessible through
+this same bucket, and no v1.0 objects had appeared there yet on the
+verification date. The missing sidecars are a NOMADS dissemination gap,
+not a product change: the production chain generates `.idx` (every
+prototype object on the bucket has one), NOAA GSL's own visualization
+pipelines report the same para-tree gap
+([zyra#364](https://github.com/NOAA-GSL/zyra/issues/364)) and read the
+bucket's `rrfs_public/` prefix as the v1.0 destination, sidecars included.
+The builder therefore defaults to `rrfs_public/` with the operational
+naming, and `METEO_RRFS_BASE` re-points it without a release if the
+destination moves.
 
 Quirks:
 
 - **One 3 km North-America integration**; `conus`, `ak`, `hi`, and `pr` are
-  distribution cutouts, and the CONUS cutout is **exactly the HRRR grid**
-  (sites 224–236 km inside). Which cutout a builder fetches is transport
-  detail, which is why the slug is `rrfs`, not `rrfs-conus`.
+  distribution cutouts, and the CONUS cutout is **exactly the HRRR grid** —
+  Lambert 1799 × 1059, Latin 38.5°, LoV 262.5°, 3 km, grid-relative winds,
+  re-verified by decode 2026-08-13 (sites 224–236 km inside). Which cutout a
+  builder fetches is transport detail, which is why the slug is `rrfs`, not
+  `rrfs-conus`.
 - **Vertical velocity is geometric:** `prslev` carries the full 9-level
-  curated band with TMP/RH/**DPT**/HGT/UGRD/VGRD — but vertical velocity is
-  `DZDT` (geometric w, m/s), not omega; VVEL is absent at band levels. The
-  port will convert at build (ω ≈ −ρgw) and declare
-  `verticalVelocity: "fromGeometricW"` so consumers can see the provenance.
-- **`2dfld` carries the science set:** instantaneous **and** hour-average
-  SHTFL/LHTFL, instantaneous GUST, surface-based CAPE/CIN plus the variant
-  menu, HPBL, layered cloud, and hourly-bucket APCP.
-- **Content may still move:** NCEP warns decoders that record content,
-  order, and scaling may change at implementation — everything above is
-  re-verified against the parallel feed (`nomads…/com/rrfs/para/`, expected
-  ~2026-08-11) or the production paths before the port lands.
+  curated band with TMP/RH/**DPT**/HGT/UGRD/VGRD — a true level dew point,
+  which NAM never published at all levels — but vertical velocity is `DZDT`
+  (geometric w, m/s) at all nine levels; **VVEL does not exist** (zero
+  records in the live index). The builder converts at build through the
+  hydrostatic relation ω ≈ −ρgw with dry-air density ρ = p/(R_d·T) from the
+  level's own temperature (the virtual-temperature correction it ignores is
+  ≲1 %), and the catalogue declares `verticalVelocity: "fromGeometricW"` so
+  consumers can label converted lift differently from native omega.
+- **MSL pressure is `MSLET`** — not HRRR's MSLMA or NAM's PRMSL; records
+  are selected by that exact name.
+- **Precipitation is a fixed one-hour bucket:** APCP publishes a
+  `(h−1)–h hour acc` record at every step beside the run total, so mm over
+  one hour is mm/h directly with no differencing (catalogue:
+  `windowMeanRate`). An instantaneous PRATE and an hourly-max PRATE are
+  published too and left unread.
+- **Fluxes come in instant and hour-average twins:** un-suffixed
+  SHTFL/LHTFL (`:12 hour fcst:`) are instantaneous; `11-12 hour ave fcst`
+  twins sit beside them, separated by the idx window token. The builder
+  reads the instantaneous pair, like the other NOAA models.
+- **RRFS-SD speciates its aerosols — the idx qualifier is load-bearing:**
+  where HRRR carried one unspeciated smoke tracer, RRFS publishes MASSDEN
+  and COLMD once per species (`aerosol=Particulate organic matter dry`,
+  `aerosol=Dust dry`, in size bins) on the *same* variable/level/forecast
+  triple, so a reader that ignores the trailing idx tokens gets whichever
+  species the file lists first. The smoke block reads the biomass-burning
+  tracer (particulate organic matter, PM2.5): surface MASSDEN at 8 m
+  (kg/m³ → µg/m³, decoded 16.7 µg/m³ at a founding site on the smoky
+  verification day) and COLMD column mass (kg/m² → mg/m²). `AOTK` is
+  published unqualified and is the **total-aerosol** optical thickness —
+  smoke plus dust — the model's own sun-dimming number, published as the
+  smoke block's `aot`. The aerosols are **radiatively coupled**: RRFS-SD v1
+  includes the aerosol direct feedback to radiation (Li et al. 2025, GRL,
+  10.1029/2025GL115384), so published fluxes and derived quantities are
+  already smoke-aware — declared `smoke: "radiativelyCoupled"` in the
+  catalogue and echoed per document.
+- **The science set is otherwise complete hourly:** instantaneous GUST,
+  surface-based CAPE/CIN plus the variant menu, HPBL, LCDC/MCDC/HCDC plus a
+  boundary-layer TCDC, and terrain `HGT:surface` at every hour.
+- **Content may still move before implementation:** NCEP warns decoders
+  that record content, order, and scaling may change — the facts above are
+  re-verified against the production paths at cutover.
 - **REFS** (five RRFS members plus HRRR-initialized members, to 60 h at
-  00/06/12/18Z) is a potential future ensemble leg beside REPS and GEPS.
+  00/06/12/18Z, live on the para tree since 2026-08-11) is a potential
+  future ensemble leg beside REPS and GEPS.
 
 ## REPS 10 km ensemble — supported
 
@@ -760,7 +806,7 @@ catalogue can revisit.
 - **ECCC** (HRDPS, RDPS, GDPS, REPS, GEPS): used under the
   [Environment and Climate Change Canada Data Server End-use Licence](https://eccc-msc.github.io/open-data/licence/readme_en/).
   Derived profiles carry the attribution requirement.
-- **NOAA** (HRRR, GFS, NAM, GOES-18 — and RAP/RRFS if adopted): U.S.
+- **NOAA** (HRRR, RRFS, GFS, NAM, GOES-18 — and RAP if adopted): U.S.
   government open data. Attribution is requested, and use implies no NOAA
   endorsement of this project.
 - **ECMWF** open data is CC-BY-4.0 — relevant only if an IFS-based leg is

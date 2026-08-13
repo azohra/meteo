@@ -131,6 +131,53 @@
       }
     },
     {
+      "slug": "rrfs",
+      "label": "RRFS",
+      "provider": "NOAA",
+      "gridKm": 3,
+      "stepHours": 1,
+      "horizonHours": 84,
+      "runIntervalHours": 6,
+      "typicalPublicationLagHours": 3.5,
+      "kind": "deterministic",
+      "experimental": true,
+      "capabilities": {
+        "levels": true,
+        "pressureLevels": [
+          925,
+          900,
+          875,
+          850,
+          800,
+          750,
+          700,
+          650,
+          600
+        ],
+        "verticalVelocity": "fromGeometricW",
+        "verticalVelocityLevels": [
+          925,
+          900,
+          875,
+          850,
+          800,
+          750,
+          700,
+          650,
+          600
+        ],
+        "heatFluxes": true,
+        "gust": "instant",
+        "precipitation": "windowMeanRate",
+        "cape": true,
+        "cin": true,
+        "pblHeight": true,
+        "cloudLayers": true,
+        "cloudProfile": false,
+        "smoke": "radiativelyCoupled"
+      }
+    },
+    {
       "slug": "rdps",
       "label": "RDPS",
       "provider": "ECCC",

@@ -1,5 +1,5 @@
 ---
-title: "Choosing among eight deterministic forecast models"
+title: "Choosing among nine deterministic forecast models"
 description: "Model choice by spatial resolution and forecast schedule"
 ---
 
@@ -7,7 +7,7 @@ import ModelDisagreementLab from "../../../../components/labs/ModelDisagreementL
 import CapabilityMatrix from "../../../../components/docs/CapabilityMatrix.astro";
 import ModelHorizonChart from "../../../../components/docs/ModelHorizonChart.astro";
 
-Eight deterministic models publish through the same profile contract with different resolutions,
+Nine deterministic models publish through the same profile contract with different resolutions,
 lead times, pressure levels, optional capabilities, and field semantics. Choose by lead time and
 required detail, then use disagreement to locate sensitivity in the day.
 
@@ -17,13 +17,14 @@ required detail, then use disagreement to locate sensitivity in the day.
 
 | Question | Begin with | Then compare |
 | --- | --- | --- |
-| What will the launch do today? | HRDPS 1 km (an experimental feed) / 2.5 km, HRRR or NAM nest 3 km | each other, then observations |
+| What will the launch do today? | HRDPS 1 km (an experimental feed) / 2.5 km, HRRR, RRFS (an experimental feed) or NAM nest 3 km | each other, then observations |
 | How stable is tomorrow’s forecast? | the same high-resolution models | RDPS |
-| Is the weekend worth protecting? | RDPS, NAM 12 km, GDPS | GFS trend |
+| Is the weekend worth protecting? | RDPS, NAM 12 km, RRFS, GDPS | GFS trend |
 | Is next week worth watching? | GDPS / GFS | wait for shorter-range guidance |
 
 Both NAM entries carry a declared `sunset` in the catalogue — retired 2026-10-06, succeeded by
-RRFS — so weigh that date when building anything durable on them; the
+RRFS, which already publishes through the same contract as an experimental feed — so weigh that
+date when building anything durable on them; the
 [feed reference](/docs/forecast/forecast-model-feeds/) records the lifecycle details.
 
 A global model can identify a ridge or trough many days out. It cannot resolve the launch cycle on a

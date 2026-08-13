@@ -43,6 +43,7 @@ export const noSleep = async (_ms: number): Promise<void> => {};
 // assertions or flip dataset reads into S3 mode.
 const WIRE_ENV = [
   "METEO_DATAMART_BASE",
+  "METEO_RRFS_BASE",
   "METEO_DATA_BASE",
   "R2_ENDPOINT",
   "METEO_R2_BUCKET",

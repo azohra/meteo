@@ -5,7 +5,7 @@ description: "Per-model field meanings, and absences as stated facts"
 
 import CapabilityMatrix from "../../site/src/components/docs/CapabilityMatrix.astro";
 
-Ten models publish through one contract, but their fields differ in measurement, cadence, and
+Eleven models publish through one contract, but their fields differ in measurement, cadence, and
 availability. A blank can accurately state that a feed omits a quantity. The model catalogue
 ([`models.json`](https://github.com/azohra/meteo/blob/main/forecast/models.json)) declares what
 each field means and whether each model publishes it.
@@ -40,7 +40,7 @@ files' own interval metadata could not answer, is in the
 ## Smoke is a coupling claim, not just a field list
 
 `capabilities.smoke` carries three values because "this model publishes
-smoke" is only half the fact. `"radiativelyCoupled"` (HRRR) means the
+smoke" is only half the fact. `"radiativelyCoupled"` (HRRR, RRFS) means the
 model's forecast smoke attenuates its own shortwave — its published
 fluxes, and every thermal quantity derived from them, are **already
 smoke-aware**, so applying a smoke correction on top would double-count
@@ -52,6 +52,18 @@ model, never inside the profile. Documents echo the token as
 `semantics.smoke`, and the renderer's smoke-adjusted view refuses to run
 wherever the declaration says the base picture already did the
 arithmetic — see [Smoke and thermals](/logbook/smoke-and-thermals/).
+
+## One model's lift is native, another's is converted
+
+Every omega in the dataset is pascals per second with negative as lift, but not every model
+computed one. Most capable models publish their own omega; RRFS publishes geometric vertical
+velocity instead — metres per second — and the builder converts it at build time through the
+hydrostatic relation ω ≈ −ρgw, with dry-air density from the level's own pressure and
+temperature. The catalogue therefore declares vertical-velocity *provenance*, not presence:
+`"omega"` for a provider's own pressure tendency, `"fromGeometricW"` for a converted value, so a
+display can label converted lift differently from native lift instead of blending the two claims.
+The conversion and its assumptions are recorded in the
+[forecast model feed reference](/docs/forecast/forecast-model-feeds/).
 
 ## Surface-based CAPE
 
@@ -109,8 +121,8 @@ ensemble panel showing CAPE spread from any other model is showing something oth
 ## Cloud shading is two kinds of evidence
 
 GFS is the only model here that publishes cloud fraction on pressure levels — model cloud with
-altitude attached. HRRR and both NAM models publish low, middle, and high layer fractions without a
-profile, GFS carries those layers as well as its profile, and every
+altitude attached. HRRR, RRFS, and both NAM models publish low, middle, and high layer fractions
+without a profile, GFS carries those layers as well as its profile, and every
 ECCC model publishes a single total-column percentage. So the cloud shading in the chart body means
 different things by model. Where the model publishes its own per-level cloud, the renderer shades
 from it: the model asserting cloud. Everywhere else the shading is an inference — levels whose

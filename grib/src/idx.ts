@@ -4,6 +4,11 @@ export interface IdxRecord {
   variable: string;
   level: string;
   forecast: string;
+  /** NCEP's extra idx tokens past the forecast field, colon-joined (e.g.
+   * RRFS-SD's `aerosol=Dust dry:aerosol_size <2.5e-06`); "" for ordinary
+   * records. Same-variable records can differ only here, so a caller that
+   * ignores it gets whichever species the file lists first. */
+  qualifier?: string;
   offset: number;
   length: number | undefined;
 }
@@ -12,16 +17,23 @@ export interface IdxRecord {
 export class MissingRecordError extends Error {}
 
 export function parseIdx(text: string): IdxRecord[] {
-  const rows: Array<[number, string, string, string]> = [];
+  const rows: Array<[number, string, string, string, string]> = [];
   for (const line of text.split("\n")) {
     const parts = line.split(":");
     if (parts.length < 6) continue;
-    rows.push([Number.parseInt(parts[1]!, 10), parts[3]!, parts[4]!, parts[5]!]);
+    rows.push([
+      Number.parseInt(parts[1]!, 10),
+      parts[3]!,
+      parts[4]!,
+      parts[5]!,
+      parts.slice(6).join(":"),
+    ]);
   }
-  return rows.map(([offset, variable, level, forecast], index) => ({
+  return rows.map(([offset, variable, level, forecast, qualifier], index) => ({
     variable,
     level,
     forecast,
+    qualifier,
     offset,
     length: index + 1 < rows.length ? rows[index + 1]![0] - offset : undefined,
   }));
@@ -32,13 +44,21 @@ export function findRecord(
   variable: string,
   level: string,
   forecast: string,
+  qualifier?: string,
 ): IdxRecord {
   for (const record of records) {
     if (record.variable === variable && record.level === level && record.forecast === forecast) {
+      if (qualifier !== undefined && (record.qualifier ?? "") !== qualifier) {
+        continue;
+      }
       return record;
     }
   }
-  throw new MissingRecordError(`${variable}:${level}:${forecast} is not in the GRIB index`);
+  const wanted =
+    qualifier === undefined || qualifier === ""
+      ? `${variable}:${level}:${forecast}`
+      : `${variable}:${level}:${forecast}:${qualifier}`;
+  throw new MissingRecordError(`${wanted} is not in the GRIB index`);
 }
 
 /** Inclusive HTTP Range header value; open-ended for the last record. */

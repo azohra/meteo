@@ -57,6 +57,7 @@ export const BUILDERS: ReadonlyMap<string, RegisteredBuilder> = new Map<string, 
     "hrrr-conus",
     async (options) => (await import("./hrrr.js")).buildHrrr(forecastOptions(options)),
   ],
+  ["rrfs", async (options) => (await import("./rrfs.js")).buildRrfs(forecastOptions(options))],
   [
     "rdps",
     async (options) => {
