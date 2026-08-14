@@ -44,10 +44,14 @@ const lanes = {
     ["test station", ["pnpm", "exec", "vp", "test"], "station"],
     ["test forecast", ["pnpm", "exec", "vp", "test"], "forecast"],
   ],
+  // After astro build, check reads src/ and Playwright serves dist/ —
+  // disjoint surfaces, so the two run as a fork (a parallel step group).
   site: [
     ["site build", ["pnpm", "exec", "astro", "build"], "site"],
-    ["site check", ["pnpm", "exec", "astro", "check"], "site"],
-    ["site test", ["pnpm", "exec", "playwright", "test"], "site"],
+    [
+      ["site check", ["pnpm", "exec", "astro", "check"], "site"],
+      ["site test", ["pnpm", "exec", "playwright", "test"], "site"],
+    ],
   ],
 };
 
@@ -71,13 +75,22 @@ function run(name, [command, ...args], directory) {
   });
 }
 
+function isFork(step) {
+  return Array.isArray(step[0]);
+}
+
+async function runStep([name, command, directory]) {
+  const result = await run(name, command, directory);
+  console.log(`${result.code === 0 ? "ok  " : "FAIL"} ${result.name} (${result.seconds}s)`);
+  return result;
+}
+
 async function runLane(steps) {
   const results = [];
-  for (const [name, command, directory] of steps) {
-    const result = await run(name, command, directory);
-    console.log(`${result.code === 0 ? "ok  " : "FAIL"} ${result.name} (${result.seconds}s)`);
-    results.push(result);
-    if (result.code !== 0) break; // later steps in the lane assume this one
+  for (const step of steps) {
+    const stepResults = isFork(step) ? await Promise.all(step.map(runStep)) : [await runStep(step)];
+    results.push(...stepResults);
+    if (stepResults.some((result) => result.code !== 0)) break; // later steps assume these
   }
   return results;
 }
