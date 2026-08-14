@@ -3,9 +3,8 @@ title: Tune the wire
 description: "Read the transport report every build prints, and let it decide what to change: connections, hosts, or nothing."
 ---
 
-From engine 0.1.3, every `meteo forecast build` prints a `[wire]` block
-beside its summary line. It is the evidence for every transport decision an
-operator faces — whether to raise a fetch gate, move a model to a different
+Every `meteo forecast build` prints a `[wire]` block beside its summary
+line. It is the evidence for every transport decision an operator faces — whether to raise a fetch gate, move a model to a different
 host, or leave a slow-looking lane exactly as it is.
 
 ```text
@@ -86,7 +85,7 @@ unpinned, and the scheduling rules from
 reasoning, and its Actions log carries live `[wire]` blocks from every
 tick.
 
-One ordering rule its history teaches: **publish before you pin.** A
+One ordering rule: **publish before you pin.** A
 lockfile cannot resolve an engine version that is not on the registry yet —
 release the engine first, then bump the pin and refresh the lockfile in
 the same commit, or the next tick fails at install.
