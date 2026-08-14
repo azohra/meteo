@@ -38,11 +38,9 @@ import {
 } from "./common.js";
 
 export const SLUG = "rrfs";
-// The prototype trees froze when the pre-implementation parallel phase began
-// (2026-08-11); the registry commits that the parallel and operational data
-// land on this same bucket, and NOAA GSL's own pipelines name rrfs_public/
-// as the v1.0 destination (with .idx sidecars the NOMADS para tree lacks).
-// METEO_RRFS_BASE re-points the builder without a release if that moves.
+// rrfs_public/ is the bucket prefix NOAA GSL's pipelines name as the v1.0
+// destination, with the .idx sidecars the NOMADS trees lack.
+// METEO_RRFS_BASE re-points the builder without a release.
 export const DEFAULT_BASE_URL = "https://noaa-rrfs-pds.s3.amazonaws.com/rrfs_public";
 export function baseUrl(): string {
   return (process.env["METEO_RRFS_BASE"] ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
