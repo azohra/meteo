@@ -10,9 +10,13 @@ import { appendHistoryLines } from "../history.js";
 import { manifestStats, roundDocument, writeJson, type PublishedManifest } from "../publish.js";
 import { parseSites } from "../sites.js";
 import { DownloadCounters, USER_AGENT, type TransportFetch } from "../providers/transport.js";
+import { runConcurrent } from "./common.js";
 import { openGranule, type GranuleReader } from "./granule.js";
 
 export const BUCKET = "https://noaa-goes18.s3.amazonaws.com";
+// The bucket is its own host, so the granule walk gets the same per-bucket
+// connection budget as the other NOAA builders.
+export const FETCH_CONCURRENCY = 10;
 export const WINDOW_HOURS = 72;
 export const DEFAULT_BACKFILL_HOURS = 6;
 export const GOES_REQUEST_TIMEOUT_S = 120;
@@ -153,8 +157,13 @@ export async function buildGoesProduct(product: Product, options: GoesBuildOptio
   const startedAt = performance.now();
   const sampler = options.granuleSamples ?? sampleGranule;
   const newObservations = new Map<string, ObservationEntry[]>(sites.map((site) => [site.slug, []]));
+  // The first granule locates every site's grid indices; the rest reuse
+  // them and fetch concurrently. Samples land keyed by position so the
+  // observation entries stay in granule order regardless of completion.
   let indices: SiteIndices | null = null;
-  for (const [key, observedAt] of keys) {
+  const samplesByKey = Array.from<Record<string, number>>({ length: keys.length });
+  const sampleAt = async (index: number): Promise<void> => {
+    const [key] = keys[index]!;
     const { indices: located, samples } = await sampler(
       `${BUCKET}/${key}`,
       product,
@@ -163,9 +172,17 @@ export async function buildGoesProduct(product: Product, options: GoesBuildOptio
       stats,
       wire,
     );
-    indices = located;
+    indices ??= located;
     log(`  ${key.split("/").pop()!}: whole-file`);
-    for (const [siteSlug, value] of Object.entries(samples)) {
+    samplesByKey[index] = samples;
+  };
+  await sampleAt(0);
+  await runConcurrent(
+    keys.slice(1).map((_, offset) => () => sampleAt(offset + 1)),
+    FETCH_CONCURRENCY,
+  );
+  for (const [index, [, observedAt]] of keys.entries()) {
+    for (const [siteSlug, value] of Object.entries(samplesByKey[index] ?? {})) {
       newObservations.get(siteSlug)?.push({ observedAt, [product.valueKey]: value });
     }
   }

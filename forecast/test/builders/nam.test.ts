@@ -402,7 +402,7 @@ describe.each(["nam", "nam-conus-nest"])("models.json matches the %s configurati
 });
 
 it("the fetch pool cap holds its catalogued value and URLs match the bucket grammar", () => {
-  expect(FETCH_CONCURRENCY).toBe(10);
+  expect(FETCH_CONCURRENCY).toBe(14);
   expect(NEST.maxNearestKm).toBe(5.0);
   expect(PARENT.maxNearestKm).toBe(15.0);
   expect(fileUrl("awphys", "20260807", "12", 6)).toBe(

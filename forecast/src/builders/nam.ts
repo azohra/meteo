@@ -42,7 +42,10 @@ import {
 
 export const BASE_URL = "https://noaa-nam-pds.s3.amazonaws.com";
 export const RUN_HOURS = ["18", "12", "06", "00"] as const;
-export const FETCH_CONCURRENCY = 10;
+// noaa-nam-pds serves ranged GETs at ~1 s per request, so connections, not
+// bandwidth, pace the nest — this gate runs wider than the other NOAA
+// builders' 10 for that reason.
+export const FETCH_CONCURRENCY = 14;
 
 // NAM publishes PRMSL directly; the PRES:surface record beside it is
 // station pressure, not the contract's MSL pressure.
