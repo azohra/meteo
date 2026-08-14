@@ -49,7 +49,11 @@ bindings apart.
   shared merge and clock rule) via the
   [client stores](/docs/station/client-data/). `poll-seconds` /
   `current-poll-seconds` override cadence, `paused` stops the loops without
-  dropping the held document, and `refresh()` refetches now.
+  dropping the held document, and `refresh()` refetches now. There is no
+  `live` attribute: this binding polls feed and current only — the `/live`
+  stream is reached through
+  [`createStationLiveStore`](/docs/station/client-data/#the-live-store) or
+  the react `useStationLive`.
 - Without `src`, the consumer owns the data: set the `feed` and
   `receivedAtMs` properties.
 - Display defaults: `unit`, `locale`, `thresholds` as attributes; `strings`,
@@ -79,6 +83,7 @@ Every react component has its tag twin, rendering the identical DOM:
 | Tag | React twin | Notes |
 |---|---|---|
 | `<meteo-station-card>` | `StationCard` | Compound — below |
+| `<meteo-station-card-header>` `-instrument` `-chart` `-summary` | `StationCard.Header` et al. | The card's composable pieces; a part outside `<meteo-station-card>` throws |
 | `<meteo-current-conditions>` | `CurrentConditions` | |
 | `<meteo-wind-history-chart>` | `WindHistoryChart` | `plot-height`, `window-hours`, `compare-offset-days` (`1\|2\|3`, absent when history doesn't reach back that far); the full inspector (preview, pin by timestamp, touch-safe); a persistent compass-letter row and Avg row above/below every vane |
 | `<meteo-trend-chart>` | `TrendChart` | `series="temperature|pressure"` required |
@@ -130,6 +135,5 @@ every visual and semantic rule, so mixing them across pages cannot drift.
 
 ## Stability
 
-Pre-1.0: tag names, the attribute/property surface, and the emitted class
-vocabulary documented here are stable; pin a minor version if you reach
-past them.
+Pre-1.0: the tag names, the attribute/property surface, and the emitted
+class vocabulary are stable; pin a minor version if you reach past them.

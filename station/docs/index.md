@@ -38,8 +38,6 @@ import { createStationFeedHandler } from "@azohra/meteo.station/server";
 
 ## The documentation
 
-Each page is the single authority for its topic:
-
 | Page | Covers |
 |---|---|
 | [Getting started](/docs/station/getting-started/) | Install, mount the handler, render components, the data-level API |
@@ -58,5 +56,4 @@ schemas follow in their own package.
 ## Lineage
 
 Station was developed in its own repository before joining this one; its
-history remains archived there. The capability arrived here at feature
-parity with that repository's final state.
+history remains archived there.

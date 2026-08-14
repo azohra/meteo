@@ -15,6 +15,8 @@ its runtime. This page is the recipe for wiring one, not a module to
 import; it is the server-side counterpart of
 [Wire an inspector](/docs/briefing/wire-an-inspector/).
 
+![The ingest loop's five steps — poll runs.json with loadRuns, compare each model's (referenceTime, generatedAt) pair against seen, fetch a coherent set with loadSiteSet anchored on the manifest, refuse a syncing: true set by ingesting nothing, and atomically swap the store under the new referenceTime — with every path returning to the standing state: serve the newest coherent publication the store holds.](figures/ingest-loop.svg)
+
 ## Poll runs.json on your own cadence
 
 The dataset is static files, so there is no webhook to subscribe to and
@@ -217,12 +219,9 @@ your decision; treating the two failure classes differently is the recipe.
 A store that serves through gaps must answer "how current is
 this?". `runFreshness` from `@azohra/meteo.briefing/derive` grades a runs.json entry
 `"current" | "delayed" | "stale"`, and its inputs split exactly along the
-fact/policy line this page keeps drawing. The facts are the catalogue's
-per-model `runIntervalHours` and `typicalPublicationLagHours`, declared in
-the [model catalogue](/docs/briefing/catalogue/). The boundaries are yours —
-deliberately required parameters, because how much lateness a product
-tolerates before warning its users is display policy, never a dataset
-property. The grading semantics live in the
+fact/policy line this page keeps drawing: the facts come from the
+[model catalogue](/docs/briefing/catalogue/), the threshold boundaries are
+yours. The grading semantics live in the
 [derive reference](/docs/briefing/derive/#judge-run-freshness).
 
 ```ts title="grade-feeds.ts"
@@ -249,11 +248,8 @@ export function gradeFeeds(
 }
 ```
 
-Pass the runs.json entry and the catalogue entry straight in — age is
-`now − referenceTime`, so a corrected re-publication never makes a forecast
-look younger. A `"delayed"` run is still the newest forecast there is;
+Pass the runs.json entry and the catalogue entry straight in. A
+`"delayed"` run is still the newest forecast there is;
 `"stale"` means the feed has missed enough runs that presenting it as
 current weather would be dishonest — which grade triggers which product
-behaviour is the baseline-versus-bonus decision above. Observation datasets
-never come here: they have no runs; judge them against their catalogue
-`cadenceMinutes`.
+behaviour is the baseline-versus-bonus decision above.

@@ -236,17 +236,11 @@ under a plume whose optical depth the
 the transmittance the
 [smoke-adjusted derivation](/logbook/smoke-and-thermals/) predicts.
 
-The package closes that loop end to end. `nearestObservation` in
+The package closes that loop end to end: `nearestObservation` in
 [`@azohra/meteo.briefing/derive`](/docs/briefing/derive/) is the join primitive,
-`clearSkyGhiWm2` (Haurwitz, per Reno, Hansen & Stein 2012) turns a
+and `clearSkyGhiWm2` (Haurwitz, per Reno, Hansen & Stein 2012) turns a
 measurement into an `observedTransmittance` against the clear-sky
-expectation, and a Meteogram built with the document as
-[`options.observations`](/docs/briefing/scene/) draws the **Sun
-strip** — measured W/m² with a shadow that deepens as the sky
-under-delivers — labelled from `scene.observationSource`, never
-implying the measurements share the forecast's provenance. The AOD
-dataset closes the same loop for the plume itself: passed as
-[`options.aotObservations`](/docs/briefing/scene/), it draws the
-**AOT strip** — measured optical depth rendered with the forecast smoke
-strip's own haze encoding, so the two read against each other at a
-glance — labelled from `scene.aotObservationSource`.
+expectation. Passed to a Meteogram as
+[`options.observations` and `options.aotObservations`](/docs/briefing/scene/),
+the two datasets draw the **Sun** and **AOT** strips, each labelled from
+its own source.

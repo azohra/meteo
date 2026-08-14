@@ -167,8 +167,8 @@ evidence. Those fields are what make the compressed statement auditable.
 
 ## The envelope self-describes
 
-Since the Windgram-era 0.22 release, everything a downstream comparison
-validates or states about a member is **on the envelope**, so a serialized `ForecastAnalysis` re-enters
+Everything a downstream comparison validates or states about a member is
+**on the envelope**, so a serialized `ForecastAnalysis` re-enters
 [`compareAnalyses`](/docs/briefing/compare/#compare-cached-analyses)
 without re-opening the profile:
 
@@ -183,7 +183,8 @@ without re-opening the profile:
   mid-horizon);
 - `extensions` — named third-party statements, when
   [extensions](#extend-over-the-public-frame) were passed; **absent, not
-  empty**, otherwise, so envelopes serialized before then are byte-identical.
+  empty**, otherwise, so an extension-free envelope is byte-identical to
+  one serialized before the field existed.
 
 These are required fields, which is additive for every *reader* of the
 envelope — only code that constructs `ForecastAnalysis` values by hand
@@ -193,8 +194,8 @@ later compare validates against.
 
 ## Versioning reads tolerantly
 
-`vocabularyVersion` is typed `number`, not the version literal — the one
-type-level break of that release, with zero wire change. It encodes
+`vocabularyVersion` is typed `number`, not the version literal — a
+deliberate loosening with zero wire consequence. It encodes
 the **tolerant-reader convention**: consumers of serialized envelopes must
 ignore finding kinds and envelope fields they do not know, so additive
 kinds bump the version number without breaking any conforming reader.
@@ -237,38 +238,15 @@ third-party statements have their own door, below.
 
 `ANALYZE_VOCABULARY_VERSION` is currently `5`. Adding,
 renaming, or removing a `kind` is an analysis-contract event, independent
-of the profile `schemaVersion`.
-
-**Renamed at vocabulary 5:** the envelope's bare-`Ms` quantity fields take
-the profile contract's `Mps` suffix grammar (`wstarMinMps`,
-`peakThermalVelocityMps`, `meanWindMps`, and their siblings). No kind was
-added or removed; serialized vocabulary-4 envelopes keep their old field
-names, and the runtime version check catches the skew.
-
-**Renamed at vocabulary 4:** `flyableWindow` is now `thermalWindow`. The
-kind string is the one token every consumer switches on, and "flyable" was
-the one judgment word that did not reduce to the stated arithmetic — the
-test reads two thermal quantities (W* and usable-lift depth) against stated
-floors and is blind to wind, rain, and overdevelopment. The new name says
-what the arithmetic tests; the flyability call stays downstream, where it
-always belonged. If your code switches on `"flyableWindow"` or overrides
-`thresholds.flyableWindow`, both spellings are now `thermalWindow`.
-
-**Removed at vocabulary 4**, because live documents measured each as an
-artifact rather than a statement:
-
-- `ensembleMembership.bands[].trend` and its `wideningRatio` threshold — the
-  first-vs-last verdict was a diurnal confound in both directions (a run
-  whose first or last hours are night reads a zero band width at the edge,
-  so the verdict measured where the horizon ends, not spread growth). The
-  replacement is `dayBands`: the per-local-day band-width series itself,
-  read at each day's peak-p50-W* hour, with no monotonicity verdict of any
-  kind.
-- `ensembleMembership.maxRelativeSpread` / `maxSpreadAt` — width divided by
-  p50 explodes as p50 approaches zero, so the value pointed at the least
-  consequential hour. The evidence arrays keep the underlying series.
-- `liftCeiling.flips` — it restated `segments.length - 1` and compressed
-  nothing.
+of the profile `schemaVersion` — the
+[package changelog](https://github.com/azohra/meteo/blob/main/briefing/CHANGELOG.md)
+records each boundary. One rename still bites old
+code: vocabulary 4 renamed `flyableWindow` to `thermalWindow` because the
+test reads two thermal quantities (W* and usable-lift depth) against
+stated floors and is blind to wind, rain, and overdevelopment — the
+flyability call stays downstream — so code that switches on
+`"flyableWindow"` or overrides `thresholds.flyableWindow` now spells both
+`thermalWindow`.
 
 | Finding kind | What it states | Evidence and limits |
 | --- | --- | --- |
@@ -284,13 +262,14 @@ artifact rather than a statement:
 | `windDirection` | Surface-flow evolution across a window: start / peak-lift / end samples, net circular veer, vector means | Deterministic documents only — ensemble percentiles of raw degrees are not circular statistics. `netVeerDeg` is start→end displacement, never accumulated rotation, and is blind to a full 360° loop |
 | `bandShear` | The strongest adjacent-layer shear rate inside the climb band, with its mandatory layer bounds | Analyze-only, never compared: rates are not comparable across level densities. Sparse columns rarely emit — absence means "too sparse to state", never "no shear" |
 | `terrainMismatch` | Grid terrain delta and whether published lift ever arithmetically reaches the caller's launch | Emitted only when `AnalyzeOptions.launch` is supplied and the embedded mismatch threshold is met; evidence carries the max p90 lift top so the bench is checkable at the band's top |
-| `ensembleMembership` | Contributor-count loss, p10–p90 band-width magnitude, and the per-day `dayBands` width series | Spread and membership are not a confidence interval or confidence score; `dayBands` rows carry `leadHours` and a `truncated` flag, and no trend verdict exists |
+| `ensembleMembership` | Contributor-count loss, p10–p90 band-width magnitude, and the per-day `dayBands` width series, each day read at its peak-p50-W\* hour | Spread and membership are not a confidence interval or confidence score; `dayBands` rows carry `leadHours` and a `truncated` flag, and no trend verdict exists |
 | `dataCaveats` | Absent quantity families, derived-null hours, coarse cadence, or UTC fallback | Threshold-free; absence remains "not published," never zero — including the `"smoke"` family, where absence is never clear air |
 
-## Read the v4 kinds
+## Read the finding kinds
 
-Each example below compiles against the released package and keeps the
-finding's own caveats visible instead of flattening them away.
+The worked example compiles against the released package and keeps the
+finding's own caveats visible instead of flattening them away; every other
+kind narrows the same way.
 
 `percentileCrossing` is ensemble-only and emits only where a percentile's
 day verdict disagrees with p50's — a day where every percentile agrees emits
@@ -322,165 +301,21 @@ export function upsideDays(analysis: ForecastAnalysis) {
 }
 ```
 
-`smokeImpact` republishes numbers and deliberately states no derated window
-and no adjusted W* — the only live passive column source measured far below
-a satellite-verified column (the RAQDPS column field is quarantined from
-derived optics; the contract's `smokePlumeColumnMgm2` note is
-[that fact's one home](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)),
-and even satellite-magnitude optics flipped almost nothing. The `semantics` echo is load-bearing: `"radiativelyCoupled"`
-means the document's own lift numbers already feel this smoke, so any
-downstream derate double-counts.
+Beyond the vocabulary table's limits, these field-level caveats govern
+the read:
 
-```ts title="smoke-rows.ts"
-import type { ForecastAnalysis } from "@azohra/meteo.briefing/analyze";
-
-export function smokeRows(analysis: ForecastAnalysis) {
-  return analysis.findings.flatMap((finding) => {
-    if (finding.kind !== "smokeImpact") return [];
-
-    return [{
-      day: finding.day,
-      semantics: finding.semantics,
-      peakSurfaceUgm3: finding.peakSurfaceUgm3,
-      // Day peak and in-window maximum are materially different facts; a
-      // null duringWindow means no window, or no smoke hour landed on one.
-      inWindowSurfaceUgm3: finding.duringWindow?.maxSurfaceUgm3 ?? null,
-      // The source's second number: the model's own AOT on profile days;
-      // on joined (RAQDPS) days the republished column mass, the smoke
-      // run's own referenceTime beside the envelope's, and how many
-      // profile hours the join actually covered.
-      ...(finding.source === "profile"
-        ? { peakAot: finding.peakAot }
-        : {
-            peakColumnMgm2: finding.peakColumnMgm2,
-            smokeRun: finding.smokeRun,
-            coverage: finding.coverage,
-          }),
-    }];
-  });
-}
-```
-
-`convectiveDay` exists for models that publish CAPE and no CIN, where
-`capTiming`'s gate would otherwise leave a washout day saying nothing about
-instability. It is deliberately unable to say "uncapped".
-
-```ts title="convective-rows.ts"
-import type { ForecastAnalysis } from "@azohra/meteo.briefing/analyze";
-
-export function convectiveRows(analysis: ForecastAnalysis) {
-  return analysis.findings.flatMap((finding) => {
-    if (finding.kind !== "convectiveDay") return [];
-    // A truncated day's peaks are peaks OF THE COVERED HOURS only — live
-    // horizon slivers carry nocturnal CAPE peaks cited at 01:00-05:00.
-    if (finding.coverage.truncated) return [];
-
-    return [{
-      day: finding.day,
-      // Never compare across documents: CAPE magnitudes are model-specific.
-      peakCapeJkg: finding.peakCapeJkg,
-      capIsJudgeable: finding.capIsJudgeable, // always false: no CIN published
-      precipStartsLocal: finding.precipStartsAt?.local ?? null,
-      // A 0.00 series is a FORECAST of dryness, not absence.
-      dryAboveFloor: finding.noPrecipAboveThreshold ?? false,
-      windowEndsLocal: finding.thermalWindowEndsAt?.local ?? null,
-    }];
-  });
-}
-```
-
-`windExceedance` states where your own ceiling is met, and nothing else —
-see [the analysis inputs](#two-analysis-inputs-are-not-thresholds) for
-supplying `windCeilings`. A day without a thermal window emits nothing
-whatever the wind; absence on a window day means no window hour met the
-ceiling.
-
-```ts title="wind-alerts.ts"
-import type { ForecastAnalysis } from "@azohra/meteo.briefing/analyze";
-
-export function windAlerts(analysis: ForecastAnalysis) {
-  return analysis.findings.flatMap((finding) => {
-    if (finding.kind !== "windExceedance") return [];
-
-    return finding.runs.map((run) => ({
-      day: finding.day,
-      quantity: finding.quantity,
-      thresholdMps: finding.thresholdMps, // your ceiling, echoed verbatim
-      // Present iff quantity is "gust": hourMax and instant exceedances
-      // must never be compared — the classes measure ~1.8-2.8x apart.
-      gustSemantics: finding.gustSemantics ?? null,
-      localStart: run.start.local,
-      localEnd: run.end.local,
-      // Covered span at the document's actual cadence; finding.stepHours
-      // is the quantization bound on this number.
-      hours: run.hours,
-      peakMps: run.peakMps,
-    }));
-  });
-}
-```
-
-`windDirection` tells the drainage-to-upvalley story across one window, for
-deterministic documents only. All arithmetic is vector math; raw degrees
-are never averaged, and a sample under the embedded floor states its speed
-with a null bearing rather than a jittering direction.
-
-```ts title="flow-evolution.ts"
-import type { ForecastAnalysis } from "@azohra/meteo.briefing/analyze";
-
-export function flowEvolution(analysis: ForecastAnalysis) {
-  return analysis.findings.flatMap((finding) => {
-    if (finding.kind !== "windDirection") return [];
-
-    return [{
-      day: finding.day,
-      startDeg: finding.surface.start.directionDeg,
-      peakLiftDeg: finding.surface.peakLift.directionDeg,
-      endDeg: finding.surface.end.directionDeg,
-      // Start-to-end circular displacement, never accumulated rotation —
-      // a flow that boxes the compass and returns reads as zero. The
-      // per-hour path stays in finding.evidence.
-      netVeerDeg: finding.netVeerDeg,
-      bandMeanDeg: finding.bandVectorMean?.directionDeg ?? null,
-    }];
-  });
-}
-```
-
-`bandShear` is the height-resolved shear read: component-wise vector shear
-between adjacent published levels inside the climb band. It never joins a
-cross-model comparison — a sparse column reports a different, smeared layer,
-not a softer number — which is why the layer bounds and level count are
-mandatory in the shape.
-
-```ts title="shear-rows.ts"
-import type { ForecastAnalysis } from "@azohra/meteo.briefing/analyze";
-
-export function shearRows(analysis: ForecastAnalysis) {
-  return analysis.findings.flatMap((finding) => {
-    if (finding.kind !== "bandShear") return [];
-
-    return [{
-      day: finding.day,
-      // The rate means nothing without its layer: "2.3 m/s/km across
-      // 1506-3129 m" must not be mistaken for a sharp shear zone.
-      ratePerKm: finding.maxShear.ratePerKm,
-      layer: finding.maxShear.layer,
-      levelsInBand: finding.levelsInBand,
-      // An arithmetic relation, not a verdict: both endpoint speeds sit
-      // under the embedded floor, so the "shear" may be a direction
-      // difference between two near-calm winds.
-      bothEndpointsUnderFloorMps: finding.bothEndpointsUnderFloorMps,
-    }];
-  });
-}
-```
+| Kind | Reading caveats |
+| --- | --- |
+| `smokeImpact` | No derated window and no adjusted W\*, deliberately: the only live passive column source measured far below a satellite-verified column ([the column defect's home](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)), and even satellite-magnitude optics flipped almost nothing. `semantics: "radiativelyCoupled"` makes any downstream derate a double-count. A null `duringWindow` means no window, or no smoke hour landed on one |
+| `convectiveDay` | Exists so a CAPE-without-CIN model's washout day still states instability where `capTiming`'s gate stays shut; deliberately unable to say "uncapped". A `coverage.truncated` day's peaks are peaks of the covered hours only — live horizon slivers carry nocturnal CAPE peaks cited at 01:00–05:00. A 0.00 precipitation series (`noPrecipAboveThreshold`) is a forecast of dryness, not absence |
+| `windExceedance` | Supply the ceiling via [the analysis inputs](#two-analysis-inputs-are-not-thresholds). A day without a thermal window emits nothing whatever the wind; absence on a window day means no window hour met the ceiling. `gustSemantics` is present exactly when `quantity` is `"gust"`; each run's `hours` is the covered span at the document's actual cadence, with `stepHours` as its quantization bound |
+| `windDirection` | The drainage-to-upvalley story across one window. All arithmetic is vector math — raw degrees are never averaged — and a sample under the embedded floor states its speed with a null bearing rather than a jittering direction. `netVeerDeg` reads zero for a flow that boxes the compass and returns; the per-hour path stays in `finding.evidence` |
+| `bandShear` | Component-wise vector shear between adjacent published levels. The rate means nothing without its layer: "2.3 m/s/km across 1506–3129 m" must not be mistaken for a sharp shear zone, and a sparse column reports a different, smeared layer, not a softer number. `bothEndpointsUnderFloorMps` marks a "shear" that may be a direction difference between two near-calm winds |
 
 ## Extend over the public frame
 
 The extraction frame — the normalization ground every first-party
-extractor stands on — is public since the Windgram-era 0.22 release:
-`AnalysisFrame`, versioned
+extractor stands on — is public: `AnalysisFrame`, versioned
 separately as `ANALYSIS_FRAME_VERSION` (the frame is where extractors
 stand, the vocabulary is what they say; the frame changes rarely, and a
 frame change is its own contract event). `AnalyzeOptions.extensions` runs

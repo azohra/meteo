@@ -500,9 +500,142 @@ function assertSelfContained(name, svg) {
   return bytes;
 }
 
+/* The token map draws every documented token from styles.css itself, both
+   arms of each light-dark() declaration, so the theming page can show its
+   palette without copying a value into prose. Fixed literal colors on
+   purpose: the figure depicts station's own palette, which never follows
+   the website theme. */
+function parseFullTokens(arm) {
+  const marker = ":where(.meteo-root) {";
+  const start = stylesCss.indexOf(marker);
+  if (start === -1) throw new Error(`styles.css: token block not found: ${marker}`);
+  const block = stylesCss.slice(start, stylesCss.indexOf("\n}", start));
+  const tokens = [];
+  for (const match of block.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)) {
+    tokens.push({
+      name: match[1],
+      value: resolveLightDark(match[2].replace(/\s+/g, " ").trim(), arm),
+    });
+  }
+  return tokens;
+}
+
+function tokenMapSvg() {
+  const light = parseFullTokens("light");
+  const dark = new Map(parseFullTokens("dark").map((token) => [token.name, token.value]));
+  const isColor = (value) => /^#[0-9a-f]{3,8}$/i.test(value) || /^rgba?\(/.test(value);
+
+  const groupOf = (name) => {
+    if (name.startsWith("--meteo-band-")) return "Band ramp";
+    if (name.startsWith("--meteo-freshness-")) return "Freshness states";
+    if (name.startsWith("--meteo-wind-") || name === "--meteo-cursor") {
+      return "Chart and wind encoding";
+    }
+    return "Chrome and identity";
+  };
+  const groupOrder = [
+    "Chrome and identity",
+    "Freshness states",
+    "Chart and wind encoding",
+    "Band ramp",
+  ];
+
+  const colorTokens = light.filter((token) => isColor(token.value));
+  const otherTokens = light.filter((token) => !isColor(token.value));
+
+  const width = 880;
+  const nameX = 24;
+  const panels = [
+    { label: "light arm", x: 396, bg: "#ffffff", border: "#dbe2e9", ink: "#17232e" },
+    { label: "dark arm", x: 636, bg: "#10161d", border: "#2b3844", ink: "#e7edf3" },
+  ];
+  const panelW = 220;
+  const rowH = 24;
+  const mono = 'font-family="ui-monospace, SFMono-Regular, Menlo, monospace"';
+  const sans = 'font-family="ui-sans-serif, system-ui, sans-serif"';
+
+  const rows = [];
+  let y = 88;
+  const groupSpans = [];
+  for (const group of groupOrder) {
+    const members = colorTokens.filter((token) => groupOf(token.name) === group);
+    if (members.length === 0) continue;
+    rows.push(
+      `<text ${sans} font-size="11" font-weight="650" letter-spacing="0.08em" fill="#62717f" x="${nameX}" y="${y}">${esc(group.toUpperCase())}</text>`,
+    );
+    y += 14;
+    const groupTop = y;
+    for (const token of members) {
+      const rowMid = y + rowH / 2;
+      rows.push(
+        `<text ${mono} font-size="12.5" fill="#17232e" x="${nameX}" y="${n(rowMid + 4)}">${esc(token.name)}</text>`,
+      );
+      for (const panel of panels) {
+        const value = panel.label === "light arm" ? token.value : dark.get(token.name);
+        rows.push(
+          `<rect x="${panel.x + 14}" y="${n(rowMid - 8)}" width="16" height="16" rx="3" fill="${esc(value)}" stroke="${panel.border}"/>`,
+          `<text ${mono} font-size="10.5" fill="${panel.ink}" x="${panel.x + 38}" y="${n(rowMid + 4)}">${esc(value)}</text>`,
+        );
+      }
+      y += rowH;
+    }
+    groupSpans.push({ top: groupTop, bottom: y });
+    y += 12;
+  }
+
+  const footerTop = y + 6;
+  let fy = footerTop + 16;
+  const footer = [
+    `<text ${sans} font-size="11" font-weight="650" letter-spacing="0.08em" fill="#62717f" x="${nameX}" y="${fy}">NON-COLOUR TOKENS (LIGHT ARM WHERE TWO EXIST)</text>`,
+  ];
+  fy += 8;
+  for (const token of otherTokens) {
+    fy += 20;
+    const shown = token.value.length > 76 ? `${token.value.slice(0, 73)}…` : token.value;
+    footer.push(
+      `<text ${mono} font-size="12" fill="#17232e" x="${nameX}" y="${fy}">${esc(token.name)}</text>`,
+      `<text ${mono} font-size="10.5" fill="#62717f" x="248" y="${fy}">${esc(shown)}</text>`,
+    );
+  }
+  const height = fy + 26;
+
+  const panelRects = panels
+    .map((panel) =>
+      groupSpans
+        .map(
+          (span) =>
+            `<rect x="${panel.x}" y="${n(span.top - 2)}" width="${panelW}" height="${n(span.bottom - span.top + 4)}" rx="6" fill="${panel.bg}" stroke="${panel.border}"/>`,
+        )
+        .join(""),
+    )
+    .join("");
+
+  const header =
+    `<text ${sans} font-size="19" font-weight="700" fill="#17232e" x="${nameX}" y="38">Station theme tokens</text>` +
+    `<text ${sans} font-size="12.5" fill="#62717f" x="${nameX}" y="58">Each token is one light-dark() declaration in styles.css; both arms shown, resolved from the stylesheet.</text>` +
+    panels
+      .map(
+        (panel) =>
+          `<text ${mono} font-size="11.5" font-weight="650" fill="#62717f" x="${panel.x + 14}" y="80">${esc(panel.label)}</text>`,
+      )
+      .join("");
+
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${n(height)}" viewBox="0 0 ${width} ${n(height)}" role="img" aria-label="Every station theme token from styles.css with its light and dark values shown as labelled colour swatches, grouped into chrome, freshness states, chart and wind encoding, and the five-step band ramp; font, radius, and shadow listed as text.">` +
+    `<rect width="${width}" height="${n(height)}" rx="14" fill="#f4f6f9"/>` +
+    `<rect x="1" y="1" width="${width - 2}" height="${n(height - 2)}" rx="13" fill="none" stroke="#dbe2e9" stroke-width="2"/>` +
+    header +
+    panelRects +
+    rows.join("") +
+    footer.join("") +
+    `</svg>`
+  );
+}
+
 const ASSETS = {
   "hero-light.svg": heroSvg("light"),
   "hero-dark.svg": heroSvg("dark"),
+  "token-map.svg": tokenMapSvg(),
 };
 
 const check = process.argv.includes("--check");

@@ -114,6 +114,43 @@ Build the frame at a measured pixel width — `measuredChartWidth` (in
 react, the `useMeasuredChartWidth(ref)` hook) is that rule; a fixed
 viewBox stretched by CSS magnifies every label and stroke.
 
+## Slicing history
+
+Six pure functions on `@azohra/meteo.station` re-slice already-fetched
+history `points` — never a new fetch. Two narrow which points a component
+sees, and one turns a whole history into a single day:
+
+```ts
+import {
+  METEOROLOGICAL_SEASON_MONTHS, // { winter, spring, summer, fall }: number[] (1-12)
+  filterByMonth,                // (points, months, utcOffsetMinutes?) => HistoryPoint[]
+  filterByTimeOfDay,            // (points, fromMinute, toMinute, utcOffsetMinutes?) => HistoryPoint[]
+  dailyPattern,                 // (points, { slotMinutes?, utcOffsetMinutes? }) => DailyPatternSlot[]
+} from "@azohra/meteo.station";
+```
+
+`filterByTimeOfDay`'s `fromMinute > toMinute` wraps past midnight (a "night"
+window). Both filters and `dailyPattern` take a plain UTC-offset minutes —
+not an IANA zone — matching the "local standard time, no DST" a station page
+itself commits to; pass 0 (the default) to work in UTC.
+
+The history chart's `windowHours` and `compareOffsetDays` props
+([React](/docs/station/react/) / [Elements](/docs/station/elements/)) are
+built from the other three:
+
+```ts
+import {
+  windowPoints,       // (points, hours: number | undefined) => ReadonlyArray<HistoryPoint> — trailing N hours; an undefined hours is a no-op
+  compareWindow,       // (points, offsetDays, windowHours?) => HistoryPoint[] | null — a prior period's own span, re-sliced from `points`; null when history doesn't reach back far enough
+  compareTracePoints, // (comparePoints, scales, offsetDays) => string — the compare trace's coordinates, shifted onto the CURRENT chart's own x-axis
+} from "@azohra/meteo.station";
+```
+
+`compareWindow` requires coverage, not just presence: the matched
+span's own edges must land within one typical sample period (scaled by the
+same gap tolerance an outage is judged by) of the window asked for, or it
+returns `null` rather than a two-point ghost of a trace.
+
 ## Display resolution — shared across bindings
 
 The components' ambient-default discipline is one exported rule,
@@ -163,5 +200,5 @@ coordinates and path strings, never markup). All on
 
 ## Stability
 
-Pre-1.0: the poller and store semantics documented here are stable; pin a
-minor version if you reach past them.
+Pre-1.0: the poller and store semantics are stable; pin a minor version if
+you reach past them.

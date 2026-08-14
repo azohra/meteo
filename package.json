@@ -30,7 +30,9 @@
     "station-assets:check": "pnpm build && node internal/generate-station-assets.mjs --check",
     "scenarios:generate": "pnpm build && node internal/scenarios.mjs generate",
     "scenarios:check": "pnpm build && node internal/scenarios.mjs check",
-    "doc-fences:check": "pnpm build && node internal/check-doc-fences.mjs"
+    "doc-fences:check": "pnpm build && node internal/check-doc-fences.mjs",
+    "doc-links:check": "node internal/check-doc-links.mjs",
+    "prose:check": "node internal/check-prose-rules.mjs"
   },
   "devDependencies": {
     "@azohra/meteo.briefing": "workspace:*",

@@ -7,7 +7,7 @@ The `@azohra/meteo.briefing` package ships ESM types and requires no DOM. This e
 a profile from disk, keeping loading policy separate from rendering. This is
 what it produces:
 
-![The chart and key this page's code produces: a complete Meteogram and its derived key, rendered at build time by the released package.](figures/first-meteogram.svg)
+![A ten-hour Meteogram for the synthetic Synthetic Ridge teaching scenario — morning stability giving way to a deep midday unstable column, with the boundary layer, usable lift, and cloud base tracing distinct arcs beneath light veering wind — and the key derived from its final scene.](figures/first-meteogram.svg)
 
 1. Install the package:
 

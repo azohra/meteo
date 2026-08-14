@@ -1,21 +1,11 @@
 ---
 title: "The mountain the model sees"
-summary: "Why model terrain sits far from the real launch, and what relief and land cover add"
-section: "Terrain diagnostics"
-kind: "case-study"
-published: 2026-08-10
-updated: 2026-08-10
-status: "current"
-order: 8
-scenarios: []
-thumbnail: "terrain-smoothing"
+description: "Why model terrain sits far from the real launch, and what relief and land cover add"
 ---
 
-import ElevationLadderFigure from "../../components/docs/ElevationLadderFigure.astro";
-import LandCoverFractionsFigure from "../../components/docs/LandCoverFractionsFigure.astro";
-import ReliefPercentileFigure from "../../components/docs/ReliefPercentileFigure.astro";
-
-# The mountain the model sees
+import ElevationLadderFigure from "../../../../components/docs/ElevationLadderFigure.astro";
+import LandCoverFractionsFigure from "../../../../components/docs/LandCoverFractionsFigure.astro";
+import ReliefPercentileFigure from "../../../../components/docs/ReliefPercentileFigure.astro";
 
 Two elevations describe the same place, and they live in different
 documents on purpose. The
@@ -23,12 +13,11 @@ documents on purpose. The
 the **measured launch elevation** — its `elevation` pick, sampled from
 ground observations at the catalogued coordinates. Every profile carries
 `site.modelElevationM` — the elevation of the model's own terrain at
-that grid point. At the launches in this project's catalogue the two
-routinely disagree by tens to hundreds of metres — and that disagreement
-is not an error to fix but a fact to read. This article is about reading
-it: where the gap comes from, and what the context document adds about
-the real mountain — the relief the launch sits in and the ground its
-thermals feed on.
+that grid point. At catalogued launches the two routinely disagree by
+tens to hundreds of metres — and that disagreement is not an error to
+fix but a fact to read: where the gap comes from, and what the context
+document adds about the real mountain — the relief the launch sits in
+and the ground its thermals feed on.
 
 ## Why the model's mountain is smoother than yours
 

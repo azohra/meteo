@@ -15,7 +15,7 @@ day.
 This is the forecast capability's one **server-side** subpath: the archive
 reader is built on `node:zlib`, so it runs in Node, Bun, and Deno but not in
 browsers. Every other subpath of the package stays runtime-agnostic —
-[why, below](#the-runtime-story).
+[why, below](#why-the-reader-splits-gzip-members-itself).
 
 ## Why the reader splits gzip members itself
 
@@ -49,12 +49,26 @@ guards' never-throw convention; the loaders report that as a
 boundary, so a Range fetch from a member offset splits with the same
 code as a full fetch.
 
+That decoder is also why the subpath is server-side: only `node:zlib`
+reports consumed input bytes. Verified 2026-08-10: Node 24.19 runs the
+full test suite; Bun 1.3 (split and load) and Deno 2.9 (member
+splitting) run it via their `node:zlib` compatibility layers.
+**Browsers are not supported by this subpath**, and no other subpath is
+affected: contract, derive, analyze, compare, transport, scene, and SVG
+stay runtime-agnostic exactly as before.
+
 ## Load a site's months
 
 `loadForecastHistory` and `loadSmokeHistory` are the typed faces of
 `loadHistory`, whose `guard` parameter types each archive line — a
 history line is exactly the published document, so the guards are the
 contract's own (`parseSiteForecastJson`, `parseSmokeDocumentJson`).
+No observation-shaped face ships: `loadHistory`'s line type requires the
+run stamp (`model`, `run.referenceTime`, `run.generatedAt`) that drives
+the dedupe, and an [observation archive](/docs/briefing/history-archives/)
+line is a single observation object that deliberately does not satisfy
+it — a reader of those months splits them with `splitHistoryArchive` and
+types the lines itself.
 Transport manners match [`@azohra/meteo.briefing/transport`](/docs/briefing/transport/):
 injected fetch, discriminated `DocumentMiss`, `TransportHttpError` as the
 only throw, no storage side effects.
@@ -125,17 +139,6 @@ ignores `Range` and answers `200` with the full body all degrade to the
 full-archive fetch, silently correct — both paths filter identically, so
 index-present and index-absent loads are equivalent.
 
-## The runtime story
-
-The reader needs a deflate decoder that reports consumed input bytes,
-and only `node:zlib` provides one — so this subpath is server-side.
-Verified 2026-08-10: Node 24.19 runs the full test suite; Bun 1.3
-(split and load) and Deno 2.9 (member splitting) run it via their
-`node:zlib` compatibility layers. **Browsers are not supported by this
-subpath**, and no other subpath is affected: contract, derive, analyze,
-compare, transport, scene, and SVG stay runtime-agnostic exactly as
-before.
-
 ## Compare a model's runs through time
 
 `compareRuns` points [compare's discipline](/docs/briefing/compare/)
@@ -197,9 +200,8 @@ restating a past day reads negative, not wrong.
 
 ## The five run-comparison kinds
 
-### existenceTrajectory
-
-Per target local day, every unbenched run's vote — window, quiet, or an
+`existenceTrajectory` is the worked example: per target local day, every
+unbenched run's vote — window, quiet, or an
 abstention with its reason — newest run first. An existence flip is read
 off the `vote` sequence; the finding never names it with an adjective.
 Each rung carries the run's **own** sensitivity flip values against the
@@ -228,126 +230,15 @@ export function existenceLadder(comparison: RunComparison) {
 }
 ```
 
-### timingTrajectory
+The other four kinds narrow the same way. Their statements and reading
+caveats:
 
-Window start/end instants across runs, reusing compare's timing
-construction verbatim: only **unclipped** edges vote (a horizon-clipped
-edge reads as "open since at least", never as timing), an edge joins the
-day whose local calendar date contains its instant, and every vote
-carries its window's `stepHours` — up to that many minus one hours of
-run-to-run difference is quantization, not drift.
-
-```ts title="timing-ladder.ts"
-import type { RunComparison } from "@azohra/meteo.briefing/history";
-
-export function timingLadder(comparison: RunComparison) {
-  return comparison.findings.flatMap((finding) => {
-    if (finding.kind !== "timingTrajectory") return [];
-    return [{
-      day: finding.day,
-      starts: finding.starts.map((vote) => ({
-        referenceTime: vote.referenceTime,
-        local: vote.at.local,
-        stepHours: vote.stepHours, // the quantization bound on this edge
-      })),
-      startSpreadHours: finding.startSpreadHours, // max − min; null below two
-      startStepHoursMax: finding.startStepHoursMax,
-    }];
-  });
-}
-```
-
-### magnitudeTrajectory
-
-Per voting run: peak W*, launch-relative peak lift, and covered window
-duration — the numbers whose run-to-run deltas state themselves.
-Whole-window numbers belong to the window's own day, so a run touching
-the day only via a midnight spanner keyed elsewhere states `null` rather
-than restating another day's magnitudes. Ensemble runs carry their own
-per-day p10–p90 band widths as **evidence with no narrowing verdict** —
-the recorded spike measured band widths moving both directions as lead
-fell, so "narrowing = converging" was manufactured, and no such verdict
-exists.
-
-```ts title="magnitude-ladder.ts"
-import type { RunComparison } from "@azohra/meteo.briefing/history";
-
-export function magnitudeLadder(comparison: RunComparison) {
-  return comparison.findings.flatMap((finding) => {
-    if (finding.kind !== "magnitudeTrajectory") return [];
-    return [{
-      day: finding.day,
-      rungs: finding.rungs.map((rung) => ({
-        referenceTime: rung.referenceTime,
-        leadHours: rung.leadHours,
-        peakThermalVelocityMps: rung.peakThermalVelocityMps,
-        peakLiftAboveLaunchM: rung.peakLiftAboveLaunchM,
-        windowDurationHours: rung.windowDurationHours,
-        // Band widths ride as evidence; the reader sees the series.
-        bandWidth: rung.bandWidth ?? null,
-      })),
-    }];
-  });
-}
-```
-
-### identityDrift
-
-Non-meteorological facts that changed between runs, stated so a publisher
-or model change is never read as weather: the loader's republication
-statements pass through verbatim, and a ledger walk names identity facts
-(`modelElevationM`, `stepHours`, `hours`) that differ between
-chronologically adjacent runs. Day-less, and emitted only when there is
-drift to state.
-
-```ts title="identity-drift.ts"
-import type { RunComparison } from "@azohra/meteo.briefing/history";
-
-export function identityDrift(comparison: RunComparison) {
-  return comparison.findings.flatMap((finding) => {
-    if (finding.kind !== "identityDrift") return [];
-    return [{
-      republishedRuns: finding.revisions.map((revision) => revision.referenceTime),
-      changes: finding.changes.map((change) => ({
-        fact: change.fact, // "modelElevationM" | "stepHours" | "hours"
-        from: change.from,
-        to: change.to,
-      })),
-    }];
-  });
-}
-```
-
-### settled
-
-Arithmetic stability, per target local day: whether the newest `minRuns`
-runs' launch-relative lift magnitudes all sit within `magnitudeBandM` of
-each other (max − min ≤ band). A stability statement about **runs** —
-"the forecast has stopped moving" — and explicitly **not probability and
-not skill**: a settled forecast can be settled on the wrong answer, and
-nothing here scores the atmosphere. `settled` is `false` whenever the
-arithmetic cannot run — fewer runs than `minRuns`, or any sampled run
-stating no magnitude — and the `sample` roster shows which, so "not
-stable" and "not statable" stay readable apart.
-
-```ts title="settled.ts"
-import type { RunComparison } from "@azohra/meteo.briefing/history";
-
-export function settledDays(comparison: RunComparison) {
-  return comparison.findings.flatMap((finding) => {
-    if (finding.kind !== "settled") return [];
-    return [{
-      day: finding.day,
-      settled: finding.settled,
-      spreadM: finding.spreadM, // null when the arithmetic could not run
-      // The roster separates "not stable" from "not statable": a null
-      // magnitude in the sample is a run that stated nothing for the day.
-      sample: finding.sample,
-      thresholds: finding.thresholds, // the embedded constants, echoed
-    }];
-  });
-}
-```
+| Kind | What it states | Reading caveats |
+| --- | --- | --- |
+| `timingTrajectory` | Window start and end instants across runs (`starts` / `ends`), reusing compare's timing construction verbatim, with per-edge spread facts: `startSpreadHours` / `endSpreadHours` (max − min, null below two) and `startStepHoursMax` / `endStepHoursMax` | Only **unclipped** edges vote — a horizon-clipped edge reads as "open since at least", never as timing; an edge joins the day whose local calendar date contains its instant; every vote carries its window's `stepHours`, and up to that many minus one hours of run-to-run difference is quantization, not drift |
+| `magnitudeTrajectory` | Per voting run: peak W\* (`peakThermalVelocityMps`), launch-relative peak lift, and covered window duration — the numbers whose run-to-run deltas state themselves | Whole-window numbers belong to the window's own day: a run touching the day only via a midnight spanner keyed elsewhere states `null` rather than restating another day's magnitudes. Ensemble runs carry per-day p10–p90 band widths (`bandWidth`) as **evidence with no narrowing verdict** — the recorded spike measured band widths moving both directions as lead fell, so "narrowing = converging" was manufactured |
+| `identityDrift` | Non-meteorological facts that changed between runs: the loader's republication statements pass through verbatim (`revisions`), and a ledger walk names identity facts (`modelElevationM`, `stepHours`, `hours`) that differ between chronologically adjacent runs | Exists so a publisher or model change is never read as weather; day-less, and emitted only when there is drift to state |
+| `settled` | Arithmetic stability per target local day: whether the newest `minRuns` runs' launch-relative lift magnitudes all sit within `magnitudeBandM` of each other (max − min ≤ band), the embedded constants echoed on `thresholds` | A stability statement about **runs** — "the forecast has stopped moving" — and explicitly **not probability and not skill**: a settled forecast can be settled on the wrong answer, and nothing here scores the atmosphere. `settled` is `false` whenever the arithmetic cannot run — fewer runs than `minRuns`, or any sampled run stating no magnitude — with `spreadM` null and the `sample` roster showing which, so "not stable" and "not statable" stay readable apart |
 
 The default constants — `minRuns: 3`, `magnitudeBandM: 300` — are
 **trial values**, calibrated on a thin
@@ -356,6 +247,8 @@ one; a re-sweep at two or more weeks of month-file archive is a recorded
 obligation (~2026-08-24). They are caller-movable per call via
 `CompareRunsOptions.settled`, and every finding echoes the values that
 produced it.
+
+![Two schematic five-rung convergence ladders for one target local day, newest run first, each rung labelled with its run, its leadHours to the local-noon anchor, and its vote — window, quiet, or an abstention with the stated reason outOfHorizon. On the settled day the newest minRuns = 3 rungs' magnitudes span 150 m, within magnitudeBandM 300, so settled is true; on the unsettled day they span 990 m, so settled is false.](figures/convergence-ladder.svg)
 
 ## What this vocabulary refuses to say
 

@@ -11,7 +11,7 @@ lifts, returning values bit-identical to the full decode (the contract is
 in [Two-ring correctness](/docs/j2k/correctness/)).
 
 Measured single-threaded (minimum of 5, Node 24, Apple M5 Max; 4
-uniformly scattered points per field):
+uniformly scattered points per field; recorded 2026-08-12):
 
 | fixture | samples | bits | full decode | region, 4 points | ratio | codeblocks touched |
 |---|---:|---:|---:|---:|---:|---:|
@@ -20,6 +20,12 @@ uniformly scattered points per field):
 | raqdps-pm25-sfc | 436,671 | 20 | 101 ms | 20 ms | 5.0× | 28/136 |
 | rdps-cape-sfc-jasper | 813,275 | 24 | 295 ms | 4.4 ms | 67× | 25/12,711 |
 
+The 67× row is not the trend: `rdps-cape-sfc-jasper` is the JasPer field's
+one-row bitmapped geometry
+([the JasPer story](/docs/j2k/subset/#the-jasper-story)) — an 813275×1
+image splits into 12,711 tiny codeblocks, so four points touch a far
+smaller fraction of them than on any gridded field.
+
 The cost scales sublinearly in points because nearby points share windows
 and every point's coarse-level ancestry converges: on HRDPS-continental
 (same machine, single thread) 1 point touches 16 codeblocks (14 ms), 4
@@ -27,6 +33,8 @@ points 49 (44 ms), 16 points 145 (121 ms), 64 points 366 (297 ms), 256
 points 674 (538 ms). The full packet-structure parse is unavoidable —
 packet lengths are only discoverable sequentially — but it is under half a
 millisecond on every regular fixture.
+
+![Four requested points on the HRDPS continental field, the tile buffer with all 911 codeblocks drawn across five decomposition levels where only the 49 the 4-point decode entropy-decoded are filled and hatched, and a bar row showing the touched count growing sublinearly as the same scatter scales from 1 to 256 points.](figures/region-decode.svg)
 
 Through `@azohra/meteo.grib`'s worker pool this is the sampled path
 end-to-end: on the same machine, a 4-point sampled decode of
@@ -45,7 +53,7 @@ WASM OpenJPEG build and faster than the asm.js one. Measured by the
 cross-codec bench
 ([`grib/tools/bench-j2k-single.ts`](https://github.com/azohra/meteo/blob/main/grib/tools/bench-j2k-single.ts)
 — it needs both codecs, and only that package depends on both; minimum
-of 5, Node 24, Apple Silicon):
+of 5, Node 24, Apple Silicon; recorded 2026-08-12):
 
 | fixture | samples | bits | @azohra/meteo.j2k | oracle | ratio |
 |---|---:|---:|---:|---:|---:|

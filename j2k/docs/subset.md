@@ -13,7 +13,10 @@ covers exactly it:
   SOC..EOC)
 - one tile covering the whole grid, one tile-part
 - one grayscale component, no subsampling — 12/16/20/24-bit unsigned
-  observed; any depth to 28 bits, signed or unsigned, accepted
+  observed; any depth to 28 bits, signed or unsigned, accepted (the
+  ceiling is the int32 coefficient carrier: Tier-1 carries magnitudes
+  doubled, and 28 bits is the most that keeps every subband's magnitude
+  inside it)
 - reversible 5/3 wavelet, no quantization (QCD style 0; a tile-part QCC
   restating style-0 quantization for the one component is honoured — the
   JasPer fields ship one whose exponents really differ from the QCD's)
@@ -43,7 +46,9 @@ One guard is deliberately loose: the three resolution-major progression
 orders are accepted interchangeably, because with one layer and one
 component they emit the same resolution-then-precinct packet sequence;
 the position-major orders (PCRL/CPRL) are accepted only while every
-resolution has a single precinct, where all five orders coincide.
+resolution has a single precinct, where all five orders coincide — with
+one precinct per resolution there is only one position to walk, so
+position-major and resolution-major emit the same packet sequence.
 
 ## The JasPer story
 

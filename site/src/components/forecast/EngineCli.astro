@@ -29,7 +29,7 @@ const horizonHours = hrdps?.horizonHours ?? 48;
       </div>
 
       <div class="fc-term">
-        <p class="fc-term-title">the build behind the dataset above</p>
+        <p class="fc-term-title">the build behind the sample dataset</p>
         <pre class="fc-term-body"><code><span class="t-prompt">$</span> pnpm --dir forecast build
 <span class="t-prompt">$</span> node forecast/dist/cli.js forecast build --model hrdps-continental \
     --sites scenarios/catalog/sites.json \
@@ -39,7 +39,7 @@ const horizonHours = hrdps?.horizonHours ?? 48;
 
     <p class="fc-cli-note">
       Drop <code>--dry-run</code> and the engine fetches the newest complete run and writes the
-      tree shown above. <code>--max-steps 8</code> is what holds the dataset above to eight of
+      dataset. <code>--max-steps 8</code> is what holds the sample dataset to eight of
       the model's {horizonHours} hourly steps.
     </p>
   </div>

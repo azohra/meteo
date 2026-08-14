@@ -9,10 +9,10 @@ every ECCC HRDPS, RDPS, REPS, and RAQDPS field) and multi-field messages
 (NCEP's paired U/V submessages), and no maintained JavaScript decoder
 provides either.
 
-The core is browser-safe by construction — no `node:` imports, no ambient
-I/O, no WASM. Node callers get JPEG 2000 from the separate
-`@azohra/meteo.grib/j2k-node` subpath; see
-[JPEG 2000 and the pool](/docs/grib/jpeg2000/).
+The core is browser-safe by construction
+([what the core never does](/docs/grib/coverage/#what-the-core-never-does));
+Node callers get JPEG 2000 from the separate `@azohra/meteo.grib/j2k-node`
+subpath — see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
 ## Decode a real field
 
@@ -59,8 +59,6 @@ Consumers inside the workspace (the forecast engine) import the same surface
 as `@azohra/meteo.grib` and `@azohra/meteo.grib/j2k-node`.
 
 ## The documentation
-
-Each page is the single authority for its topic:
 
 | Page | Covers |
 |---|---|

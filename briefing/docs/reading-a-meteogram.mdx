@@ -66,7 +66,7 @@ a stack of observed layers. The launch marker is supplied by the renderer, not t
 consumer passes a launch elevation at render time, normally the measured `elevation` pick from
 [site-context.json](/docs/briefing/site-context-document/); a render given no launch
 draws no marker. Surface values are referenced to the model's own smoothed terrain —
-[The mountain the model sees](/logbook/the-mountain-the-model-sees/) shows how large that gap is
+[The mountain the model sees](/docs/models/the-mountain-the-model-sees/) shows how large that gap is
 and how to read across it.
 
 In the complete example, pressure eases from 90.30 to 90.01 kPa before a small
@@ -169,8 +169,9 @@ profile; the freezing contour alone cannot supply it.
 The front-arrival example separates those observations. Over its final
 six hours, precipitation builds from zero to an instantaneous peak of 4.0 mm/h in the penultimate
 hour, then eases to 3.0 mm/h, while the package
-renders temperature and moisture through the full column. The figure presents precipitation rate
-and the 0 °C contour as evidence for a fuller phase analysis.
+renders temperature and moisture through the full column. Precipitation rate
+and the 0 °C contour are evidence for a fuller phase analysis, not the
+phase call itself.
 
 <MoisturePrecipCase />
 
@@ -219,7 +220,7 @@ before decoding the feathers.
 On models that publish a gust, a “G” readout above the surface barb carries the gust in the same
 printed unit. Whether that number means “gusting to” over the past hour or an instantaneous sample is
 declared per model — see [What each model can — and cannot — tell you](/docs/forecast/model-capabilities/).
-The wind-profile example omits gusts to isolate the vertical wind profile: around the selected hour,
+The wind-profile example publishes no gust, so the barbs carry the whole story: around the selected hour,
 wind strengthens from 23.4 km/h near launch to 99 km/h at
 3,025 m while turning from 5° to 124°.
 

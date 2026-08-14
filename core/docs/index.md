@@ -1,13 +1,14 @@
 ---
 title: "meteo: the shared foundation"
-description: The @azohra/meteo.core package — the shared physical vocabulary every platform package builds on — units, angle and wind-vector math, zod primitives, the upstream-failure vocabulary, and schema-artifact tooling.
+description: The @azohra/meteo.core package — the physical vocabulary the station and briefing packages build on — units, angle and wind-vector math, zod primitives, the upstream-failure vocabulary, and schema-artifact tooling.
 ---
 
-**`@azohra/meteo.core`** is the foundation of the meteo by Azohra platform: the shared
-physical vocabulary every other `@azohra/*` meteorology package builds on —
-units and conversions, angle and wind-vector math with one sign convention
-platform-wide, zod schema primitives, the upstream-failure vocabulary, and the
-machinery each capability uses to emit its JSON Schema artifacts.
+**`@azohra/meteo.core`** is the platform's shared physical vocabulary —
+units and conversions, angle and wind-vector math with one sign convention,
+zod schema primitives, the upstream-failure vocabulary, and the machinery
+each capability uses to emit its JSON Schema artifacts. The packages that
+carry these quantities on their wires — station and briefing — build on it;
+grib, j2k, and forecast declare no dependency on it.
 
 **Looking for a product, not a foundation?**
 
@@ -56,4 +57,4 @@ Dependencies: [zod](https://zod.dev) only.
 | Page | Covers |
 |---|---|
 | [Units, angles, one wind sign](/docs/core/conventions/) | The unit vocabulary, angle helpers, and the wind sign convention every platform package shares |
-| [Failures and schema artifacts](/docs/core/failures-and-schema/) | The closed upstream-failure vocabulary, and how capabilities render their JSON Schema artifacts |
+| [Failures and schema artifacts](/docs/core/failures-and-schema/) | The upstream-failure vocabulary, the shared zod schema primitives, and how capabilities render their JSON Schema artifacts |

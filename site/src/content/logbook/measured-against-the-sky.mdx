@@ -1,0 +1,72 @@
+---
+title: "Measured against the sky"
+summary: "GOES-18's downward shortwave and aerosol optical depth arrive as observation models; on their first live day, four sites read 554–623 W/m² under a BC plume that thinned from AOT 3.0 to 1.4 in under two hours"
+section: "Smoke and radiation"
+kind: "case-study"
+published: 2026-08-14
+updated: 2026-08-14
+status: "current"
+order: 11
+scenarios: []
+thumbnail: "validation-witnesses"
+---
+
+# Measured against the sky
+
+The w* smoke correction in
+[Smoke and thermals](/logbook/smoke-and-thermals/) runs on cited
+constants, and cited claims should answer to measurement. The August
+2026 BC smoke event put that to the test on live data for the first
+time: GOES-18 measuring, from orbit, the same sky the forecast models
+describe.
+
+## Measured irradiance
+
+The engine's catalogue carries GOES-18's satellite-measured downward
+shortwave as an observation model (`goes18-dsr`), publishing ten-minute
+[observation documents](/docs/briefing/observation-document/) for
+whatever sites an operator serves. On the capability's first live day,
+the reference operator's four sites read 554–623 W/m², all
+quality-good, in one smoky late morning \[observed 2026-08-10]:
+consistent with a cloudless sky delivering ~650–700 W/m² attenuated by
+the plume overhead. Measured irradiance beside a smoke document's
+optical depth is exactly the comparison exp(−0.16·τ) was fitted from —
+a comparison any operator publishing both datasets keeps running.
+
+## The third opinion: measured smoke
+
+The optical depth itself is measured too: GOES-18's aerosol optical
+depth is the catalogue's second observation model (`goes18-aod`), so a
+Meteogram can hold three
+independent statements about the same smoke side by side — RAQDPS's
+forecast AOT, HRRR's physics-felt smoke, and GOES-18's **measured**
+AOT. Same quantity, same 550 nm wavelength, same field name, drawn as
+neighbouring strips with one haze encoding — the measured strip's tint
+is the forecast smoke strip's own, so one key chip explains both and the
+eye compares them directly. Like every measurement, the strip renders
+below the provenance divider, and its gaps carry meaning: it is a daytime
+product, and an absent instant means no accepted retrieval — never
+clear air.
+
+Agreement between the forecast smoke strip and the measured strip is
+earned trust: the plume the
+[smoke-adjusted view](/logbook/smoke-and-thermals/#the-adjusted-view)
+derates w* with is
+really overhead, at about the stated thickness. Disagreement is the more
+valuable signal — the forecast plume is misplaced, mistimed, or
+mis-sized, and the adjusted view inherits that error, so read its
+derated thermals with the same skepticism. The measurement wins on what
+the sky is doing right now; the forecast is still the only voice with
+anything to say about the hours ahead. On the measured strip's first
+live afternoon — the same BC event — it tracked the plume over Dundee
+thinning from AOT 3.0 to 1.4 in under two hours \[observed 2026-08-10]:
+the number every forecast strip beside it could finally be held to.
+
+*The stamped observations re-ran from the append-only observation
+history of the reference operator,
+[`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts) —
+the `goes18-dsr/history/<site>/2026-08.jsonl.gz` month archive and its
+`goes18-aod` twin, private data. The
+[sample dataset](https://meteo.azohra.com/data-sample/hrdps-continental/history/test-hill/2026-08.jsonl.gz)
+publishes the same month-archive convention, though its archives hold
+forecast profiles — no observation documents ship in the sample.*

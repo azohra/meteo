@@ -33,7 +33,7 @@ const TREE: TreeRow[] = [
     indent: 1,
     name: "runs.json",
     path: "runs.json",
-    note: "the newest run per model — printed whole above",
+    note: "the newest run per model",
   },
   {
     indent: 1,
@@ -59,7 +59,7 @@ const TREE: TreeRow[] = [
     indent: 3,
     name: "test-hill.json",
     path: "hrdps-continental/sites/test-hill.json",
-    note: "one site document — excerpted at right",
+    note: "one site document",
   },
   { indent: 3, name: "test-ridge.json", path: "hrdps-continental/sites/test-ridge.json" },
   { indent: 3, name: "test-valley.json", path: "hrdps-continental/sites/test-valley.json" },
@@ -181,7 +181,7 @@ const stats = manifest.stats;
     </div>
 
     <p class="fc-cost" id="dataset-cost">
-      The documents above total {formatBytes(totalBytes)}. <code>manifest.stats</code> records
+      The documents total {formatBytes(totalBytes)}. <code>manifest.stats</code> records
       what building them cost the engine: {stats.downloads} provider
       downloads, {formatBytes(stats.downloadBytes)} fetched,
       {Math.round(stats.durationMs / 1000)} s, {stats.retries} retries.

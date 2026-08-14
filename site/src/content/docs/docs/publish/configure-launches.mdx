@@ -82,6 +82,9 @@ to the dataset root **verbatim**.
    pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
    ```
 
+   An invalid catalogue fails here with the offending field named; a valid
+   one prints the one-line `Would build …` summary and writes nothing.
+
 6. Run the chosen model. If any configured site falls outside that model's
    sampling guard, the build fails with an out-of-grid error rather than
    publishing a clamped boundary value. Use a site catalogue appropriate to

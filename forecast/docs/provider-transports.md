@@ -21,12 +21,11 @@ path to ECCC's models.
 | NOAA Open Data indexed GRIB | `providers/noaa.ts`, NOAA builders, `@azohra/meteo.grib` `.idx` helpers | Read `.idx`, fetch only byte ranges for needed records, sample sites | Record names, level strings, grid rotation, and accumulation windows are model-specific |
 | NOAA object-store NetCDF (GOES observations) | `builders/granule.ts`, `builders/goes.ts` | Download the whole 9–41 MB granule and read it through h5wasm with netCDF4's mask-and-scale semantics | Fixed-grid projection attributes are read per granule; cadence and validity are per product |
 
-GOES granules are deliberately read whole-file. The retired Python pipeline
-range-read HDF5 chunks to serve h5py's C callbacks a file-like object; here a
-granule is one download whose handful of probe pixels are extracted in
-memory, so the block-cached seekable reader has no consumer. Its one rule
-that survives — a 200 response to a Range request is a failure, never a body
-to use — lives in `@azohra/meteo.grib`'s ranged fetch helpers.
+GOES granules are deliberately read whole-file: a granule is one download
+whose handful of probe pixels are extracted in memory — one fetch, no
+fallback machinery. One rule applies to every ranged fetch — a 200 response
+to a Range request is a failure, never a body to use — and lives in
+`@azohra/meteo.grib`'s ranged fetch helpers.
 
 ## Preserve provider semantics
 

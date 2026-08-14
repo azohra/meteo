@@ -26,6 +26,9 @@ observation endpoint and normalizes the latest observation into a
 ## Capabilities
 
 `{ gustLull: true, temperature: true, conditions: true, history: false }`.
+`live` and `battery` are undeclared, and on the wire an undeclared
+capability key reads as false
+([evolution rules](/docs/station/wire-contract/#evolution-rules)).
 
 The hardware carries the full sensor suite, so gust/lull, temperature, and
 the extended conditions block are always declared. History is declared
@@ -46,11 +49,8 @@ tests and proxies.
 
 Responses cache for 60 seconds under the key `tempest/<stationId>` — the
 token is deliberately excluded, because a credential must never leak into a
-shared cache. The consequence: a config carrying a wrong token can be served
-a payload another config's valid token warmed. Payloads are per-station, not
-per-credential, so that is by design — but multi-tenant hosts whose tenants
-must re-prove credentials should
-[inject a cache per tenant](/docs/station/adapters/#the-cache-trust-model).
+shared cache. What that means for multi-tenant hosts is
+[the cache trust model](/docs/station/adapters/#the-cache-trust-model).
 
 ## What the adapter guards
 

@@ -45,6 +45,49 @@ curl 'https://your.host/wind/feed?hours=2'           # narrower window (≤ the 
 curl 'https://your.host/wind/current?station=summit' # one station, reading only
 ```
 
+`/feed` answers with a `StationFeed` — every configured station on one
+document, whether its upstream answered or not (abbreviated with `…`; the
+field names are real):
+
+```json
+{
+  "schemaVersion": 2,
+  "servedAt": "2026-08-05T22:13:00.000Z",
+  "primaryStationId": "summit",
+  "stations": [
+    { "id": "bluff", "name": "Bluff Launch", "status": "ok",
+      "capabilities": { "gustLull": true, "history": true, "live": true, … },
+      "reading": { "observedAt": "2026-08-05T22:12:45.000Z",
+        "windAvgMps": 2.5, "windGustMps": 3.9, "windLullMps": 1.7,
+        "windDirectionDeg": 290, … },
+      "history": { "periodMinutes": 1, "points": [ … ] }, … },
+    { "id": "meadow", "status": "unavailable", "reason": "upstream_error",
+      "reading": null, "history": null, … },
+    { "id": "summit", "status": "ok", … }
+  ]
+}
+```
+
+`?hours=2` serves the same shape with `history` narrowed to the trailing
+two hours. `/current` answers with a `StationCurrent` — one station,
+reading only, `history` null:
+
+```json
+{
+  "schemaVersion": 2,
+  "servedAt": "2026-08-05T22:13:00.000Z",
+  "station": { "id": "summit", "name": "Summit Logger", "status": "ok",
+    "reading": { "observedAt": "2026-08-05T22:12:57.000Z",
+      "windAvgMps": 2.5, … },
+    "history": null, … }
+}
+```
+
+A failed upstream keeps its station's slot with `"status": "unavailable"`
+and a machine `reason` — the documents, field by field, are the
+[wire contract](/docs/station/wire-contract/), with committed annotated
+examples in `station/schema/`.
+
 Every field each vendor entry takes — and the quirks its adapter guards —
 is on that vendor's reference page:
 [WindNerd](/docs/station/adapters/windnerd/),
@@ -52,15 +95,16 @@ is on that vendor's reference page:
 [Campbell](/docs/station/adapters/campbell/).
 
 `maxHistoryHours` (default 6) is both the default window and the ceiling for
-`?hours=` — a request above it is rejected with 400, and valid values snap
-to quarter-hour steps. Routing
+`?hours=` — the range and rejection rules are in
+[the HTTP protocol](/docs/station/wire-contract/#the-http-protocol). Routing
 matches by pathname suffix by default; pass `basePath: "/api/wind"` to pin
 exact-match routes (`/api/wind/feed`, `/api/wind/current`) when several
 handlers are mounted beside each other.
 
-Responses carry `Cache-Control` (derived from upstream cache TTLs) and a
-weak `ETag` computed over station content excluding `servedAt`, so unchanged
-upstreams revalidate to 304. Override caching for a CDN with:
+Responses carry `Cache-Control` and a weak `ETag`, so unchanged upstreams
+revalidate to 304 — the derivation is
+[the HTTP protocol's](/docs/station/wire-contract/#the-http-protocol).
+Override caching for a CDN with:
 
 <!-- meteo-doc-fence: ignore — a handler-option fragment, not a standalone module -->
 ```ts
@@ -131,6 +175,8 @@ function LiveWind() {
 }
 ```
 
+![The station card rendered from a synthetic station, Launch Ridge: the wind dial with lull and gust flanks beside a six-hour graded history chart.](figures/hero-light.svg)
+
 No react? The same page is one module script and plain markup with the
 [custom-elements binding](/docs/station/elements/) —
 `<meteo-station-feed src="/api/wind">` polls the same endpoints through the
@@ -151,20 +197,13 @@ the tokens the components wear are in [Theming](/docs/station/theming/).
 
 ## 3 · A season, not a window
 
-[`loadWindnerdStation`](/docs/station/adapters/windnerd/) accepts a
+[`loadWindnerdStation`](/docs/station/adapters/windnerd/) accepts a record
 resolution alongside the window. This is a
-direct-adapter option: `loadStationFeed` and `loadStationCurrent` forward
-only `{ historyHours, mode, environment }` to any vendor, windnerd included,
+[direct-adapter option](/docs/station/adapters/windnerd/#direct-adapter-options):
+`loadStationFeed` and `loadStationCurrent` forward only
+`{ historyHours, mode, environment }` to any vendor, windnerd included,
 so a season pull calls `loadWindnerdStation` itself rather than going
-through the fleet-feed API:
-
-<!-- meteo-doc-fence: ignore — bare option declarations, an excerpt of the adapter's option shape -->
-```ts
-type WindnerdRecordPeriodMinutes = 1 | 15 | 60 | 180; // the vendor's own whitelist; anything else 404s
-
-recordPeriodMinutes?: WindnerdRecordPeriodMinutes; // default 1 (live, raw)
-cacheTtlSeconds?: number;                          // default: 60s at period 1, 900s otherwise
-```
+through the fleet-feed API.
 
 A live card wants `historyHours: 6` at the default one-minute resolution. A
 season's rose wants months of history at a coarse resolution instead —
@@ -174,61 +213,25 @@ minutes. `history.periodMinutes` on the returned document always reflects
 the resolution actually served, so `historyGaps` and every duration-aware
 reader keep judging dropouts correctly regardless of which one you asked for.
 
-**The 180-minute aggregate buckets by the station's own local standard
-time, not UTC** — confirmed live: the local grid is the ordinary
-`00:00, 03:00, 06:00…`, but a station eight hours west of UTC has those
-boundaries arrive stamped `08:00Z, 11:00Z, 14:00Z…` — each `date_utc` is the
-correct UTC instant of its local boundary, not a UTC-aligned bucket.
-`dailyPattern` and the two filters below default to `utcOffsetMinutes: 0` —
-plain UTC — which will look entirely plausible right up until you compare
-it to the station's actual afternoon: pass your station's own standard-time
-offset (you configured it, or you own the hardware and already know it) to
-bucket in local time instead. The vendor's response carries that same
-offset too, as `time_offset` — one entry per record, not a single field, so
-`parseWindnerdRecords` takes the first — but only at period 180.
-`loadWindnerdStation` does not surface it on the `Station` it returns —
-surfacing it there is a wire-contract addition, not one this pass makes.
-Only a caller running `parseWindnerdRecords` directly against the raw
-upstream text sees it, in the result's `utcOffsetMinutes`.
+One trap: the 180-minute aggregates bucket by the station's own
+[local standard time, not UTC](/docs/station/adapters/windnerd/#aggregate-buckets-follow-local-standard-time).
+`dailyPattern` and the month and time-of-day filters default to
+`utcOffsetMinutes: 0` — plain UTC — which will look entirely plausible
+right up until you compare it to the station's actual afternoon: pass your
+station's own standard-time offset (you configured it, or you own the
+hardware and already know it) to bucket in local time instead.
 
-Two pure functions narrow which points a component then sees, and one turns
-a whole history into a single day:
-
-```ts
-import {
-  METEOROLOGICAL_SEASON_MONTHS, // { winter, spring, summer, fall }: number[] (1-12)
-  filterByMonth,                // (points, months, utcOffsetMinutes?) => HistoryPoint[]
-  filterByTimeOfDay,            // (points, fromMinute, toMinute, utcOffsetMinutes?) => HistoryPoint[]
-  dailyPattern,                 // (points, { slotMinutes?, utcOffsetMinutes? }) => DailyPatternSlot[]
-} from "@azohra/meteo.station";
-```
-
-`filterByTimeOfDay`'s `fromMinute > toMinute` wraps past midnight (a "night"
-window). Both filters and `dailyPattern` take a plain UTC-offset minutes —
-not an IANA zone — matching the "local standard time, no DST" a station page
-itself commits to; pass 0 (the default) to work in UTC. Feed the filtered
-points straight into `<WindRose points={...} />`; feed a whole history's
-points into `<DailyPattern points={...} />` (or `station={...}`, which also
-turns the caption into a true coverage fraction via the station's own
-`periodMinutes` instead of a bare sample count) and it buckets internally.
-
-`WindHistoryChart`'s `windowHours` and `compareOffsetDays` props
-([React](/docs/station/react/) / [Elements](/docs/station/elements/)) are
-themselves built from two more pure, exported functions — re-slicing the
-SAME already-fetched `points`, never a new fetch:
-
-```ts
-import {
-  windowPoints,       // (points, hours: number | undefined) => ReadonlyArray<HistoryPoint> — trailing N hours; an undefined hours is a no-op
-  compareWindow,       // (points, offsetDays, windowHours?) => HistoryPoint[] | null — a prior period's own span, re-sliced from `points`; null when history doesn't reach back far enough
-  compareTracePoints, // (comparePoints, scales, offsetDays) => string — the compare trace's coordinates, shifted onto the CURRENT chart's own x-axis
-} from "@azohra/meteo.station";
-```
-
-`compareWindow` requires coverage, not just presence: the matched
-span's own edges must land within one typical sample period (scaled by the
-same gap tolerance an outage is judged by) of the window asked for, or it
-returns `null` rather than a two-point ghost of a trace.
+The slicing itself is six pure functions on `@azohra/meteo.station`:
+`filterByMonth`, `filterByTimeOfDay`, and `dailyPattern` narrow or bucket
+the points; `windowPoints`, `compareWindow`, and `compareTracePoints` back
+the chart's `windowHours` and `compareOffsetDays` props. Signatures and
+rules are in
+[the client data layer](/docs/station/client-data/#slicing-history). Feed
+the filtered points straight into `<WindRose points={...} />`; feed a whole
+history's points into `<DailyPattern points={...} />` (or `station={...}`,
+which also turns the caption into a true coverage fraction via the
+station's own `periodMinutes` instead of a bare sample count) and it
+buckets internally.
 
 ## Where next
 

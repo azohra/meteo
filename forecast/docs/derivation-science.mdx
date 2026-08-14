@@ -61,9 +61,7 @@ parcelLclM = modelElevationM + (T − T_LCL) / 0.0098    # dry-adiabatic climb (
 ```
 
 Bolton's fit is accurate to 0.1 K across the meteorological range; against Romps (2017)'s exact
-closed form the height stays within about 1%, most of that the shared dry-lapse constant. It retires
-the inherited 121 m per degree linear estimate, which sat 35–58 m below the parcel across the
-repository's real columns — a fair estimate, now an unnecessary one.
+closed form the height stays within about 1%, most of that the shared dry-lapse constant.
 
 The parcel is not the only evidence. When the published column itself saturates below the parcel
 LCL — dew point depression down at the same 0.5 °C the renderer hatches as dense cloud, the crossing
@@ -150,5 +148,5 @@ Changing a constant creates a different metric. Name it separately and test it a
 
 Executable authority: [`forecast/src/derive.ts`](https://github.com/azohra/meteo/blob/main/forecast/src/derive.ts), with exact assertions in
 [`forecast/test/`](https://github.com/azohra/meteo/tree/main/forecast/test); the renderer-side lapse-rate and stability-band definitions live in
-[`forecast/src/derive/lapse.ts`](https://github.com/azohra/meteo/blob/main/briefing/src/derive/lapse.ts) and
-[`forecast/src/derive/stability.ts`](https://github.com/azohra/meteo/blob/main/briefing/src/derive/stability.ts).
+[`briefing/src/derive/lapse.ts`](https://github.com/azohra/meteo/blob/main/briefing/src/derive/lapse.ts) and
+[`briefing/src/derive/stability.ts`](https://github.com/azohra/meteo/blob/main/briefing/src/derive/stability.ts).

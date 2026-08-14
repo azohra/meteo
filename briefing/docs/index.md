@@ -11,7 +11,9 @@ chart, it lives here.
 
 The package has two tiers. The **data tier** — contract, derivations,
 analysis, comparison, transport, history — needs no DOM and produces typed
-values and findings. The **presentation tier** — `/meteogram` — is
+values and findings; what it reads is the published-document family —
+profiles, manifests, catalogues, smoke, observation, and site-context
+documents — each with its own reference page below. The **presentation tier** — `/meteogram` — is
 the Meteogram: a validated document becomes a serializable scene graph,
 and the scene becomes deterministic SVG. Every surface is an explicit
 subpath of `@azohra/meteo.briefing`:
@@ -44,14 +46,27 @@ both tiers in one working example.
 | [Compare model profiles](/docs/briefing/compare/) | `compareForecasts` / `compareAnalyses`: cross-model agreement, spread, and divergence for one site |
 | [History and run convergence](/docs/briefing/history/) | The append-only month-archive reader and `compareRuns` convergence |
 
+### The documents
+
+| Page | Covers |
+|---|---|
+| [Profile document](/docs/briefing/profile-document/) | The per-site forecast document — blocks, run and site provenance, semantics |
+| [Smoke document](/docs/briefing/smoke-document/) | The per-site wildfire-smoke series — fields, units, verified provider facts, the profile join |
+| [Observation document](/docs/briefing/observation-document/) | The measured GOES-18 series — DSR and AOD, validity discipline, product facts |
+| [Site context document](/docs/briefing/site-context-document/) | Static measured ground truth per site — the elevation pick, terrain, land cover, licences |
+| [Model manifest](/docs/briefing/manifest/) | One model publication's identity, extent, sites, and build accounting |
+| [Model catalogue](/docs/briefing/catalogue/) | `models.json` — model discovery and declared capabilities |
+| [Ensemble values](/docs/briefing/ensemble-values/) | Percentile blocks, contributor counts, censoring, circular wind |
+| [History archives](/docs/briefing/history-archives/) | The append-only monthly gzip archives and their sidecar indexes |
+| [Data and package versioning](/docs/briefing/versioning/) | The dataset and npm version axes and their compatibility rules |
+
 ### The presentation tier
 
 | Page | Covers |
 |---|---|
 | [Render a first Meteogram](/docs/briefing/render-first-meteogram/) | Validate one profile and serialize a reference chart with its scene-derived key |
 | [Build a scene graph](/docs/briefing/scene/) | Serializable geometry and hit-testing from one validated profile |
-| [Render SVG and a scene-derived key](/docs/briefing/svg/) | Deterministic SVG from a scene, styled by package tokens |
-| [Defaults and tokens](/docs/briefing/defaults-and-tokens/) | Configuring the reference scene and renderer through options and tokens |
+| [Render SVG and a scene-derived key](/docs/briefing/svg/) | Deterministic SVG from a scene, styled and configured through package defaults and tokens |
 | [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) | What every mark on the rendered chart means, and how to read it |
 
 ### Recipes

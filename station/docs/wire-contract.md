@@ -23,10 +23,11 @@ status union:
   serves them: `telemetry` (device health — today `batteryVoltage`, volts)
   and `samples` (`{ intervalSeconds, points }` of instantaneous
   `LiveSample`s).
-- `status: "unavailable"` — a machine `reason` code
-  (`upstream_error`, `contract_break`, `timeout`, `not_configured`,
-  `rate_limited`); `reading` and `history` are null. Never prose, never
-  stale numbers.
+- `status: "unavailable"` — a machine `reason` code; `reading` and
+  `history` are null. Never prose, never stale numbers. The vocabulary is
+  [core's four upstream-failure codes](/docs/core/failures-and-schema/#the-failure-vocabulary)
+  plus one of station's own, `not_configured` — `UNAVAILABLE_REASONS` in
+  `contract.ts`.
 
 `StationCurrent` is `{ schemaVersion, servedAt, station }` — one station,
 reading only, history null. It reuses the station shape so clients need one
@@ -42,6 +43,36 @@ SSE data event, discriminated on `type`:
 | `reading` | `{ stationId, servedAt, reading, telemetry }` — a fresh reading | as the source digests |
 | `ping` | `{ servedAt }` — keepalive; feeds the client's idle watchdog | ~20 s |
 | `unavailable` | `{ stationId, reason }` — terminal; the stream closes after it | on failure |
+
+One station entry from the committed example
+[`schema/example-feed.json`](https://github.com/azohra/meteo/blob/main/station/schema/example-feed.json)
+— the `unavailable` arm, identity and capabilities intact, `reading` and
+`history` null:
+
+```json
+{
+  "id": "narrows",
+  "name": "Gorge Narrows",
+  "sourceLabel": "Campbell logger",
+  "pageUrl": "https://example.com/stations/gorge-narrows",
+  "latitude": 49.3,
+  "longitude": -118.8,
+  "timeZone": "America/Vancouver",
+  "elevationM": 460,
+  "capabilities": {
+    "gustLull": true,
+    "temperature": true,
+    "conditions": false,
+    "history": true
+  },
+  "samplingWindowSeconds": 3,
+  "recommendedPollSeconds": 15,
+  "status": "unavailable",
+  "reason": "upstream_error",
+  "reading": null,
+  "history": null
+}
+```
 
 Parse helpers ship with the contract: `parseStationFeed(Json)` /
 `parseStationCurrent(Json)` / `parseStationLiveFrame(Json)` return the typed

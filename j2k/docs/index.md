@@ -29,8 +29,6 @@ This decoder is the production path: it is
 build stays selectable for whole-image decodes; OpenJPEG.js is retired
 outright), that package's sampled decode is this decoder's region decode,
 and its worker pool fans full decodes' codeblock tasks across threads.
-The receipts — the measured region-decode and per-core tables — are in
-[Performance, honestly](/docs/j2k/performance/).
 
 ## Decode a real field
 
@@ -77,9 +75,8 @@ console.log(`${region.codeblocksDecoded}/${region.codeblocksTotal} codeblocks de
 ```
 
 On the largest ECCC field a 4-point region decode touches 49 of 911
-codeblocks and runs ~16× faster than the full decode on one core; the
-measured table is in [Performance, honestly](/docs/j2k/performance/), and
-the exactness gate in
+codeblocks; the measured table is in
+[Performance, honestly](/docs/j2k/performance/), and the exactness gate in
 [Two-ring correctness](/docs/j2k/correctness/#region-decode-is-exact-by-contract).
 
 ## The `J2kSamples` seam

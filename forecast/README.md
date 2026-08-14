@@ -13,12 +13,6 @@ the site catalogue it builds from, the bucket and its credentials — is
 the operator's own repository. This platform ships no production instance;
 the reference deployment lives with its operator.
 
-It began as a module-by-module port of a Python pipeline; each ported
-module's spec was the Python test that pinned it, and each builder's
-acceptance gate was a published-JSON dual-run diff against the Python
-builder for the same run. The dual-run harness retired with the
-Python side.
-
 ## The documents
 
 The reference lives in [`docs/`](docs/) and is served at
@@ -49,21 +43,3 @@ pnpm exec meteo forecast migrate --model gfs   # dry-run by default
 
 From a workspace checkout, the same commands run as
 `node forecast/dist/cli.js forecast ...` after `pnpm --dir forecast build`.
-
-## Deliberately not ported
-
-- `repack.py` — the one-time year-file→month-file history repack already
-  ran in production; its output is the published dataset itself, so the
-  code had nothing left to do and died with `python/`. Its TTL
-  arithmetic survives in [`src/migrate.ts`](src/migrate.ts), its only
-  TypeScript consumer. (`migrate.py` was originally on this list for the
-  same reason, but the decision was reversed: the cutover machinery —
-  probe, migrate, verify against the published contract, race-check,
-  upload — is what any future wire version will need again, so it is
-  ported with the document map as the pluggable part.)
-
-- `rangedfile.py` — the block-cached seekable HTTP file existed to serve
-  h5py's C callbacks; the TypeScript GOES reader reads whole granules,
-  so the module has no consumer here. The posture and the one rule that
-  survives are recorded in
-  [Provider transports](docs/provider-transports.md).

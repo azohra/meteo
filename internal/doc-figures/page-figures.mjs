@@ -539,6 +539,388 @@ async function composeTwoTransports(ctx) {
   });
 }
 
+const DEG = Math.PI / 180;
+
+/* Orthographic projection for the schematic globe: view-centred, with a
+   visibility flag so graticule paths break cleanly at the limb. */
+function orthographic(centerLat, centerLon, radius, cx, cy) {
+  const sinC = Math.sin(centerLat * DEG);
+  const cosC = Math.cos(centerLat * DEG);
+  return (lat, lon) => {
+    const phi = lat * DEG;
+    const dLon = (lon - centerLon) * DEG;
+    const cosPhi = Math.cos(phi);
+    const sinPhi = Math.sin(phi);
+    return {
+      x: cx + radius * cosPhi * Math.sin(dLon),
+      y: cy - radius * (cosC * sinPhi - sinC * cosPhi * Math.cos(dLon)),
+      visible: sinC * sinPhi + cosC * cosPhi * Math.cos(dLon) > 0.001,
+    };
+  };
+}
+
+function arcPath(points, close = false) {
+  let d = "";
+  let pen = false;
+  for (const point of points) {
+    if (!point.visible) {
+      pen = false;
+      continue;
+    }
+    d += `${pen ? "L" : "M"}${round(point.x)} ${round(point.y)}`;
+    pen = true;
+  }
+  return d === "" ? "" : d + (close ? "Z" : "");
+}
+
+async function composeRotatedGrid(ctx) {
+  const { fromRotated, nearestGridpoint, parseFields, parseGrid, splitMessages, toRotated } =
+    await ctx.importPackage("grib");
+  const fixturePath = join(ctx.root, "grib", "test", "fixtures", "hrdps-continental-tmp-2m.grib2");
+  const field = parseFields(splitMessages(new Uint8Array(readFileSync(fixturePath)))[0])[0];
+  const grid = parseGrid(field.section3);
+  if (grid.kind !== "rotated") {
+    throw new Error(
+      "[rotated-grid] the HRDPS continental fixture no longer parses as template 3.1",
+    );
+  }
+
+  const launch = { latitude: 49.3634, longitude: -117.2361 };
+  const nearest = nearestGridpoint(grid, launch.latitude, launch.longitude);
+  const rot = toRotated(
+    launch.latitude,
+    launch.longitude,
+    grid.southPoleLatitude,
+    grid.southPoleLongitude,
+  );
+  const signed = (lon) => ((lon + 540) % 360) - 180;
+  const poleLon = signed(grid.southPoleLongitude);
+  const rotLon0 = signed(grid.longitudeOfFirstGridPoint);
+  const rotLat0 = grid.latitudeOfFirstGridPoint;
+  const di = grid.iDirectionIncrement;
+  const dj = grid.jDirectionIncrement;
+  const iFrac = (rot.longitude - rotLon0) / di;
+  const jFrac = (rot.latitude - rotLat0) / dj;
+  const iIndex = nearest.index % grid.ni;
+  const jIndex = Math.floor(nearest.index / grid.ni);
+  if (Math.round(iFrac) !== iIndex || Math.round(jFrac) !== jIndex) {
+    throw new Error(
+      "[rotated-grid] the analytic inverse and nearestGridpoint disagree on the cell",
+    );
+  }
+  if (jIndex * grid.ni + iIndex !== nearest.index) {
+    throw new Error("[rotated-grid] the storage-order index no longer decomposes as j * ni + i");
+  }
+  const kmPerDeg = (grid.earthRadiusM * Math.PI) / 180 / 1000;
+  const cosLat = Math.cos(launch.latitude * DEG);
+  const dxKm = signed(nearest.longitude - launch.longitude) * kmPerDeg * cosLat;
+  const dyKm = (nearest.latitude - launch.latitude) * kmPerDeg;
+  if (Math.abs(Math.hypot(dxKm, dyKm) - nearest.distanceKm) > 0.005) {
+    throw new Error("[rotated-grid] the drawn residual does not reproduce the reported distanceKm");
+  }
+  const deg = (value, digits = 4) => `${value.toFixed(digits)}°`;
+  /* Labels sit over graticule strokes throughout; a paper-coloured halo
+     keeps them legible without erasing the geometry beneath. */
+  const haloT = (x, y, content, o = {}) =>
+    t(x, y, content, o).replace(
+      "<text ",
+      `<text stroke="${HALO}" stroke-width="3" paint-order="stroke" `,
+    );
+
+  /* ── Panel A: the two graticules on a schematic globe ── */
+  const gx = 210;
+  const gy = 232;
+  const R = 168;
+  const project = orthographic(10, -114, R, gx, gy);
+  const truePaths = [];
+  for (let lat = -60; lat <= 80; lat += 20) {
+    const pts = [];
+    for (let lon = -180; lon <= 180; lon += 3) pts.push(project(lat, lon));
+    truePaths.push(arcPath(pts));
+  }
+  for (let lon = -180; lon < 180; lon += 30) {
+    const pts = [];
+    for (let lat = -88; lat <= 88; lat += 3) pts.push(project(lat, lon));
+    truePaths.push(arcPath(pts));
+  }
+  const rotatedSample = (rlat, rlon) => {
+    const geo = fromRotated(rlat, rlon, grid.southPoleLatitude, grid.southPoleLongitude);
+    return project(geo.latitude, geo.longitude);
+  };
+  const rotatedPaths = [];
+  for (let rlat = -60; rlat <= 80; rlat += 20) {
+    if (rlat === 0) continue;
+    const pts = [];
+    for (let rlon = -180; rlon <= 180; rlon += 3) pts.push(rotatedSample(rlat, rlon));
+    rotatedPaths.push(arcPath(pts));
+  }
+  for (let rlon = -180; rlon < 180; rlon += 30) {
+    const pts = [];
+    for (let rlat = -88; rlat <= 88; rlat += 3) pts.push(rotatedSample(rlat, rlon));
+    rotatedPaths.push(arcPath(pts));
+  }
+  const equatorPts = [];
+  for (let rlon = -180; rlon <= 180; rlon += 2) equatorPts.push(rotatedSample(0, rlon));
+  const rotLon1 = rotLon0 + (grid.ni - 1) * di;
+  const rotLat1 = rotLat0 + (grid.nj - 1) * dj;
+  const domainPts = [];
+  for (let rlon = rotLon0; rlon <= rotLon1; rlon += 0.75)
+    domainPts.push(rotatedSample(rotLat0, rlon));
+  for (let rlat = rotLat0; rlat <= rotLat1; rlat += 0.75)
+    domainPts.push(rotatedSample(rlat, rotLon1));
+  for (let rlon = rotLon1; rlon >= rotLon0; rlon -= 0.75)
+    domainPts.push(rotatedSample(rotLat1, rlon));
+  for (let rlat = rotLat1; rlat >= rotLat0; rlat -= 0.75)
+    domainPts.push(rotatedSample(rlat, rotLon0));
+  const pole = project(grid.southPoleLatitude, poleLon);
+  const northPole = project(90, 0);
+  const launchOnGlobe = project(launch.latitude, launch.longitude);
+  const domainLabelAt = rotatedSample(rotLat0, (rotLon0 + rotLon1) / 2);
+
+  const panelA = `${panelChip(24, 8, "A")}
+  ${t(58, 26, "TWO GRATICULES, ONE DOMAIN", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(430, 25, "schematic globe", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="24" y1="42" x2="430" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  <circle cx="${gx}" cy="${gy}" r="${R}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.5"/>
+  <path d="${truePaths.join(" ")}" fill="none" stroke="${RULE_STRONG}" stroke-width=".7" stroke-opacity=".5"/>
+  <path d="${rotatedPaths.join(" ")}" fill="none" stroke="${INK_SOFT}" stroke-width=".9" stroke-dasharray="4 3"/>
+  <path d="${arcPath(equatorPts)}" fill="none" stroke="${ACCENT_STRONG}" stroke-width="1.7" stroke-dasharray="7 4"/>
+  <path d="${arcPath(domainPts, true)}" fill="${ACCENT}" fill-opacity=".2" stroke="${ACCENT_STRONG}" stroke-width="1.4"/>
+  ${northPole.visible ? haloT(northPole.x, northPole.y - 6, "N", { font: MONO, size: 10, weight: 700, fill: INK_SOFT, anchor: "middle" }) : ""}
+  ${haloT(domainLabelAt.x, domainLabelAt.y + 16, "HRDPS domain", { font: MONO, size: 10, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}
+  <circle cx="${round(launchOnGlobe.x)}" cy="${round(launchOnGlobe.y)}" r="3.4" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.2"/>
+  ${haloT(launchOnGlobe.x - 9, launchOnGlobe.y + 3.5, "launch", { font: MONO, size: 10, weight: 700, fill: INK, anchor: "end" })}
+  <path d="M${round(pole.x)} ${round(pole.y - 6)} L${round(pole.x + 6)} ${round(pole.y)} L${round(pole.x)} ${round(pole.y + 6)} L${round(pole.x - 6)} ${round(pole.y)} Z" fill="${ACCENT_STRONG}" stroke="${HALO}" stroke-width="1.2"/>
+  ${haloT(pole.x + 11, pole.y - 1, "rotated south pole", { font: MONO, size: 10, weight: 700, fill: INK })}
+  ${haloT(pole.x + 11, pole.y + 12, `${deg(grid.southPoleLatitude)}, ${deg(poleLon)}`, { font: MONO, size: 9.5, fill: INK_MUTE })}
+  <path d="M40 428 h26" stroke="${RULE_STRONG}" stroke-width="1.4"/>
+  ${t(76, 432, "true graticule — solid", { font: MONO, size: 10, fill: INK_SOFT })}
+  <path d="M40 446 h26" stroke="${INK_SOFT}" stroke-width="1.2" stroke-dasharray="4 3"/>
+  ${t(76, 450, "rotated graticule — dashed · heavy dash: rotated equator", { font: MONO, size: 10, fill: INK_SOFT })}`;
+
+  /* ── Panel B: the inverse at the launch, gridlines mapped through fromRotated ── */
+  const bx = 470;
+  const bw = 510;
+  const bTop = 58;
+  const bh = 282;
+  const bcx = bx + bw / 2;
+  const bcy = bTop + bh / 2;
+  const S = 2700;
+  const loc = (lat, lon) => ({
+    x: bcx + signed(lon - launch.longitude) * cosLat * S,
+    y: bcy - (lat - launch.latitude) * S,
+  });
+  const patch = [];
+  patch.push(
+    `<clipPath id="rotated-grid-patch"><rect x="${bx}" y="${bTop}" width="${bw}" height="${bh}"/></clipPath>`,
+  );
+  patch.push(
+    `<rect x="${bx}" y="${bTop}" width="${bw}" height="${bh}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+  );
+  const clipped = [];
+  for (const lat of [49.3, 49.35, 49.4]) {
+    const y = round(loc(lat, launch.longitude).y);
+    clipped.push(
+      `<path d="M${bx} ${y} h${bw}" stroke="${RULE_STRONG}" stroke-width=".7" stroke-opacity=".55"/>`,
+    );
+    clipped.push(
+      haloT(bx + 6, y - 4, `${lat.toFixed(2)}°N`, { font: MONO, size: 9, fill: INK_MUTE }),
+    );
+  }
+  for (const lon of [-117.3, -117.25, -117.2, -117.15]) {
+    const x = round(loc(launch.latitude, lon).x);
+    clipped.push(
+      `<path d="M${x} ${bTop} v${bh}" stroke="${RULE_STRONG}" stroke-width=".7" stroke-opacity=".55"/>`,
+    );
+    clipped.push(
+      haloT(x + 3, bTop + bh - 6, `${Math.abs(lon).toFixed(2)}°W`, {
+        font: MONO,
+        size: 9,
+        fill: INK_MUTE,
+      }),
+    );
+  }
+  const rotatedLocal = (rlat, rlon) => {
+    const geo = fromRotated(rlat, rlon, grid.southPoleLatitude, grid.southPoleLongitude);
+    return loc(geo.latitude, geo.longitude);
+  };
+  const polyline = (pts) =>
+    pts.map((p, index) => `${index === 0 ? "M" : "L"}${round(p.x)} ${round(p.y)}`).join("");
+  const meridianTopX = new Map();
+  for (let i = iIndex - 6; i <= iIndex + 6; i += 1) {
+    const rlon = rotLon0 + i * di;
+    const pts = [];
+    for (let rlat = rot.latitude - 0.11; rlat <= rot.latitude + 0.11; rlat += 0.02) {
+      pts.push(rotatedLocal(rlat, rlon));
+    }
+    clipped.push(
+      `<path d="${polyline(pts)}" fill="none" stroke="${INK_SOFT}" stroke-width="1" stroke-dasharray="5 3"/>`,
+    );
+    const top = pts.reduce((best, p) =>
+      Math.abs(p.y - (bTop + 16)) < Math.abs(best.y - (bTop + 16)) ? p : best,
+    );
+    meridianTopX.set(i, top.x);
+  }
+  const parallelRightY = new Map();
+  for (let j = jIndex - 5; j <= jIndex + 5; j += 1) {
+    const rlat = rotLat0 + j * dj;
+    const pts = [];
+    for (let rlon = rot.longitude - 0.16; rlon <= rot.longitude + 0.16; rlon += 0.02) {
+      pts.push(rotatedLocal(rlat, rlon));
+    }
+    clipped.push(
+      `<path d="${polyline(pts)}" fill="none" stroke="${INK_SOFT}" stroke-width="1" stroke-dasharray="5 3"/>`,
+    );
+    const rightTarget = bx + bw - 24;
+    const right = pts.reduce((best, p) =>
+      Math.abs(p.x - rightTarget) < Math.abs(best.x - rightTarget) ? p : best,
+    );
+    parallelRightY.set(j, right.y);
+  }
+  for (const i of [iIndex - 2, iIndex, iIndex + 2]) {
+    const x = meridianTopX.get(i);
+    clipped.push(
+      haloT(x + 4, bTop + 16, i === iIndex ? `i ${i}` : String(i), {
+        font: MONO,
+        size: 9.5,
+        weight: i === iIndex ? 700 : 400,
+        fill: i === iIndex ? ACCENT_STRONG : INK_MUTE,
+      }),
+    );
+  }
+  for (const j of [jIndex - 2, jIndex, jIndex + 2]) {
+    const y = parallelRightY.get(j);
+    clipped.push(
+      haloT(bx + bw - 8, y - 4, j === jIndex ? `j ${j}` : String(j), {
+        font: MONO,
+        size: 9.5,
+        weight: j === jIndex ? 700 : 400,
+        fill: j === jIndex ? ACCENT_STRONG : INK_MUTE,
+        anchor: "end",
+      }),
+    );
+  }
+  for (let i = iIndex - 6; i <= iIndex + 6; i += 1) {
+    for (let j = jIndex - 5; j <= jIndex + 5; j += 1) {
+      const p = rotatedLocal(rotLat0 + j * dj, rotLon0 + i * di);
+      clipped.push(`<circle cx="${round(p.x)}" cy="${round(p.y)}" r="1.8" fill="${INK_MUTE}"/>`);
+    }
+  }
+  const launchAt = loc(launch.latitude, launch.longitude);
+  const gridpointAt = loc(nearest.latitude, nearest.longitude);
+  clipped.push(
+    `<circle cx="${round(gridpointAt.x)}" cy="${round(gridpointAt.y)}" r="6.5" fill="none" stroke="${ACCENT_STRONG}" stroke-width="1.8"/>`,
+  );
+  clipped.push(
+    `<circle cx="${round(launchAt.x)}" cy="${round(launchAt.y)}" r="3.2" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.2"/>`,
+  );
+  clipped.push(
+    `<circle cx="${round(launchAt.x)}" cy="${round(launchAt.y)}" r="15" fill="none" stroke="${ACCENT_STRONG}" stroke-width="1.2"/>`,
+  );
+  clipped.push(
+    haloT(launchAt.x - 24, launchAt.y - 26, `launch -> cell (i ${iIndex}, j ${jIndex})`, {
+      font: MONO,
+      size: 10,
+      weight: 700,
+      fill: INK,
+      anchor: "end",
+    }),
+  );
+  clipped.push(
+    haloT(
+      launchAt.x - 24,
+      launchAt.y - 12,
+      `index ${jIndex} × ${grid.ni} + ${iIndex} = ${nearest.index}`,
+      {
+        font: MONO,
+        size: 10,
+        fill: INK_SOFT,
+        anchor: "end",
+      },
+    ),
+  );
+
+  /* Magnifier inset: the residual is ~16× smaller than a cell, so it gets
+     its own scale, with the zoom factor computed from the two scales. */
+  const inW = 212;
+  const inH = 136;
+  const inX = bx + 20;
+  const inY = bTop + bh + 14;
+  const insetScale = 470; // px per km
+  const zoom = Math.round(insetScale / (S / kmPerDeg));
+  const inLaunch = { x: inX + 58, y: inY + 96 };
+  const inGrid = { x: inLaunch.x + dxKm * insetScale, y: inLaunch.y - dyKm * insetScale };
+  const inset = `<path d="M${round(launchAt.x - 5)} ${round(launchAt.y + 14)} L${round(inX + inW)} ${round(inY)}" stroke="${ACCENT_STRONG}" stroke-width="1" stroke-dasharray="3 3"/>
+  <rect x="${inX}" y="${inY}" width="${inW}" height="${inH}" fill="${STRIP_BG}" stroke="${ACCENT_STRONG}" stroke-width="1.3"/>
+  ${t(inX + 8, inY + 15, `×${zoom} magnified`, { font: MONO, size: 9.5, weight: 700, fill: ACCENT_STRONG })}
+  <path d="M${round(inLaunch.x)} ${round(inLaunch.y)} L${round(inGrid.x)} ${round(inGrid.y)}" stroke="${ACCENT_STRONG}" stroke-width="1.6"/>
+  <circle cx="${round(inGrid.x)}" cy="${round(inGrid.y)}" r="6.5" fill="none" stroke="${ACCENT_STRONG}" stroke-width="1.8"/>
+  <circle cx="${round(inLaunch.x)}" cy="${round(inLaunch.y)}" r="3.2" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.2"/>
+  ${t(inLaunch.x - 6, inLaunch.y + 14, "launch", { font: MONO, size: 9.5, fill: INK_SOFT })}
+  ${t(inGrid.x + 10, inGrid.y + 3, "gridpoint", { font: MONO, size: 9.5, fill: INK_SOFT })}
+  ${t((inLaunch.x + inGrid.x) / 2 - 8, (inLaunch.y + inGrid.y) / 2 + 12, `distanceKm ${nearest.distanceKm.toFixed(3)} km`, { font: MONO, size: 10, weight: 700, fill: ACCENT_STRONG })}
+  <path d="M${inX + inW - 8 - insetScale * 0.1} ${inY + inH - 12} h${round(insetScale * 0.1)}" stroke="${INK}" stroke-width="2"/>
+  ${t(inX + inW - 8 - insetScale * 0.05, inY + inH - 18, "100 m", { font: MONO, size: 9, fill: INK_MUTE, anchor: "middle" })}`;
+
+  const panelB = `${panelChip(470, 8, "B")}
+  ${t(504, 26, "THE INVERSE, AT THE LAUNCH", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(980, 25, `${di.toFixed(4)}° cells · rotated frame`, { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="470" y1="42" x2="980" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${patch.join("\n  ")}
+  <g clip-path="url(#rotated-grid-patch)">
+  ${clipped.join("\n  ")}
+  </g>
+  ${inset}`;
+
+  const rows = [
+    {
+      term: "grid",
+      text:
+        `template 3.${grid.gridDefinitionTemplateNumber} rotated latitude-longitude · ` +
+        `${grid.ni} × ${grid.nj} points at ${di.toFixed(4)}° rotated spacing ` +
+        `(hrdps-continental-tmp-2m.grib2)`,
+    },
+    {
+      term: "rotated pole",
+      text:
+        `south pole of the rotated frame at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)} — ` +
+        `the graticule tilted until the domain lies along the rotated equator`,
+    },
+    {
+      term: "analytic inverse",
+      text:
+        `toRotated(${deg(launch.latitude)}, ${deg(launch.longitude)}) -> ` +
+        `(${deg(rot.latitude)}, ${deg(rot.longitude)}) rotated · ` +
+        `i = ${iFrac.toFixed(2)} -> ${iIndex} · j = ${jFrac.toFixed(2)} -> ${jIndex} · ` +
+        `index ${nearest.index}`,
+    },
+    {
+      term: "residual",
+      text:
+        `nearestGridpoint -> ${deg(nearest.latitude)}, ${deg(nearest.longitude)} at ` +
+        `distanceKm ${nearest.distanceKm.toFixed(3)} km — reported, never thrown: ` +
+        `the distance is the caller's out-of-domain guard`,
+    },
+  ];
+  const ledger = ledgerRows(rows, 980, 512);
+
+  return frame({
+    id: "rotated-grid",
+    title: "Why template 3.1 needs an analytic inverse",
+    lesson:
+      "A rotated grid's rows follow a tilted frame, not the true graticule — toRotated maps a geographic point straight to fractional grid coordinates, and the reported distance is the residual.",
+    description: `Two panels. Left, a schematic globe: the true graticule in solid strokes, the rotated graticule in dashed strokes, the rotated south pole marked at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)}, and the HRDPS continental domain lying along the rotated equator. Right, the neighbourhood of the launch at ${deg(launch.latitude)}, ${deg(launch.longitude)}: dashed rotated gridlines at ${di.toFixed(4)}° spacing tilted against the solid true graticule, the launch mapped by toRotated to rotated (${deg(rot.latitude)}, ${deg(rot.longitude)}), fractional cell (${iFrac.toFixed(2)}, ${jFrac.toFixed(2)}), nearest gridpoint (i ${iIndex}, j ${jIndex}) = storage index ${nearest.index}, with the ${nearest.distanceKm.toFixed(3)} km residual drawn in a magnified inset.`,
+    caption:
+      "Every number is computed at figure-generation time from the committed HRDPS continental fixture through the built package — parseGrid for the pole and spacing, toRotated for the inverse, nearestGridpoint for the index and distance. The globe is schematic; the pole, domain, gridlines, index, and residual are the fixture's real values.",
+    units: "coordinates degrees · grid spacing degrees (rotated frame) · residual km and m",
+    bodyWidth: 980,
+    bodyHeight: 512 + ledger.height,
+    body: `${panelA}
+  ${panelB}
+  ${ledger.markup}`,
+  });
+}
+
 async function composeContractAnatomy(ctx) {
   const { p50 } = await ctx.importPackage("briefing/derive");
   const profile = await ctx.loadProfile("convective-cycle");
@@ -1399,7 +1781,740 @@ async function composeTokenReference(ctx) {
   });
 }
 
+async function composePlatformBoundary() {
+  const width = 980;
+  const leftX = 0;
+  const leftW = 600;
+  const leftCx = leftX + leftW / 2;
+  const rightX = 650;
+  const rightW = width - rightX;
+  const rightCx = rightX + rightW / 2;
+  const titleSpec = { family: "ibm-plex-sans", weight: 700, size: 14 };
+  const detailSpec = { family: "ibm-plex-sans", weight: 400, size: 12.5 };
+
+  const parts = [];
+  parts.push(flowMarker("platform-boundary-flow"));
+
+  function box(x, w, y, title, detail, { accent = false } = {}) {
+    const cx = x + w / 2;
+    const titleLines = wrapText(title, w - 26, titleSpec);
+    const detailLines = wrapText(detail, w - 26, detailSpec);
+    const h = 16 + titleLines.length * 18 + 4 + detailLines.length * 17 + 10;
+    parts.push(
+      `<rect x="${round(x)}" y="${round(y)}" width="${round(w)}" height="${round(h)}" rx="8" fill="${accent ? SURFACE_ACCENT : SURFACE}" stroke="${accent ? ACCENT : RULE_STRONG}" stroke-width="2"/>`,
+    );
+    let ty = y + 16 + 12;
+    for (const line of titleLines) {
+      parts.push(t(cx, ty - 12 + 4, line, { font: MONO, size: 14, weight: 700, anchor: "middle" }));
+      ty += 18;
+    }
+    ty += 2;
+    for (const line of detailLines) {
+      parts.push(t(cx, ty - 12 + 2, line, { size: 12.5, fill: INK_SOFT, anchor: "middle" }));
+      ty += 17;
+    }
+    return y + h;
+  }
+
+  function arrow(cx, fromY, toY) {
+    parts.push(
+      `<path d="M${round(cx)} ${round(fromY)} V${round(toY - 3)}" stroke="${INK_SOFT}" stroke-width="2" marker-end="url(#platform-boundary-flow)"/>`,
+    );
+  }
+
+  const sourceY = 14;
+  parts.push(
+    t(leftCx, sourceY, "provider model files — GRIB2 · JPEG 2000", {
+      font: MONO,
+      size: 12,
+      fill: INK_MUTE,
+      anchor: "middle",
+    }),
+  );
+  parts.push(
+    t(rightCx, sourceY, "weather-station hardware", {
+      font: MONO,
+      size: 12,
+      fill: INK_MUTE,
+      anchor: "middle",
+    }),
+  );
+
+  let y = sourceY + 12;
+  arrow(leftCx, y, y + 16);
+  const decodersBottom = box(
+    leftX + 20,
+    leftW - 40,
+    y + 18,
+    "@azohra/meteo.grib · @azohra/meteo.j2k",
+    "Decode provider bytes into typed grids, gated bit-for-bit against ecCodes.",
+  );
+  arrow(leftCx, decodersBottom, decodersBottom + 16);
+  const engineBottom = box(
+    leftX + 20,
+    leftW - 40,
+    decodersBottom + 18,
+    "@azohra/meteo.forecast",
+    "Samples each launch, derives engine-owned values, publishes documents.",
+  );
+
+  arrow(leftCx, engineBottom, engineBottom + 16);
+  const boundaryY = engineBottom + 18;
+  const boundaryH = 46;
+  parts.push(
+    `<rect x="${leftX}" y="${round(boundaryY)}" width="${leftW}" height="${boundaryH}" fill="${SURFACE_SUNKEN}" stroke="${INK}" stroke-width="2"/>`,
+  );
+  parts.push(
+    t(leftCx, boundaryY + 19, "VERSIONED JSON DOCUMENTS", {
+      font: MONO,
+      size: 12.5,
+      weight: 700,
+      ls: 0.5,
+      fill: ACCENT_STRONG,
+      anchor: "middle",
+    }),
+  );
+  parts.push(
+    t(leftCx, boundaryY + 36, "manifest · site profiles · month archives · site context", {
+      font: MONO,
+      size: 11,
+      fill: INK_SOFT,
+      anchor: "middle",
+    }),
+  );
+  const boundaryBottom = boundaryY + boundaryH;
+
+  arrow(leftCx, boundaryBottom, boundaryBottom + 16);
+  const readerY = boundaryBottom + 18;
+  const briefingBottom = box(
+    leftX + 20,
+    leftW - 40,
+    readerY,
+    "@azohra/meteo.briefing",
+    "Validates the documents, derives, analyzes, compares, draws the Meteogram.",
+  );
+
+  // The station lane never crosses the forecast-document boundary: adapters
+  // read vendor hardware feeds and serve the capability's own live wire.
+  arrow(rightCx, sourceY + 12, readerY);
+  const stationBottom = box(
+    rightX + 6,
+    rightW - 12,
+    readerY,
+    "@azohra/meteo.station",
+    "Adapters, feed handler, and display over its own live wire contract.",
+  );
+
+  const readersBottom = Math.max(briefingBottom, stationBottom);
+  const coreY = readersBottom + 14;
+  const downstreamY = coreY + 46;
+  // Arrows first, then the core bar on a solid ground, so the shared
+  // foundation reads as a layer the lanes pass beneath.
+  arrow(leftCx, readersBottom, downstreamY);
+  arrow(rightCx, readersBottom, downstreamY);
+  parts.push(
+    `<rect x="${leftX + 20}" y="${round(coreY)}" width="${width - 40}" height="30" rx="6" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-dasharray="5 4" stroke-width="1.5"/>`,
+  );
+  parts.push(
+    t(
+      width / 2,
+      coreY + 19,
+      "@azohra/meteo.core — units · one wind sign · failure vocabulary (imported by briefing and station)",
+      {
+        font: MONO,
+        size: 11.5,
+        fill: INK_SOFT,
+        anchor: "middle",
+      },
+    ),
+  );
+  parts.push(`<path d="M0 ${round(downstreamY + 2)} h${width}" stroke="${INK}" stroke-width="2"/>`);
+  parts.push(
+    t(0, downstreamY + 22, "DOWNSTREAM PUBLISHER", {
+      font: MONO,
+      size: 12,
+      weight: 700,
+      ls: 0.5,
+      fill: ACCENT_STRONG,
+    }),
+  );
+  parts.push(
+    t(width, downstreamY + 22, "hosting · schedule · access · presentation · safety language", {
+      font: MONO,
+      size: 12,
+      fill: INK_MUTE,
+      anchor: "end",
+    }),
+  );
+
+  return frame({
+    id: "platform-boundary",
+    title: "Responsibility by layer",
+    lesson:
+      "An engine publishes versioned JSON; packages read what it published. Station reads live hardware over its own wire and never crosses that boundary.",
+    description:
+      "Two lanes. Left: provider model files decode through the grib and j2k packages, the forecast engine publishes versioned JSON documents, and the briefing package reads them. Right: weather-station hardware feeds the station package directly. Both lanes end at the downstream publisher. A dashed bar marks the core package's shared vocabulary beneath briefing and station.",
+    caption:
+      "Every layer runs on infrastructure its operator controls. The versioned documents are the data boundary between publisher and consumer; the downstream publisher owns everything its readers see around them.",
+    units: "layer diagram; no numeric scale",
+    bodyWidth: width,
+    bodyHeight: downstreamY + 30,
+    body: parts.join("\n  "),
+  });
+}
+
+/* Deterministic PRNG and scatter, mirroring j2k/test/region.test.ts so the
+   figure reproduces the committed bench's exact point sets (seed 0xc0ffee). */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function benchScatter(width, height, count, seed) {
+  const rand = mulberry32(seed);
+  const indices = new Set();
+  while (indices.size < count) {
+    indices.add(Math.floor(rand() * height) * width + Math.floor(rand() * width));
+  }
+  return [...indices];
+}
+
+async function composeRegionDecode(ctx) {
+  const { parseFields, splitMessages } = await ctx.importPackage("grib");
+  const { decodeJ2kRegion, decodeRegionFromPlan, planDecode } = await ctx.importPackage("j2k");
+  const fixturePath = join(ctx.root, "grib", "test", "fixtures", "hrdps-continental-tmp-2m.grib2");
+  const field = parseFields(splitMessages(new Uint8Array(readFileSync(fixturePath)))[0])[0];
+  /* Section 7's body (past its 5-octet header) is the raw JPEG 2000
+     codestream a DRT 5.40 field carries. */
+  const codestream = field.section7.subarray(5);
+  const plan = planDecode(codestream);
+  const { width, height } = plan.header;
+  const samples = width * height;
+  const levels = plan.header.decompositionLevels;
+
+  const series = [1, 4, 16, 64, 256].map((count) => {
+    const result = decodeJ2kRegion(codestream, benchScatter(width, height, count, 0xc0ffee));
+    return { count, decoded: result.codeblocksDecoded, total: result.codeblocksTotal };
+  });
+  const total = series[0].total;
+  const four = series.find((entry) => entry.count === 4);
+
+  /* The touched SET: decodeRegionFromPlan reads a task's byteOffset exactly
+     once per entropy-decoded codeblock, so instrumented tasks record the
+     exact blocks the decode consumed — no selection logic reimplemented. */
+  const indices = benchScatter(width, height, 4, 0xc0ffee);
+  const touched = new Set();
+  const instrumented = plan.tasks.map((task, id) => ({
+    ...task,
+    get byteOffset() {
+      touched.add(id);
+      return task.byteOffset;
+    },
+  }));
+  const region = decodeRegionFromPlan(codestream, { ...plan, tasks: instrumented }, indices);
+  if (touched.size !== region.codeblocksDecoded || region.codeblocksDecoded !== four.decoded) {
+    throw new Error(
+      "[region-decode] the instrumented touched set disagrees with codeblocksDecoded",
+    );
+  }
+  const points = indices.map((index) => ({ x: index % width, y: Math.floor(index / width) }));
+
+  /* ── Panel A: the request, in image space ── */
+  const aX = 24;
+  const aTop = 56;
+  const k2 = 340 / width;
+  const aH = round(height * k2);
+  const imagePanel = [
+    `<rect x="${aX}" y="${aTop}" width="340" height="${aH}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+  ];
+  points.forEach((point, index) => {
+    const x = aX + point.x * k2;
+    const y = aTop + point.y * k2;
+    imagePanel.push(
+      `<path d="M${round(x - 5)} ${round(y)} h10 M${round(x)} ${round(y - 5)} v10" stroke="${ACCENT_STRONG}" stroke-width="1.6"/>`,
+    );
+    const labelY = y < aTop + 16 ? y + 16 : y - 8;
+    imagePanel.push(
+      t(x + 7, labelY, String(index + 1), {
+        font: MONO,
+        size: 10,
+        weight: 700,
+        fill: ACCENT_STRONG,
+      }),
+    );
+  });
+  imagePanel.push(
+    t(aX, aTop + aH + 18, `${width} × ${height} = ${samples.toLocaleString("en-CA")} samples`, {
+      font: MONO,
+      size: 10,
+      fill: INK_SOFT,
+    }),
+  );
+  imagePanel.push(
+    t(aX, aTop + aH + 33, points.map((p, i) => `${i + 1} (${p.x}, ${p.y})`).join(" · "), {
+      font: MONO,
+      size: 9.5,
+      fill: INK_MUTE,
+    }),
+  );
+  const statTop = aTop + aH + 66;
+  imagePanel.push(
+    t(aX, statTop, `${four.decoded} of ${total}`, {
+      font: DISPLAY,
+      size: 34,
+      weight: 800,
+      ls: 0.3,
+    }),
+  );
+  imagePanel.push(
+    t(
+      aX,
+      statTop + 22,
+      `codeblocks entropy-decoded · ${((four.decoded / total) * 100).toFixed(1)} %`,
+      {
+        font: MONO,
+        size: 11,
+        fill: INK_SOFT,
+      },
+    ),
+  );
+  imagePanel.push(
+    t(aX, statTop + 40, "values bit-identical to the full decode", {
+      font: MONO,
+      size: 10.5,
+      fill: INK_MUTE,
+    }),
+  );
+
+  /* ── Panel B: every codeblock in the tile buffer, touched ones hatched ── */
+  const mX = 386;
+  const mTop = 56;
+  const k = 590 / width;
+  const mW = round(width * k);
+  const mH = round(height * k);
+  const map = [];
+  map.push(`<defs><pattern id="region-decode-hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+    <rect width="5" height="5" fill="${ACCENT}"/>
+    <path d="M0 0V5" stroke="${ACCENT_STRONG}" stroke-width="1.5"/>
+  </pattern></defs>`);
+  map.push(`<rect x="${mX}" y="${mTop}" width="${mW}" height="${mH}" fill="${SURFACE}"/>`);
+  const blockRect = (task) =>
+    `x="${round(mX + task.tileX * k)}" y="${round(mTop + task.tileY * k)}" width="${round(task.width * k)}" height="${round(task.height * k)}"`;
+  plan.tasks.forEach((task, id) => {
+    if (!touched.has(id))
+      map.push(
+        `<rect ${blockRect(task)} fill="none" stroke="${RULE}" stroke-width=".5" stroke-opacity=".7"/>`,
+      );
+  });
+  for (const id of touched) {
+    map.push(
+      `<rect ${blockRect(plan.tasks[id])} fill="url(#region-decode-hatch)" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
+    );
+  }
+  for (let r = 0; r < levels; r += 1) {
+    const res = plan.resolutions[r];
+    map.push(
+      `<rect x="${mX}" y="${mTop}" width="${round(res.width * k)}" height="${round(res.height * k)}" fill="none" stroke="${INK_SOFT}" stroke-width="1"/>`,
+    );
+  }
+  map.push(
+    `<rect x="${mX}" y="${mTop}" width="${mW}" height="${mH}" fill="none" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+  );
+  const prev = plan.resolutions[levels - 1];
+  const bandLabel = (x, y, label) =>
+    t(x, y, label, { font: MONO, size: 10.5, weight: 700, fill: INK_MUTE });
+  map.push(bandLabel(mX + prev.width * k + 8, mTop + 16, "HL"));
+  map.push(bandLabel(mX + 8, mTop + prev.height * k + 16, "LH"));
+  map.push(bandLabel(mX + prev.width * k + 8, mTop + prev.height * k + 16, "HH"));
+  /* Each point's coefficient position at the finest level: (x >> 1, y >> 1)
+     offset into each subband — the geometry the touched clusters sit on. */
+  for (const point of points) {
+    const hx = point.x >> 1;
+    const hy = point.y >> 1;
+    for (const [ox, oy] of [
+      [prev.width, 0],
+      [0, prev.height],
+      [prev.width, prev.height],
+    ]) {
+      const x = mX + (ox + hx) * k;
+      const y = mTop + (oy + hy) * k;
+      map.push(
+        `<path d="M${round(x - 3)} ${round(y)} h6 M${round(x)} ${round(y - 3)} v6" stroke="${INK}" stroke-width="1.1"/>`,
+      );
+    }
+  }
+  map.push(
+    t(
+      mX + mW,
+      mTop + mH + 18,
+      "tile buffer: the finest subbands ring the coarser levels, recursively",
+      {
+        font: MONO,
+        size: 10,
+        fill: INK_MUTE,
+        anchor: "end",
+      },
+    ),
+  );
+
+  /* ── Panel C: the sublinear cost curve, computed by decodeJ2kRegion ── */
+  const cTop = 428;
+  const barX = 150;
+  const barW = 700;
+  const bars = [];
+  series.forEach((entry, index) => {
+    const y = cTop + 44 + index * 26;
+    bars.push(
+      t(barX - 10, y + 9, `${entry.count} ${entry.count === 1 ? "point" : "points"}`, {
+        font: MONO,
+        size: 11,
+        fill: INK,
+        anchor: "end",
+      }),
+    );
+    bars.push(
+      `<rect x="${barX}" y="${y}" width="${round((entry.decoded / total) * barW)}" height="13" fill="${ACCENT}" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
+    );
+    bars.push(
+      t(barX + (entry.decoded / total) * barW + 8, y + 10.5, `${entry.decoded}`, {
+        font: MONO,
+        size: 11,
+        weight: 700,
+        fill: ACCENT_STRONG,
+      }),
+    );
+  });
+  const barsBottom = cTop + 44 + series.length * 26;
+  bars.push(
+    `<path d="M${barX + barW} ${cTop + 38} V${barsBottom}" stroke="${INK_SOFT}" stroke-width="1.2" stroke-dasharray="5 4"/>`,
+  );
+  bars.push(
+    t(barX + barW, cTop + 32, `${total} = every codeblock (full decode)`, {
+      font: MONO,
+      size: 10,
+      fill: INK_SOFT,
+      anchor: "end",
+    }),
+  );
+  const pointsFactor = series[series.length - 1].count / series[0].count;
+  const blocksFactor = series[series.length - 1].decoded / series[0].decoded;
+  bars.push(
+    t(
+      barX,
+      barsBottom + 20,
+      `points ×${pointsFactor} -> codeblocks ×${Math.round(blocksFactor)} — nearby points share windows, and every point's coarse-level ancestry converges`,
+      {
+        font: MONO,
+        size: 10.5,
+        fill: INK_SOFT,
+      },
+    ),
+  );
+
+  const rows = [
+    {
+      term: "touched",
+      text:
+        `filled + hatched: the ${four.decoded} codeblocks whose bytes this 4-point decode ` +
+        `entropy-decoded (the set is read off the decode itself and equals its codeblocksDecoded)`,
+    },
+    {
+      term: "untouched",
+      text:
+        `outline only: the other ${total - four.decoded} codeblocks are skipped after the ` +
+        `packet-structure parse — their bytes are never entropy-decoded`,
+    },
+    {
+      term: "crosses",
+      text:
+        "each requested point's coefficient position in the three finest subbands — the same " +
+        "four neighbourhoods recur at every coarser level, which is why cost tracks codeblocks, not points",
+    },
+  ];
+  const ledger = ledgerRows(rows, 980, barsBottom + 44);
+
+  const body = `${panelChip(24, 8, "A")}
+  ${t(58, 26, "THE REQUEST", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(364, 25, "image space", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="24" y1="42" x2="364" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${imagePanel.join("\n  ")}
+  ${panelChip(386, 8, "B")}
+  ${t(420, 26, "WHAT IT TOUCHES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(976, 25, `${total} codeblocks · ${levels} decomposition levels`, { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="386" y1="42" x2="976" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${map.join("\n  ")}
+  ${panelChip(24, cTop - 34, "C")}
+  ${t(58, cTop - 16, "CODEBLOCKS TOUCHED AS POINTS MULTIPLY", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(976, cTop - 17, "same field · same seed per count", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="24" y1="${cTop}" x2="976" y2="${cTop}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${bars.join("\n  ")}
+  ${ledger.markup}`;
+
+  return frame({
+    id: "region-decode",
+    title: "Region-decode cost tracks codeblocks, not points",
+    lesson: `decodeJ2kRegion entropy-decodes only the codeblocks the requested points touch — 4 points on the ${samples.toLocaleString("en-CA")}-sample HRDPS continental field decode ${four.decoded} of ${total}.`,
+    description: `Three panels. Left, the ${width} × ${height} HRDPS continental field with the bench's 4 scattered sample points marked. Centre, the codestream's tile buffer: all ${total} codeblocks drawn across ${levels} decomposition levels, with the ${four.decoded} codeblocks this 4-point decode actually entropy-decoded filled and hatched, clustering around each point's coefficient position in every subband. Below, the touched count as the same scatter grows: ${series.map((entry) => `${entry.count} point${entry.count === 1 ? "" : "s"} -> ${entry.decoded}`).join(", ")} of ${total} codeblocks — points ×${pointsFactor} costs only ×${Math.round(blocksFactor)} in codeblocks.`,
+    caption:
+      "Every count is computed at figure-generation time by calling decodeJ2kRegion on the JPEG 2000 codestream embedded in the committed fixture (grib/test/fixtures/hrdps-continental-tmp-2m.grib2), with the point scatter reproducing the committed bench's seed (j2k/test/region.test.ts). The highlighted blocks are the exact set whose bytes that decode read, verified equal to its reported codeblocksDecoded.",
+    units: "codeblocks count · points count · samples count · coordinates gridpoints",
+    bodyWidth: 980,
+    bodyHeight: barsBottom + 44 + ledger.height,
+    body,
+  });
+}
+
+async function composeConvergenceLadder() {
+  /* Rung values are schematic (a structural diagram, not a data plot), but
+     every printed number obeys the arithmetic it illustrates: leads step 12 h
+     for a twice-daily model against a local-noon anchor 7 h behind UTC, and
+     each panel's spreadM is genuinely max - min over its sample. */
+  const votePill = (x, baseline, vote) => {
+    const styles = {
+      window: { fill: ACCENT, stroke: ACCENT_STRONG, dash: "", ink: ACCENT_INK },
+      quiet: { fill: SURFACE, stroke: RULE_STRONG, dash: "", ink: INK },
+      abstained: { fill: SURFACE, stroke: RULE, dash: ' stroke-dasharray="4 3"', ink: INK_MUTE },
+    };
+    const style = styles[vote];
+    return `<rect x="${x}" y="${baseline - 14}" width="86" height="20" fill="${style.fill}" stroke="${style.stroke}" stroke-width="1.2"${style.dash}/>
+  ${t(x + 43, baseline, vote, { font: MONO, size: 10, weight: 700, fill: style.ink, anchor: "middle" })}`;
+  };
+
+  const ladder = (x0, spec) => {
+    const parts = [];
+    parts.push(panelChip(x0, 8, spec.chip));
+    parts.push(t(x0 + 34, 26, spec.heading, { font: DISPLAY, size: 18, weight: 800, ls: 0.36 }));
+    parts.push(t(x0 + 446, 25, spec.note, { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" }));
+    parts.push(
+      `<line x1="${x0}" y1="42" x2="${x0 + 446}" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+    );
+    parts.push(
+      t(x0 + 16, 62, "target local day 2026-08-14 · anchor 12:00 local (leadAnchorLocalHour 12)", {
+        font: MONO,
+        size: 9.5,
+        fill: INK_SOFT,
+      }),
+    );
+    const header = { font: MONO, size: 9, weight: 700, ls: 0.5, fill: INK_MUTE };
+    parts.push(t(x0 + 16, 84, "RUN", header));
+    parts.push(t(x0 + 104, 84, "LEAD", header));
+    parts.push(t(x0 + 186, 84, "VOTE", header));
+    parts.push(t(x0 + 430, 84, "MAGNITUDE M", { ...header, anchor: "end" }));
+
+    parts.push(
+      `<rect x="${x0 + 8}" y="96" width="430" height="126" fill="${SURFACE_ACCENT}" stroke="${ACCENT_STRONG}" stroke-width="1.4"/>`,
+    );
+    parts.push(
+      t(x0 + 16, 114, "SETTLED SAMPLE — NEWEST minRuns = 3 RUNGS", {
+        font: MONO,
+        size: 9.5,
+        weight: 700,
+        ls: 0.4,
+        fill: ACCENT_STRONG,
+      }),
+    );
+    const baselines = [140, 172, 204, 246, 278];
+    spec.rows.forEach((row, index) => {
+      const y = baselines[index];
+      parts.push(t(x0 + 16, y, row.run, { font: MONO, size: 11, weight: 700 }));
+      parts.push(t(x0 + 104, y, `lead ${row.lead} h`, { font: MONO, size: 10, fill: INK_SOFT }));
+      parts.push(votePill(x0 + 186, y, row.vote));
+      if (row.tag) parts.push(t(x0 + 282, y, row.tag, { font: MONO, size: 9.5, fill: INK_MUTE }));
+      parts.push(
+        t(x0 + 430, y, row.magnitude, {
+          font: MONO,
+          size: 11.5,
+          weight: row.magnitude === "—" ? 400 : 700,
+          fill: row.magnitude === "—" ? INK_MUTE : INK,
+          anchor: "end",
+        }),
+      );
+    });
+    parts.push(
+      t(x0 + 16, 302, "rungs below the band are read, not sampled — settled sees the newest 3", {
+        font: MONO,
+        size: 9.5,
+        fill: INK_MUTE,
+      }),
+    );
+    parts.push(t(x0 + 16, 330, spec.sampleLine, { font: MONO, size: 10.5, fill: INK_SOFT }));
+    parts.push(t(x0 + 16, 352, spec.spreadLine, { font: MONO, size: 11.5, weight: 700 }));
+    parts.push(
+      t(x0 + 16, 382, spec.verdictLine, {
+        font: MONO,
+        size: 13,
+        weight: 800,
+        fill: spec.verdictFill,
+      }),
+    );
+    return parts.join("\n  ");
+  };
+
+  const settled = ladder(24, {
+    chip: "A",
+    heading: "A SETTLED DAY",
+    note: "one model · newest run first",
+    rows: [
+      { run: "08-14 00Z", lead: 19, vote: "window", magnitude: "1480" },
+      { run: "08-13 12Z", lead: 31, vote: "window", magnitude: "1370" },
+      { run: "08-13 00Z", lead: 43, vote: "window", magnitude: "1520" },
+      { run: "08-12 12Z", lead: 55, vote: "window", magnitude: "1750" },
+      { run: "08-12 00Z", lead: 67, vote: "abstained", tag: "outOfHorizon", magnitude: "—" },
+    ],
+    sampleLine: "sample, newest first: 1480 · 1370 · 1520 m",
+    spreadLine: "spreadM = max - min = 1520 - 1370 = 150 m",
+    verdictLine: "150 <= magnitudeBandM 300 -> settled: true",
+    verdictFill: ACCENT_STRONG,
+  });
+
+  const unsettled = ladder(510, {
+    chip: "B",
+    heading: "AN UNSETTLED DAY",
+    note: "same site · same thresholds",
+    rows: [
+      { run: "08-14 00Z", lead: 19, vote: "window", magnitude: "1980" },
+      { run: "08-13 12Z", lead: 31, vote: "window", magnitude: "1420" },
+      { run: "08-13 00Z", lead: 43, vote: "quiet", tag: "peakLiftDepthM", magnitude: "990" },
+      { run: "08-12 12Z", lead: 55, vote: "quiet", tag: "peakLiftDepthM", magnitude: "640" },
+      { run: "08-12 00Z", lead: 67, vote: "abstained", tag: "outOfHorizon", magnitude: "—" },
+    ],
+    sampleLine: "sample, newest first: 1980 · 1420 · 990 m",
+    spreadLine: "spreadM = max - min = 1980 - 990 = 990 m",
+    verdictLine: "990 > magnitudeBandM 300 -> settled: false",
+    verdictFill: INK,
+  });
+
+  const rows = [
+    {
+      term: "rungs",
+      text:
+        "newest run first — votes and abstention reasons are existenceTrajectory rungs; " +
+        "magnitudes are the settled sample's peakLiftAboveLaunchM: a window rung's peak " +
+        "lift above launch, a quiet rung's peakLiftDepthM",
+    },
+    {
+      term: "leadHours",
+      text:
+        "hours from the run's referenceTime to hour leadAnchorLocalHour of the target day " +
+        "(default 12, local noon) — negative restates a past day, arithmetic like any other",
+    },
+    {
+      term: "settled",
+      text:
+        "true exactly when the newest minRuns rungs all state a magnitude and max - min <= " +
+        "magnitudeBandM; fewer runs, or any null magnitude, reads settled: false with spreadM " +
+        "null — not stable and not statable stay readable apart",
+    },
+    {
+      term: "thresholds",
+      text:
+        "{ minRuns: 3, magnitudeBandM: 300 } — embedded trial defaults, caller-movable via " +
+        "CompareRunsOptions.settled, and every finding echoes the values that produced it",
+    },
+  ];
+  const ledger = ledgerRows(rows, 980, 412);
+
+  const body = `${settled}
+  <line x1="490" y1="8" x2="490" y2="392" stroke="${RULE}" stroke-width="1"/>
+  ${unsettled}
+  ${ledger.markup}`;
+
+  return frame({
+    id: "convergence-ladder",
+    title: "The convergence ladder, settled beside unsettled",
+    lesson:
+      "compareRuns stacks successive runs of one model against one target local day; settled is arithmetic over the newest minRuns rungs' magnitudes — a statement about runs, not probability and not skill.",
+    description:
+      "Two five-rung convergence ladders for the same schematic target local day, newest run first, each rung labelled with its run reference time, its leadHours to the day's local-noon anchor (19 to 67 hours), and its vote. Left, a settled day: the newest three rungs vote window with magnitudes 1480, 1370, and 1520 m above launch; spreadM = 1520 - 1370 = 150 m, within magnitudeBandM 300, so settled is true. Right, an unsettled day: window rungs at 1980 and 1420 m and a quiet rung at 990 m of depth give spreadM = 1980 - 990 = 990 m, over the band, so settled is false. In both ladders the settled band encloses only the newest minRuns = 3 rungs; an older rung votes outside the band, and the oldest rung is an abstention with the stated reason outOfHorizon and no magnitude.",
+    caption:
+      "Rung values are schematic — a structural diagram, not measured runs — but every printed number obeys the arithmetic it illustrates: leads step 12 hours for a twice-daily model against a local-noon anchor seven hours behind UTC, and each spreadM is max - min over its sample. minRuns 3 and magnitudeBandM 300 are the embedded defaults (DEFAULT_SETTLED_THRESHOLDS), trial values calibrated on a thin archive.",
+    units:
+      "leads hours · magnitudes m above launch (quiet rungs: m of depth) · schematic; no measured data",
+    bodyWidth: 980,
+    bodyHeight: 412 + ledger.height,
+    body,
+  });
+}
+
+async function composeIngestLoop() {
+  const step = (x, y, w, n, title, subs, titleFont = MONO, titleSize = 12.5) => {
+    const cx = x + w / 2;
+    return `<rect x="${x}" y="${y}" width="${w}" height="68" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${chip(x, y, n)}
+  ${t(cx, y + 26, title, { font: titleFont, size: titleSize, weight: 800, anchor: "middle", ...(titleFont === DISPLAY ? { ls: 0.4 } : {}) })}
+  ${t(cx, y + 44, subs[0], { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
+  ${t(cx, y + 58, subs[1], { size: 10.5, fill: INK_MUTE, anchor: "middle" })}`;
+  };
+  const flow = (d, dashed = false) =>
+    `<path d="${d}" stroke="${INK_SOFT}" stroke-width="1.5" fill="none"${dashed ? ' stroke-dasharray="5 4"' : ""} marker-end="url(#ingest-loop-head)"/>`;
+
+  const body = `${flowMarker("ingest-loop-head")}
+  ${step(40, 58, 190, "1", "POLL runs.json", ["loadRuns — one small fetch;", "the poll is the subscription"])}
+  ${flow("M230 92 H268")}
+
+  ${step(272, 58, 230, "2", "(referenceTime, generatedAt)", ["the identity pair, compared", "against seen[slug] per model"], MONO, 11)}
+  ${flow("M502 92 H540")}
+  ${t(521, 38, "pair changed", { font: MONO, size: 9, fill: INK_SOFT, anchor: "middle" })}
+
+  ${step(544, 58, 210, "3", "loadSiteSet", ["the manifest is the commit point;", "misses never poison the set"])}
+  ${flow("M754 92 H792")}
+  ${t(773, 38, "still mixed after one retry", { font: MONO, size: 9, fill: INK_SOFT, anchor: "middle" })}
+
+  ${step(796, 58, 160, "4", "syncing: true", ["a publish mid-flight —", "runsSeen names the runs"], MONO, 12)}
+
+  ${flow("M387 126 V296")}
+  ${t(379, 170, "unchanged pair —", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+  ${t(379, 184, "nothing new this tick", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+
+  ${flow("M649 126 V174")}
+  ${t(659, 154, "syncing: false — one run anchors the whole set", { font: MONO, size: 10, fill: INK_SOFT })}
+
+  ${step(544, 178, 210, "5", "ATOMIC SWAP", ["store the set under its new", "referenceTime · advance seen[slug]"], DISPLAY, 15)}
+  ${flow("M649 246 V296")}
+  ${t(639, 276, "the new run becomes what you serve", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+
+  ${flow("M876 126 V296")}
+  ${t(868, 262, "ingest nothing — the store keeps", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+  ${t(868, 276, "serving what it already holds", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+
+  ${flow("M135 300 V130", true)}
+  ${t(145, 216, "next tick — your cadence,", { font: MONO, size: 10, fill: INK_MUTE })}
+  ${t(145, 230, "a small fraction of the fastest", { font: MONO, size: 10, fill: INK_MUTE })}
+  ${t(145, 244, "runIntervalHours you serve", { font: MONO, size: 10, fill: INK_MUTE })}
+
+  <rect x="40" y="300" width="916" height="84" fill="${STRIP_BG}" stroke="${ACCENT}" stroke-width="1.8"/>
+  ${t(498, 330, "SERVING — THE NEWEST COHERENT PUBLICATION THE STORE HOLDS", { font: DISPLAY, size: 19, weight: 800, ls: 0.4, anchor: "middle" })}
+  ${t(498, 351, "the standing state, not a step: the predecessor keeps serving through syncing sets, late runs, and dead ticks", { size: 11, fill: INK_SOFT, anchor: "middle" })}
+  ${t(498, 369, 'never a partially ingested run · never delete on a miss — "this is the 06Z run; the 12Z is late"', { font: MONO, size: 10, fill: INK_MUTE, anchor: "middle" })}`;
+
+  return frame({
+    id: "ingest-loop",
+    title: "The ingest loop returns to serving",
+    lesson:
+      "Five package-verb steps — poll, compare the identity pair, fetch the coherent set, refuse a syncing one, swap atomically — all return to one standing state: serve the newest coherent publication the store holds.",
+    description:
+      "A cycle diagram of the ingest loop. Step 1 polls runs.json with loadRuns; step 2 compares each model's (referenceTime, generatedAt) identity pair against the last pair seen — an unchanged pair returns to serving with nothing new this tick. A changed pair leads to step 3, loadSiteSet, where the manifest fetched once is the commit point and per-site misses never poison the set. If the set still mixes runs after one retry, step 4's syncing: true branch ingests nothing — runsSeen names the runs observed — and returns to serving what the store already holds. A coherent set reaches step 5, the atomic swap: store the set under its new referenceTime and advance seen. Beneath the steps, the standing state every path returns to: serving the newest coherent publication the store holds — the predecessor through syncing sets, late runs, and dead ticks — with a dashed edge back to step 1 on the next tick of your own cadence.",
+    caption:
+      "A later generatedAt for the same referenceTime is a corrected re-publication, and re-ingesting it is exactly as mandatory as a new run. loadSiteSet retries a mid-publish mix once before reporting syncing: true. How many predecessors to keep is retention — consumer policy, never a dataset property.",
+    units: "one poll tick; no numeric scale",
+    bodyWidth: 980,
+    bodyHeight: 392,
+    body,
+  });
+}
+
 export const PAGE_FIGURE_TARGETS = [
+  {
+    id: "docs-platform-boundary",
+    file: "site/src/content/docs/docs/figures/platform-boundary.svg",
+    compose: composePlatformBoundary,
+  },
   {
     id: "docs-contract-anatomy",
     file: "briefing/docs/figures/contract-anatomy.svg",
@@ -1452,6 +2567,16 @@ export const PAGE_FIGURE_TARGETS = [
     compose: composeTokenReference,
   },
   {
+    id: "docs-convergence-ladder",
+    file: "briefing/docs/figures/convergence-ladder.svg",
+    compose: composeConvergenceLadder,
+  },
+  {
+    id: "docs-ingest-loop",
+    file: "briefing/docs/figures/ingest-loop.svg",
+    compose: composeIngestLoop,
+  },
+  {
     id: "docs-publication-flow",
     file: "forecast/docs/figures/publication-flow.svg",
     compose: composePublicationFlow,
@@ -1460,5 +2585,15 @@ export const PAGE_FIGURE_TARGETS = [
     id: "docs-two-transports",
     file: "forecast/docs/figures/two-transports.svg",
     compose: composeTwoTransports,
+  },
+  {
+    id: "docs-rotated-grid",
+    file: "grib/docs/figures/rotated-grid.svg",
+    compose: composeRotatedGrid,
+  },
+  {
+    id: "docs-region-decode",
+    file: "j2k/docs/figures/region-decode.svg",
+    compose: composeRegionDecode,
   },
 ];

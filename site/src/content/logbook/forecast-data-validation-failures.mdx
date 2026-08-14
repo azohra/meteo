@@ -1,6 +1,6 @@
 ---
 title: "Seven forecast-data failures that passed parsing"
-summary: "Forecast-data failures caught by independent checks"
+summary: "HTTP 200, decoded cleanly, values a chart could draw — and wrong anyway; it took an independent witness to prove what each payload actually represented"
 section: "Data validation"
 kind: "case-study"
 published: 2026-08-08
@@ -24,8 +24,8 @@ GeoTIFF, values a chart could draw. Seven times it was wrong anyway — about th
 direction, the time interval, the model, or the run state. Parsing proved each payload was
 readable; it took an independent witness to prove what it actually represented.
 
-Every incident below has the same anatomy: what arrived looking fine, the witness that disagreed,
-and the rule the platform keeps. The atlas pairs them; the cases follow.
+Every incident has the same anatomy: what arrived looking fine, the witness that disagreed,
+and the rule the platform keeps.
 
 <FailureAtlas />
 
@@ -61,7 +61,7 @@ and the rule the platform keeps. The atlas pairs them; the cases follow.
   rule="A correct magnitude does not prove a correct direction."
 >
   HRRR's Lambert grid and REPS's rotated latitude–longitude grid define their components along grid
-  axes rather than true east and north. The rotation was checked three ways — ecCodes geolocation to
+  axes rather than true east and north. I checked the rotation three ways — ecCodes geolocation to
   about 10⁻⁶ degrees, member-for-member speed against GeoMet, and directional comparison with
   sibling models — and the builders now read each grid's vector convention from GRIB projection
   metadata before deriving direction.

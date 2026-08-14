@@ -27,9 +27,14 @@ to every binding identically. Every hook takes the **mount base** (e.g.
   `${url}/feed` at the fleet's advised cadence.
 - `useStationCurrent(url, stationId, options)` polls `${url}/current?station=<id>`; fold
   it into the full feed with `mergeCurrent(feed, current)` — or just use `useStation`.
+- `useStationLive(url, stationId, { enabled, fetchInit, windowSeconds })` →
+  `{ station, samples, status, servedAt, receivedAtMs, error }`. Subscribes to the
+  `${url}/live` stream; status, backoff, and the rolling sample window are
+  [the live store's](/docs/station/client-data/#the-live-store).
 - Options: `pollSeconds`, `currentPollSeconds` (useStation), `enabled`, `fetchInit`
   (its latest value rides every poll; the loop's own abort signal always wins), and
-  `initialData`.
+  `initialData`. `useStation` also takes `live?: boolean` — `live: true` replaces its
+  current-poll leg with the `/live` stream; the feed poll and the fold are unchanged.
 
 `useFreshness(observedAt, servedAt, receivedAtMs, thresholds?)` grades an
 observation for display — the semantics are the wire contract's
@@ -55,7 +60,9 @@ props with no provider anywhere.
 Per-station components inside a provider resolve their station in this order:
 an explicit `station` prop → a `stationId` prop looked up in the feed → the
 feed's `primaryStationId` → `stations[0]`. A component that resolves nothing
-throws a wiring error rather than rendering a mystery blank.
+throws a wiring error rather than rendering a mystery blank. The rule is
+`resolveStation`, shared with every binding
+([client data](/docs/station/client-data/#display-resolution--shared-across-bindings)).
 
 ## Thresholds
 
@@ -143,6 +150,7 @@ unrounded.
 | `UpdatedAt` | Ticking relative age ("just now", "3 min ago"; the `updated` strings group), falling back to the absolute `formatTime` words past ~6 hours. Server-anchored when `servedAt`/`receivedAtMs` exist |
 | `BandChip` | The reading graded against `thresholds`, worn as a chip with `data-band`. Your `labels` (values.length + 1 words) supply the vocabulary; without labels the chip states the converted speed. Calm says the calm word, ungraded |
 | `Dial` | The instrument's gauge alone — `CurrentConditions` without flanks or rows. `size` scales the rendered box, never the drawing |
+| `WindArrow` | The direction arrow glyph alone, pointing downwind for `deg` (degrees FROM); `size` (default 12). `aria-hidden` — pair it with text |
 | `Sparkline` | The served history window at word size: lull–gust band + average trace, the big chart's dropout and null-pair rules, `thresholds` grading per segment. A quiet station holds the same fixed box |
 | `Readout` | The charts' inspection line: an `<output>` with a bold lead (`strong`) and a `parts` tail of text and wind-arrow pieces. Pass `ariaLive` polite at rest and off while a pointer previews, so a pin announces and a sweep never floods a screen reader |
 
@@ -156,10 +164,9 @@ They compose inline — a sentence, a table cell, a board row:
 </StationFeedProvider>
 ```
 
-Provider resolution is the standard one: an explicit `station` prop → a
-`stationId` looked up in the ambient feed → `primaryStationId` →
-`stations[0]`; resolving nothing throws the wiring error, and every primitive
-still works with zero provider via explicit props.
+Provider resolution and the wiring error are the rules under
+[the provider](#the-provider); every primitive still works with zero
+provider via explicit props.
 
 ## SSR and App Router
 
@@ -200,36 +207,14 @@ function BoardRow({ url }: { url: string }) {
 }
 ```
 
-The recipe below remains for **fully custom cells** — when the board's markup
-is yours and the library supplies only the data, the units, and the badge:
-
-```tsx
-import { speedFromMps, speedUnitLabel, stationFreshnessThresholds } from "@azohra/meteo.station";
-import { FreshnessBadge, useFreshness, useStationFeed } from "@azohra/meteo.station/react";
-
-function BoardCell({ url }: { url: string }) {
-  // url is the mount base; the hook polls `${url}/feed`.
-  const { feed, receivedAtMs } = useStationFeed(url, { fetchInit: { cache: "no-store" } });
-  const station = feed?.stations.find((s) => s.id === feed.primaryStationId) ?? feed?.stations[0];
-  const status = useFreshness(
-    station?.reading?.observedAt, feed?.servedAt, receivedAtMs,
-    station ? stationFreshnessThresholds(station) : undefined,
-  );
-  if (!station) return null;
-  return (
-    <div className="meteo-root">
-      <strong>{station.name}</strong>{" "}
-      {station.reading
-        ? `${Math.round(speedFromMps(station.reading.windAvgMps, "knots"))} ${speedUnitLabel("knots")}`
-        : "—"}
-      {status && <FreshnessBadge status={status} />}
-    </div>
-  );
-}
-```
+For a fully custom cell — your markup, the library's data — compose the
+root exports (`speedFromMps`, `speedUnitLabel`,
+`stationFreshnessThresholds`) with `useStationFeed`, `useFreshness`, and
+`FreshnessBadge`;
+[the client data layer](/docs/station/client-data/#words-and-formatting)
+lists every exported piece.
 
 ## Stability
 
 Pre-1.0: the wire contract and environment helpers are stable; handler
-internals are not. Pin a minor version if you reach past the documented
-surface.
+internals are not. Pin a minor version if you reach past them.

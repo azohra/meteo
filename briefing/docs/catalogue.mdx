@@ -35,10 +35,9 @@ cadence.
 
 `typicalPublicationLagHours` is the upper end of normal for *this dataset's*
 publish of a run after its `referenceTime` — the provider's
-complete-availability time plus publisher overhead, rounded up. It is a fact,
-not a policy: judge a run's lateness against `runIntervalHours` plus it with
-[`runFreshness`](/docs/briefing/derive/#judge-run-freshness), whose
-current/delayed/stale thresholds stay consumer-owned. The values were seeded
+complete-availability time plus publisher overhead, rounded up.
+[`runFreshness`](/docs/briefing/derive/#judge-run-freshness) is the grader
+that reads it. The values were seeded
 2026-08-10, drawing on the dated `[verified]` availability times the
 [forecast feed reference](/docs/forecast/forecast-model-feeds/) records, and
 are to be re-verified against the accumulated run archive around
@@ -78,17 +77,10 @@ A new catalogue entry is not a package enum change.
 
 `site-context.json` is the third catalogue-root file, published at the
 dataset root beside `models.json` and `sites.json`: static,
-machine-measured ground truth for every catalogued site — the launch
-`elevation` pick, terrain analysis, and land cover. The division of labour
-is deliberate: `sites.json` (schemaVersion 2) is **identity only** — slug,
-name, coordinates, timezone, published verbatim — and everything physical
-is measured from those coordinates by `meteo forecast terrain` and published
-here. Adding a site is authoring identity plus one terrain run, committed
-together — the [configure-launches guide](/docs/publish/configure-launches/)
-is the flow. Fetch the context once, guard it with `parseSiteContextJson`,
-and join its entries against `sites.json` by slug — it echoes no
-coordinates of its own. It has no cadence and no runs; it changes only
-when the site catalogue does. Its shape, sources, and licences live in the
+machine-measured ground truth — the launch `elevation` pick, terrain
+analysis, and land cover — joined against the identity-only `sites.json`
+by slug. Its shape, sources, licences, generation, and join semantics
+live in the
 [site context reference](/docs/briefing/site-context-document/).
 
 ## Absence and semantics are declarations

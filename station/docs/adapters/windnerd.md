@@ -100,6 +100,19 @@ these — a season pull at period 180 calls the adapter directly, as
 [getting started § 3](/docs/station/getting-started/#3--a-season-not-a-window)
 walks through.
 
+### Aggregate buckets follow local standard time
+
+At period 180 the vendor buckets by the station's own local standard time,
+not UTC — confirmed live: the local grid is the ordinary
+`00:00, 03:00, 06:00…`, but a station eight hours west of UTC has those
+boundaries arrive stamped `08:00Z, 11:00Z, 14:00Z…` — each `date_utc` is the
+correct UTC instant of its local boundary, not a UTC-aligned bucket. The
+response carries that offset as `time_offset` — one entry per record, not a
+single field, and only at period 180 — and `parseWindnerdRecords` takes the
+first, surfacing it as the result's `utcOffsetMinutes`. It is not on the
+`Station` document `loadWindnerdStation` returns; only a caller running
+`parseWindnerdRecords` directly against the raw upstream text sees it.
+
 ## What the adapter guards
 
 - Speeds arrive in m/s — the wire's own unit, so nothing converts — and are
@@ -125,12 +138,9 @@ walks through.
   `elevationM` and the co-timed temperature; the pressure trend is derived
   from the reduced history via `pressureTendency` — the same public
   derivations [custom adapters are asked to match](/docs/station/adapters/#the-custom-arm).
-- `time_offset` — the station's local standard-time offset, one entry per
-  record — is validated to −720…+840 minutes and surfaced only by
-  `parseWindnerdRecords` as `utcOffsetMinutes`; it is not on the `Station`
-  document. It matters at period 180, where the vendor buckets by
-  station-local standard time — see
-  [getting started § 3](/docs/station/getting-started/#3--a-season-not-a-window).
+- `time_offset` — the station's local standard-time offset — is validated
+  to −720…+840 minutes; what it means and where it surfaces is
+  [Aggregate buckets follow local standard time](#aggregate-buckets-follow-local-standard-time).
 - Record times must parse as instants; an unparseable `date_utc` throws.
 
 ## Setup

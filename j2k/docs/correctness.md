@@ -51,8 +51,8 @@ clusters, and dense scatters to 5000 points — to integer equality. One
 mismatched sample is a decoder bug, never tolerance.
 
 The tie is transitive: the full decode is gated bit-for-bit against the
-codec oracle and ecCodes (the two rings above), and region decode is
-gated bit-for-bit against the full decode — so a region-decoded sample
+codec oracle (ring one) and ecCodes' recorded answers (ring two), and
+region decode is gated bit-for-bit against the full decode — so a region-decoded sample
 carries exactly the oracle's answer. `@azohra/meteo.grib` re-asserts the
 chain at its own seam: its sampled worker path must reproduce the full
 decode's GRIB-scaled doubles at every requested point

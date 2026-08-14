@@ -24,11 +24,10 @@ the day, quiet enough that everything drawn over it stays legible. Here is how t
 eight-class ramp resolves that tension, and the one measured defect in its lineage that a validator
 caught where every reviewing eye had signed off.
 
-Every number here is reproducible: colour difference is ΔE, Euclidean distance in the OKLab colour
+Colour difference is ΔE, Euclidean distance in the OKLab colour
 space scaled by 100, with colour-vision deficiency simulated by the Machado–Oliveira–Fernandes
 (2009) matrices at full severity — protanopia and deuteranopia, the two axes this article's
-validator simulates. Lightness spans are CIE L*. The shipped palette's figures compute their values
-from the package export, so the article cannot drift from what renders.
+validator simulates. Lightness spans are CIE L*.
 
 ## What the field owes the lines above it
 
@@ -78,13 +77,12 @@ lived below the threshold of design-by-eye and above the threshold of measuremen
 process lesson: once a palette is measurable, "looks right" stops being the acceptance test.
 
 The shipped default, [`STABILITY_TOKEN_DEFAULTS`](https://github.com/azohra/meteo/blob/main/briefing/src/svg/theme.ts), is that
-ancestry re-set into the pale register — the hue architecture kept, every one of the eight values
-moved (per-class ΔE 6.8 to 14.8 from its ancestor). The failing purples are pulled apart (ΔE 1.8
+ancestry re-set into the pale register — I kept the hue architecture and moved every one of the
+eight values (per-class ΔE 6.8 to 14.8 from its ancestor). The failing purples are pulled apart (ΔE 1.8
 to 7.0 under deuteranopia), the grey tail is internally light-ordered from stable through strong
 inversion, and every adjacent pair now clears the 6.0 colour-vision floor under both simulated
-deficiencies — adjacent-pair ΔE minima of 7.8 normal, 7.8 protanopic, 7.0 deuteranopic. The
-repairs were found the same way the defect was — a validator over OKLab with CVD simulation — and
-every number above re-runs from the two named sources with the same math the figures build with.
+deficiencies — adjacent-pair ΔE minima of 7.8 normal, 7.8 protanopic, 7.0 deuteranopic. I found the
+repairs the same way I found the defect — a validator over OKLab with CVD simulation.
 
 *Ancestor provenance: canadarasp's `windgram-continental.ncl` paints its lapse panel with colormap
 indices 11, 10, 7, 8, 3, 2, 13, 14 of `windgram-continental-colormap.ncl` — most unstable first,

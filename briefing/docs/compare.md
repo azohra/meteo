@@ -95,8 +95,8 @@ a distinct, named error:
   `ANALYZE_VOCABULARY_VERSION`, with the remedy named (strict equality is
   v1 of this surface — tolerating older envelopes is a later,
   evidence-bearing decision, not a default);
-- missing self-description — an envelope serialized by a Windgram-era
-  release before 0.22 lacks `thresholds` / `deterministic` / `coveredDays`, and the
+- missing self-description — an envelope serialized by an old enough
+  release lacks `thresholds` / `deterministic` / `coveredDays`, and the
   runtime check is the only door for parsed JSON the compile-time type
   cannot vouch for;
 - `timeZone` mismatch — day keys pair only in one zone;
@@ -318,21 +318,12 @@ before reading the angle.
 
 ## Versioning
 
-`COMPARE_VOCABULARY_VERSION` — currently `3` — versions these finding kinds independently of the published profile
-`schemaVersion`. Vocabulary 3 rides analyze vocabulary 5: the bare-`Ms`
-quantity fields take the `Mps` suffix grammar (`peakThermalVelocityMps`,
-`directionFloorMps`), a pure rename with no kind change. Vocabulary 2 rode
-analyze vocabulary 4 as one release:
-votes read the renamed `thermalWindow` kind, and the `analyses` re-keying
-above was that release's breaking change. Downstream publishers choose
-weighting, display language, and operational thresholds.
-
-That Windgram-era 0.22 release rides **under** vocabulary 2 — no vocabulary event: the
-comparison kind set is untouched. Its additions are `compareAnalyses`
-above, and the widening of the envelope's `vocabularyVersion` from the
-literal to `number` under the
-[tolerant-reader convention](/docs/briefing/analyze/#versioning-reads-tolerantly)
-— the release's one type-level break, zero wire change. Readers of
-serialized comparison envelopes check the version at runtime and ignore
-kinds and fields they do not know; the convention governs readers of the
-closed set, never the set, which stays spike-gated and first-party.
+`COMPARE_VOCABULARY_VERSION` — currently `3` — versions these finding
+kinds independently of the published profile `schemaVersion`; the
+[package changelog](https://github.com/azohra/meteo/blob/main/briefing/CHANGELOG.md)
+records each boundary. Readers of serialized comparison envelopes check
+the version at runtime and ignore kinds and fields they do not know —
+the [tolerant-reader convention](/docs/briefing/analyze/#versioning-reads-tolerantly)
+governs readers of the closed set, never the set, which stays
+spike-gated and first-party. Downstream publishers choose weighting,
+display language, and operational thresholds.

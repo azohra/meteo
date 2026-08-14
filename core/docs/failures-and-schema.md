@@ -1,15 +1,16 @@
 ---
 title: Failures and schema artifacts
-description: The closed upstream-failure vocabulary transports share, and the machinery each capability uses to render its published JSON Schema artifacts.
+description: The closed upstream-failure vocabulary transports share, the shared zod schema primitives, and the machinery each capability uses to render its published JSON Schema artifacts.
 ---
 
-Two pieces of shared machinery keep the platform's boundaries honest: a closed
-vocabulary for upstream failure, and one renderer for the JSON Schema
-artifacts each capability publishes. This page is the authority for both as
-[`failures.ts`](https://github.com/azohra/meteo/blob/main/core/src/failures.ts)
+Three pieces of shared machinery keep the platform's boundaries honest: a
+closed vocabulary for upstream failure, zod schema primitives capability
+configs share, and one renderer for the JSON Schema artifacts each
+capability publishes — defined by
+[`failures.ts`](https://github.com/azohra/meteo/blob/main/core/src/failures.ts),
+[`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts),
 and
-[`schema-artifacts.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema-artifacts.ts)
-define them.
+[`schema-artifacts.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema-artifacts.ts).
 
 ## The failure vocabulary
 
@@ -50,6 +51,29 @@ try {
 
 The reason code travels; words, retries, and presentation are the
 consumer's.
+
+Closed binds what a transport may report, not what a capability's wire may
+carry: a wire may extend the vocabulary with failures that are its own.
+Station's `UNAVAILABLE_REASONS` is these four codes plus `not_configured` —
+a config verdict no upstream ever produced — as
+[its wire contract](/docs/station/wire-contract/) documents.
+
+## Schema primitives
+
+Three zod building blocks in
+[`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts)
+recur in capability configs:
+
+- **`ianaTimeZone`** — a string `Intl.DateTimeFormat` accepts as a time
+  zone; anything else fails with `not an IANA time zone`.
+- **`httpUrl`** — a parseable URL whose protocol is `http:` or `https:`.
+- **`positionFields`** — the position-claim fields station configs spread
+  in: `elevationM` (finite), `latitude` (−90 to 90), and `longitude` (−180
+  inclusive to 180 exclusive — exactly 180 is rejected, so every position
+  has one canonical longitude; the
+  [Tempest adapter](/docs/station/adapters/tempest/) normalizes a payload's
+  180 to −180 before validating). All three are nullish: a config that
+  claims no position stays null.
 
 ## Schema artifacts
 

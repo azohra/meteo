@@ -58,7 +58,7 @@ one grep of your page finds all of it. Within that root, three tiers:
   station, not a wind station. Alongside: `meteo-air-*`, `meteo-sample-*`,
   `meteo-trend-*`, `meteo-strip-*`, `meteo-sparkline-*`. The Meteogram renderer already
   follows the same pattern (`meteo-gram-*`, themed on the
-  [defaults and tokens page](/docs/briefing/defaults-and-tokens/)), and
+  [SVG renderer page](/docs/briefing/svg/)), and
   future capabilities continue it (`meteo-sounding-*`).
 
 ## Hook-only classes
@@ -97,6 +97,8 @@ itself carries no rule to replace — override the base dress, don't rebuild
 it.
 
 ## Token reference
+
+![Every station theme token with its light and dark values as labelled colour swatches, grouped into chrome and identity, freshness states, chart and wind encoding, and the five-step band ramp; the font, radius, and shadow tokens listed as text.](figures/token-map.svg)
 
 ### `--meteo-*` — the shared skin
 

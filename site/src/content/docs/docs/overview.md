@@ -6,7 +6,9 @@ description: How the six packages fit together, from provider bytes to a publish
 meteo by Azohra splits a published forecast into layers with hard edges: an engine derives and
 publishes versioned JSON documents, and packages validate, analyze, and render what it
 published. A club, pilot, researcher, or application can run any layer on infrastructure it
-controls. This page maps each layer's responsibility.
+controls.
+
+![Two lanes of packages: provider model files decode through grib and j2k into the forecast engine, which publishes versioned JSON documents that the briefing package reads; weather-station hardware feeds the station package directly over its own live wire; both lanes end at the downstream publisher, with the core package's shared vocabulary beneath briefing and station.](figures/platform-boundary.svg)
 
 ## The responsibility boundary
 

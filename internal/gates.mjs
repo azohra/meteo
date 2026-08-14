@@ -25,6 +25,11 @@ const lanes = {
     ["station-assets:check", ["node", "internal/generate-station-assets.mjs", "--check"]],
   ],
   "doc-fences": [["doc-fences:check", ["node", "internal/check-doc-fences.mjs"]]],
+  // Both content gates read sources only — no dist/, no network.
+  content: [
+    ["doc-links:check", ["node", "internal/check-doc-links.mjs"]],
+    ["prose:check", ["node", "internal/check-prose-rules.mjs"]],
+  ],
   typecheck: [
     ["typecheck root", ["pnpm", "exec", "tsc", "-p", "tsconfig.json", "--noEmit"]],
     ...["core", "briefing", "station", "forecast", "grib", "j2k"].map((directory) => [

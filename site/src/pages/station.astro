@@ -90,13 +90,19 @@ const SECTIONS: { id: string; nav: string }[] = [
     </div>
 
 
-    <footer class="station-footer section-inner">
-      <p>
-        Build the same page against your own stations: <a href="/docs/station/">the station
-        documentation</a> covers the wire contract, adapters, the feed handler, and both bindings —
-        and carries these principles in full.
-      </p>
-    </footer>
+    <section id="boundary" class="station-boundary" aria-labelledby="station-boundary-title">
+      <div class="section-inner">
+        <h2 id="station-boundary-title">This package reads live stations. It doesn't forecast.</h2>
+        <p>
+          Station reads live weather stations and renders them; it is independent
+          of the forecast and Meteogram capabilities. Forecasts are the job
+          of <a href="/forecast/">@azohra/meteo.forecast</a>, the engine. Build the same
+          page against your own stations: <a href="/docs/station/">the station
+          documentation</a> covers the wire contract, adapters, the feed handler, and
+          both bindings.
+        </p>
+      </div>
+    </section>
   </main>
 </Base>
 
@@ -361,13 +367,20 @@ const SECTIONS: { id: string; nav: string }[] = [
     padding-block-start: 0;
   }
 
-  .station-footer {
-    padding-block-start: clamp(2rem, 4vw, 3rem);
+  .station-boundary {
+    padding-block: clamp(2.5rem, 5vw, 4rem) clamp(1rem, 2vw, 1.5rem);
   }
 
-  .station-footer p {
-    max-width: 46rem;
+  .station-boundary h2 {
     margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .station-boundary p {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
     color: var(--ink-soft);
+    line-height: 1.65;
   }
 </style>

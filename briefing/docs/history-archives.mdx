@@ -64,10 +64,9 @@ before building a reader on it.
 
 The index is recomputed from the archive bytes after every append — a
 pure function of the file — and it is **advisory, never authoritative**:
-a missing, stale, or unparsable index degrades a reader to the
-full-archive fetch, silently correct. Because the archives are
-append-only, fetching from a member offset to end-of-file can never miss
-a member the index had not yet seen.
+no reader may require it. The
+[history loaders' since-suffix strategy](/docs/briefing/history/#the-sidecar-index-and-the-since-suffix-strategy)
+is the worked consumption, degradations included.
 
 ## Observation history — one observation per line
 
@@ -102,14 +101,11 @@ each line is one measured instant, not one run.
 
 Use an equivalent gzip reader when `gzip` or `jq` is unavailable — but
 know that the archives are **multi-member** gzip: command-line `gzip`
-handles concatenated members, while WHATWG
-`DecompressionStream("gzip")` does not (the runtimes disagree on *how*
-it fails, which is worse). TypeScript consumers should read archives
-through the [`@azohra/meteo.briefing/history` loaders](/docs/briefing/history/),
-which split members correctly, dedupe republished runs
-keep-latest-`generatedAt`, and use the sidecar index for since-narrowed
-Range reads. Applications should stream lines rather than inflate an
-entire long archive into memory.
+handles concatenated members, while WHATWG `DecompressionStream("gzip")`
+does not — the [history API](/docs/briefing/history/) holds the measured
+per-runtime failures and the loaders that read these archives correctly.
+Applications should stream lines rather than inflate an entire long
+archive into memory.
 
 History supports reproducible analysis, calibration audits, and downstream
 archives. Archived output can also calibrate scenario-profile ranges offline.

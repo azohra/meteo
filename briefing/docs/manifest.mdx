@@ -37,7 +37,9 @@ diagnostics, not application logic.
 
 Treat `(referenceTime, generatedAt)` as the publication identity. A new
 `generatedAt` with the same `referenceTime` is a corrected republication and
-should be re-ingested. It is not a schema release.
+should be re-ingested. It is not a schema release — the identity pair and
+its consequences are defined in
+[Data and package versioning](/docs/briefing/versioning/#publication-identity).
 
 The manifest and a selected profile must describe the same model and
 `referenceTime`. Independently cached static files can briefly disagree during
@@ -55,7 +57,9 @@ The observation datasets (`goes18-dsr`, `goes18-aod`) publish a manifest
 variant: it keeps the identity and `stats` fields but carries
 `firstObservedAt`, `lastObservedAt`, and `observationCount` in place of the
 forecast-hour extent (its `referenceTime` equals `lastObservedAt`), so
-`parseForecastManifestJson` does not accept it — the
+`parseForecastManifestJson` does not accept it — parse it with
+`parseObservationManifestJson`, or with `parseManifestJson` when the
+dataset kind is unknown; the
 [observation document reference](/docs/briefing/observation-document/)
 covers that dataset family.
 

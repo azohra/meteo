@@ -59,11 +59,13 @@ percentile object and package scene rather than recomputing it linearly.
 
 ## Narrow safely in TypeScript
 
-Use `isEnsembleValue` when the band matters, `isEnsembleDropout` for the
-zero-member shape, and `p50` from `@azohra/meteo.briefing/derive` when a numeric derivation
-explicitly chooses the median. `p50` returns `number | null`. Use
-`isDeterministicProfile` only when an integration genuinely rejects ensemble
-documents.
+The [profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
+carries the worked narrowing fence. Choose the guard by question:
+`isEnsembleValue` when the band matters, `isEnsembleDropout` for the
+zero-member shape, `p50` from `@azohra/meteo.briefing/derive` (returning
+`number | null`) when a numeric derivation explicitly chooses the median,
+and `isDeterministicProfile` only when an integration genuinely rejects
+ensemble documents.
 
 The scene graph builds median lines and percentile band geometry wherever the
 document supplies populated values. Dropout positions render as gaps; a level

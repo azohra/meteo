@@ -5,14 +5,16 @@ description: Accept profile, manifest, model, site, and run-index documents at a
 
 The `@azohra/meteo.briefing/contract` export is the executable authority for published JSON.
 Its zod schemas, inferred TypeScript types, nullable parse guards, and generated
-JSON Schemas describe the same eight document families.
+JSON Schemas describe the same nine document families.
 
 ![A profile document block by block: excerpts of a real profile — the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.](figures/contract-anatomy.svg)
 
 | Document | Parser | Published location |
 | --- | --- | --- |
 | Profile | `parseSiteForecastJson` | `<model>/sites/<site>.json` and each history line |
-| Manifest | `parseForecastManifestJson` | `<model>/manifest.json` |
+| Manifest (forecast and smoke) | `parseForecastManifestJson` | `<model>/manifest.json` |
+| Manifest (observation) | `parseObservationManifestJson` | `<model>/manifest.json` for observation datasets — the same path carries a different manifest shape (`firstObservedAt`, `lastObservedAt`, `observationCount` in place of the forecast-hour extent) |
+| Manifest (either) | `parseManifestJson` | `<model>/manifest.json` when the caller does not know the dataset kind — the union of the two shapes above |
 | Models | `parseModelCatalogueJson` | `models.json` |
 | Sites | `parseSitesCatalogueJson` | `sites.json` |
 | Site context | `parseSiteContextJson` | `site-context.json` |
@@ -55,20 +57,9 @@ fallback or use an API's documented fallback behaviour:
 ## Scalar values
 
 Every numeric position under `surface`, `levels`, and `derived` is either a
-number or an ensemble percentile object. Switch on shape, not a model slug:
-
-```ts title="read-scalar.ts"
-import { isEnsembleDropout, isEnsembleValue, type SiteForecast } from "@azohra/meteo.briefing/contract";
-
-export function firstWindSpeed(profile: SiteForecast): number | null | undefined {
-  const speed = profile.hours[0]?.surface.windSpeedMps;
-  return speed === undefined
-    ? undefined
-    : isEnsembleValue(speed)
-      ? isEnsembleDropout(speed) ? null : speed.p50
-      : speed;
-}
-```
+number or an ensemble percentile object. Switch on shape, not a model slug —
+the [profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
+carries the worked narrowing fence.
 
 Full ensemble dropout is `members: 0` with every percentile `null`.
 `isEnsembleDropout` distinguishes it from a populated percentile block.
@@ -109,25 +100,28 @@ A worked height boundary: to place `surface.pblHeightM` beside MSL series,
 add `profile.site.modelElevationM`. Do not add a launch elevation — the
 model's PBL depth is referenced to model terrain. For pure unit
 conversions, use package exports such as `msToKmh` from
-[`@azohra/meteo.briefing/derive`](/docs/briefing/derive/); the deprecated
-scene-subpath re-export was retained through the Windgram-era v0.3 line and
-removed in v0.4.0, before the `@azohra` packages existed.
+[`@azohra/meteo.briefing/derive`](/docs/briefing/derive/).
 
 ## Building-block exports
 
-Every block inside the eight document families is itself an exported zod
+Every block inside the nine document families is itself an exported zod
 schema with an inferred type, so a consumer can validate or type one fragment
 — a single hour, a capability declaration, a manifest stats block — without
 handling a whole document. Each pair feeds exactly one parse entry point.
 
 The document roots are `siteForecastSchema`/`SiteForecast`,
 `forecastManifestSchema`/`ForecastManifest`,
+`observationManifestSchema`/`ObservationManifest` (parsed by
+`parseObservationManifest(Json)`),
 `modelCatalogueSchema`/`ModelCatalogue`,
 `sitesCatalogueSchema`/`SitesCatalogue`,
 `siteContextSchema`/`SiteContext`,
 `runsIndexSchema`/`RunsIndex`,
 `smokeDocumentSchema`/`SmokeDocument`, and
-`observationDocumentSchema`/`ObservationDocument`. Manifest, models,
+`observationDocumentSchema`/`ObservationDocument`.
+`manifestSchema`/`Manifest`, parsed by `parseManifest(Json)`, is the
+union of the two manifest roots for callers that read
+`<model>/manifest.json` without knowing the dataset kind. Manifest, models,
 runs, smoke, and observation pin `SCHEMA_VERSION` (1); the profile pins
 its own exported `SITE_FORECAST_SCHEMA_VERSION` (2 — wire v2), and sites
 and site context pin `SITES_SCHEMA_VERSION` and
@@ -163,11 +157,9 @@ and site context pin `SITES_SCHEMA_VERSION` and
   enum.
 - An absent optional field means not published there, never zero.
 - A stored profile's own `semantics` keeps gust and precipitation meaning with
-  the document; absence of that [Windgram-era](#the-v1-freeze-and-its-unlock) v0.3 tag does not
-  imply a default.
+  the document; absence of that optional tag does not imply a default.
 - A stored profile's optional `site.timeZone` keeps local-time interpretation
-  with the document; absence of that [Windgram-era](#the-v1-freeze-and-its-unlock) v0.4 echo
-  does not imply UTC.
+  with the document; absence of that optional echo does not imply UTC.
 - The zod contract is behavioural authority. For other languages, the
   generated JSON Schema files ship in the `@azohra/meteo.briefing` tarball's
   `schema/` directory and in the repository at `forecast/schema/`;
@@ -175,16 +167,6 @@ and site context pin `SITES_SCHEMA_VERSION` and
   (`profile.schema.json` and its siblings), so a resolver can reach them
   by specifier as well as by path.
 
-## The v1 freeze and its unlock
-
-The v1 wire was frozen — field names, schema `$id`s, units, declared
-semantics, and every URL under the published dataset root — with one documented
-escape: wording and vocabulary change only at a `schemaVersion` event. Wire
-v2 is that event, fired. Site-forecast and history documents now carry the
-v2 quantity vocabulary (the `Mps` suffix grammar, `seaLevelPressureHpa`),
-the JSON Schema titles and descriptions track the current contract rather
-than any frozen wording, and stored v1 documents reach v2 through the
-forecast engine's wire migrator (`meteo forecast migrate`).
-
 See [Data and package versioning](/docs/briefing/versioning/) for the independent
-dataset and npm version axes.
+dataset and npm version axes, the wire-v2 boundary, and the migration path
+for stored v1 documents.

@@ -29,10 +29,10 @@ since the derivations became their own baseline.
 
 The constant is old and honourable. Approximating condensation height as a fixed climb per degree of
 temperature–dew-point spread goes back to James Espy's nineteenth-century cloud observations, and
-121 m/°C is the value canadarasp's `windgram-continental.ncl` used. This project inherited it the way it
+121 m/°C is the value canadarasp's `windgram-continental.ncl` used. I inherited it the way I
 inherited the strongest-core updraft profile and the 1 m/s sink threshold: ported
 constant-for-constant, because during the schema migration the derivations were the verification
-oracle — the one thing deliberately held fixed while everything around them moved. That debt is
+oracle — the one thing I deliberately held fixed while everything around them moved. That debt is
 recorded with gratitude in the [forecast derivations](/docs/forecast/derivation-science/); the estimate
 served canadarasp's pilots for years and served this project as its proof of equivalence.
 
@@ -70,7 +70,7 @@ saturated, so the two moisture signals can no longer contradict each other on he
 
 ## What changed, measured
 
-Both real columns were re-derived old-versus-new: the 15-hour HRDPS column behind the
+I re-derived both real columns old-versus-new: the 15-hour HRDPS column behind the
 package's pipeline-parity fixture and the 10-hour HRRR column behind the site's fixed forecast
 example. Both are dry columns — no hour triggers the saturated-layer floor, which is exercised by
 synthetic tests instead — so the measured shift is pure Bolton-versus-121:
@@ -104,7 +104,7 @@ exact cloud base matters beyond tidiness: the cap is only as accurate as the bas
 
 The usable-lift derivation itself is untouched — same profile, same constants, as
 [Why usable lift can sit above the boundary layer](/logbook/usable-lift-and-boundary-layer/) describes.
-Every shift above enters through its cloud-base input alone. Boundary-layer top and thermal velocity
+Every shift enters through its cloud-base input alone. Boundary-layer top and thermal velocity
 are moisture-free and did not move.
 
 See every hour's shift below — the uniform cloud-base rise, and the two rust bars where the cap

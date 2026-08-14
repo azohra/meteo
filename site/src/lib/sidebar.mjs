@@ -12,6 +12,7 @@ export const sidebar = [
     items: [
       { slug: "docs/publish/configure-launches", label: "Configure launches" },
       { slug: "docs/models/choosing", label: "Choose models" },
+      { slug: "docs/models/the-mountain-the-model-sees", label: "Model terrain" },
       { slug: "docs/publish/run-one-model", label: "Run one model" },
       { slug: "docs/publish/schedule-builds", label: "Schedule builds" },
       { slug: "docs/publish/tune-the-wire", label: "Tune the wire" },
@@ -51,7 +52,6 @@ export const sidebar = [
           { slug: "docs/briefing/scene", label: "Scene graph" },
           { slug: "docs/briefing/wire-an-inspector", label: "Wire an inspector" },
           { slug: "docs/briefing/svg", label: "SVG renderer and key" },
-          { slug: "docs/briefing/defaults-and-tokens", label: "Defaults and tokens" },
         ],
       },
       { slug: "docs/briefing/reading-a-meteogram", label: "Reading a Meteogram" },

@@ -62,6 +62,33 @@ from one of the exported maps:
 - `FIELD_STYLE_DEFAULTS` for each field-overlay class's fill token and
   opacity, the facts an HTML ramp chip needs.
 
+Token keys omit the CSS prefix: `surface` maps to `--meteo-gram-surface`,
+and `stable` maps to `--meteo-gram-stab-stable`. Read the maps for
+legends and swatches; override CSS custom properties on an ancestor for
+a downstream presentation.
+
+![The package's exported defaults rendered as swatches and values: the stability ramp, all renderer tokens, the CAPE class thresholds, and which overlays default on.](figures/token-reference.svg)
+
+The stability ramp's eight classes, in order: `very-unstable`,
+`unstable`, `conditional-strong`, `conditional`, `near-neutral`,
+`stable`, `inverted`, `strong-inversion` — each themed by its
+`--meteo-gram-stab-<name>` token. The figure's CAPE thresholds and
+overlay defaults read from the same package exports
+(`DEFAULT_CAPE_CLASSES`, `DEFAULT_OVERLAYS`).
+
+```ts title="stability-swatches.ts"
+import { STABILITY_TOKEN_DEFAULTS } from "@azohra/meteo.briefing/meteogram";
+
+export const stabilitySwatches = Object.entries(STABILITY_TOKEN_DEFAULTS).map(
+  ([name, color]) => ({ name, color }),
+);
+```
+
+The reference renderer keeps the stability field pale so lines, markers,
+labels, and white wind barbs remain foreground. The
+[stability-ramp logbook entry](/logbook/stability-ramp/) records the
+measured palette constraints.
+
 Override tokens on an ancestor instead of forking the serializer:
 
 ```css title="club-overrides.css"
@@ -90,6 +117,34 @@ its H/M/L row tags.
 The serializer fills sampled field bands with the SVG even-odd rule. Custom
 renderers of `MeteogramScene.fields` must apply the same `fill-rule="evenodd"` to
 preserve holes between interpolated contour thresholds.
+
+## Scene defaults
+
+meteo by Azohra ships one reference look. Configure scene behaviour
+through `MeteogramOptions` and visual values through the renderer's
+`--meteo-gram-*` tokens. `DEFAULT_OVERLAYS` exposes the package's overlay
+defaults when a control must enumerate every layer; omit `overlays` when
+the reference defaults are sufficient.
+
+```ts title="build-reference-scene.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { buildMeteogramScene, DEFAULT_OVERLAYS } from "@azohra/meteo.briefing/meteogram";
+
+export function buildClubScene(profile: SiteForecast) {
+  return buildMeteogramScene(profile, {
+    timeZone: profile.site.timeZone ?? "Etc/UTC",
+    smooth: false,
+    overlays: {
+      ...DEFAULT_OVERLAYS,
+      thermalIndex: true,
+    },
+  });
+}
+```
+
+Display windows, overlay choices, CAPE classes, sink rates, and local colour
+overrides belong to the downstream publisher. Pass them directly to
+`buildMeteogramScene` or the consuming stylesheet.
 
 ## Deterministic SVG output
 

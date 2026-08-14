@@ -17,7 +17,7 @@ paragliders. meteo by Azohra brings forecast and live observational data into to
 inform a flying decision. It does not make that decision for them.
 
 The people running and extending the platform will often be technical. The people using what it
-creates should not need to be. A downstream site can make the result beautiful, legible, and specific
+creates should not need to be. A downstream site can make the result legible and specific
 to its community while the science, contracts, and derivations remain inspectable underneath.
 
 ## The open-forecast bet
@@ -47,26 +47,24 @@ another part of the weather stack. The documentation, logbook entries, and labs 
 work: a record of what I learn, where the methods came from, what remains uncertain, and how the
 foundations can be improved. I want that trail to help another pilot or builder begin further ahead.
 
-## Portable state
+## From prototype to contract
 
 Portable documents keep renderer decisions reversible. The prototype stored display units,
 pre-smoothed height series, a Pacific daylight window, and thresholds that belonged to one chart.
 
-The current contract inverts those defaults: SI values, unsmoothed derived series, every forecast
-hour, published source fields, slugs as identity, declared field semantics, and a `schemaVersion` on
-every document. Presentation choices—timezone, window, palette, smoothing, overlays, and interaction—
-belong to the renderer or the downstream application.
+The current contract inverts those defaults, keeping presentation choices with the renderer or the
+downstream application — [Contract validation](/docs/briefing/contract/) defines the fields, units,
+and versioning.
 
 ## Authority across the document boundary
 
 Every published quantity has exactly one authority — the forecast engine or the package, never both.
 [Authority by quantity](/docs/overview/#authority-by-quantity) in the documentation overview is
-that split's home; the figure below shows where each value lives.
+that split's home.
 
 <QuantityHomes />
 
-The versioned JSON between the engine and package carries model and site identity,
-times, units, declared provider semantics, source fields, and engine-derived values. The model
+The model
 catalogue states what each model can and cannot publish. Missing capability remains an absence,
 never a zero invented by a frontend.
 
@@ -83,7 +81,7 @@ location catalogue, access, retention, alerts, and presentation.
 The [documentation overview](/docs/overview/) maps these responsibilities. Executable authority lives in
 the engine's [derivation module](https://github.com/azohra/meteo/blob/main/forecast/src/derive.ts) for
 stored derivations, the
-[`forecast/`](https://github.com/azohra/meteo/tree/main/briefing) capability for the
+[`briefing/`](https://github.com/azohra/meteo/tree/main/briefing) capability for the
 contract and renderer, and
 [`models.json`](https://github.com/azohra/meteo/blob/main/forecast/models.json) for the model
 catalogue.

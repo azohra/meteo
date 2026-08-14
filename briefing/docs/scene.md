@@ -122,8 +122,8 @@ smoke document forecasts as `aot` — joined to each rendered hour by
 nearest instant, with `scene.aotObservationSource` naming the dataset
 and its newest measured instant. The haze behind the line is
 deliberately the forecast smoke strip's own cell encoding, same class
-and same scale (full tint at AOT 3), so forecast smoke and measured
-smoke compare at a glance and one key chip — `KeySpec.smokeHaze` —
+and same scale (full tint at AOT 3), and one key chip —
+`KeySpec.smokeHaze` —
 explains both tints. The `observedAot` overlay defaults on, a document
 whose entries are not AOT-shaped contributes nothing, and pointer
 packets carry `observedAot`.
@@ -134,8 +134,7 @@ splits spatially: the viewed model's own strips render as one group,
 and anything foreign — another model's smoke, the Sun and AOT
 measurement strips — renders below a labelled divider (*"beside this model — not in its
 physics"*, `scene.stripDivider`) with its source and instant written
-inside the strip itself (`sourceLabel`), so even a cropped screenshot
-answers "did the model account for this?". The reference renderer
+inside the strip itself (`sourceLabel`). The reference renderer
 always draws the divider when any foreign strip exists. The one subtle
 case is a model's own passive smoke: its data, so it stays above the
 line, but the strip says *"this model's forecast · not in its

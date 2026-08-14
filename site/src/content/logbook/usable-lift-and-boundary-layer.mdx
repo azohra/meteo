@@ -1,6 +1,6 @@
 ---
 title: "Why usable lift can sit above the boundary layer"
-summary: "Boundary-layer top versus usable-lift top"
+summary: "The solid usable-lift line often rides above the dashed boundary-layer line; the two answer different questions, and the trail to why runs through Dr Jack's own caveats, a 1980 aircraft campaign, and a coefficient choice in canadarasp's source"
 section: "Lift definitions"
 kind: "method"
 published: 2026-08-08
@@ -18,7 +18,7 @@ import LiftProfileDiagram from "../../components/logbook/LiftProfileDiagram.astr
 
 # Why usable lift can sit above the boundary layer
 
-The solid usable-lift line on this project’s charts often rides above the dashed boundary-layer line.
+The solid usable-lift line on the charts often rides above the dashed boundary-layer line.
 If both lines meant “thermal top,” one of them would have to be wrong. Neither is — they answer
 different questions, and the trail to why runs through Dr Jack’s own caveats, a 1980 aircraft
 campaign over the ocean, and a coefficient choice made in canadarasp’s source.
@@ -31,8 +31,8 @@ maximum thermalling height over flat ground. He also flags the limits himself: t
 quantitative validation, and boundary-layer top may work better over complex terrain.
 
 canadarasp inherits the name and the idea of a sink threshold, but its meteogram code asks a different
-question: how high might the **strongest core** still beat a 1 m/s sink rate? That is the number this
-project ports. Same name, different quantity — “Hcrit” names a family of methods, not a portable
+question: how high might the **strongest core** still beat a 1 m/s sink rate? That is the number I
+ported. Same name, different quantity — “Hcrit” names a family of methods, not a portable
 value that every forecast system computes identically.
 
 ## How much the strongest-core choice matters
@@ -63,8 +63,8 @@ mountain valley. The code is precise; the physical transfer is an assumption.
 ## What remains uncalibrated
 
 Neither coefficient establishes a calibrated flight ceiling for mountain soaring. The archive can be
-paired with IGC tracks to measure bias by site, hour, wind regime, and pilot population; that study has
-not been done. The chart therefore names the ported quantity **usable-lift top**, not predicted maximum
+paired with IGC tracks to measure bias by site, hour, wind regime, and pilot population; I have not
+done that study. The chart therefore names the ported quantity **usable-lift top**, not predicted maximum
 altitude. [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) keeps the boundary-layer and usable-lift lines as
 different questions.
 

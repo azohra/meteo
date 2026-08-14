@@ -16,11 +16,11 @@ import ModelLifecycleTimeline from "../../components/logbook/ModelLifecycleTimel
 
 # Adopting a model two months before its retirement
 
-Four candidate models went through feed verification in one sitting — NOAA's NAM, both its 12 km
+I put four candidate models through feed verification in one sitting — NOAA's NAM, both its 12 km
 parent and its 3 km CONUS nest, NOAA's RAP, and DWD's global ICON. Partway through, a service
 change notice reframed the whole exercise: NAM is terminated on 2026-10-06, the day its successor
-becomes operational. The obvious verdict is to skip a model with two months to live. The catalogue
-adopted it anyway.
+becomes operational. The obvious verdict is to skip a model with two months to live. I adopted it
+anyway.
 
 ## The notice that reframed the evaluation
 
@@ -71,9 +71,9 @@ Inventorying vertical velocity across the candidates meant inventorying it acros
 and the result was uncomfortable: HRRR and GFS have always published omega at every curated
 pressure level, through their full horizons. The catalogue declared `verticalVelocity: false` for
 both — not because the feeds lacked the field, but because the builders never fetched it. A
-declaration that is supposed to mean "the model does not publish this" was quietly meaning "we
-never asked". That is exactly the kind of dishonesty the capability system exists to prevent, so
-the debt was paid in the same change: both builders now fetch and publish omega.
+declaration that is supposed to mean "the model does not publish this" was quietly meaning "nobody
+asked". That is exactly the kind of dishonesty the capability system exists to prevent, so
+I paid the debt in the same change: both builders now fetch and publish omega.
 
 The fix also changed the declaration's type. RRFS does not publish omega at all — its vertical
 velocity is geometric w in m/s — so the port will convert during the forecast build (ω ≈ −ρgw, with density
@@ -89,11 +89,11 @@ instantaneous sample instead of claiming mere presence.
 
 ## Two candidates declined
 
-RAP was not adopted. It survives the October retirements and cycles hourly, but everything it
+I did not adopt RAP. It survives the October retirements and cycles hourly, but everything it
 publishes for this product HRRR already publishes at finer resolution from the same buckets — and
 its own successor is scheduled.
 
-ICON global was not adopted for now — the harder call of the two. It is the only candidate that
+I did not adopt ICON global for now — the harder call of the two. It is the only candidate that
 would add a physics and data-assimilation lineage from outside North America, which is genuine
 disagreement signal no NOAA or ECCC sibling can supply. The cost is not the physics but a new
 transport, and several contract fields it cannot fill. The entry it would occupy is a judgment
@@ -101,7 +101,7 @@ call deferred, not a door closed.
 
 ## Slugs name legs, not descriptions
 
-Adding models forced the catalogue to answer what a slug is before minting more of them. The
+Adding models forced me to answer what a slug is before minting more of them. The
 tempting answer embeds description — a slug like `gdps-15km` reads naturally right up until the
 provider upgrades the grid, and then the name either lies or forces the rename-on-continuity that
 identity exists to prevent. GDPS has already changed resolution once in its lifetime; GFS twice;

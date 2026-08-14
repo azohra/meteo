@@ -32,6 +32,9 @@ normalizes two of its tables into a
 ## Capabilities
 
 `{ gustLull: true, temperature: true, conditions: false, history: true }`.
+`live` and `battery` are undeclared, and on the wire an undeclared
+capability key reads as false
+([evolution rules](/docs/station/wire-contract/#evolution-rules)).
 
 The pinned field contracts (below) carry wind, temperature, and wind chill —
 no barometer, so `conditions` is `false` and the block never appears
@@ -49,7 +52,10 @@ current table with `mode=most-recent`, the history table with
 fields and requests carry only the project
 [User-Agent](/docs/station/adapters/#environment-injection): access control
 to the logger is the deployment's, not the adapter's. Responses are capped
-at 512 KiB.
+at 512 KiB and cache under the key
+`campbell/<baseUrl>/<source>/<table>/<mode>/<period>/<order>` — the current
+table for `currentCacheTtlSeconds` (default 15 s), the history table for
+120 s.
 
 ## What the adapter guards
 

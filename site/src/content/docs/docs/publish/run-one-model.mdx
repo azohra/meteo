@@ -23,6 +23,9 @@ the CLI so external site and output paths are scoped consistently.
    pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
    ```
 
+   Success is one line — `Would build hrrr-conus for N site(s) from … into …` —
+   with both paths resolved absolute and nothing written.
+
 3. **Use a short smoke cap when appropriate.** `--max-steps 2` selects the
    first two scheduled steps. It limits forecast steps, not sites or fields.
 4. **Run the build.** Remove `--dry-run`; remove the cap for the full declared

@@ -45,12 +45,6 @@ Each page is the single authority for its topic:
 | [Meteogram derivations](/docs/forecast/derivation-science/) | The equations, constants, and fallbacks behind every published derived quantity |
 | [Builder contract](/docs/forecast/builder-contract/) | The eight invariants every builder must honour — the binding rules |
 | [Provider transports](/docs/forecast/provider-transports/) | Whole-file ECCC sampling, indexed NOAA byte ranges, whole-file GOES granules |
+| [Model capabilities](/docs/forecast/model-capabilities/) | What each model's fields mean, and which absences are stated facts |
+| [Forecast model feed reference](/docs/forecast/forecast-model-feeds/) | Dated provider facts — verified paths, schedules, fields, retention, transport, and licensing |
 | [Add a forecast model](/docs/forecast/adding-a-model/) | The verify-before-code workflow from live feed to registered builder |
-
-## Lineage
-
-The engine began as a module-by-module port of a Python pipeline: each
-ported module's spec was the Python test that pinned it, and each builder's
-acceptance gate was a published-JSON dual-run diff against the Python
-builder for the same run. The dual-run harness retired with the
-Python side.

@@ -3,12 +3,11 @@ title: Units, angles, one wind sign
 description: The unit vocabulary, angle helpers, and the single wind sign convention every meteo package computes with.
 ---
 
-Every platform package computes with the same physical vocabulary. This page is
-the authority for that vocabulary as
+The station and briefing packages compute with the same physical vocabulary
+— units, angles, and one wind sign convention — defined by
 [`units.ts`](https://github.com/azohra/meteo/blob/main/core/src/units.ts),
 [`angles.ts`](https://github.com/azohra/meteo/blob/main/core/src/angles.ts),
-and [`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts)
-define it.
+and [`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts).
 
 ## One wind sign convention
 

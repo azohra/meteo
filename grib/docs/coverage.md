@@ -30,6 +30,8 @@ holds the inverses;
 [`src/nearest.ts`](https://github.com/azohra/meteo/blob/main/grib/src/nearest.ts)
 the lookup.
 
+![The rotated graticule drawn over the true one: a schematic globe with the rotated south pole marked and the HRDPS domain lying along the rotated equator, and beside it the launch neighbourhood where tilted rotated gridlines cross the true graticule — toRotated maps the launch to fractional grid coordinates and a storage index, with the great-circle residual nearestGridpoint reports drawn in a magnified inset.](figures/rotated-grid.svg)
+
 ## Data representation templates (section 5)
 
 | Template | Packing | Implementation |
