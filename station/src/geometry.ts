@@ -230,8 +230,10 @@ export function vaneTicks(vanes: ReadonlyArray<Vane>, scales: ChartScales): Char
   });
 }
 
+/* Typed on the instant alone, so history points and live samples inspect
+ * through the same cursor math. */
 export function nearestIndex(
-  points: ReadonlyArray<HistoryPoint>,
+  points: ReadonlyArray<{ observedAt: string }>,
   chartX: number,
   frame: ChartFrame,
   scales: ChartScales,
@@ -242,7 +244,7 @@ export function nearestIndex(
   return points.reduce(
     (nearest, point, index) =>
       Math.abs(Date.parse(point.observedAt) - ms) <
-      Math.abs(Date.parse((points[nearest] as HistoryPoint).observedAt) - ms)
+      Math.abs(Date.parse((points[nearest] as { observedAt: string }).observedAt) - ms)
         ? index
         : nearest,
     0,

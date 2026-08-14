@@ -100,6 +100,14 @@ The store owns the transport discipline:
 the init frame's ring — it is how the `live: true` stores and hooks ride the
 existing fold unchanged.
 
+Drawing the window is composition, not a component. `sampleRuns` (gap-split
+at 2.5 intervals, the history chart's own tolerance), `sampleScales`,
+`samplePoints`, `sampleMeanDirectionDeg`, `thinSampleVanes`, and
+`samplesSummary` on `@azohra/meteo.station` mirror the history machinery
+and return the same `ChartScales` and `Vane` shapes — so `chartFrame`,
+`vanePath`, and `vaneTicks` draw a sample strip exactly as they draw the
+six-hour chart, and a host lays out whichever strip its page needs.
+
 ## Display resolution — shared across bindings
 
 The components' ambient-default discipline is one exported rule,

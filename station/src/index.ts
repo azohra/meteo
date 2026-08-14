@@ -94,6 +94,7 @@ export {
   filterByMonth,
   filterByTimeOfDay,
   historyGaps,
+  nearestIndex,
   speedBand,
   thinVanes,
   vanePath,
@@ -152,6 +153,17 @@ export type { FavorableDirection, HistoryRun } from "./instruments.js";
 
 export { foldCurrent, mergeCurrent } from "./merge-current.js";
 export type { MergeResult } from "./merge-current.js";
+
+export {
+  SAMPLE_GAP_TOLERANCE_FACTOR,
+  sampleMeanDirectionDeg,
+  samplePoints,
+  sampleRuns,
+  sampleScales,
+  samplesSummary,
+  thinSampleVanes,
+} from "./samples.js";
+export type { SamplesSummary } from "./samples.js";
 
 export {
   defaultFormatTime,
