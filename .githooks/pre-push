@@ -6,6 +6,28 @@
 # emergency exit; the battery still runs before every publish
 # (Release boundaries in CONTRIBUTING.md).
 cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# Publish before push: `changeset publish` tags each release
+# @azohra/<name>@x.y.z, so the tags are the local ledger of what is on
+# the registry. A manifest version pushed to main without its tag means
+# the version commit is outrunning its publish. A package with no tags
+# at all has never released and passes.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] || continue
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac # ref deletion
+  for dir in core briefing station forecast grib j2k; do
+    nv="$(git show "$local_sha:$dir/package.json" 2>/dev/null |
+      node -p 'const m=JSON.parse(require("fs").readFileSync(0,"utf8"));m.name+" "+m.version')" || continue
+    name="${nv% *}"
+    version="${nv#* }"
+    [ -n "$(git tag -l "$name@*")" ] || continue
+    if [ -z "$(git tag -l "$name@$version")" ]; then
+      echo "pre-push: $name@$version has no release tag — run 'pnpm changeset publish' before pushing main" >&2
+      exit 1
+    fi
+  done
+done
+
 marker="$(git rev-parse --git-dir)/meteo-gates-green"
 tree="$(git rev-parse HEAD^{tree})"
 if [ -f "$marker" ] && [ "$(cat "$marker")" = "$tree" ]; then
