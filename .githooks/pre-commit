@@ -1,11 +1,17 @@
 #!/bin/sh
 # The full battery, at the moment a commit forms (~25 s: internal/gates.mjs).
-# On green, record the proven tree so pre-push can skip honestly: the
-# marker is written only when the working tree matches the index — a
-# partial staging proves the disk, not the commit, and earns no marker.
+# On green, record the proven tree in the COMMON git dir: proofs are
+# content-addressed by tree hash, so a tree proven in any worktree is proven
+# for every checkout, and pre-push can skip honestly wherever the push
+# happens. The marker is earned only when the disk IS the commit — no
+# unstaged edits, no untracked files — because the battery proves the disk,
+# and a partial staging or a stray module would prove something else.
 cd "$(git rev-parse --show-toplevel)" || exit 1
 pnpm run gates || exit 1
-if git diff --quiet; then
-  git write-tree > "$(git rev-parse --git-dir)/meteo-gates-green"
+if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+  ledger="$(git rev-parse --path-format=absolute --git-common-dir)/meteo-gates-green.d"
+  mkdir -p "$ledger"
+  : > "$ledger/$(git write-tree)"
+  ls -t "$ledger" | tail -n +33 | while read -r stale; do rm -f "$ledger/$stale"; done
 fi
 exit 0

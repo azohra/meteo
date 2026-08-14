@@ -1,11 +1,16 @@
 #!/bin/sh
-# A push deploys the site with no CI behind it, so the pushed tree must be
-# proven green. If pre-commit already proved exactly this tree, skip the
-# rerun; anything else — a --no-verify commit, an amend, a merge — misses
-# the marker and pays the battery here. `git push --no-verify` remains the
-# emergency exit; the battery still runs before every publish
-# (Release boundaries in CONTRIBUTING.md).
+# A push deploys the site with no CI behind it, so every pushed tree must be
+# proven green. Proofs live in the common git dir's ledger, keyed by tree
+# hash — pre-commit writes them from whichever worktree proved the tree, and
+# this hook honours them from whichever checkout pushes. An unproven tree
+# pays the battery here, and only from a clean checkout OF that tree: a
+# dirty battery proves the disk, not the push, and passes for the wrong
+# reason. `git push --no-verify` remains the emergency exit; the battery
+# still runs before every publish (Release boundaries in CONTRIBUTING.md).
 cd "$(git rev-parse --show-toplevel)" || exit 1
+
+ledger="$(git rev-parse --path-format=absolute --git-common-dir)/meteo-gates-green.d"
+unproven=""
 
 # Publish before push: `changeset publish` tags each release
 # @azohra/<name>@x.y.z, so the tags are the local ledger of what is on
@@ -13,8 +18,10 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 # the version commit is outrunning its publish. A package with no tags
 # at all has never released and passes.
 while read -r local_ref local_sha remote_ref remote_sha; do
-  [ "$remote_ref" = "refs/heads/main" ] || continue
   case "$local_sha" in *[!0]*) ;; *) continue ;; esac # ref deletion
+  tree="$(git rev-parse "$local_sha^{tree}")"
+  [ -f "$ledger/$tree" ] || unproven="$unproven $tree"
+  [ "$remote_ref" = "refs/heads/main" ] || continue
   for dir in core briefing station forecast grib j2k; do
     nv="$(git show "$local_sha:$dir/package.json" 2>/dev/null |
       node -p 'const m=JSON.parse(require("fs").readFileSync(0,"utf8"));m.name+" "+m.version')" || continue
@@ -28,16 +35,26 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   done
 done
 
-marker="$(git rev-parse --git-dir)/meteo-gates-green"
-tree="$(git rev-parse HEAD^{tree})"
-if [ -f "$marker" ] && [ "$(cat "$marker")" = "$tree" ]; then
-  echo "gates: HEAD tree already proven green by pre-commit; skipping"
+if [ -z "$unproven" ]; then
+  echo "gates: every pushed tree already proven green; skipping"
   exit 0
 fi
-# The battery proves the disk; record the pushed tree as green only when
-# the disk IS that tree.
-pnpm run gates || exit 1
-if git diff --quiet HEAD; then
-  echo "$tree" > "$marker"
+
+# The battery proves the disk, so the disk must BE the unproven tree:
+# a clean checkout, sitting on exactly that commit.
+if ! git diff --quiet HEAD || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+  echo "pre-push: pushed tree is unproven and this working tree is dirty — a dirty battery proves the disk, not the push. Land or set aside the stray work, or push from a clean worktree of the pushed commit." >&2
+  exit 1
 fi
+head_tree="$(git rev-parse "HEAD^{tree}")"
+for tree in $unproven; do
+  if [ "$tree" != "$head_tree" ]; then
+    echo "pre-push: pushed tree $tree is unproven and is not this checkout's HEAD — push from a clean checkout of that commit so the battery proves what ships." >&2
+    exit 1
+  fi
+done
+
+pnpm run gates || exit 1
+mkdir -p "$ledger"
+: > "$ledger/$head_tree"
 exit 0
