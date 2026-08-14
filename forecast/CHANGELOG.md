@@ -1,5 +1,15 @@
 # @azohra/meteo.forecast
 
+## 0.1.3
+
+### Patch Changes
+
+- Every build now prints a `[wire]` transport report beside its summary line:
+  requests and failures, bytes, busy time against wall, mean concurrency,
+  latency percentiles, busy throughput, and per-host rows with a cpu split.
+  The report reads the same on every provider, so an operator can tell a
+  wire-bound tick from a compute-bound one without instrumenting anything.
+
 ## 0.1.2
 
 ### Patch Changes

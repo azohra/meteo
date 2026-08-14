@@ -39,6 +39,7 @@ export async function fetchBytes(
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     options.stats?.recordRequest(attempt > 0);
+    const settle = options.stats?.timeRequest(url);
     let response: TransportResponse | null = null;
     let body: Uint8Array | null = null;
     try {
@@ -57,17 +58,24 @@ export async function fetchBytes(
       if (response.status === 200) {
         const mismatch = contentLengthMismatch(response, body!);
         if (mismatch === null) {
+          settle?.(body!.byteLength, true);
           options.stats?.recordBytes(body!.byteLength);
           return body!;
         }
+        settle?.(0, false);
         lastError = new Error(`Datamart ${url} ${mismatch}`);
       } else if (response.status === 404) {
+        settle?.(0, true);
         throw new NotFoundError(`Datamart ${url} returned 404`);
       } else if (response.status !== 429 && response.status < 500) {
+        settle?.(0, false);
         throw new Error(`Datamart ${url} failed with ${response.status}`);
       } else {
+        settle?.(0, false);
         lastError = new Error(`Datamart ${url} failed with ${response.status}`);
       }
+    } else {
+      settle?.(0, false);
     }
     if (attempt < 2) {
       await sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);

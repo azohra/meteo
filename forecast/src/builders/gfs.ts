@@ -513,6 +513,9 @@ export async function buildGfs(options: GfsBuildOptions): Promise<boolean> {
     `Published ${result.profiles.length} GFS profiles for ${referenceTime} ` +
       `(${stats.requests} requests, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
   return true;
 }
 

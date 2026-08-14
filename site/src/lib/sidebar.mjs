@@ -14,6 +14,7 @@ export const sidebar = [
       { slug: "docs/models/choosing", label: "Choose models" },
       { slug: "docs/publish/run-one-model", label: "Run one model" },
       { slug: "docs/publish/schedule-builds", label: "Schedule builds" },
+      { slug: "docs/publish/tune-the-wire", label: "Tune the wire" },
       { slug: "docs/publish/static-output", label: "Publish static output" },
       { slug: "docs/publish/downstream-access", label: "Downstream access" },
     ],

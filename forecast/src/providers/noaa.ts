@@ -35,16 +35,20 @@ function retryingFetch(options: NoaaOptions): IdxFetch {
     let lastError: Error | null = null;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       options.stats?.recordRequest(attempt > 0);
+      const settle = options.stats?.timeRequest(url);
       try {
         const response = await fetchImpl(url, {
           headers: { "user-agent": USER_AGENT, ...init?.headers },
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_S * 1000),
         });
         if (response.status === 429 || response.status >= 500) {
+          settle?.(0, false);
           lastError = new Error(`NOAA ${url} failed with ${response.status}`);
         } else {
           const body = new Uint8Array(await response.arrayBuffer());
-          if (response.status === 200 || response.status === 206) {
+          const carried = response.status === 200 || response.status === 206;
+          settle?.(carried ? body.byteLength : 0, true);
+          if (carried) {
             options.stats?.recordBytes(body.byteLength);
           }
           return {
@@ -54,6 +58,7 @@ function retryingFetch(options: NoaaOptions): IdxFetch {
           };
         }
       } catch (error) {
+        settle?.(0, false);
         lastError = error instanceof Error ? error : new Error(String(error));
       }
       if (attempt < 2) {

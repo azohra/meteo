@@ -412,6 +412,9 @@ export async function buildHrdpsWest(options: HrdpsWestBuildOptions): Promise<bo
     `Published ${result.profiles.length} 1 km profiles for ${referenceTime} ` +
       `(${stats.requests} downloads, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
   return true;
 }
 

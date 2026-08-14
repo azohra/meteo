@@ -246,6 +246,9 @@ export async function buildGoesProduct(product: Product, options: GoesBuildOptio
       `(window now ${firstObservedAt} … ${lastObservedAt}, ` +
       `${stats.requests} requests, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
 }
 
 export async function scanKeysSince(
@@ -509,6 +512,7 @@ async function fetchGoes(
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     stats.recordRequest(attempt > 0);
+    const settle = stats.timeRequest(url);
     let status: number | null = null;
     let payload: Uint8Array | null = null;
     try {
@@ -526,13 +530,17 @@ async function fetchGoes(
     }
     if (status !== null) {
       if (status === 200) {
+        settle(payload!.byteLength, true);
         stats.recordBytes(payload!.byteLength);
         return payload!;
       }
+      settle(0, false);
       if (status < 500) {
         throw new Error(`GOES ${url} failed with ${status}`);
       }
       lastError = new Error(`GOES ${url} failed with ${status}`);
+    } else {
+      settle(0, false);
     }
     if (attempt < 2) {
       await wire.sleep(2 ** attempt * 1000);

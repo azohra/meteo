@@ -754,6 +754,9 @@ export async function buildReps(options: RepsBuildOptions): Promise<boolean> {
     `Published ${result.documents.length} ensemble documents for ${referenceTime} ` +
       `(${stats.requests} downloads, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
   return true;
 }
 

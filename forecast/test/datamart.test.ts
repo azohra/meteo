@@ -237,3 +237,38 @@ describe("fetchBytes over a live socket", () => {
     }
   });
 });
+
+describe("DownloadCounters transport report", () => {
+  it("stays silent when nothing was timed", () => {
+    expect(new DownloadCounters().transportReport()).toEqual([]);
+  });
+
+  it("reports totals, busy union, concurrency, and per-host rows", () => {
+    let tick = 0;
+    const stats = new DownloadCounters(() => tick);
+    const first = stats.timeRequest("https://example.test/a");
+    tick = 100;
+    const second = stats.timeRequest("https://example.test/b");
+    tick = 200;
+    first(1024 * 1024, true);
+    tick = 300;
+    second(1024 * 1024, true);
+    tick = 400;
+    const third = stats.timeRequest("https://other.test/c");
+    tick = 500;
+    third(0, false);
+    third(1024 * 1024, true); // settle is one-shot: this must not double-count
+    tick = 1000;
+
+    const report = stats.transportReport();
+    expect(report[0]).toBe("[wire] 3 requests (1 failed), 2.0 MiB, wall 1.0 s");
+    // Busy union [0,300] + [400,500] = 400 ms; in-flight sum 500 ms.
+    expect(report[1]).toContain("wire-busy 0.4 s (40% of wall)");
+    expect(report[1]).toContain("busy throughput 5.0 MiB/s");
+    expect(report[2]).toContain("p50 200 ms");
+    expect(report[2]).toContain("max 0.2 s");
+    expect(report[3]).toMatch(/^\[wire\] cpu user /);
+    expect(report[4]).toBe("[wire]   example.test: 2 requests, 2.0 MiB, mean 200 ms");
+    expect(report[5]).toBe("[wire]   other.test: 1 requests, 0.0 MiB, mean 100 ms, 1 failed");
+  });
+});

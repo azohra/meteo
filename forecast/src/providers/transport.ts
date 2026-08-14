@@ -149,10 +149,32 @@ export function keepAliveFetch(url: string, init: TransportInit = {}): Promise<T
 
 export const REQUEST_TIMEOUT_S = 60;
 
+interface WireHostRow {
+  requests: number;
+  bytes: number;
+  ms: number;
+  failures: number;
+}
+
 export class DownloadCounters {
   requests = 0;
   responseBytes = 0;
   retries = 0;
+
+  readonly #now: () => number;
+  readonly #startedAt: number;
+  readonly #cpuStart = process.cpuUsage();
+  readonly #durationsMs: number[] = [];
+  readonly #hosts = new Map<string, WireHostRow>();
+  #active = 0;
+  #busyMs = 0;
+  #lastTransitionAt: number;
+
+  constructor(now: () => number = () => performance.now()) {
+    this.#now = now;
+    this.#startedAt = now();
+    this.#lastTransitionAt = this.#startedAt;
+  }
 
   recordRequest(retry: boolean): void {
     this.requests += 1;
@@ -163,6 +185,88 @@ export class DownloadCounters {
 
   recordBytes(count: number): void {
     this.responseBytes += count;
+  }
+
+  /**
+   * Times one transport attempt from dispatch to body completion. The
+   * returned settle records the attempt's host row exactly once however
+   * the attempt ends; `ok: false` marks it failed.
+   */
+  timeRequest(url: string): (bytes: number, ok: boolean) => void {
+    let host: string;
+    try {
+      host = new URL(url).host;
+    } catch {
+      host = "unknown";
+    }
+    const begunAt = this.#transition(1);
+    let settled = false;
+    return (bytes, ok) => {
+      if (settled) return;
+      settled = true;
+      const ms = this.#transition(-1) - begunAt;
+      this.#durationsMs.push(ms);
+      const row = this.#hosts.get(host) ?? { requests: 0, bytes: 0, ms: 0, failures: 0 };
+      row.requests += 1;
+      row.bytes += bytes;
+      row.ms += ms;
+      if (!ok) row.failures += 1;
+      this.#hosts.set(host, row);
+    };
+  }
+
+  /**
+   * One `[wire]` block for the build log: totals, busy time against wall,
+   * mean concurrency, latency percentiles, cpu split, and a per-host row.
+   * Empty when no timed request ran, so quiet builds stay quiet. Reading
+   * it: busy ≈ wall with concurrency pinned at the builder's gate and low
+   * throughput means the wire paces the build; cpu ≈ wall means compute
+   * does; high p50 against small mean sizes means round trips do.
+   */
+  transportReport(): string[] {
+    if (this.#durationsMs.length === 0) {
+      return [];
+    }
+    let busyMs = this.#busyMs;
+    if (this.#active > 0) {
+      busyMs += this.#now() - this.#lastTransitionAt;
+    }
+    const safeBusyMs = Math.max(busyMs, 1);
+    const wallMs = Math.max(this.#now() - this.#startedAt, 1);
+    const cpu = process.cpuUsage(this.#cpuStart);
+    const sorted = [...this.#durationsMs].sort((a, b) => a - b);
+    const quantile = (q: number): number =>
+      sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))]!;
+    const inFlightMs = sorted.reduce((total, ms) => total + ms, 0);
+    const rows = [...this.#hosts.entries()];
+    const bytes = rows.reduce((total, [, row]) => total + row.bytes, 0);
+    const failures = rows.reduce((total, [, row]) => total + row.failures, 0);
+    const mib = (count: number): string => (count / (1024 * 1024)).toFixed(1);
+    const s = (ms: number): string => (ms / 1000).toFixed(1);
+    return [
+      `[wire] ${this.#durationsMs.length} requests (${failures} failed), ${mib(bytes)} MiB, wall ${s(wallMs)} s`,
+      `[wire] wire-busy ${s(busyMs)} s (${Math.round((busyMs / wallMs) * 100)}% of wall) · ` +
+        `mean concurrency ${(inFlightMs / safeBusyMs).toFixed(1)} · ` +
+        `busy throughput ${mib(bytes / (safeBusyMs / 1000))} MiB/s`,
+      `[wire] request latency p50 ${quantile(0.5).toFixed(0)} ms · p90 ${quantile(0.9).toFixed(0)} ms · ` +
+        `max ${s(sorted[sorted.length - 1]!)} s · mean size ${mib(bytes / this.#durationsMs.length)} MiB`,
+      `[wire] cpu user ${s(cpu.user / 1000)} s · system ${s(cpu.system / 1000)} s`,
+      ...rows.map(
+        ([host, row]) =>
+          `[wire]   ${host}: ${row.requests} requests, ${mib(row.bytes)} MiB, ` +
+          `mean ${(row.ms / row.requests).toFixed(0)} ms${row.failures > 0 ? `, ${row.failures} failed` : ""}`,
+      ),
+    ];
+  }
+
+  #transition(delta: number): number {
+    const now = this.#now();
+    if (this.#active > 0) {
+      this.#busyMs += now - this.#lastTransitionAt;
+    }
+    this.#lastTransitionAt = now;
+    this.#active += delta;
+    return now;
   }
 }
 

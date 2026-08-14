@@ -861,6 +861,9 @@ export async function buildEccc(model: DatamartModel, options: EcccBuildOptions)
     `Published ${result.profiles.length} profiles for ${referenceTime} ` +
       `(${stats.requests} downloads, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
   return true;
 }
 

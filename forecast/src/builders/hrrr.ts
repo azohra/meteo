@@ -504,6 +504,9 @@ export async function buildHrrr(options: HrrrBuildOptions): Promise<boolean> {
     `Published ${result.profiles.length} HRRR profiles for ${referenceTime} ` +
       `(${stats.requests} requests, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
   return true;
 }
 

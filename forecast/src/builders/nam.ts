@@ -628,6 +628,9 @@ export async function buildNam(product: NamProduct, options: NamBuildOptions): P
     `Published ${result.profiles.length} ${product.label} profiles for ${referenceTime} ` +
       `(${stats.requests} requests, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
   );
+  for (const line of stats.transportReport()) {
+    log(line);
+  }
   return true;
 }
 
