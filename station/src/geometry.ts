@@ -23,6 +23,20 @@ export const CHART_FALLBACK_WIDTH = 360;
 const CHART_AXIS_GUTTER = 46;
 export const VANE_TARGET = 13;
 
+/* The measure-before-framing rule: build the frame at the container's
+ * measured pixel width, falling back only while nothing has been measured.
+ * A fixed viewBox stretched by CSS magnifies every label and stroke. */
+export function measuredChartWidth(measured: number): number {
+  return measured > 0 ? Math.round(measured) : CHART_FALLBACK_WIDTH;
+}
+
+export type TickAnchor = "end" | "middle" | "start";
+
+/* Edge time labels anchor inward so the first and last never clip. */
+export function tickAnchor(index: number, lastIndex: number): TickAnchor {
+  return index === 0 ? "start" : index === lastIndex ? "end" : "middle";
+}
+
 export function chartFrame(width: number): ChartFrame {
   const plotHeight = width < 520 ? 76 : 116;
   const plotTop = 10;

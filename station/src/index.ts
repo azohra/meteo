@@ -82,6 +82,7 @@ export {
 export type { DirectionCellData, SummaryEntry } from "./format.js";
 
 export {
+  CHART_FALLBACK_WIDTH,
   DAILY_PATTERN_DEFAULT_SLOT_MINUTES,
   METEOROLOGICAL_SEASON_MONTHS,
   averagePoints,
@@ -94,9 +95,11 @@ export {
   filterByMonth,
   filterByTimeOfDay,
   historyGaps,
+  measuredChartWidth,
   nearestIndex,
   speedBand,
   thinVanes,
+  tickAnchor,
   vanePath,
   vaneTicks,
   windRose,
@@ -109,6 +112,7 @@ export type {
   ChartTick,
   DailyPatternSlot,
   RoseSector,
+  TickAnchor,
   Vane,
   WindRoseSummary,
 } from "./geometry.js";

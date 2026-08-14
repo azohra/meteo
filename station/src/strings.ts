@@ -18,6 +18,7 @@ export type StationStrings = {
   lullLabel: string;
   minLabel: string;
   noHistory: string;
+  noSamples: string;
   notMeasured: string;
   notReporting: string;
   peakLabel: string;
@@ -95,6 +96,7 @@ export type StationStrings = {
     rose: (stationName: string) => string;
     roseFavorable: (sectors: string) => string;
     roseGeneric: string;
+    sampleStrip: (stationName: string) => string;
     sparkline: (stationName: string) => string;
     strip: (stationName: string) => string;
     summary: (endedAtFormatted: string) => string;
@@ -116,6 +118,7 @@ export const defaultStrings: StationStrings = {
   lullLabel: "lull",
   minLabel: "Min",
   noHistory: "No history available",
+  noSamples: "No live samples",
   notMeasured: "Not measured here",
   notReporting: "Not reporting",
   peakLabel: "Peak",
@@ -228,6 +231,8 @@ export const defaultStrings: StationStrings = {
     rose: (stationName) => `Wind direction distribution at ${stationName}`,
     roseFavorable: (sectors) => `The outer ring marks favorable directions: from ${sectors}.`,
     roseGeneric: "Wind direction distribution",
+    sampleStrip: (stationName) =>
+      `Live wind at ${stationName}: each point is a single sample, and the vanes below point where the wind blew to.`,
     sparkline: (stationName) => `six hours of wind at ${stationName}`,
     strip: (stationName) => `Latest reading at ${stationName}`,
     summary: (endedAtFormatted) => `Summary of the period ending ${endedAtFormatted}`,

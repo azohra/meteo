@@ -7,6 +7,7 @@ export * from "./dial.js";
 export * from "./glyphs.js";
 export * from "./daily-pattern.js";
 export * from "./rose.js";
+export * from "./sample-strip.js";
 export * from "./sparkline.js";
 export * from "./strip.js";
 export * from "./table.js";

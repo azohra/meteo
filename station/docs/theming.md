@@ -55,8 +55,8 @@ one grep of your page finds all of it. Within that root, three tiers:
   chart, vanes, the lull–gust band). Station-level artifacts are
   station-scoped — `meteo-station-card-*`, `meteo-station-table-*`,
   `meteo-current-*`, `meteo-summary-*` — because a station is a weather
-  station, not a wind station. Alongside: `meteo-air-*`, `meteo-trend-*`,
-  `meteo-strip-*`, `meteo-sparkline-*`. The Meteogram renderer already
+  station, not a wind station. Alongside: `meteo-air-*`, `meteo-sample-*`,
+  `meteo-trend-*`, `meteo-strip-*`, `meteo-sparkline-*`. The Meteogram renderer already
   follows the same pattern (`meteo-gram-*`, themed on the
   [defaults and tokens page](/docs/briefing/defaults-and-tokens/)), and
   future capabilities continue it (`meteo-sounding-*`).
@@ -90,7 +90,11 @@ stylesheet.
 | `meteo-air-corner` | The air matrix's corner cell |
 
 Unstyled by design: style them from your own CSS, or leave them be — the
-default look does not depend on them.
+default look does not depend on them. The SVG text seams
+(`meteo-grid-label`, `meteo-tick`) are not bare, though: font, size, and
+ink arrive from their chart's base `.meteo-*-svg text` rule, so the class
+itself carries no rule to replace — override the base dress, don't rebuild
+it.
 
 ## Token reference
 

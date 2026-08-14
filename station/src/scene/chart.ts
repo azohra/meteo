@@ -1,21 +1,15 @@
-import type { HistoryPoint } from "../contract.js";
-import { CHART_FALLBACK_WIDTH, nearestIndex } from "../geometry.js";
+import { nearestIndex } from "../geometry.js";
 import type { ChartFrame, ChartScales } from "../geometry.js";
 
-export type TickAnchor = "end" | "middle" | "start";
+export { measuredChartWidth, tickAnchor } from "../geometry.js";
+export type { TickAnchor } from "../geometry.js";
 
 export type ReadoutPart = { kind: "text"; text: string } | { kind: "arrow"; deg: number };
 
-export function tickAnchor(index: number, lastIndex: number): TickAnchor {
-  return index === 0 ? "start" : index === lastIndex ? "end" : "middle";
-}
-
-export function measuredChartWidth(measured: number): number {
-  return measured > 0 ? Math.round(measured) : CHART_FALLBACK_WIDTH;
-}
-
+/* Typed on the instant alone, like nearestIndex: history points and live
+ * samples pin, preview, and inspect through the same cursor math. */
 export function pinnedIndexOf(
-  points: ReadonlyArray<HistoryPoint>,
+  points: ReadonlyArray<{ observedAt: string }>,
   pinnedAt: string | null,
 ): number | null {
   if (pinnedAt == null) return null;
@@ -24,7 +18,7 @@ export function pinnedIndexOf(
 }
 
 export function activeChartIndex(
-  points: ReadonlyArray<HistoryPoint>,
+  points: ReadonlyArray<{ observedAt: string }>,
   pinnedAt: string | null,
   previewIndex: number | null,
 ): number | null {
@@ -32,7 +26,7 @@ export function activeChartIndex(
 }
 
 export function chartIndexAtClient(
-  points: ReadonlyArray<HistoryPoint>,
+  points: ReadonlyArray<{ observedAt: string }>,
   frame: ChartFrame,
   scales: ChartScales,
   clientX: number,

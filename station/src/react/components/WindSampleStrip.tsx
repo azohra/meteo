@@ -2,65 +2,54 @@
 import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
-  useId,
   useRef,
   useState,
 } from "react";
 import { resolveDisplay } from "../../index.js";
 import {
-  WIND_CHART_CLASS,
+  SAMPLE_STRIP_CLASS,
   activeChartIndex,
   chartIndexAtClient,
   readoutAriaLive,
+  sampleStripGate,
+  sampleStripScene,
   togglePinnedAt,
-  windChartGate,
-  windChartScene,
 } from "../../scene/index.js";
-import type { History, SpeedUnit, Station } from "../../index.js";
+import type { LiveSamples, SpeedUnit } from "../../index.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
-import type { SpeedThresholds } from "../../index.js";
 import { useMeasuredChartWidth } from "../hooks/useMeasuredChartWidth.js";
 import { Readout } from "./Readout.js";
-import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
+import { useStationFeedContext } from "./StationFeedProvider.js";
 
-export function WindHistoryChart({
-  station: stationProp,
-  stationId,
-  thresholds: thresholdsProp,
+/* The history chart's live sibling, samples-only by design: the rolling
+ * sample window in, the same frame and rows out. The host owns the live
+ * subscription (useStationLive) and hands the window over; instants stay
+ * ungraded — thresholds grade sustained wind, never a single sample. */
+export function WindSampleStrip({
+  samples,
+  stationName,
   unit: unitProp,
   plotHeight,
-  windowHours,
-  compareOffsetDays,
   strings: stringsProp,
   formatTime: formatTimeProp,
 }: {
-  station?: Station;
-  stationId?: string;
-  thresholds?: SpeedThresholds | null;
+  samples: LiveSamples | null | undefined;
+  stationName: string;
   unit?: SpeedUnit;
   plotHeight?: number;
-  windowHours?: number;
-  compareOffsetDays?: 1 | 2 | 3;
   strings?: StationStringOverrides;
   formatTime?: FormatTime;
 }) {
   const context = useStationFeedContext();
-  const station = requireResolved(
-    "WindHistoryChart",
-    "station",
-    stationProp ?? resolveStation(context, stationId),
-  );
-  const { formatTime, thresholds, unit, words } = resolveDisplay(context, {
+  const { formatTime, unit, words } = resolveDisplay(context, {
     formatTime: formatTimeProp,
     strings: stringsProp,
-    thresholds: thresholdsProp,
     unit: unitProp,
   });
   const wrapRef = useRef<HTMLDivElement>(null);
-  const gate = windChartGate(station, words);
+  const gate = sampleStripGate(samples, words);
   const width = useMeasuredChartWidth(wrapRef, { enabled: gate.kind === "draw" });
 
-  if (gate.kind === "hidden") return null;
   if (gate.kind === "note") {
     return (
       <div className={gate.className} role="note">
@@ -70,18 +59,15 @@ export function WindHistoryChart({
   }
 
   return (
-    <div className={WIND_CHART_CLASS} ref={wrapRef}>
+    <div className={SAMPLE_STRIP_CLASS} ref={wrapRef}>
       {width != null && (
-        <MeasuredChart
-          compareOffsetDays={compareOffsetDays}
+        <MeasuredStrip
           formatTime={formatTime}
-          history={gate.history}
           plotHeight={plotHeight}
-          stationName={station.name}
-          thresholds={thresholds}
+          samples={gate.samples}
+          stationName={stationName}
           unit={unit}
           width={width}
-          windowHours={windowHours}
           words={words}
         />
       )}
@@ -89,44 +75,33 @@ export function WindHistoryChart({
   );
 }
 
-function MeasuredChart({
-  compareOffsetDays,
+function MeasuredStrip({
   formatTime,
-  history,
   plotHeight,
+  samples,
   stationName,
-  thresholds,
   unit,
   width,
-  windowHours,
   words,
 }: {
-  compareOffsetDays: 1 | 2 | 3 | undefined;
   formatTime: FormatTime;
-  history: History;
   plotHeight: number | undefined;
+  samples: LiveSamples;
   stationName: string;
-  thresholds: SpeedThresholds | undefined;
   unit: SpeedUnit;
   width: number;
-  windowHours: number | undefined;
   words: StationStrings;
 }) {
-  const hatchId = `meteo-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const [pinnedAt, setPinnedAt] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
-  const scene = windChartScene({
-    compareOffsetDays,
+  const scene = sampleStripScene({
     formatTime,
-    hatchId,
-    history,
     plotHeight,
+    samples,
     stationName,
-    thresholds,
     unit,
     width,
-    windowHours,
     words,
   });
   const { readout, cursor } = scene.inspect(activeChartIndex(scene.points, pinnedAt, previewIndex));
@@ -169,50 +144,7 @@ function MeasuredChart({
         viewBox={scene.svg.viewBox}
         width={scene.svg.width}
       >
-        <defs>
-          <pattern
-            height={scene.defs.pattern.height}
-            id={scene.defs.pattern.id}
-            patternTransform={scene.defs.pattern.transform}
-            patternUnits={scene.defs.pattern.units}
-            width={scene.defs.pattern.width}
-          >
-            <line
-              className={scene.defs.pattern.line.className}
-              x1={scene.defs.pattern.line.x1}
-              x2={scene.defs.pattern.line.x2}
-              y1={scene.defs.pattern.line.y1}
-              y2={scene.defs.pattern.line.y2}
-            />
-          </pattern>
-          <clipPath id={scene.defs.clip.id}>
-            <rect
-              height={scene.defs.clip.rect.height}
-              width={scene.defs.clip.rect.width}
-              x={scene.defs.clip.rect.x}
-              y={scene.defs.clip.rect.y}
-            />
-          </clipPath>
-        </defs>
-        {scene.zones.map((zone) => (
-          <rect
-            className={zone.className}
-            height={zone.height}
-            key={zone.key}
-            width={zone.width}
-            x={zone.x}
-            y={zone.y}
-          />
-        ))}
         {scene.grid.map(({ key, line, label }) => (
-          <g key={key}>
-            <line className={line.className} x1={line.x1} x2={line.x2} y1={line.y1} y2={line.y2} />
-            <text className={label.className} textAnchor={label.anchor} x={label.x} y={label.y}>
-              {label.text}
-            </text>
-          </g>
-        ))}
-        {scene.thresholdGuides.map(({ key, line, label }) => (
           <g key={key}>
             <line className={line.className} x1={line.x1} x2={line.x2} y1={line.y1} y2={line.y2} />
             <text className={label.className} textAnchor={label.anchor} x={label.x} y={label.y}>
@@ -230,38 +162,18 @@ function MeasuredChart({
             y2={guide.y2}
           />
         ))}
-        {scene.gaps.map((gap) => (
-          <rect
-            className={gap.className}
-            fill={gap.fill}
-            height={gap.height}
-            key={gap.key}
-            width={gap.width}
-            x={gap.x}
-            y={gap.y}
-          />
-        ))}
-        {scene.band && <polygon className={scene.band.className} points={scene.band.points} />}
-        {scene.compare && (
-          <polyline
-            className={scene.compare.className}
-            clipPath={scene.compare.clipPath}
-            points={scene.compare.points}
-          />
-        )}
-        {scene.mean.kind === "polyline" ? (
-          <polyline className={scene.mean.className} points={scene.mean.points} />
-        ) : (
-          scene.mean.segments.map((segment) => (
-            <line
-              className={segment.className}
-              key={segment.key}
-              x1={segment.x1}
-              x2={segment.x2}
-              y1={segment.y1}
-              y2={segment.y2}
+        {scene.trace.map((part) =>
+          part.kind === "dot" ? (
+            <circle
+              className={part.className}
+              cx={part.cx}
+              cy={part.cy}
+              key={part.key}
+              r={part.r}
             />
-          ))
+          ) : (
+            <polyline className={part.className} key={part.key} points={part.points} />
+          ),
         )}
         {scene.calmNote && (
           <text

@@ -369,11 +369,13 @@
 /* ---------- history chart ---------- */
 
 .meteo-wind-chart,
+.meteo-sample-strip,
 .meteo-daily-pattern {
   width: 100%;
 }
 
 .meteo-wind-chart-na,
+.meteo-sample-strip-na,
 .meteo-daily-pattern-na,
 .meteo-trend-na,
 .meteo-wind-rose-na {
@@ -390,6 +392,7 @@
  * daily-pattern caption is static — no pin state — but shares the line so
  * it never wears a different rhythm than the chart above it. */
 .meteo-wind-chart-readout,
+.meteo-sample-strip-readout,
 .meteo-daily-pattern-caption,
 .meteo-trend-readout {
   display: flex;
@@ -405,18 +408,21 @@
 }
 
 .meteo-wind-chart-readout strong,
+.meteo-sample-strip-readout strong,
 .meteo-trend-readout strong {
   color: var(--meteo-accent, #0f7490);
   font-weight: 700;
 }
 
 .meteo-wind-chart-svg,
+.meteo-sample-strip-svg,
 .meteo-daily-pattern-svg,
 .meteo-trend-svg {
   display: block;
 }
 
 .meteo-wind-chart-svg text,
+.meteo-sample-strip-svg text,
 .meteo-daily-pattern-svg text,
 .meteo-trend-svg text {
   font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
@@ -561,6 +567,24 @@
   cursor: crosshair;
   /* A vertical swipe over the chart must stay a scroll. */
   touch-action: pan-y;
+}
+
+/* ---------- sample strip ---------- */
+
+/* The live trace: instants in the mean line's colour at a lighter weight —
+ * a single sample is a quieter fact than a period mean. Runs split at
+ * dropouts; the break itself is the outage. */
+.meteo-sample-trace {
+  fill: none;
+  stroke: var(--meteo-wind-mean, #0f7490);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* A one-sample run between gaps: still a measurement, drawn as a dot. */
+.meteo-sample-dot {
+  fill: var(--meteo-wind-mean, #0f7490);
 }
 
 /* ---------- sparkline ---------- */

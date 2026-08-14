@@ -36,6 +36,12 @@ observation for display — the semantics are the wire contract's
 [freshness model](/docs/station/wire-contract/#freshness-the-servedat-anchor),
 re-judged on the shared 30 s cadence.
 
+`useMeasuredChartWidth(ref)` measures a chart container the way the
+built-in charts do — a ResizeObserver behind the measure-or-fallback rule
+(`measuredChartWidth` on the root), null until a width exists. Frame a
+custom SVG at this measured pixel width; a fixed viewBox stretched by CSS
+magnifies every label and stroke.
+
 ## The provider
 
 `StationFeedProvider` is the package-wide ambient default: it carries
@@ -76,6 +82,7 @@ Per-station components take `station` (or `stationId`); fleet components take `s
 | `StationCard` | The station card, a compound (below). `station`/`stationId`, `servedAt`, `receivedAtMs`, `thresholds`, `unit` |
 | `CurrentConditions` | The instrument dial. Same props; calm hides the needle, outages grey the dial |
 | `WindHistoryChart` | Lull–gust band + graded mean, a persistent compass-letter row and Avg row above/below every vane. `thresholds` (guide labels show your declared numbers), `plotHeight`, `windowHours` (slices to the trailing N hours of the SAME points, no new fetch), `compareOffsetDays` (`1 \| 2 \| 3`; overlays a prior day's trace shifted onto today's own x-axis, absent when history doesn't reach back far enough) |
+| `WindSampleStrip` | The history chart's live sibling: the rolling sample window over the same frame, grid, compass-letter and avg rows, and edge-anchored ticks. Samples-only by design — pass `samples` (from `useStationLive`) and `stationName`; instants stay ungraded, a dropout breaks the trace, a one-sample run draws as a dot. `plotHeight` |
 | `TrendChart` | Temperature (°C) or sea-level pressure (hPa) over history. `series: "temperature" \| "pressure"`; null gaps break the trace, never interpolated. No `unit` — the units are the series' own |
 | `WindRose` | Direction shares. `station`/`stationId` or raw `points`, `sectorCount`, `thresholds`, `favorableDirections`. No `unit` — the rose shows percentages |
 | `DailyPattern` | A typical day: every point bucketed by time-of-day and vector-averaged, with a persistent compass-letter row and Avg row (dashed for a slot nothing ever fell into). `station`/`stationId` or raw `points`, `slotMinutes` (default 180), `utcOffsetMinutes`, `thresholds` |
@@ -137,6 +144,7 @@ unrounded.
 | `BandChip` | The reading graded against `thresholds`, worn as a chip with `data-band`. Your `labels` (values.length + 1 words) supply the vocabulary; without labels the chip states the converted speed. Calm says the calm word, ungraded |
 | `Dial` | The instrument's gauge alone — `CurrentConditions` without flanks or rows. `size` scales the rendered box, never the drawing |
 | `Sparkline` | The served history window at word size: lull–gust band + average trace, the big chart's dropout and null-pair rules, `thresholds` grading per segment. A quiet station holds the same fixed box |
+| `Readout` | The charts' inspection line: an `<output>` with a bold lead (`strong`) and a `parts` tail of text and wind-arrow pieces. Pass `ariaLive` polite at rest and off while a pointer previews, so a pin announces and a sweep never floods a screen reader |
 
 They compose inline — a sentence, a table cell, a board row:
 

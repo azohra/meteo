@@ -22,8 +22,11 @@ export { StationStrip } from "./components/StationStrip.js";
 export { TrendChart } from "./components/TrendChart.js";
 export { WindArrow } from "./components/WindArrow.js";
 export { DailyPattern } from "./components/DailyPattern.js";
+export { Readout } from "./components/Readout.js";
+export type { ReadoutPart } from "../scene/index.js";
 export { WindHistoryChart } from "./components/WindHistoryChart.js";
 export { WindRose } from "./components/WindRose.js";
+export { WindSampleStrip } from "./components/WindSampleStrip.js";
 export {
   StationCard,
   StationCardChart,
@@ -32,6 +35,7 @@ export {
   StationCardSummary,
 } from "./components/StationCard.js";
 export { useFreshness } from "./hooks/useFreshness.js";
+export { useMeasuredChartWidth } from "./hooks/useMeasuredChartWidth.js";
 export { useStation } from "./hooks/useStation.js";
 export { useStationCurrent } from "./hooks/useStationCurrent.js";
 export { useStationFeed } from "./hooks/useStationFeed.js";

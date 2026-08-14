@@ -100,13 +100,19 @@ The store owns the transport discipline:
 the init frame's ring — it is how the `live: true` stores and hooks ride the
 existing fold unchanged.
 
-Drawing the window is composition, not a component. `sampleRuns` (gap-split
-at 2.5 intervals, the history chart's own tolerance), `sampleScales`,
-`samplePoints`, `sampleMeanDirectionDeg`, `thinSampleVanes`, and
-`samplesSummary` on `@azohra/meteo.station` mirror the history machinery
-and return the same `ChartScales` and `Vane` shapes — so `chartFrame`,
-`vanePath`, and `vaneTicks` draw a sample strip exactly as they draw the
-six-hour chart, and a host lays out whichever strip its page needs.
+Drawing the window: `WindSampleStrip` on `@azohra/meteo.station/react` is
+the history chart's live sibling — the same frame, grid, labelled vane
+rows, and edge-anchored ticks over the rolling window, samples-only by
+design. For a layout the component doesn't cover, the composition
+primitives remain: `sampleRuns` (gap-split at 2.5 intervals, the history
+chart's own tolerance), `sampleScales`, `samplePoints`,
+`sampleMeanDirectionDeg`, `thinSampleVanes`, and `samplesSummary` on
+`@azohra/meteo.station` mirror the history machinery and return the same
+`ChartScales` and `Vane` shapes — so `chartFrame`, `vanePath`, and
+`vaneTicks` draw a sample strip exactly as they draw the six-hour chart.
+Build the frame at a measured pixel width — `measuredChartWidth` (in
+react, the `useMeasuredChartWidth(ref)` hook) is that rule; a fixed
+viewBox stretched by CSS magnifies every label and stroke.
 
 ## Display resolution — shared across bindings
 
