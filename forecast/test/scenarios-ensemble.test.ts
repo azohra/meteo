@@ -1,8 +1,6 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { deriveSiteForecast, type SourceProfile } from "../src/derive.js";
@@ -28,15 +26,10 @@ import {
   validateSource,
 } from "../src/scenario/index.js";
 
-const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+import { loadJson, ROOT, scenarioRepository, type Doc } from "./helpers/scenarios.js";
+
 const ENSEMBLE_IDS = ["ensemble-tight", "ensemble-wide", "ensemble-column-censored"] as const;
 const PERCENTILE_KEYS = ["p10", "p25", "p50", "p75", "p90"] as const;
-
-type Doc = Record<string, any>;
-
-function loadJson(path: string): Doc {
-  return JSON.parse(readFileSync(path, "utf-8")) as Doc;
-}
 
 function definition(scenarioId: string): TaggedValue {
   return loadScenarioJson(join(ROOT, "scenarios", "definitions", `${scenarioId}.json`));
@@ -44,14 +37,6 @@ function definition(scenarioId: string): TaggedValue {
 
 function generated(scenarioId: string): Doc {
   return loadJson(join(ROOT, "scenarios", "generated", `${scenarioId}.profile.json`));
-}
-
-function scenarioRepository(): string {
-  // Only the scenarios/ tree travels: the model catalogue ships with the
-  // package itself (models.json).
-  const tmp = mkdtempSync(join(tmpdir(), "scenario-repo-"));
-  cpSync(join(ROOT, "scenarios"), join(tmp, "scenarios"), { recursive: true });
-  return tmp;
 }
 
 function memberProfiles(scenarioDefinition: TaggedValue): Doc[] {
@@ -404,12 +389,14 @@ describe("optional fields and comparison scenarios", () => {
 
     const stale = join(generatedDir, "model-timing-disagreement.later.profile.json");
     writeFileSync(stale, "{}\n");
-    expect(() => checkScenarioRepository({ repositoryRoot: repository })).toThrowError(
-      ScenarioCheckError,
-    );
-    expect(() => checkScenarioRepository({ repositoryRoot: repository })).toThrow(
-      /model-timing-disagreement\.later/,
-    );
+    let thrown: unknown;
+    try {
+      checkScenarioRepository({ repositoryRoot: repository });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(ScenarioCheckError);
+    expect((thrown as Error).message).toMatch(/model-timing-disagreement\.later/);
 
     generateScenarioRepository({ repositoryRoot: repository });
     checkScenarioRepository({ repositoryRoot: repository });

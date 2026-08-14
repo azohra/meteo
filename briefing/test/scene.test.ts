@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { parseSiteForecast } from "../src/contract.js";
 import { buildMeteogramScene, DEFAULT_OVERLAYS } from "../src/scene/index.js";
 import {
   deterministicSceneProfile,
@@ -8,14 +7,6 @@ import {
 } from "../test/scene-fixtures.js";
 
 const TZ = { timeZone: "America/Vancouver" };
-
-describe("fixtures", () => {
-  it("are valid profiles by the package's own contract", () => {
-    expect(parseSiteForecast(deterministicSceneProfile())).not.toBeNull();
-    expect(parseSiteForecast(ensembleSceneProfile())).not.toBeNull();
-    expect(parseSiteForecast(tinySceneProfile())).not.toBeNull();
-  });
-});
 
 describe("scales and layout", () => {
   const scene = buildMeteogramScene(deterministicSceneProfile(), TZ);

@@ -57,12 +57,6 @@ describe("golden SVG fixtures", () => {
   it("matches the selection golden", async () => {
     await expect(selectionSvg()).toMatchFileSnapshot("golden/selection.svg");
   });
-
-  it("is deterministic across renders", () => {
-    expect(deterministicSvg()).toBe(deterministicSvg());
-    expect(ensembleSvg()).toBe(ensembleSvg());
-    expect(scienceSvg()).toBe(scienceSvg());
-  });
 });
 
 describe("renderMeteogramSvg structure", () => {

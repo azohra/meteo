@@ -1,13 +1,46 @@
-import type {
-  EnsembleValue,
-  ModelCatalogue,
-  RunsIndex,
-  SitesCatalogue,
-  ForecastHour,
-  ForecastManifest,
-  ObservationManifest,
-  SiteForecast,
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  parseSiteForecast,
+  type EnsembleValue,
+  type ModelCatalogue,
+  type RunsIndex,
+  type SitesCatalogue,
+  type ForecastHour,
+  type ForecastManifest,
+  type ObservationManifest,
+  type SiteForecast,
 } from "../src/contract.js";
+
+/* analyze-fixtures.json holds real pipeline profiles (36-45 kB each); the
+   file is read once and each key is contract-parsed once. Callers get a
+   deep clone, so a mutating test never leaks into the next. */
+let analyzeFixturesJson: Record<string, unknown> | undefined;
+const parsedAnalyzeFixtures = new Map<string, SiteForecast>();
+
+function analyzeFixturesDocument(): Record<string, unknown> {
+  analyzeFixturesJson ??= JSON.parse(
+    readFileSync(join(__dirname, "analyze-fixtures.json"), "utf-8"),
+  ) as Record<string, unknown>;
+  return analyzeFixturesJson;
+}
+
+/** A deep clone of the raw fixture document, for tests that mutate and re-parse. */
+export function analyzeFixtureRaw(key: string): unknown {
+  return structuredClone(analyzeFixturesDocument()[key]);
+}
+
+/** A deep clone of the contract-parsed fixture profile. */
+export function analyzeFixture(key: string): SiteForecast {
+  let profile = parsedAnalyzeFixtures.get(key);
+  if (profile === undefined) {
+    const parsed = parseSiteForecast(analyzeFixturesDocument()[key]);
+    if (parsed === null) throw new Error(`${key} must satisfy the published contract`);
+    parsedAnalyzeFixtures.set(key, parsed);
+    profile = parsed;
+  }
+  return structuredClone(profile);
+}
 
 export function deterministicHour(overrides: Partial<ForecastHour> = {}): ForecastHour {
   return {

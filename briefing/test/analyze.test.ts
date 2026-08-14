@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { analyzeFixture, analyzeFixtureRaw } from "./fixtures.js";
 import { describe, expect, it } from "vitest";
 import {
   ANALYSIS_FRAME_VERSION,
@@ -31,19 +30,9 @@ import {
   type SiteForecast,
 } from "../src/contract.js";
 
-const fixtures = JSON.parse(
-  readFileSync(join(__dirname, "analyze-fixtures.json"), "utf-8"),
-) as Record<string, unknown>;
-
-function load(key: string): SiteForecast {
-  const profile = parseSiteForecast(fixtures[key]);
-  expect(profile, `${key} must satisfy the published contract`).not.toBeNull();
-  return profile!;
-}
-
-const hrrr = () => load("hrrrConusErie");
-const geps = () => load("gepsFlagpole");
-const reps = () => load("repsErie");
+const hrrr = () => analyzeFixture("hrrrConusErie");
+const geps = () => analyzeFixture("gepsFlagpole");
+const reps = () => analyzeFixture("repsErie");
 
 const ERIE = { launch: { elevationM: 1247 } };
 const FLAGPOLE = { launch: { elevationM: 1222 } };
@@ -81,7 +70,7 @@ const quietWstar = () => ev(0.1, 0.15, 0.2, 0.3, 0.4);
 const quietTop = () => ev(1300, 1350, 1400, 1450, 1500);
 
 function crossingFixture(): SiteForecast {
-  const doc = JSON.parse(JSON.stringify(fixtures["repsErie"])) as {
+  const doc = analyzeFixtureRaw("repsErie") as {
     hours: Array<{ validAt: string; derived: Record<string, unknown> }>;
   };
   const template = JSON.stringify(doc.hours[0]);
@@ -601,7 +590,7 @@ describe("capTiming", () => {
 
 describe("capTiming at multi-hour cadence — interval verdicts", () => {
   function threeHourly(offset: number, count = 4): SiteForecast {
-    const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as { hours: unknown[] };
+    const doc = analyzeFixtureRaw("hrrrConusErie") as { hours: unknown[] };
     doc.hours = Array.from({ length: count }, (_, k) => doc.hours[offset + 3 * k]);
     const profile = parseSiteForecast(doc);
     expect(profile).not.toBeNull();
@@ -628,7 +617,7 @@ describe("capTiming at multi-hour cadence — interval verdicts", () => {
   });
 
   it("states the day edge as its own case: cap already open at first covered step", () => {
-    const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as { hours: unknown[] };
+    const doc = analyzeFixtureRaw("hrrrConusErie") as { hours: unknown[] };
     doc.hours = [doc.hours[6], doc.hours[9]];
     const profile = parseSiteForecast(doc)!;
     const findings = ofKind<CapTimingFinding>(analyzeForecast(profile, ERIE).findings, "capTiming");
@@ -655,7 +644,7 @@ describe("capTiming at multi-hour cadence — interval verdicts", () => {
   });
 
   it("echoes the precipitation semantics beside the threshold it compares against", () => {
-    const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+    const doc = analyzeFixtureRaw("hrrrConusErie") as {
       semantics?: object;
       hours: Array<{ surface: { precipitationMmHr: number } }>;
     };
@@ -676,7 +665,7 @@ describe("convectiveDay — the CIN-less convective story", () => {
   const iso = (ms: number) => new Date(ms).toISOString().replace(".000Z", "Z");
 
   function cinless(firstValidAt: string, count: number, capes?: number[]): SiteForecast {
-    const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+    const doc = analyzeFixtureRaw("hrrrConusErie") as {
       hours: Array<{ validAt: string; surface: { capeJkg?: number; cinJkg?: number } }>;
     };
     const start = Date.parse(firstValidAt);
@@ -948,7 +937,7 @@ describe("mixed cadence — spacing is per-gap, never a document constant", () =
   const iso = (ms: number) => new Date(ms).toISOString().replace(".000Z", "Z");
 
   function gepsSwitching(): SiteForecast {
-    const doc = JSON.parse(JSON.stringify(fixtures["gepsFlagpole"])) as {
+    const doc = analyzeFixtureRaw("gepsFlagpole") as {
       hours: Array<{ validAt: string }>;
     };
     const head = doc.hours.slice(0, 10);
@@ -963,7 +952,7 @@ describe("mixed cadence — spacing is per-gap, never a document constant", () =
   }
 
   function hrrrWidening(): SiteForecast {
-    const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+    const doc = analyzeFixtureRaw("hrrrConusErie") as {
       hours: unknown[];
     };
     doc.hours = [
@@ -1039,7 +1028,7 @@ describe("mixed cadence — spacing is per-gap, never a document constant", () =
   });
 
   it("measures wind persistence as covered span — a lone far-horizon sample is as wide as its step", () => {
-    const doc = JSON.parse(JSON.stringify(fixtures["repsErie"])) as { hours: unknown[] };
+    const doc = analyzeFixtureRaw("repsErie") as { hours: unknown[] };
     doc.hours = [...doc.hours.slice(0, 5), doc.hours[6]];
     const profile = parseSiteForecast(doc)!;
     const findings = ofKind<WindSummaryFinding>(
@@ -1056,7 +1045,7 @@ describe("smokeImpact", () => {
   const iso = (ms: number) => new Date(ms).toISOString().replace(".000Z", "Z");
 
   function smokyHrrr(): SiteForecast {
-    const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+    const doc = analyzeFixtureRaw("hrrrConusErie") as {
       semantics?: object;
       hours: Array<{ validAt: string; smoke?: object }>;
     };
@@ -1209,7 +1198,7 @@ describe("smokeImpact", () => {
   });
 
   it("echoes the semantics tag, and reads an untagged smoke block as passive", () => {
-    const untagged = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+    const untagged = analyzeFixtureRaw("hrrrConusErie") as {
       semantics?: object;
       hours: Array<{ validAt: string; smoke?: object }>;
     };
@@ -1400,7 +1389,7 @@ describe("windSummary.duringWindow", () => {
   });
 
   it("states pressureHpa as null under full ensemble dropout — no more NaN under a number type", () => {
-    const doc = JSON.parse(JSON.stringify(fixtures["repsErie"])) as {
+    const doc = analyzeFixtureRaw("repsErie") as {
       hours: Array<{ levels: Array<{ pressureHpa: unknown }> }>;
     };
     doc.hours[6].levels[0].pressureHpa = {

@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { analyzeFixture, analyzeFixtureRaw } from "./fixtures.js";
 import { describe, expect, it } from "vitest";
 import { parseSiteForecast, type SiteForecast } from "../src/contract.js";
 import {
@@ -19,19 +18,9 @@ import {
   type ForecastAnalysis,
 } from "../src/analyze/index.js";
 
-const fixtures = JSON.parse(
-  readFileSync(join(__dirname, "analyze-fixtures.json"), "utf-8"),
-) as Record<string, unknown>;
-
-function load(key: string): SiteForecast {
-  const profile = parseSiteForecast(fixtures[key]);
-  expect(profile).not.toBeNull();
-  return profile!;
-}
-
 const TZ = "America/Vancouver";
-const hrrr = () => load("hrrrConusErie");
-const reps = () => load("repsErie");
+const hrrr = () => analyzeFixture("hrrrConusErie");
+const reps = () => analyzeFixture("repsErie");
 
 const ERIE_LAUNCH = { elevationM: 1247 };
 
@@ -69,7 +58,7 @@ function detMember(opts: {
   gustSemantics?: "hourMax" | "instant";
   hours: HourSpec[];
 }): SiteForecast {
-  const doc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+  const doc = analyzeFixtureRaw("hrrrConusErie") as {
     model: string;
     run: { referenceTime: string };
     site: { modelElevationM: number };
@@ -118,9 +107,9 @@ const QUIET = { wstar: 0.1, top: 1300 };
 
 describe("compareForecasts guards", () => {
   it("refuses mixed sites — one comparison, one site", () => {
-    expect(() => compareForecasts([hrrr(), load("gepsFlagpole")], { timeZone: TZ })).toThrow(
-      /mixed sites/,
-    );
+    expect(() =>
+      compareForecasts([hrrr(), analyzeFixture("gepsFlagpole")], { timeZone: TZ }),
+    ).toThrow(/mixed sites/);
   });
 
   it("refuses an empty member list", () => {
@@ -163,9 +152,9 @@ describe("compareAnalyses — the coherence-validated door", () => {
   });
 
   it("refuses mixed sites — one comparison, one site", () => {
-    expect(() => compareAnalyses([analyzed(hrrr()), analyzed(load("gepsFlagpole"))])).toThrow(
-      /mixed sites \(erie vs flagpole\)/,
-    );
+    expect(() =>
+      compareAnalyses([analyzed(hrrr()), analyzed(analyzeFixture("gepsFlagpole"))]),
+    ).toThrow(/mixed sites \(erie vs flagpole\)/);
   });
 
   it("refuses the SAME analysis twice — identity is (model, referenceTime)", () => {
@@ -217,7 +206,7 @@ describe("compareAnalyses — the coherence-validated door", () => {
 });
 
 describe("member identity (model, referenceTime) — the v2 breaking change", () => {
-  const laterDoc = JSON.parse(JSON.stringify(fixtures["hrrrConusErie"])) as {
+  const laterDoc = analyzeFixtureRaw("hrrrConusErie") as {
     run: { referenceTime: string };
   };
   laterDoc.run.referenceTime = "2026-08-09T00:00:00Z";
@@ -293,7 +282,7 @@ describe("the member ledger", () => {
   });
 
   it("benches a member whose lift never reaches launch — the GEPS case, by arithmetic", () => {
-    const deficit = load("gepsFlagpole");
+    const deficit = analyzeFixture("gepsFlagpole");
     (deficit.site as { id: string }).id = "erie";
     const withBenched = compareForecasts([hrrr(), reps(), deficit], {
       timeZone: TZ,
@@ -318,7 +307,7 @@ describe("the member ledger", () => {
   });
 
   it("benches nobody without a launch — terrainMismatch is a launch statement", () => {
-    const deficit = load("gepsFlagpole");
+    const deficit = analyzeFixture("gepsFlagpole");
     (deficit.site as { id: string }).id = "erie";
     const launchFree = compareForecasts([hrrr(), reps(), deficit], { timeZone: TZ });
     expect(launchFree.site.launchAltitudeM).toBeNull();
@@ -506,7 +495,7 @@ describe("outOfHorizon abstentions", () => {
 
 describe("zero-voter suppression", () => {
   it("suppresses a day only at zero voters AND zero abstentions", () => {
-    const deficit = load("gepsFlagpole");
+    const deficit = analyzeFixture("gepsFlagpole");
     (deficit.site as { id: string }).id = "erie";
     const comparison = compareForecasts([deficit], { timeZone: TZ, launch: ERIE_LAUNCH });
     expect(comparison.members[0].benched).toMatchObject({ reason: "terrainMismatch" });
@@ -656,7 +645,7 @@ describe("the percentile carry-through and the heightSpread band", () => {
   const quietWstar = () => ev(0.1, 0.15, 0.2, 0.3, 0.4);
   const quietTop = () => ev(1300, 1350, 1400, 1450, 1500);
   function crossingFixture(): SiteForecast {
-    const doc = JSON.parse(JSON.stringify(fixtures["repsErie"])) as {
+    const doc = analyzeFixtureRaw("repsErie") as {
       hours: Array<{ validAt: string; derived: Record<string, unknown> }>;
     };
     const template = JSON.stringify(doc.hours[0]);

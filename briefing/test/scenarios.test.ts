@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseSiteForecast, siteForecastSchema, type SiteForecast } from "../src/contract.js";
+import { siteForecastSchema, type SiteForecast } from "../src/contract.js";
 import { stabilityClass } from "../src/derive/index.js";
 import { buildMeteogramScene, type MeteogramScene } from "../src/scene/index.js";
 import { renderMeteogramSvg } from "../src/svg/index.js";
@@ -74,8 +74,8 @@ function loadOutput(entry: ScenarioEntry, output: ScenarioOutput): LoadedOutput 
     }`,
   ).toBe(true);
 
-  const profile = parseSiteForecast(rawProfile);
-  expect(profile, `${label} must satisfy parseSiteForecast`).not.toBeNull();
+  // parseSiteForecast is this same safeParse; reuse its verdict.
+  const profile = schemaResult.success ? schemaResult.data : null;
   expect(profile!.site.id, `${label} site identity`).toBe(entry.site.id);
 
   const launch = entry.launch;

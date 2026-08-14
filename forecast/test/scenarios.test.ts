@@ -1,8 +1,6 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -21,8 +19,7 @@ import {
   validateSource,
 } from "../src/scenario/index.js";
 import { parseTaggedJson, pyDumps, untag, type TaggedValue } from "../src/scenario/json.js";
-
-const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+import { loadJson, ROOT, scenarioRepository, type Doc } from "./helpers/scenarios.js";
 
 const TEACHING_SCENARIOS = [
   "convective-cycle",
@@ -37,26 +34,12 @@ const TEACHING_SCENARIOS = [
   "three-hourly-sampling",
 ] as const;
 
-type Doc = Record<string, any>;
-
-function loadJson(path: string): Doc {
-  return JSON.parse(readFileSync(path, "utf-8")) as Doc;
-}
-
 function minimalDefinition(): TaggedValue {
   return loadScenarioJson(join(ROOT, "scenarios", "definitions", "minimal-valid.json"));
 }
 
 function minimalBaseline(): TaggedValue {
   return loadScenarioJson(join(ROOT, "scenarios", "baselines", "minimal-hourly-core.source.json"));
-}
-
-function scenarioRepository(): string {
-  // Only the scenarios/ tree travels: the model catalogue ships with the
-  // package itself (models.json).
-  const tmp = mkdtempSync(join(tmpdir(), "scenario-repo-"));
-  cpSync(join(ROOT, "scenarios"), join(tmp, "scenarios"), { recursive: true });
-  return tmp;
 }
 
 describe("byte-identity against the committed scenario artifacts", () => {
@@ -482,8 +465,10 @@ describe("scenario generation", () => {
     );
   });
 
+  // Artifact freshness lives with the byte-identity gate above, which
+  // regenerates every committed profile; these hold only the definitions.
   it.each(TEACHING_SCENARIOS)(
-    "teaching scenario %s has three assertions and matches its committed artifact",
+    "teaching scenario %s carries three assertions and declared precipitation semantics",
     (scenarioId) => {
       const definition = loadScenarioJson(
         join(ROOT, "scenarios", "definitions", `${scenarioId}.json`),
@@ -493,11 +478,6 @@ describe("scenario generation", () => {
       expect(["instantRate", "windowMeanRate"]).toContain(
         (untag(definition.semantics) as Doc).precipitation,
       );
-      const generated = generateScenario(definition, { repositoryRoot: ROOT });
-      const committed = loadJson(
-        join(ROOT, "scenarios", "generated", `${scenarioId}.profile.json`),
-      );
-      expect(generated).toEqual(committed);
     },
   );
 });
@@ -741,8 +721,14 @@ describe("loadScenarioJson", () => {
     const baseline = loadJson(path);
     baseline.hours[0].temperatureC = "__NAN__";
     writeFileSync(path, JSON.stringify(baseline).replace('"__NAN__"', "NaN"));
-    expect(() => loadScenarioJson(path)).toThrowError(ScenarioError);
-    expect(() => loadScenarioJson(path)).toThrow(/JSON contains the non-finite value NaN/);
+    let thrown: unknown;
+    try {
+      loadScenarioJson(path);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(ScenarioError);
+    expect((thrown as Error).message).toMatch(/JSON contains the non-finite value NaN/);
   });
 
   it("wraps malformed JSON with the file path", () => {

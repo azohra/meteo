@@ -6,9 +6,7 @@ import { buildMeteogramScene } from "../src/scene/index.js";
 import { ensembleSceneProfile } from "../test/scene-fixtures.js";
 
 const fixture = parseSiteForecast(
-  JSON.parse(
-    readFileSync(join(__dirname, "..", "..", "briefing", "test", "pipeline-parity.json"), "utf-8"),
-  ),
+  JSON.parse(readFileSync(join(__dirname, "pipeline-parity.json"), "utf-8")),
 );
 
 describe("scene option sinkRateMps", () => {

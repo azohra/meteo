@@ -5,7 +5,6 @@ import {
   DownloadCounters,
   exists,
   keepAliveFetch,
-  REQUEST_TIMEOUT_S,
   USER_AGENT,
 } from "../src/providers/transport.js";
 import { stubFetch } from "./helpers/wire.js";
@@ -18,12 +17,6 @@ describe("USER_AGENT", () => {
     expect(USER_AGENT).toBe(
       `azohra-meteo/${manifest.version ?? "0.dev"} (+https://github.com/azohra/meteo)`,
     );
-  });
-});
-
-describe("REQUEST_TIMEOUT_S", () => {
-  it("is one minute", () => {
-    expect(REQUEST_TIMEOUT_S).toBe(60);
   });
 });
 

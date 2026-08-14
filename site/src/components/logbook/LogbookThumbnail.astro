@@ -23,6 +23,7 @@ const labels: Record<LogbookThumbnailKind, string> = {
   "terrain-shear": "Terrain flow",
   "terrain-smoothing": "Model terrain",
   "smoke-derate": "Cube root",
+  "wire-report": "Measured wire",
 };
 const descriptions: Record<LogbookThumbnailKind, string> = {
   "lift-limits": "Parcel top, usable-lift top, and cloud base follow different paths through one day.",
@@ -34,6 +35,8 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   "terrain-shear": "A valley surface wind and flow aloft belong to different circulations.",
   "terrain-smoothing": "A smoothed model terrain line runs beneath the ridge-top launch its grid cell cannot see.",
   "smoke-derate": "A τ = 2 plume removes about a quarter of the sun's power but only a tenth of thermal strength.",
+  "wire-report":
+    "Two Datamart hosts at the same five-connection gate: 73 MiB/s clean against 16 MiB/s with one request in ten failing.",
 };
 ---
 
@@ -177,6 +180,24 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
+    {thumbnail.visual === "wire-report" && (
+      <g class="wire-report-visual">
+        <text x="18" y="22" class="visual-title">ONE CYCLE · TWO HOSTS · ONE GATE</text>
+        <text x="18" y="44" class="bar-label">HPFX</text>
+        <rect x="60" y="34" width="196" height="13" class="bar-frame" />
+        <rect x="60" y="34" width="196" height="13" class="fast-bar" />
+        <text x="264" y="45" class="metric small">73 MiB/s</text>
+        <text x="60" y="60" class="visual-note">4,352 REQUESTS · 0 FAILED</text>
+        <text x="18" y="86" class="bar-label">DD</text>
+        <rect x="60" y="76" width="196" height="13" class="bar-frame" />
+        <rect x="60" y="76" width="43" height="13" class="slow-bar" />
+        <text x="264" y="87" class="metric small">16 MiB/s</text>
+        <text x="60" y="102" class="visual-note">1 REQUEST IN 10 FAILED</text>
+        <line x1="18" y1="114" x2="302" y2="114" class="floor" />
+        <text x="18" y="130" class="visual-note">[wire] BALANCE LANES BY MEASURED TIME, NOT BYTES</text>
+      </g>
+    )}
+
     {thumbnail.visual === "smoke-derate" && (
       <g class="smoke-derate-visual">
         <text x="18" y="22" class="visual-title">τ = 2 · SCATTERED, NOT BLOCKED</text>
@@ -264,6 +285,8 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   .bar-frame { fill: none; stroke: var(--rule-strong); }
   .sun-bar { fill: var(--accent); }
   .wstar-bar { fill: var(--chart-usable); }
+  .fast-bar { fill: var(--chart-usable); }
+  .slow-bar { fill: var(--status-serious); }
   .thumbnail-meta { position: absolute; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-between; gap: 10px; padding: 6px 8px; color: var(--ink); background: color-mix(in srgb, var(--surface) 90%, transparent); border-top: 1px solid var(--rule); font: 9px/1.2 var(--mono); letter-spacing: .04em; text-transform: uppercase; }
   .thumbnail-meta span:last-child { color: var(--doc-accent); font-weight: 700; }
   @media (prefers-reduced-motion: reduce) {

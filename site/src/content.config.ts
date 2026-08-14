@@ -16,6 +16,7 @@ const logbookThumbnailKinds = [
   "terrain-shear",
   "terrain-smoothing",
   "smoke-derate",
+  "wire-report",
 ] as const;
 
 const logbookSchema = z
