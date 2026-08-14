@@ -4,7 +4,9 @@ const port = 4329;
 
 export default defineConfig({
   testDir: "./test",
-  fullyParallel: false,
+  // Every test owns its page and navigates fresh; nothing shares state
+  // through a file, so file-order serialization buys nothing.
+  fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   reporter: process.env.CI ? "github" : "list",

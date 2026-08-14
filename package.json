@@ -11,6 +11,9 @@
   },
   "type": "module",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
+    "gates:static": "pnpm run lint && pnpm run fmt:check",
+    "gates": "node internal/gates.mjs",
     "build": "pnpm --filter '!meteo-site' -r build && vp pack",
     "test": "vp test",
     "test:all": "pnpm run test && pnpm -r test",
