@@ -1,7 +1,21 @@
 #!/bin/sh
-# The full local gate battery gates every push — a push deploys the site,
-# and there is no CI behind it to catch what this misses. In an emergency
-# `git push --no-verify` skips it; the battery still runs before every
-# publish (Release boundaries in CONTRIBUTING.md).
+# A push deploys the site with no CI behind it, so the pushed tree must be
+# proven green. If pre-commit already proved exactly this tree, skip the
+# rerun; anything else — a --no-verify commit, an amend, a merge — misses
+# the marker and pays the battery here. `git push --no-verify` remains the
+# emergency exit; the battery still runs before every publish
+# (Release boundaries in CONTRIBUTING.md).
 cd "$(git rev-parse --show-toplevel)" || exit 1
-exec pnpm run gates
+marker="$(git rev-parse --git-dir)/meteo-gates-green"
+tree="$(git rev-parse HEAD^{tree})"
+if [ -f "$marker" ] && [ "$(cat "$marker")" = "$tree" ]; then
+  echo "gates: HEAD tree already proven green by pre-commit; skipping"
+  exit 0
+fi
+# The battery proves the disk; record the pushed tree as green only when
+# the disk IS that tree.
+pnpm run gates || exit 1
+if git diff --quiet HEAD; then
+  echo "$tree" > "$marker"
+fi
+exit 0
