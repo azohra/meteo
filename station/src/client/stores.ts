@@ -2,6 +2,7 @@ import { stationCurrentSchema, stationFeedSchema } from "../contract.js";
 import type { Station, StationCurrent, StationFeed } from "../contract.js";
 import { currentEndpoint, feedEndpoint } from "../endpoints.js";
 import { foldCurrent } from "../merge-current.js";
+import { createStationLiveStore, liveSnapshotToCurrent, type StationLiveSnapshot } from "./live.js";
 import { createJsonPoller } from "./poll.js";
 import type { JsonPoller, ParseOutcome, PollError } from "./poll.js";
 
@@ -91,6 +92,62 @@ export type StationStore = {
   refresh(): void;
 };
 
+type CurrentLegSnapshot = {
+  data: StationCurrent | null;
+  error: PollError | null;
+  receivedAtMs: number | null;
+};
+
+type CurrentLeg = {
+  getSnapshot(): CurrentLegSnapshot;
+  subscribe(listener: () => void): () => void;
+  start(): void;
+  stop(): void;
+  refresh(): void;
+};
+
+/* The live stream folds into the same seam the current poller uses: its
+ * snapshot is shaped into a StationCurrent, with the rolling sample window
+ * standing in for the init frame's ring. */
+function liveCurrentLeg(
+  base: string,
+  stationId: string,
+  fetchInit: FetchInitOption | undefined,
+): CurrentLeg {
+  const liveStore = createStationLiveStore(base, stationId, {
+    ...(fetchInit != null ? { fetchInit } : {}),
+  });
+  let lastLive: StationLiveSnapshot | null = null;
+  let mapped: CurrentLegSnapshot = { data: null, error: null, receivedAtMs: null };
+
+  const toCurrent = (live: StationLiveSnapshot): CurrentLegSnapshot => {
+    const data = liveSnapshotToCurrent(live);
+    return {
+      data,
+      error: live.error,
+      receivedAtMs: data == null ? null : live.receivedAtMs,
+    };
+  };
+
+  return {
+    getSnapshot: () => {
+      const live = liveStore.getSnapshot();
+      if (live !== lastLive) {
+        lastLive = live;
+        mapped = toCurrent(live);
+      }
+      return mapped;
+    },
+    subscribe: (listener) => liveStore.subscribe(listener),
+    start: () => liveStore.start(),
+    stop: () => liveStore.stop(),
+    refresh: () => {
+      liveStore.stop();
+      liveStore.start();
+    },
+  };
+}
+
 export function createStationStore(
   base: string,
   stationId: string,
@@ -99,6 +156,9 @@ export function createStationStore(
     currentPollSeconds?: number;
     fetchInit?: FetchInitOption;
     initialData?: { feed: StationFeed; receivedAtMs: number };
+    /* Replace the current-poll leg with the /live stream; the feed poll and
+     * the fold are unchanged. */
+    live?: boolean;
   } = {},
 ): StationStore {
   const { pollSeconds, currentPollSeconds, fetchInit, initialData } = options;
@@ -107,19 +167,21 @@ export function createStationStore(
     ...(fetchInit != null ? { fetchInit } : {}),
     ...(initialData != null ? { initial: initialData } : {}),
   });
-  const currentStore = createStationCurrentStore(base, stationId, {
-    ...(currentPollSeconds != null ? { pollSeconds: currentPollSeconds } : {}),
-    ...(fetchInit != null ? { fetchInit } : {}),
-  });
+  const currentLeg: CurrentLeg = options.live
+    ? liveCurrentLeg(base, stationId, fetchInit)
+    : createStationCurrentStore(base, stationId, {
+        ...(currentPollSeconds != null ? { pollSeconds: currentPollSeconds } : {}),
+        ...(fetchInit != null ? { fetchInit } : {}),
+      });
 
   let cached: StationSnapshot | null = null;
   let lastFeed: ReturnType<typeof feedStore.getSnapshot> | null = null;
-  let lastCurrent: ReturnType<typeof currentStore.getSnapshot> | null = null;
+  let lastCurrent: CurrentLegSnapshot | null = null;
 
   return {
     getSnapshot: () => {
       const feedSnapshot = feedStore.getSnapshot();
-      const currentSnapshot = currentStore.getSnapshot();
+      const currentSnapshot = currentLeg.getSnapshot();
       if (cached == null || feedSnapshot !== lastFeed || currentSnapshot !== lastCurrent) {
         lastFeed = feedSnapshot;
         lastCurrent = currentSnapshot;
@@ -140,7 +202,7 @@ export function createStationStore(
     },
     subscribe: (listener) => {
       const unsubscribeFeed = feedStore.subscribe(listener);
-      const unsubscribeCurrent = currentStore.subscribe(listener);
+      const unsubscribeCurrent = currentLeg.subscribe(listener);
       return () => {
         unsubscribeFeed();
         unsubscribeCurrent();
@@ -148,15 +210,15 @@ export function createStationStore(
     },
     start: () => {
       feedStore.start();
-      currentStore.start();
+      currentLeg.start();
     },
     stop: () => {
       feedStore.stop();
-      currentStore.stop();
+      currentLeg.stop();
     },
     refresh: () => {
       feedStore.refresh();
-      currentStore.refresh();
+      currentLeg.refresh();
     },
   };
 }

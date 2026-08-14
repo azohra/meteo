@@ -19,7 +19,10 @@ status union:
 
 - `status: "ok"` — a `reading` (windowed average, gust/lull, direction,
   temperature, optional extended `conditions`) plus `history` when the
-  station keeps one.
+  station keeps one. Two nullish blocks ride this arm where the source
+  serves them: `telemetry` (device health — today `batteryVoltage`, volts)
+  and `samples` (`{ intervalSeconds, points }` of instantaneous
+  `LiveSample`s).
 - `status: "unavailable"` — a machine `reason` code
   (`upstream_error`, `contract_break`, `timeout`, `not_configured`,
   `rate_limited`); `reading` and `history` are null. Never prose, never
@@ -29,8 +32,20 @@ status union:
 reading only, history null. It reuses the station shape so clients need one
 decoder.
 
+`StationLiveFrame` is the unit of the `/live` stream — one JSON document per
+SSE data event, discriminated on `type`:
+
+| Frame | Carries | Cadence |
+|---|---|---|
+| `init` | `{ schemaVersion, servedAt, station }` — a full ok station with its sample ring | once per connection |
+| `samples` | `{ stationId, samples }` — the newest batch of instantaneous samples | as the source batches them |
+| `reading` | `{ stationId, servedAt, reading, telemetry }` — a fresh reading | as the source digests |
+| `ping` | `{ servedAt }` — keepalive; feeds the client's idle watchdog | ~20 s |
+| `unavailable` | `{ stationId, reason }` — terminal; the stream closes after it | on failure |
+
 Parse helpers ship with the contract: `parseStationFeed(Json)` /
-`parseStationCurrent(Json)` return the typed document or null — never throw.
+`parseStationCurrent(Json)` / `parseStationLiveFrame(Json)` return the typed
+document or null — never throw.
 
 ## Semantics
 
@@ -49,6 +64,14 @@ Parse helpers ship with the contract: `parseStationFeed(Json)` /
   `history.points` carry no points; `periodMinutes` is on the wire because
   wind run, vane thinning, and dropout detection are all functions of it — a
   client cannot treat 1-minute records and 5-minute logger records alike.
+- **A `LiveSample` is an instant, not a mean.** `HistoryPoint.windAvgMps` is
+  contractually a period mean; `LiveSample.windMps` is a single anemometer
+  sample. The shapes are separate so neither can pose as the other. The calm
+  and dropout rules apply to both.
+- **Telemetry is device health, not weather.** `batteryVoltage` sits in its
+  own block beside the reading, gated by the `battery` capability, and never
+  inside `conditions` — air data stays air data. Like every sensor field, a
+  declared battery that reports nothing is null, not absent structure.
 - **No prose on the wire.** Failures carry a reason code; degrees, not
   compass words. Display language, units, and colours are the client's.
 - **Units are SI: speeds are m/s**, converted for display via
@@ -81,19 +104,32 @@ Normative, not advisory:
 
 ## The HTTP protocol
 
-A mounted handler serves two routes (suffix-matched by default; exact-matched
-under `basePath`):
+A mounted handler serves three routes (suffix-matched by default;
+exact-matched under `basePath`):
 
 | Route | Document | Notes |
 |---|---|---|
 | `GET …/feed` | `StationFeed` | Every station + history. `?hours=` narrows the window — it must be in `(0, maxHistoryHours]` (default 6), out of range is a 400; valid values snap to quarter-hour steps. |
 | `GET …/current?station=<id>` | `StationCurrent` | One station, reading only — the light poll. |
+| `GET …/live?station=<id>` | `StationLiveFrame` stream | SSE (`text/event-stream`), one frame per data event. `?hours=` is ignored — live carries no history. |
 
-Responses carry `Cache-Control` derived from upstream cache TTLs and
-a weak `ETag` computed over station content excluding `servedAt`, so
+Feed and current responses carry `Cache-Control` derived from upstream cache
+TTLs and a weak `ETag` computed over station content excluding `servedAt`, so
 unchanged upstreams revalidate to 304. One broken station degrades to a
 reason code; the feed survives — a handler 500s only when it cannot produce a
 document at all.
+
+The live route never caches (`Cache-Control: no-cache, no-store`, no ETag).
+Errors before the stream opens are JSON with a status: 400 with no
+`?station=`, 404 for an unknown station or a station whose vendor has no
+live arm, 502 with `{ error, reason }` when the upstream connect fails.
+After the stream opens, failure is a terminal `unavailable` frame and a
+close; the client reconnects, and the fresh `init` frame is the resume
+story — there are no SSE ids. Each client connection holds one upstream
+connection: the handler does not multiplex, so a host expecting many
+concurrent viewers of one station terminates fan-out in its own
+infrastructure using the exported `openWindnerdLive` + `encodeStationLiveSse`
+seam.
 
 ## Freshness: the servedAt anchor
 

@@ -116,9 +116,34 @@ export type UpstreamTextRequest = {
 const inFlightLoads = new WeakMap<FeedCache, Map<string, Promise<string>>>();
 
 /**
- * The one road to an upstream: cache lookup, bounded fetch under a timeout,
- * cache fill. Concurrent misses on the same (cache instance, cacheKey)
- * coalesce onto a single in-flight load.
+ * Coalesces concurrent misses on the same (cache instance, key) onto a single
+ * in-flight load. The load owns its own cache fill; this only deduplicates.
+ */
+export function coalesceUpstreamLoad(
+  cache: FeedCache,
+  key: string,
+  load: () => Promise<string>,
+): Promise<string> {
+  let pending = inFlightLoads.get(cache);
+  if (!pending) {
+    pending = new Map();
+    inFlightLoads.set(cache, pending);
+  }
+  const inFlight = pending.get(key);
+  if (inFlight) return inFlight;
+
+  const settled = pending;
+  const loading = load().finally(() => {
+    settled.delete(key);
+  });
+  pending.set(key, loading);
+  return loading;
+}
+
+/**
+ * The one road to an upstream document: cache lookup, bounded fetch under a
+ * timeout, cache fill. Concurrent misses on the same (cache instance,
+ * cacheKey) coalesce onto a single in-flight load.
  */
 export async function fetchUpstreamText(
   environment: ResolvedEnvironment,
@@ -126,21 +151,9 @@ export async function fetchUpstreamText(
 ): Promise<string> {
   const cached = await environment.cache.get(request.cacheKey);
   if (cached != null) return cached;
-
-  let pending = inFlightLoads.get(environment.cache);
-  if (!pending) {
-    pending = new Map();
-    inFlightLoads.set(environment.cache, pending);
-  }
-  const inFlight = pending.get(request.cacheKey);
-  if (inFlight) return inFlight;
-
-  const settled = pending;
-  const load = loadUpstreamText(environment, request).finally(() => {
-    settled.delete(request.cacheKey);
-  });
-  pending.set(request.cacheKey, load);
-  return load;
+  return coalesceUpstreamLoad(environment.cache, request.cacheKey, () =>
+    loadUpstreamText(environment, request),
+  );
 }
 
 async function loadUpstreamText(
@@ -186,6 +199,75 @@ async function loadUpstreamText(
   );
   await environment.cache.put(request.cacheKey, text, request.cacheTtlSeconds);
   return text;
+}
+
+export type UpstreamStreamRequest = {
+  url: string | URL;
+  subject: string;
+  accept?: string;
+  headers?: Record<string, string>;
+  /* Deadline for headers only; once the response arrives the body is governed
+   * solely by the caller's signal — a healthy stream is open for minutes. */
+  connectTimeoutMs?: number;
+  signal?: AbortSignal;
+};
+
+export const UPSTREAM_CONNECT_TIMEOUT_MS = 10_000;
+
+/**
+ * The road to a long-lived upstream body. No cache and no byte cap — the
+ * consumer bounds its own buffering — and never coalesced: every caller owns
+ * its connection and tears it down through its signal.
+ */
+export async function fetchUpstreamStream(
+  environment: ResolvedEnvironment,
+  request: UpstreamStreamRequest,
+): Promise<Response> {
+  const connect = new AbortController();
+  const connectTimer = setTimeout(
+    () => connect.abort(),
+    request.connectTimeoutMs ?? UPSTREAM_CONNECT_TIMEOUT_MS,
+  );
+  const signal = request.signal
+    ? AbortSignal.any([request.signal, connect.signal])
+    : connect.signal;
+
+  let response: Response;
+  try {
+    response = await environment.fetch(request.url, {
+      headers: {
+        Accept: request.accept ?? "text/event-stream",
+        "User-Agent": environment.userAgent,
+        ...request.headers,
+      },
+      signal,
+    });
+  } catch (error) {
+    if (request.signal?.aborted) throw error; /* deliberate caller abort, not a failure */
+    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      throw new UpstreamError(`${request.subject} timed out`, "timeout");
+    }
+    throw new UpstreamError(
+      `${request.subject} could not be reached: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  } finally {
+    clearTimeout(connectTimer);
+  }
+  if (!response.ok) {
+    try {
+      await response.body?.cancel();
+    } catch {
+      /* best-effort */
+    }
+    if (response.status === 429) {
+      throw new UpstreamError(`${request.subject} is rate limiting requests`, "rate_limited");
+    }
+    throw new UpstreamError(`${request.subject} returned ${response.status}`);
+  }
+  if (!response.body) {
+    throw new UpstreamError(`${request.subject} returned no body`);
+  }
+  return response;
 }
 
 export async function boundedResponseText(

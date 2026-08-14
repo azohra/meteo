@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { parseStationCurrent, parseStationFeed } from "../src/index.js";
+import { parseStationCurrent, parseStationFeed, parseStationLiveFrame } from "../src/index.js";
 import { createStationFeedHandler, type StationConfigInput } from "../src/server/index.js";
 import {
   campbellCurrentPayload,
   campbellHistoryPayload,
+  sseResponse,
   stubEnvironment,
   tempestPayload,
+  windnerdLiveInitPayload,
   windnerdPayload,
   type StubRoute,
 } from "./support.js";
@@ -398,5 +400,94 @@ describe("createStationFeedHandler routing", () => {
       new Request("https://example.test/wind/feed", { method: "OPTIONS" }),
     );
     expect(preflight.status).toBe(405);
+  });
+});
+
+describe("createStationFeedHandler /live", () => {
+  const liveAware: StubRoute = (url) =>
+    url.pathname.includes("/api/live-url/")
+      ? sseResponse({ data: windnerdLiveInitPayload() })
+      : allUpstreamsHealthy(url);
+
+  it("serves the live stream with SSE headers and no caching", async () => {
+    const { handler } = handlerWith(liveAware, { cors: true });
+    const response = await handler(new Request("https://example.test/wind/live?station=bluff"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("text/event-stream; charset=utf-8");
+    expect(response.headers.get("Cache-Control")).toBe("no-cache, no-store");
+    expect(response.headers.get("X-Accel-Buffering")).toBe("no");
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("ETag")).toBeNull();
+
+    const body = await response.text();
+    const frames = body
+      .split("\n\n")
+      .filter((chunk) => chunk.startsWith("data: "))
+      .map((chunk) => parseStationLiveFrame(JSON.parse(chunk.slice(6))));
+    expect(frames[0]?.type).toBe("init");
+    if (frames[0]?.type !== "init") throw new Error("expected init");
+    expect(frames[0].station.id).toBe("bluff");
+    expect(frames.at(-1)?.type).toBe("unavailable");
+  });
+
+  it("rejects a live request without a station", async () => {
+    const { handler } = handlerWith(liveAware);
+    const response = await handler(new Request("https://example.test/wind/live"));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "missing station parameter" });
+  });
+
+  it("404s an unknown station and a station without a live arm", async () => {
+    const { handler } = handlerWith(liveAware);
+
+    const unknown = await handler(new Request("https://example.test/wind/live?station=nowhere"));
+    expect(unknown.status).toBe(404);
+    expect(await unknown.json()).toEqual({ error: "unknown station" });
+
+    const unsupported = await handler(new Request("https://example.test/wind/live?station=summit"));
+    expect(unsupported.status).toBe(404);
+    expect(await unsupported.json()).toEqual({ error: "station has no live stream" });
+  });
+
+  it("502s a failed connect with the mapped reason in the body", async () => {
+    const { handler } = handlerWith((url) =>
+      url.pathname.includes("/api/live-url/")
+        ? new Response("down", { status: 502 })
+        : allUpstreamsHealthy(url),
+    );
+    const response = await handler(new Request("https://example.test/wind/live?station=bluff"));
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: "live stream unavailable",
+      reason: "upstream_error",
+    });
+  });
+
+  it("answers HEAD with the stream headers and opens no upstream connection", async () => {
+    const { handler, requests } = handlerWith(liveAware);
+    const response = await handler(
+      new Request("https://example.test/wind/live?station=bluff", { method: "HEAD" }),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("text/event-stream; charset=utf-8");
+    expect(await response.text()).toBe("");
+    expect(requests).toHaveLength(0);
+  });
+
+  it("ignores the hours parameter — live carries no history", async () => {
+    const { handler } = handlerWith(liveAware);
+    const response = await handler(
+      new Request("https://example.test/wind/live?station=bluff&hours=9999"),
+    );
+    expect(response.status).toBe(200);
+    await response.body?.cancel();
+  });
+
+  it("routes live under a pinned basePath too", async () => {
+    const { handler } = handlerWith(liveAware, { basePath: "/wind" });
+    const response = await handler(new Request("https://example.test/wind/live?station=bluff"));
+    expect(response.status).toBe(200);
+    await response.body?.cancel();
   });
 });

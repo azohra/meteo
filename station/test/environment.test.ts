@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_USER_AGENT,
+  fetchUpstreamStream,
   fetchUpstreamText,
   memoryCache,
   resolveEnvironment,
@@ -173,6 +174,131 @@ describe("fetchUpstreamText", () => {
       "returned 500",
     );
     expect(cancelled).toBe(true);
+  });
+});
+
+describe("fetchUpstreamStream", () => {
+  const streamRequest = { url: "http://upstream.example/live", subject: "test stream" };
+
+  function openBody(): ReadableStream<Uint8Array> {
+    return new ReadableStream({ start: () => {} });
+  }
+
+  it("sends the protocol identity and an event-stream Accept by default", async () => {
+    let sent: Headers | undefined;
+    const environment = resolveEnvironment({
+      fetch: (async (_input: string | URL | Request, init?: RequestInit) => {
+        sent = new Headers(init?.headers);
+        return new Response(openBody());
+      }) as typeof fetch,
+    });
+    await fetchUpstreamStream(environment, streamRequest);
+    expect(sent?.get("Accept")).toBe("text/event-stream");
+    expect(sent?.get("User-Agent")).toBe(DEFAULT_USER_AGENT);
+  });
+
+  it("aborts a connect that outlives the connect deadline and maps it to timeout", async () => {
+    const environment = resolveEnvironment({
+      fetch: (async (_input: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("aborted", "AbortError")),
+          );
+        })) as typeof fetch,
+    });
+    const error: unknown = await fetchUpstreamStream(environment, {
+      ...streamRequest,
+      connectTimeoutMs: 20,
+    }).catch((thrown: unknown) => thrown);
+    expect(error).toBeInstanceOf(UpstreamError);
+    if (!(error instanceof UpstreamError)) return;
+    expect(error.reason).toBe("timeout");
+  });
+
+  it("clears the connect deadline once headers arrive — the body outlives it", async () => {
+    let sent: AbortSignal | undefined;
+    const environment = resolveEnvironment({
+      fetch: (async (_input: string | URL | Request, init?: RequestInit) => {
+        sent = init?.signal ?? undefined;
+        return new Response(openBody());
+      }) as typeof fetch,
+    });
+    await fetchUpstreamStream(environment, { ...streamRequest, connectTimeoutMs: 10 });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(sent?.aborted).toBe(false);
+  });
+
+  it("keeps the caller's signal wired to the body after connect", async () => {
+    let sent: AbortSignal | undefined;
+    const environment = resolveEnvironment({
+      fetch: (async (_input: string | URL | Request, init?: RequestInit) => {
+        sent = init?.signal ?? undefined;
+        return new Response(openBody());
+      }) as typeof fetch,
+    });
+    const caller = new AbortController();
+    await fetchUpstreamStream(environment, {
+      ...streamRequest,
+      connectTimeoutMs: 10,
+      signal: caller.signal,
+    });
+    caller.abort();
+    expect(sent?.aborted).toBe(true);
+  });
+
+  it("rethrows a deliberate caller abort untranslated", async () => {
+    const caller = new AbortController();
+    const environment = resolveEnvironment({
+      fetch: (async (_input: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("gone", "AbortError")),
+          );
+        })) as typeof fetch,
+    });
+    const pending = fetchUpstreamStream(environment, {
+      ...streamRequest,
+      signal: caller.signal,
+    }).catch((thrown: unknown) => thrown);
+    caller.abort();
+    const error = await pending;
+    expect(error).not.toBeInstanceOf(UpstreamError);
+    expect(error).toBeInstanceOf(DOMException);
+  });
+
+  it("maps HTTP 429 to rate_limited and cancels the error body", async () => {
+    let cancelled = false;
+    const body = new ReadableStream({
+      cancel() {
+        cancelled = true;
+      },
+    });
+    const environment = resolveEnvironment({
+      fetch: (async () => new Response(body, { status: 429 })) as typeof fetch,
+    });
+    const error: unknown = await fetchUpstreamStream(environment, streamRequest).catch(
+      (thrown: unknown) => thrown,
+    );
+    expect(error).toBeInstanceOf(UpstreamError);
+    if (!(error instanceof UpstreamError)) return;
+    expect(error.reason).toBe("rate_limited");
+    expect(cancelled).toBe(true);
+  });
+
+  it("rejects non-OK statuses with the status in the message", async () => {
+    const environment = resolveEnvironment({
+      fetch: (async () => new Response("down", { status: 502 })) as typeof fetch,
+    });
+    await expect(fetchUpstreamStream(environment, streamRequest)).rejects.toThrow("returned 502");
+  });
+
+  it("rejects an OK response without a body", async () => {
+    const environment = resolveEnvironment({
+      fetch: (async () => new Response(null, { status: 200 })) as typeof fetch,
+    });
+    await expect(fetchUpstreamStream(environment, streamRequest)).rejects.toThrow(
+      "returned no body",
+    );
   });
 });
 

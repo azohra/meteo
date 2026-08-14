@@ -29,6 +29,7 @@ export const windnerdStationConfigSchema = z
     locationId: z.number().int().positive(),
     hasTemperature: z.boolean().default(true),
     hasPressure: z.boolean().default(false),
+    hasBattery: z.boolean().default(false),
   })
   .refine((config) => !config.hasPressure || config.elevationM != null, {
     message:

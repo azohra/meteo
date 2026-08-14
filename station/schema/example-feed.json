@@ -60,7 +60,9 @@
         "gustLull": true,
         "temperature": true,
         "conditions": true,
-        "history": true
+        "history": true,
+        "live": true,
+        "battery": true
       },
       "samplingWindowSeconds": 60,
       "recommendedPollSeconds": 60,
@@ -117,6 +119,29 @@
             "windDirectionDeg": 290,
             "temperatureC": 22.6,
             "seaLevelPressureHpa": 1006.1
+          }
+        ]
+      },
+      "telemetry": {
+        "batteryVoltage": 4.15
+      },
+      "samples": {
+        "intervalSeconds": 3,
+        "points": [
+          {
+            "observedAt": "2026-08-05T22:12:39.000Z",
+            "windMps": 2.2,
+            "windDirectionDeg": 288
+          },
+          {
+            "observedAt": "2026-08-05T22:12:42.000Z",
+            "windMps": 2.7,
+            "windDirectionDeg": 291
+          },
+          {
+            "observedAt": "2026-08-05T22:12:45.000Z",
+            "windMps": 0.3,
+            "windDirectionDeg": null
           }
         ]
       }

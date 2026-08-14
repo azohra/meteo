@@ -1,0 +1,74 @@
+{
+  "$comment": "Example @azohra/meteo.station live frame — the init frame that opens every /live stream. Each SSE data event validates against stationlive.schema.json; readers must ignore unknown keys (this one included).",
+  "type": "init",
+  "schemaVersion": 2,
+  "servedAt": "2026-08-05T22:13:00.000Z",
+  "station": {
+    "id": "bluff",
+    "name": "Bluff Launch",
+    "sourceLabel": "WindNerd",
+    "pageUrl": "https://example.com/stations/bluff-launch",
+    "latitude": 49.7,
+    "longitude": -118.2,
+    "timeZone": "America/Vancouver",
+    "elevationM": 1370,
+    "capabilities": {
+      "gustLull": true,
+      "temperature": true,
+      "conditions": true,
+      "history": true,
+      "live": true,
+      "battery": true
+    },
+    "samplingWindowSeconds": 60,
+    "recommendedPollSeconds": 60,
+    "status": "ok",
+    "reading": {
+      "observedAt": "2026-08-05T22:12:45.000Z",
+      "windAvgMps": 2.5,
+      "windDirectionDeg": 290,
+      "windGustMps": 3.9,
+      "windLullMps": 1.7,
+      "temperatureC": 22.6,
+      "windChillC": null,
+      "conditions": {
+        "dewPointC": null,
+        "lastLightningStrikeAt": null,
+        "lastLightningStrikeDistanceKm": null,
+        "lightningStrikeCountLastHour": null,
+        "precipitationMinutesToday": null,
+        "precipitationRateMmPerHour": null,
+        "precipitationTodayMm": null,
+        "pressureTrend": "steady",
+        "relativeHumidityPercent": null,
+        "seaLevelPressureHpa": 1006.1,
+        "solarRadiationWm2": null,
+        "uvIndex": null
+      }
+    },
+    "history": null,
+    "telemetry": {
+      "batteryVoltage": 4.15
+    },
+    "samples": {
+      "intervalSeconds": 3,
+      "points": [
+        {
+          "observedAt": "2026-08-05T22:12:39.000Z",
+          "windMps": 2.2,
+          "windDirectionDeg": 288
+        },
+        {
+          "observedAt": "2026-08-05T22:12:42.000Z",
+          "windMps": 2.7,
+          "windDirectionDeg": 291
+        },
+        {
+          "observedAt": "2026-08-05T22:12:45.000Z",
+          "windMps": 0.3,
+          "windDirectionDeg": null
+        }
+      ]
+    }
+  }
+}

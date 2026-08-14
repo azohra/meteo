@@ -1,5 +1,5 @@
 import type { ExampleArtifact, SchemaArtifact } from "@azohra/meteo.core";
-import { stationCurrentSchema, stationFeedSchema } from "../contract.js";
+import { stationCurrentSchema, stationFeedSchema, stationLiveFrameSchema } from "../contract.js";
 
 export const schemaArtifacts: readonly SchemaArtifact[] = [
   {
@@ -15,6 +15,13 @@ export const schemaArtifacts: readonly SchemaArtifact[] = [
     schema: stationCurrentSchema,
     description:
       "The single-station light document served at /current. Reuses the station shape with history null so clients need one decoder.",
+  },
+  {
+    fileName: "stationlive.schema.json",
+    title: "StationLiveFrame",
+    schema: stationLiveFrameSchema,
+    description:
+      "One frame per SSE data event on the /live stream. init seeds a full station document; samples and reading update it; unavailable is terminal — the stream closes after it.",
   },
 ];
 
@@ -73,7 +80,14 @@ const exampleFeed = {
       longitude: -118.2,
       timeZone: "America/Vancouver",
       elevationM: 1370,
-      capabilities: { gustLull: true, temperature: true, conditions: true, history: true },
+      capabilities: {
+        gustLull: true,
+        temperature: true,
+        conditions: true,
+        history: true,
+        live: true,
+        battery: true,
+      },
       samplingWindowSeconds: 60,
       recommendedPollSeconds: 60,
       status: "ok",
@@ -132,6 +146,15 @@ const exampleFeed = {
           },
         ],
       },
+      telemetry: { batteryVoltage: 4.15 },
+      samples: {
+        intervalSeconds: 3,
+        points: [
+          { observedAt: "2026-08-05T22:12:39.000Z", windMps: 2.2, windDirectionDeg: 288 },
+          { observedAt: "2026-08-05T22:12:42.000Z", windMps: 2.7, windDirectionDeg: 291 },
+          { observedAt: "2026-08-05T22:12:45.000Z", windMps: 0.3, windDirectionDeg: null },
+        ],
+      },
     },
     {
       id: "narrows",
@@ -165,7 +188,22 @@ const exampleCurrent = {
   },
 };
 
+const exampleLive = {
+  $comment:
+    "Example @azohra/meteo.station live frame — the init frame that opens every " +
+    "/live stream. Each SSE data event validates against stationlive.schema.json; " +
+    "readers must ignore unknown keys (this one included).",
+  type: "init",
+  schemaVersion: 2,
+  servedAt: "2026-08-05T22:13:00.000Z",
+  station: {
+    ...exampleFeed.stations[1],
+    history: null,
+  },
+};
+
 export const exampleArtifacts: readonly ExampleArtifact[] = [
   { fileName: "example-feed.json", document: exampleFeed, schema: stationFeedSchema },
   { fileName: "example-current.json", document: exampleCurrent, schema: stationCurrentSchema },
+  { fileName: "example-live.json", document: exampleLive, schema: stationLiveFrameSchema },
 ];

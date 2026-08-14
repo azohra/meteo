@@ -51,6 +51,64 @@ export function windnerdPayload(overrides: Record<string, unknown> = {}): string
   });
 }
 
+export function windnerdLiveDigestPayload(
+  overrides: Record<string, unknown> = {},
+  recent: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const minute = { wind_avg_2D: 8, wind_avg_1D: 9, wind_min: 6, wind_max: 14, wind_dir: 290 };
+  return {
+    recent: {
+      wind_avg_2D: 8,
+      wind_dir: 290,
+      date_utc: "2026-08-05T22:12:45Z",
+      temperature: 22.6,
+      pressure_hpa: 947.2,
+      voltage: 4.15,
+      ...recent,
+    },
+    last_10mn: { ...minute },
+    last_60mn: { ...minute },
+    last_10mn_by_1mn: [{ ...minute, wind_avg_1D: 7 }, { ...minute }],
+    last_60mn_by_5mn: [{ ...minute }],
+    yesterday_last_10mn: null,
+    yesterday_last_60mn: null,
+    ...overrides,
+  };
+}
+
+export function windnerdLiveInitPayload(overrides: Record<string, unknown> = {}): string {
+  return JSON.stringify({
+    type: "INIT",
+    delay: 60,
+    location: { id: 8675, name: "Bluff Launch", url: "bluff-launch" },
+    samples: [
+      { ts: "2026-08-05T22:12:39.000Z", sp: 8.1, dir: 288 },
+      null,
+      { ts: "2026-08-05T22:12:42.000Z", sp: 9.7, dir: 291 },
+      { ts: "2026-08-05T22:12:45.000Z", sp: 0.3, dir: 290 },
+    ],
+    digest: windnerdLiveDigestPayload(),
+    ...overrides,
+  });
+}
+
+export function sseResponse(...events: Array<{ event?: string; data: string }>): Response {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const entry of events) {
+        const name = entry.event ? `event: ${entry.event}\n` : "";
+        controller.enqueue(encoder.encode(`${name}data: ${entry.data}\n\n`));
+      }
+      controller.close();
+    },
+  });
+  return new Response(body, {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
+  });
+}
+
 export function tempestPayload(
   observation: Record<string, unknown> = {},
   station: Record<string, unknown> = {},

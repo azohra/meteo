@@ -16,8 +16,9 @@ tests); its loops only ever *run* against a live `fetch`.
 Every entry point takes the **mount base** — where
 `createStationFeedHandler` is mounted, e.g. `"/api/wind"` — and builds its
 own route from it, mirroring the handler's pathname-suffix routing.
-`feedEndpoint(base)` and `currentEndpoint(base, stationId)` (exported from
-`@azohra/meteo.station`) are the only two routes.
+`feedEndpoint(base)`, `currentEndpoint(base, stationId)`, and
+`liveEndpoint(base, stationId)` (exported from `@azohra/meteo.station`) are
+the only three routes.
 
 ## The poller
 
@@ -64,11 +65,40 @@ owed to every caller identically:
   unavailable, or absent from the feed) keeps the feed's own clock — never
   credit a dead station with a response it never produced. The feed is the
   backbone: its error outranks the light endpoint's. `refresh()` fans out to
-  both.
+  both. With `live: true` the current-poll leg is replaced by the live
+  store below; the feed poll and the fold are unchanged.
 
 The fold itself is `foldCurrent(feed, feedReceivedAtMs, current,
 currentReceivedAtMs)` on `@azohra/meteo.station`, for callers composing
 their own stores.
+
+## The live store
+
+`createStationLiveStore(base, stationId, { fetchInit?, windowSeconds? })`
+subscribes to the `/live` route and folds its
+[frames](/docs/station/wire-contract/#the-documents) into one snapshot:
+`{ status, station, samples, servedAt, receivedAtMs, error }`. `status` is
+`"connecting" | "open" | "backoff" | "stopped"`; `station` is seeded by the
+`init` frame and refreshed in place by `reading` frames; `samples` is a
+rolling window (default 600 s), oldest first, deduplicated by `observedAt` —
+the overlap a reconnect's `init` replays folds away.
+
+The store owns the transport discipline:
+
+- **Reconnect with backoff** — exponential from 1 s, capped at 30 s, full
+  jitter, reset by a successful `init` frame. A terminal `unavailable`
+  frame, a server close, an unreadable frame (`{ kind: "contract" }`), and a
+  failed request (`{ kind: "network" }`) all land here; the last station
+  stays and ages visibly.
+- **Idle watchdog** — 60 s without a frame (a healthy stream pings every
+  ~20 s) aborts and reconnects, and the deadline covers the connect itself.
+- **Visibility-gated** — a hidden tab disconnects; a visible one reconnects
+  immediately, healed by the fresh `init`.
+
+`liveSnapshotToCurrent(snapshot)` shapes a live snapshot into a
+`StationCurrent` for `foldCurrent`, with the rolling window standing in for
+the init frame's ring — it is how the `live: true` stores and hooks ride the
+existing fold unchanged.
 
 ## Display resolution — shared across bindings
 

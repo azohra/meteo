@@ -143,6 +143,26 @@
                   "type": "null"
                 }
               ]
+            },
+            "telemetry": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/StationTelemetry"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "samples": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/LiveSamples"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "required": [
@@ -304,6 +324,28 @@
         },
         "history": {
           "type": "boolean"
+        },
+        "live": {
+          "description": "The station has a live sample stream; absent or null reads as false.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "battery": {
+          "description": "The station reports battery telemetry; absent or null reads as false.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -650,6 +692,79 @@
         "windLullMps",
         "windDirectionDeg",
         "temperatureC"
+      ]
+    },
+    "StationTelemetry": {
+      "type": "object",
+      "properties": {
+        "batteryVoltage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Station supply volts. null means 'not reported here', never a dead battery."
+        }
+      },
+      "required": [
+        "batteryVoltage"
+      ],
+      "description": "Device telemetry. The station-level battery capability gates whether a client allocates UI structure; a dark sensor keeps its structure and reports null."
+    },
+    "LiveSamples": {
+      "type": "object",
+      "properties": {
+        "intervalSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Seconds between samples."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LiveSample"
+          },
+          "description": "Oldest first. A dropout is an ABSENT sample, never a zeroed one."
+        }
+      },
+      "required": [
+        "intervalSeconds",
+        "points"
+      ]
+    },
+    "LiveSample": {
+      "type": "object",
+      "properties": {
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "windMps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Instantaneous m/s — a single anemometer sample, not a period mean."
+        },
+        "windDirectionDeg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Degrees FROM; null exactly when calm (below 0.5 m/s)."
+        }
+      },
+      "required": [
+        "observedAt",
+        "windMps",
+        "windDirectionDeg"
       ]
     }
   }

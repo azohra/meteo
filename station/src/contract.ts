@@ -47,6 +47,23 @@ export const airConditionsSchema = z
   .meta({ id: "AirConditions" });
 export type AirConditions = z.infer<typeof airConditionsSchema>;
 
+/* Device health, not weather — a sibling of the reading so air data stays air data. */
+export const telemetrySchema = z
+  .object({
+    batteryVoltage: z
+      .number()
+      .finite()
+      .nullable()
+      .describe("Station supply volts. null means 'not reported here', never a dead battery."),
+  })
+  .describe(
+    "Device telemetry. The station-level battery capability gates whether " +
+      "a client allocates UI structure; a dark sensor keeps its structure " +
+      "and reports null.",
+  )
+  .meta({ id: "StationTelemetry" });
+export type StationTelemetry = z.infer<typeof telemetrySchema>;
+
 export const readingSchema = z
   .object({
     observedAt: isoTime,
@@ -104,6 +121,29 @@ export const historySchema = z
   .meta({ id: "History" });
 export type History = z.infer<typeof historySchema>;
 
+export const liveSampleSchema = z
+  .object({
+    observedAt: isoTime,
+    windMps: speedMps.describe(
+      "Instantaneous m/s — a single anemometer sample, not a period mean.",
+    ),
+    windDirectionDeg: windDirectionDeg
+      .nullable()
+      .describe("Degrees FROM; null exactly when calm (below 0.5 m/s)."),
+  })
+  .meta({ id: "LiveSample" });
+export type LiveSample = z.infer<typeof liveSampleSchema>;
+
+export const liveSamplesSchema = z
+  .object({
+    intervalSeconds: z.number().finite().positive().describe("Seconds between samples."),
+    points: z
+      .array(liveSampleSchema)
+      .describe("Oldest first. A dropout is an ABSENT sample, never a zeroed one."),
+  })
+  .meta({ id: "LiveSamples" });
+export type LiveSamples = z.infer<typeof liveSamplesSchema>;
+
 /* New capability keys must arrive .nullish() (null = undeclared = false); a
  * required boolean would brick every already-published document. */
 export const capabilitiesSchema = z
@@ -112,6 +152,14 @@ export const capabilitiesSchema = z
     temperature: z.boolean(),
     conditions: z.boolean(),
     history: z.boolean(),
+    live: z
+      .boolean()
+      .nullish()
+      .describe("The station has a live sample stream; absent or null reads as false."),
+    battery: z
+      .boolean()
+      .nullish()
+      .describe("The station reports battery telemetry; absent or null reads as false."),
   })
   .describe(
     "Declared from what the hardware carries, never inferred from data. " +
@@ -145,6 +193,8 @@ export const stationSchema = z
       status: z.literal("ok"),
       reading: readingSchema,
       history: historySchema.nullable(),
+      telemetry: telemetrySchema.nullish(),
+      samples: liveSamplesSchema.nullish(),
     }),
     z.object({
       ...stationMetaShape,
@@ -176,6 +226,42 @@ export const stationCurrentSchema = z.object({
 });
 export type StationCurrent = z.infer<typeof stationCurrentSchema>;
 
+/* One frame per SSE data event on the /live route. The init frame reuses the
+ * Station shape (history null) so a live client needs one decoder; the
+ * unavailable frame is terminal — the stream closes after it. */
+export const stationLiveFrameSchema = z
+  .discriminatedUnion("type", [
+    z.object({
+      type: z.literal("init"),
+      schemaVersion: z.literal(STATION_SCHEMA_VERSION),
+      servedAt: isoTime,
+      station: stationSchema,
+    }),
+    z.object({
+      type: z.literal("samples"),
+      stationId: z.string().min(1),
+      samples: liveSamplesSchema,
+    }),
+    z.object({
+      type: z.literal("reading"),
+      stationId: z.string().min(1),
+      servedAt: isoTime,
+      reading: readingSchema,
+      telemetry: telemetrySchema.nullable(),
+    }),
+    z.object({
+      type: z.literal("ping"),
+      servedAt: isoTime,
+    }),
+    z.object({
+      type: z.literal("unavailable"),
+      stationId: z.string().min(1),
+      reason: z.enum(UNAVAILABLE_REASONS),
+    }),
+  ])
+  .meta({ id: "StationLiveFrame" });
+export type StationLiveFrame = z.infer<typeof stationLiveFrameSchema>;
+
 export function parseStationFeed(value: unknown): StationFeed | null {
   const result = stationFeedSchema.safeParse(value);
   return result.success ? result.data : null;
@@ -197,6 +283,19 @@ export function parseStationCurrent(value: unknown): StationCurrent | null {
 export function parseStationCurrentJson(text: string): StationCurrent | null {
   try {
     return parseStationCurrent(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+export function parseStationLiveFrame(value: unknown): StationLiveFrame | null {
+  const result = stationLiveFrameSchema.safeParse(value);
+  return result.success ? result.data : null;
+}
+
+export function parseStationLiveFrameJson(text: string): StationLiveFrame | null {
+  try {
+    return parseStationLiveFrame(JSON.parse(text));
   } catch {
     return null;
   }

@@ -75,6 +75,23 @@ describe("parseStationConfig", () => {
     expect(declared.elevationM).toBe(450);
   });
 
+  it("defaults the battery report off — an OnSpot owner declares it", () => {
+    const base = {
+      vendor: "windnerd",
+      id: "dundee",
+      name: "Dundee Launch",
+      stationKey: "dundee",
+      locationId: 240,
+    };
+    const bare = parseStationConfig(base);
+    if (bare.vendor !== "windnerd") throw new Error("wrong vendor");
+    expect(bare.hasBattery).toBe(false);
+
+    const declared = parseStationConfig({ ...base, hasBattery: true });
+    if (declared.vendor !== "windnerd") throw new Error("wrong vendor");
+    expect(declared.hasBattery).toBe(true);
+  });
+
   it("rejects a station key on another host", () => {
     expect(() =>
       parseStationConfig({

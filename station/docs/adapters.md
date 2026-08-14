@@ -124,9 +124,14 @@ measured fields over it and every absent quantity stays null, never zero.
 ## Environment injection
 
 Adapters touch the world only through an injected environment:
-`{ fetch, cache, logger, userAgent, now }`. Upstream requests go through
+`{ fetch, cache, logger, userAgent, now }`. Upstream documents go through
 `fetchUpstreamText`, which enforces a 4-second timeout and a 512 KiB
-response cap, and maps HTTP 429 to `rate_limited`.
+response cap, and maps HTTP 429 to `rate_limited`. Upstream streams go
+through `fetchUpstreamStream`, whose deadline covers only the connect —
+headers must arrive within 10 seconds; the open body answers to the
+caller's `signal` and an idle watchdog, never to a whole-response timeout —
+with the same failure mapping and no cache: a stream is a connection, not a
+document, and every caller owns its own.
 
 - **`cache`** — provide a `FeedCache` backed by KV/Redis when your platform
   runs multiple isolates, so they share one upstream poll instead of each
@@ -161,5 +166,5 @@ upstream cache TTLs — polling faster only reheats a cache. Upstreams that
 are not official APIs are treated as guests: validate everything, degrade to
 `unavailable` on any contract break rather than guessing, and identify
 yourself with a User-Agent that names the project.
-[WindNerd's records endpoint](/docs/station/adapters/windnerd/#endpoint) is
+[WindNerd's endpoints](/docs/station/adapters/windnerd/#endpoints) are
 the shipped example of that stance.

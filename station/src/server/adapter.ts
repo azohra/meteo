@@ -1,9 +1,11 @@
 import {
   unavailableStation,
   type History,
+  type LiveSamples,
   type Reading,
   type Station,
   type StationMeta,
+  type StationTelemetry,
 } from "../contract.js";
 import {
   logUpstreamFailure,
@@ -32,6 +34,8 @@ export type StationAdapterContext<O extends StationAdapterOptions = StationAdapt
 export type StationAdapterResult = {
   readonly reading: Reading;
   readonly history: History | null;
+  readonly telemetry?: StationTelemetry | null;
+  readonly samples?: LiveSamples | null;
   readonly meta?: Partial<StationMeta>;
 };
 
@@ -66,6 +70,8 @@ export function defineStationAdapter<C, O extends StationAdapterOptions = Statio
         status: "ok",
         reading: result.reading,
         history: mode === "current" ? null : result.history,
+        telemetry: result.telemetry ?? null,
+        samples: result.samples ?? null,
       };
     } catch (error) {
       logUpstreamFailure(environment, `${meta.name} live wind unavailable`, error, {

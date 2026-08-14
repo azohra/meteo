@@ -7,3 +7,7 @@ export function feedEndpoint(base: string): string {
 export function currentEndpoint(base: string, stationId: string): string {
   return `${trimBase(base)}/current?station=${encodeURIComponent(stationId)}`;
 }
+
+export function liveEndpoint(base: string, stationId: string): string {
+  return `${trimBase(base)}/live?station=${encodeURIComponent(stationId)}`;
+}

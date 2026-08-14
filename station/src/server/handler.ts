@@ -1,15 +1,22 @@
-import type { StationCurrent, StationFeed } from "../contract.js";
+import type { StationCurrent, StationFeed, StationLiveFrame } from "../contract.js";
 import {
   DEFAULT_HISTORY_HOURS,
+  StationLiveUnsupportedError,
   UnknownStationError,
   assembleStations,
   loadStationCurrent,
   loadStationFeed,
+  openStationLive,
   type StationsInput,
 } from "./feed.js";
-import { resolveEnvironment, type ServerEnvironment } from "./environment.js";
+import {
+  resolveEnvironment,
+  unavailableReasonForError,
+  type ServerEnvironment,
+} from "./environment.js";
+import { encodeStationLiveSse, STATION_LIVE_SSE_HEADERS } from "./live.js";
 
-export type StationFeedHandlerRoute = "feed" | "current";
+export type StationFeedHandlerRoute = "feed" | "current" | "live";
 
 const ALLOWED_METHODS = "GET, HEAD, OPTIONS";
 
@@ -96,13 +103,49 @@ export function createStationFeedHandler(options: StationFeedHandlerOptions): St
           ? "feed"
           : pathname === `${basePath}/current`
             ? "current"
-            : null
+            : pathname === `${basePath}/live`
+              ? "live"
+              : null
         : pathname.endsWith("/feed")
           ? "feed"
           : pathname.endsWith("/current")
             ? "current"
-            : null;
+            : pathname.endsWith("/live")
+              ? "live"
+              : null;
     if (!route) return respond({ error: "not found" }, 404);
+
+    /* Live carries no history, so ?hours= does not apply and is ignored. */
+    if (route === "live") {
+      const stationId = url.searchParams.get("station");
+      if (!stationId) return respond({ error: "missing station parameter" }, 400);
+      const liveHeaders = { ...baseHeaders(), ...STATION_LIVE_SSE_HEADERS };
+      /* HEAD answers with the stream's headers and opens no upstream. */
+      if (isHead) return new Response(null, { status: 200, headers: liveHeaders });
+      let frames: ReadableStream<StationLiveFrame>;
+      try {
+        frames = await openStationLive({
+          stations: options.stations,
+          stationId,
+          environment: options.environment,
+          signal: request.signal,
+          request,
+        });
+      } catch (error) {
+        if (error instanceof UnknownStationError) {
+          return respond({ error: "unknown station" }, 404);
+        }
+        if (error instanceof StationLiveUnsupportedError) {
+          /* Absence is config, not weather — permanent, so 404 over 503. */
+          return respond({ error: "station has no live stream" }, 404);
+        }
+        return respond(
+          { error: "live stream unavailable", reason: unavailableReasonForError(error) },
+          502,
+        );
+      }
+      return new Response(encodeStationLiveSse(frames), { status: 200, headers: liveHeaders });
+    }
 
     const hours = parseHoursParam(url, maxHistoryHours);
     if (hours == null) {

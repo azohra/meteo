@@ -2,10 +2,19 @@ import { describe, expect, it } from "vitest";
 import { historyGaps } from "../src/index.js";
 import {
   loadWindnerdStation,
+  parseWindnerdLiveInit,
   parseWindnerdRecords,
+  windnerdLiveReading,
   windnerdStationConfigSchema,
 } from "../src/server/index.js";
-import { stubEnvironment, timeoutError, windnerdPayload } from "./support.js";
+import {
+  sseResponse,
+  stubEnvironment,
+  timeoutError,
+  windnerdLiveDigestPayload,
+  windnerdLiveInitPayload,
+  windnerdPayload,
+} from "./support.js";
 
 const config = windnerdStationConfigSchema.parse({
   vendor: "windnerd",
@@ -35,9 +44,9 @@ describe("parseWindnerdRecords", () => {
       "2026-08-05T22:11:45.000Z",
       "2026-08-05T22:12:45.000Z",
     ]);
-    expect(records.averageSpeedKmh).toEqual([6, 12, 9]);
-    expect(records.gustSpeedKmh).toEqual([8, 21, 14]);
-    expect(records.lullSpeedKmh).toEqual([4, 7, 6]);
+    expect(records.averageSpeedMps).toEqual([6, 12, 9]);
+    expect(records.gustSpeedMps).toEqual([8, 21, 14]);
+    expect(records.lullSpeedMps).toEqual([4, 7, 6]);
     expect(records.windDirectionDeg).toEqual([300, 310, 290]);
   });
 
@@ -55,7 +64,7 @@ describe("parseWindnerdRecords", () => {
     );
   });
 
-  it("rejects a direction outside the compass and a speed outside 0-500", () => {
+  it("rejects a direction outside the compass and a speed outside 0-140", () => {
     expect(() =>
       parseWindnerdRecords(windnerdPayload({ wind_dir: [300, 400, 290] }), 8675),
     ).toThrow("WindNerd location 8675 returned an invalid wind_dir");
@@ -146,10 +155,10 @@ describe("loadWindnerdStation", () => {
     if (station.status !== "ok") return;
     expect(station.reading).toEqual({
       observedAt: "2026-08-05T22:12:45.000Z",
-      windAvgMps: 9 / 3.6,
+      windAvgMps: 9,
       windDirectionDeg: 290,
-      windGustMps: 14 / 3.6,
-      windLullMps: 6 / 3.6,
+      windGustMps: 14,
+      windLullMps: 6,
       temperatureC: 22.6,
       windChillC: null,
       conditions: null,
@@ -162,6 +171,8 @@ describe("loadWindnerdStation", () => {
       temperature: true,
       conditions: false,
       history: true,
+      live: true,
+      battery: false,
     });
     expect(station.pageUrl).toBe("https://windnerd.net/en/bluff-launch");
     expect(station.elevationM).toBe(1370);
@@ -200,7 +211,7 @@ describe("loadWindnerdStation", () => {
 
   it("gives calm no direction, in the reading and in history", async () => {
     const { environment } = stubEnvironment(() =>
-      windnerdPayload({ wind_avg_1D: [6, 1.5, 0], wind_min: [4, 0, 0], wind_max: [8, 2, 1] }),
+      windnerdPayload({ wind_avg_1D: [6, 0.4, 0], wind_min: [4, 0, 0], wind_max: [8, 2, 1] }),
     );
     const station = await loadWindnerdStation(config, { environment });
 
@@ -212,7 +223,7 @@ describe("loadWindnerdStation", () => {
       null,
       null,
     ]);
-    expect(station.history?.points[1]?.windAvgMps).toBe(1.5 / 3.6);
+    expect(station.history?.points[1]?.windAvgMps).toBe(0.4);
   });
 
   it("normalizes a vendor 360 onto the wire's [0,360)", async () => {
@@ -489,5 +500,259 @@ describe("loadWindnerdStation", () => {
     await loadWindnerdStation(config, { environment, recordPeriodMinutes: 180 });
     await loadWindnerdStation(config, { environment, recordPeriodMinutes: 180 });
     expect(requests).toHaveLength(2);
+  });
+});
+
+const batteryConfig = windnerdStationConfigSchema.parse({
+  vendor: "windnerd",
+  id: "dundee",
+  name: "Dundee Launch",
+  stationKey: "dundee",
+  locationId: 240,
+  elevationM: 1485,
+  hasBattery: true,
+});
+
+describe("parseWindnerdLiveInit", () => {
+  it("reads the digest and the sample ring from the init frame", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    expect(init.digest.observedAt).toBe("2026-08-05T22:12:45.000Z");
+    expect(init.digest.windAvgMps).toBe(9);
+    expect(init.digest.gustMps).toBe(14);
+    expect(init.digest.lullMps).toBe(6);
+    expect(init.digest.windDirectionDeg).toBe(290);
+    expect(init.digest.temperatureC).toBe(22.6);
+    expect(init.digest.stationPressureHpa).toBe(947.2);
+    expect(init.digest.batteryVoltage).toBe(4.15);
+    expect(init.samples.map((sample) => sample.speedMps)).toEqual([8.1, 9.7, 0.3]);
+  });
+
+  it("drops the ring's empty slots and sorts samples oldest first", () => {
+    const init = parseWindnerdLiveInit(
+      windnerdLiveInitPayload({
+        samples: [
+          { ts: "2026-08-05T22:12:45.000Z", sp: 3, dir: 10 },
+          null,
+          { ts: "2026-08-05T22:12:39.000Z", sp: 1, dir: 20 },
+        ],
+      }),
+      8675,
+    );
+    expect(init.samples.map((sample) => sample.observedAt)).toEqual([
+      "2026-08-05T22:12:39.000Z",
+      "2026-08-05T22:12:45.000Z",
+    ]);
+  });
+
+  it("takes the freshest complete minute's scalar average over the vector one", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    expect(init.digest.windAvgMps).toBe(9);
+  });
+
+  it("falls back to the recent vector average when the minute block is absent", () => {
+    const init = parseWindnerdLiveInit(
+      windnerdLiveInitPayload({ digest: windnerdLiveDigestPayload({ last_10mn_by_1mn: [] }) }),
+      8675,
+    );
+    expect(init.digest.windAvgMps).toBe(8);
+    expect(init.digest.gustMps).toBeNull();
+    expect(init.digest.lullMps).toBeNull();
+  });
+
+  it("falls through a null scalar average to the vector one within the minute", () => {
+    const minute = {
+      wind_avg_2D: 7.5,
+      wind_avg_1D: null,
+      wind_min: 6,
+      wind_max: 14,
+      wind_dir: 290,
+    };
+    const init = parseWindnerdLiveInit(
+      windnerdLiveInitPayload({
+        digest: windnerdLiveDigestPayload({ last_10mn_by_1mn: [minute] }),
+      }),
+      8675,
+    );
+    expect(init.digest.windAvgMps).toBe(7.5);
+  });
+
+  it("rejects a frame that is not an init frame", () => {
+    expect(() => parseWindnerdLiveInit(JSON.stringify({ type: "LAST_DIGEST" }), 8675)).toThrow(
+      "WindNerd location 8675 returned no live init frame",
+    );
+    expect(() => parseWindnerdLiveInit("not json", 8675)).toThrow(
+      "WindNerd location 8675 returned an unparseable live frame",
+    );
+  });
+
+  it("rejects implausible sample and digest values in vendor units", () => {
+    expect(() =>
+      parseWindnerdLiveInit(
+        windnerdLiveInitPayload({ samples: [{ ts: "2026-08-05T22:12:45Z", sp: 600, dir: 90 }] }),
+        8675,
+      ),
+    ).toThrow("WindNerd location 8675 returned an invalid live sample sp");
+    expect(() =>
+      parseWindnerdLiveInit(
+        windnerdLiveInitPayload({ samples: [{ ts: "2026-08-05T22:12:45Z", sp: 6, dir: 400 }] }),
+        8675,
+      ),
+    ).toThrow("WindNerd location 8675 returned an invalid live sample dir");
+    expect(() =>
+      parseWindnerdLiveInit(
+        windnerdLiveInitPayload({
+          digest: windnerdLiveDigestPayload({}, { pressure_hpa: 1200 }),
+        }),
+        8675,
+      ),
+    ).toThrow("WindNerd location 8675 returned an invalid live pressure_hpa");
+    expect(() =>
+      parseWindnerdLiveInit(
+        windnerdLiveInitPayload({ digest: windnerdLiveDigestPayload({}, { voltage: -3 }) }),
+        8675,
+      ),
+    ).toThrow("WindNerd location 8675 returned an invalid live voltage");
+  });
+});
+
+describe("windnerdLiveReading", () => {
+  it("keeps the vendor's m/s and applies the calm rule", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    const { reading } = windnerdLiveReading(init.digest, config);
+    expect(reading.windAvgMps).toBe(9);
+    expect(reading.windGustMps).toBe(14);
+    expect(reading.windLullMps).toBe(6);
+    expect(reading.windDirectionDeg).toBe(290);
+    expect(reading.temperatureC).toBe(22.6);
+    expect(reading.conditions).toBeNull();
+  });
+
+  it("carries no direction on a calm digest", () => {
+    const minute = { wind_avg_2D: 0.45, wind_avg_1D: 0.4, wind_min: 0, wind_max: 2, wind_dir: 95 };
+    const init = parseWindnerdLiveInit(
+      windnerdLiveInitPayload({
+        digest: windnerdLiveDigestPayload({ last_10mn_by_1mn: [minute] }),
+      }),
+      8675,
+    );
+    const { reading } = windnerdLiveReading(init.digest, config);
+    expect(reading.windDirectionDeg).toBeNull();
+  });
+
+  it("reduces station pressure to sea level only when the board is declared", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    const bare = windnerdLiveReading(init.digest, config);
+    expect(bare.reading.conditions).toBeNull();
+
+    const declared = windnerdLiveReading(init.digest, {
+      hasTemperature: true,
+      hasPressure: true,
+      hasBattery: false,
+      elevationM: 450,
+    });
+    expect(declared.reading.conditions).not.toBeNull();
+    expect(declared.reading.conditions?.seaLevelPressureHpa).toBeGreaterThan(947.2);
+    expect(declared.reading.conditions?.pressureTrend).toBeNull();
+  });
+
+  it("gates the thermometer by config, not by the payload", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    const { reading } = windnerdLiveReading(init.digest, { ...config, hasTemperature: false });
+    expect(reading.temperatureC).toBeNull();
+  });
+
+  it("reports telemetry only for a declared battery, and keeps a dark one null", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    expect(windnerdLiveReading(init.digest, config).telemetry).toBeNull();
+    expect(windnerdLiveReading(init.digest, batteryConfig).telemetry).toEqual({
+      batteryVoltage: 4.15,
+    });
+
+    const dark = parseWindnerdLiveInit(
+      windnerdLiveInitPayload({ digest: windnerdLiveDigestPayload({}, { voltage: null }) }),
+      8675,
+    );
+    expect(windnerdLiveReading(dark.digest, batteryConfig).telemetry).toEqual({
+      batteryVoltage: null,
+    });
+  });
+});
+
+describe("loadWindnerdStation current mode", () => {
+  const liveRoute = (url: URL) =>
+    url.pathname.includes("/api/live-url/")
+      ? sseResponse({ data: windnerdLiveInitPayload() })
+      : windnerdPayload();
+
+  it("serves current from the live init frame, not the records API", async () => {
+    const { environment, requests } = stubEnvironment(liveRoute);
+    const station = await loadWindnerdStation(batteryConfig, { environment, mode: "current" });
+    if (station.status !== "ok") throw new Error("expected ok");
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.pathname).toBe("/api/live-url/dundee");
+    expect(station.history).toBeNull();
+    expect(station.reading.windAvgMps).toBe(9);
+    expect(station.telemetry).toEqual({ batteryVoltage: 4.15 });
+    expect(station.samples?.intervalSeconds).toBe(3);
+    expect(station.samples?.points).toHaveLength(3);
+    expect(station.samples?.points[2]?.windDirectionDeg).toBeNull();
+    expect(station.recommendedPollSeconds).toBe(15);
+  });
+
+  it("serves a second current load from the init cache", async () => {
+    const { environment, requests } = stubEnvironment(liveRoute);
+    await loadWindnerdStation(config, { environment, mode: "current" });
+    await loadWindnerdStation(config, { environment, mode: "current" });
+    expect(requests).toHaveLength(1);
+  });
+
+  it("falls back to the records current when the live stream is down", async () => {
+    const { environment, requests, logs } = stubEnvironment((url) =>
+      url.pathname.includes("/api/live-url/")
+        ? new Response("down", { status: 502 })
+        : windnerdPayload(),
+    );
+    const station = await loadWindnerdStation(config, { environment, mode: "current" });
+    if (station.status !== "ok") throw new Error("expected ok");
+
+    expect(requests.map((url) => url.pathname)).toEqual([
+      "/api/live-url/bluff-launch",
+      "/api/records",
+    ]);
+    expect(station.reading.windAvgMps).toBe(9);
+    expect(station.samples).toBeNull();
+    expect(station.telemetry).toBeNull();
+    expect(station.recommendedPollSeconds).toBe(60);
+    expect(logs.some((event) => event.message.includes("live current unavailable"))).toBe(true);
+  });
+
+  it("falls back when the stream ends before its init frame", async () => {
+    const { environment } = stubEnvironment((url) =>
+      url.pathname.includes("/api/live-url/")
+        ? sseResponse({ event: "ping", data: "{}" })
+        : windnerdPayload(),
+    );
+    const station = await loadWindnerdStation(config, { environment, mode: "current" });
+    expect(station.status).toBe("ok");
+  });
+
+  it("degrades to unavailable only when both roads are closed", async () => {
+    const { environment } = stubEnvironment(() => new Response("down", { status: 502 }));
+    const station = await loadWindnerdStation(config, { environment, mode: "current" });
+    if (station.status !== "unavailable") throw new Error("expected unavailable");
+    expect(station.reason).toBe("upstream_error");
+  });
+
+  it("leaves full mode on the records road with no live connection", async () => {
+    const { environment, requests } = stubEnvironment(liveRoute);
+    const station = await loadWindnerdStation(batteryConfig, { environment });
+    if (station.status !== "ok") throw new Error("expected ok");
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.pathname).toBe("/api/records");
+    expect(station.telemetry).toBeNull();
+    expect(station.samples).toBeNull();
+    expect(station.history).not.toBeNull();
   });
 });

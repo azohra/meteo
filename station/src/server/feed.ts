@@ -5,11 +5,13 @@ import {
   type Station,
   type StationCurrent,
   type StationFeed,
+  type StationLiveFrame,
   type StationMeta,
 } from "../contract.js";
 import { loadCampbellStation } from "./adapters/campbell.js";
 import { loadTempestStation } from "./adapters/tempest.js";
 import { loadWindnerdStation } from "./adapters/windnerd.js";
+import { openWindnerdLive } from "./adapters/windnerd-live.js";
 import {
   stationConfigSchema,
   type CustomStationConfig,
@@ -51,6 +53,50 @@ export class UnknownStationError extends Error {
     super(`no station is configured with id "${stationId}"`);
     this.name = "UnknownStationError";
   }
+}
+
+export class StationLiveUnsupportedError extends Error {
+  constructor(stationId: string) {
+    super(`station "${stationId}" has no live stream`);
+    this.name = "StationLiveUnsupportedError";
+  }
+}
+
+export type OpenStationLiveOptions = {
+  stations: StationsInput;
+  stationId: string;
+  environment?: ServerEnvironment;
+  signal?: AbortSignal;
+  request?: Request;
+};
+
+/**
+ * Opens the live stream for one configured station. Unknown ids throw
+ * UnknownStationError; stations whose vendor has no live arm — and stations
+ * whose config failed validation — throw StationLiveUnsupportedError; connect
+ * failures reject with the upstream error. One call is one upstream
+ * connection.
+ */
+export async function openStationLive(
+  options: OpenStationLiveOptions,
+): Promise<ReadableStream<StationLiveFrame>> {
+  const environment = resolveEnvironment(options.environment);
+  const assembled = assembleStations(
+    await resolveStations({ stations: options.stations, request: options.request }, environment),
+    environment,
+  );
+  const entry = assembled.find(
+    (candidate) =>
+      ("config" in candidate ? candidate.config.id : candidate.degraded.id) === options.stationId,
+  );
+  if (!entry) throw new UnknownStationError(options.stationId);
+  if ("degraded" in entry || entry.config.vendor !== "windnerd") {
+    throw new StationLiveUnsupportedError(options.stationId);
+  }
+  return openWindnerdLive(entry.config, {
+    environment,
+    signal: options.signal,
+  });
 }
 
 export async function loadStationFeed(options: LoadStationFeedOptions): Promise<StationFeed> {

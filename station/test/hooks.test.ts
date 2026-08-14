@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useStation, useStationFeed } from "../src/react/index.js";
+import { useStation, useStationFeed, useStationLive } from "../src/react/index.js";
 import { BASE_MS, downStation, feedFixture, iso, okStation } from "./fixtures.js";
 
 const jsonResponse = (body: string, ok = true) => ({
@@ -293,6 +293,105 @@ describe("useStation", () => {
     const callsBefore = fetchMock.mock.calls.length;
     act(() => result.current.refresh());
     await waitFor(() => expect(fetchMock.mock.calls.length).toBe(callsBefore + 2));
+    unmount();
+  });
+});
+
+describe("useStationLive", () => {
+  const encoder = new TextEncoder();
+
+  function liveConnection() {
+    let controller!: ReadableStreamDefaultController<Uint8Array>;
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        controller = c;
+      },
+    });
+    return {
+      response: new Response(body, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      }),
+      push(frame: unknown) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(frame)}\n\n`));
+      },
+    };
+  }
+
+  const liveInitFrame = () => ({
+    type: "init",
+    schemaVersion: 2,
+    servedAt: iso(BASE_MS),
+    station: {
+      ...okStation(),
+      history: null,
+      telemetry: { batteryVoltage: 4.15 },
+      samples: {
+        intervalSeconds: 3,
+        points: [{ observedAt: iso(BASE_MS), windMps: 2.5, windDirectionDeg: 270 }],
+      },
+    },
+  });
+
+  it("seeds from the init frame and folds later sample batches", async () => {
+    const connection = liveConnection();
+    const fetchMock = vi.fn().mockResolvedValue(connection.response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result, unmount } = renderHook(() => useStationLive("/wind", "test-station"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/wind/live?station=test-station");
+
+    connection.push(liveInitFrame());
+    await waitFor(() => expect(result.current.station).not.toBeNull());
+    expect(result.current.status).toBe("open");
+    expect(result.current.samples).toHaveLength(1);
+    expect(result.current.station?.status === "ok" && result.current.station.telemetry).toEqual({
+      batteryVoltage: 4.15,
+    });
+
+    connection.push({
+      type: "samples",
+      stationId: "test-station",
+      samples: {
+        intervalSeconds: 3,
+        points: [{ observedAt: iso(BASE_MS + 3_000), windMps: 3.1, windDirectionDeg: 280 }],
+      },
+    });
+    await waitFor(() => expect(result.current.samples).toHaveLength(2));
+    unmount();
+  });
+
+  it("useStation live replaces the current poll with the stream and folds it into the feed", async () => {
+    const connection = liveConnection();
+    const feedBody = JSON.stringify(feedFixture());
+    const currentCalls: string[] = [];
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes("/live")) return connection.response;
+      if (url.includes("/current")) {
+        currentCalls.push(url);
+        throw new Error("current poll must stay off in live mode");
+      }
+      return jsonResponse(feedBody) as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result, unmount } = renderHook(() =>
+      useStation("/wind", "test-station", { live: true, pollSeconds: 86_400 }),
+    );
+    await waitFor(() => expect(result.current.feed).not.toBeNull());
+
+    connection.push(liveInitFrame());
+    await waitFor(() =>
+      expect(
+        result.current.station?.status === "ok" && result.current.station.telemetry?.batteryVoltage,
+      ).toBe(4.15),
+    );
+    /* The feed leg's history survives the live fold. */
+    expect(
+      result.current.station?.status === "ok" && result.current.station.history,
+    ).not.toBeNull();
+    expect(currentCalls).toEqual([]);
     unmount();
   });
 });
