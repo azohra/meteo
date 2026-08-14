@@ -63,24 +63,39 @@ function memberByPackageName(name: string): { directory: string; manifest: Membe
   return null;
 }
 
-function sourceFiles(dir: string, out: string[] = []): string[] {
-  for (const entry of readdirSync(join(ROOT, dir))) {
-    const rel = join(dir, entry);
-    if (statSync(join(ROOT, rel)).isDirectory()) {
-      if (SKIPPED_DIRECTORIES.has(entry)) continue;
-      sourceFiles(rel, out);
-    } else if (entry.endsWith(".ts") || entry.endsWith(".tsx")) {
-      out.push(rel);
+/* The suite walks the same directories and re-reads the same files from
+   many tests; the tree does not change mid-run, so both walks memoize. */
+const sourceFilesCache = new Map<string, string[]>();
+const importSpecifiersCache = new Map<string, string[]>();
+
+function sourceFiles(dir: string): string[] {
+  let files = sourceFilesCache.get(dir);
+  if (files === undefined) {
+    files = [];
+    for (const entry of readdirSync(join(ROOT, dir))) {
+      const rel = join(dir, entry);
+      if (statSync(join(ROOT, rel)).isDirectory()) {
+        if (SKIPPED_DIRECTORIES.has(entry)) continue;
+        files.push(...sourceFiles(rel));
+      } else if (entry.endsWith(".ts") || entry.endsWith(".tsx")) {
+        files.push(rel);
+      }
     }
+    sourceFilesCache.set(dir, files);
   }
-  return out;
+  return files;
 }
 
 function importSpecifiers(relPath: string): string[] {
-  const source = readFileSync(join(ROOT, relPath), "utf-8");
-  return [...source.matchAll(/(?:import|export)[^"']*from\s+["']([^"']+)["']/g)].map(
-    (match) => match[1],
-  );
+  let specifiers = importSpecifiersCache.get(relPath);
+  if (specifiers === undefined) {
+    const source = readFileSync(join(ROOT, relPath), "utf-8");
+    specifiers = [...source.matchAll(/(?:import|export)[^"']*from\s+["']([^"']+)["']/g)].map(
+      (match) => match[1],
+    );
+    importSpecifiersCache.set(relPath, specifiers);
+  }
+  return specifiers;
 }
 
 function resolveRelative(fromFile: string, specifier: string): string {
@@ -108,8 +123,15 @@ function publicSpecifiers(packageName: string): {
   return { exact, prefixes };
 }
 
+const publicSpecifiersCache = new Map<string, ReturnType<typeof publicSpecifiers>>();
+
 function isPublicImport(specifier: string, packageName: string): boolean {
-  const { exact, prefixes } = publicSpecifiers(packageName);
+  let specifiers = publicSpecifiersCache.get(packageName);
+  if (specifiers === undefined) {
+    specifiers = publicSpecifiers(packageName);
+    publicSpecifiersCache.set(packageName, specifiers);
+  }
+  const { exact, prefixes } = specifiers;
   return exact.has(specifier) || prefixes.some((prefix) => specifier.startsWith(prefix));
 }
 
