@@ -20,6 +20,15 @@ The JSON contract does not contain users, roles, sessions, launch permissions,
 or API keys. Adding them would couple portable forecast documents to one
 publisher's policy.
 
+Whatever the host, serve the bytes as published. Documents keep
+`application/json`; `.jsonl.gz` history archives keep `application/gzip` — or
+go out as raw gzip bytes with no `Content-Encoding` header — so a reader
+receives the archive itself, never a transparently decompressed body. Let
+`Cache-Control` be short on manifests and current documents, which change with
+every publish; [history archives](/docs/briefing/history-archives/) are
+append-only, so the current month's archive changes with each new run and a
+closed month's does not — those can cache long.
+
 ## Read independently cached files safely
 
 Static storage can expose a new manifest before the matching profile cache

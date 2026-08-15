@@ -211,6 +211,59 @@ function proseLines(text) {
   return out;
 }
 
+/* Site components and pages are rendered prose too: the conventions hold
+   wherever a reader sees the words. Only what renders is checked — .astro
+   frontmatter script (between the leading --- pair), HTML and JS/CSS
+   comments, comment-only // lines, and fenced code are code, not prose. */
+function renderedProseLines(file, text) {
+  const lines = text.split("\n");
+  const out = [];
+  let start = 0;
+  if (file.endsWith(".astro") && lines[0]?.trim() === "---") {
+    start = 1;
+    while (start < lines.length && lines[start].trim() !== "---") start += 1;
+    start += 1;
+  }
+  let inFence = false;
+  /* null, or the closer of the comment a previous line left open. */
+  let openComment = null;
+  for (let index = start; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (openComment === null && /^\s*```/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    let visible = "";
+    let pos = 0;
+    while (pos < line.length) {
+      if (openComment !== null) {
+        const end = line.indexOf(openComment, pos);
+        if (end === -1) {
+          pos = line.length;
+        } else {
+          pos = end + openComment.length;
+          openComment = null;
+        }
+        continue;
+      }
+      if (visible.trim() === "" && line.slice(pos).trimStart().startsWith("//")) break;
+      const html = line.indexOf("<!--", pos);
+      const block = line.indexOf("/*", pos);
+      const next = Math.min(html === -1 ? Infinity : html, block === -1 ? Infinity : block);
+      if (next === Infinity) {
+        visible += line.slice(pos);
+        break;
+      }
+      visible += line.slice(pos, next);
+      openComment = next === html ? "-->" : "*/";
+      pos = next + (next === html ? 4 : 2);
+    }
+    out.push([index + 1, visible]);
+  }
+  return out;
+}
+
 for (const [, dir] of roots.slice(1)) {
   for (const file of walkPages(dir, [])) checkProse(file);
 }
@@ -219,9 +272,28 @@ for (const file of walkPages(join(repoRoot, "site", "src", "content", "docs", "d
   if (!Object.values(SECTIONS).some((d) => rel.startsWith(`${d}/`) || rel === d)) checkProse(file);
 }
 
-function checkProse(file) {
+function walkSiteFiles(dir, out) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith(".")) continue;
+    const full = join(dir, entry.name);
+    if (statSync(full).isDirectory()) walkSiteFiles(full, out);
+    else if (/\.(astro|mdx)$/.test(entry.name)) out.push(full);
+  }
+  return out;
+}
+
+for (const dir of [
+  join(repoRoot, "site", "src", "components"),
+  join(repoRoot, "site", "src", "pages"),
+]) {
+  for (const file of walkSiteFiles(dir, [])) {
+    checkProse(file, renderedProseLines);
+  }
+}
+
+function checkProse(file, extract = (_file, text) => proseLines(text)) {
   const text = readFileSync(file, "utf-8");
-  for (const [line, content] of proseLines(text)) {
+  for (const [line, content] of extract(file, text)) {
     for (const [pattern, advice] of RETIRED_VOCABULARY) {
       if (pattern.test(content)) {
         fail(`${relative(repoRoot, file)}:${line}`, `retired vocabulary ${pattern} — ${advice}`);

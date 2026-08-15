@@ -4,6 +4,9 @@ import SectionHeader from "./SectionHeader.astro";
 // The foundation, in the README's own voice: two pure-TypeScript decoders
 // written for this workspace and published on their own. Facts restated
 // from README.md § "The decoders" and the /docs/grib/ and /docs/j2k/ pages.
+// The browser-safety details live at their one home, /docs/grib/coverage/
+// § "What the core never does" — the claim below links there instead of
+// restating the triple.
 const decoders = [
   {
     name: "@azohra/meteo.grib",
@@ -31,7 +34,7 @@ const decoders = [
       eyebrow="@azohra/meteo.grib · @azohra/meteo.j2k"
       title="Read the provider bytes yourself"
       titleId="home-decoders-title"
-      intro="Beneath the engine sit two pure-TypeScript decoders, each published on its own and exact against the reference codecs. Both cores run in the browser: no node: imports, no ambient I/O, no WASM."
+      intro="Beneath the engine sit two pure-TypeScript decoders, each published on its own and exact against the reference codecs."
     />
 
     <ul class="home-decoders__cards">
@@ -46,6 +49,11 @@ const decoders = [
         </li>
       ))}
     </ul>
+
+    <p class="home-decoders__browser">
+      Both cores run in the browser —
+      <a href="/docs/grib/coverage/#what-the-core-never-does">what the core never does</a>.
+    </p>
   </div>
 </section>
 
@@ -108,6 +116,18 @@ const decoders = [
     font: 600 0.66rem/1.4 var(--mono);
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  .home-decoders__browser {
+    margin: 1rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .home-decoders__browser a {
+    color: var(--accent);
+    font-weight: 600;
   }
 
   @media (max-width: 44rem) {

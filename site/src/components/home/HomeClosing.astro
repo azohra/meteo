@@ -31,6 +31,9 @@ import MeteoMark from "../MeteoMark.astro";
           class="sr-only">love</span
         > by Justin Watts.
       </p>
+      <p class="home-closing__maturity">
+        0.x · one maintainer · <a href="/about/">learning in public</a>
+      </p>
       <div class="home-closing__legal"><AttributionLine /></div>
     </div>
   </div>
@@ -139,6 +142,30 @@ import MeteoMark from "../MeteoMark.astro";
 
   .home-closing__heart {
     color: #7fd7ec;
+  }
+
+  /* Where the project stands, in the signoff's shadow: quieter than the
+     signoff, one step above the legal line. */
+  .home-closing__maturity {
+    margin: 0.55rem 0 0;
+    color: color-mix(in srgb, #e7f3f7 70%, #0c5b72);
+    font: 0.7rem/1.7 var(--mono);
+    letter-spacing: 0.04em;
+  }
+
+  .home-closing__maturity a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .home-closing__maturity a:hover {
+    color: #7fd7ec;
+  }
+
+  .home-closing__maturity a:focus-visible {
+    outline: 2px solid #7fd7ec;
+    outline-offset: 2px;
   }
 
   .sr-only {
