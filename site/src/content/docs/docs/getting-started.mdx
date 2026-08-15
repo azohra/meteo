@@ -5,8 +5,10 @@ description: Install the packages and take the shortest path to your first forec
 
 import { Steps } from '@astrojs/starlight/components';
 
-One pipeline connects every path on this page: an engine publishes static
-JSON documents, and packages read what it published.
+One pipeline connects every forecast path on this page: an engine
+publishes static JSON documents, and packages read what it published.
+The station capability reads live observations beside it, no engine
+required.
 
 ```text
 provider bytes
@@ -80,11 +82,22 @@ elevation, and availability.
 month archives and compares successive runs of one model; it is the forecast
 capability's one server-side subpath (Node, Bun, Deno; not browsers).
 
-The platform's sibling package `@azohra/meteo.station` covers the
-[station capability](/docs/station/): live weather-station reading,
-derivation, and display, with client, server, React, and custom-element
-bindings; [its own getting started](/docs/station/getting-started/)
-begins there.
+## Station maintainer
+
+The station capability installs on its own, with no engine or forecast
+documents required:
+
+```sh title="Terminal"
+pnpm add @azohra/meteo.station
+```
+
+[`@azohra/meteo.station`](/docs/station/) reads, derives, and displays
+live weather-station data behind one wire contract, with client, server,
+React, and custom-element bindings.
+[Its own getting started](/docs/station/getting-started/) reaches a live
+page in two moves: mount the feed handler, then render components against
+it. [Adapters](/docs/station/adapters/) cover the supported vendors
+(WindNerd, Tempest, Campbell Scientific) and writing your own.
 
 ## Decoder user
 
