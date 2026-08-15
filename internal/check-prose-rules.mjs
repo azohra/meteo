@@ -9,7 +9,12 @@ import { fileURLToPath } from "node:url";
    that needs context would cry wolf. Code fences are skipped: "simple
    packing" is a GRIB2 packing type, not a claim. A legitimate literal use
    (quoting a source, naming a provider product) opts out with
-   `meteo-prose: ignore` on the same or preceding line. */
+   `meteo-prose: ignore` on the same or preceding line.
+
+   The same pass holds the quote convention: straight quotes only — the
+   2026-08 sweep normalized the corpus, and this keeps curly characters
+   from creeping back in. The quote rule also covers package docs, which
+   the praise gate leaves to review. */
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORE_MARKER = "meteo-prose: ignore";
@@ -39,6 +44,8 @@ const BANNED_PATTERN = new RegExp(`\\b(${BANNED.join("|")})\\b`, "gi");
 /* Technical homonyms: the term is the claim's opposite — a name, not praise. */
 const ALLOWED_PHRASES = [/simple packing/i, /simple and complex/i, /grib2? simple/i];
 
+const CURLY_PATTERN = /[\u2018\u2019\u201C\u201D]/g;
+
 function walk(dir, extensions, out) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
@@ -60,6 +67,11 @@ for (const entry of readdirSync(repoRoot, { withFileTypes: true })) {
 }
 files.push(join(repoRoot, "README.md"));
 
+const praiseFiles = new Set(files);
+for (const pkg of ["briefing", "core", "forecast", "grib", "j2k", "station"]) {
+  walk(join(repoRoot, pkg, "docs"), [".md", ".mdx"], files);
+}
+
 let failedFiles = 0;
 for (const file of files) {
   const lines = readFileSync(file, "utf-8").split("\n");
@@ -74,6 +86,12 @@ for (const file of files) {
     if (lines[i].includes(IGNORE_MARKER) || (i > 0 && lines[i - 1].includes(IGNORE_MARKER))) {
       continue;
     }
+    for (const match of lines[i].matchAll(CURLY_PATTERN)) {
+      errors.push(
+        `${relative(repoRoot, file)}:${i + 1}: "${match[0]}" — curly quote; straight quotes are the convention`,
+      );
+    }
+    if (!praiseFiles.has(file)) continue;
     if (ALLOWED_PHRASES.some((phrase) => phrase.test(lines[i]))) continue;
     for (const match of lines[i].matchAll(BANNED_PATTERN)) {
       errors.push(`${relative(repoRoot, file)}:${i + 1}: "${match[0]}" — unsupported praise`);
@@ -87,7 +105,7 @@ for (const file of files) {
 }
 
 if (failedFiles > 0) {
-  console.error(`\ncheck-prose-rules: banned claims in ${failedFiles} file(s)`);
+  console.error(`\ncheck-prose-rules: violations in ${failedFiles} file(s)`);
   process.exit(1);
 }
-console.log(`check-prose-rules: ${files.length} files carry no unsupported praise`);
+console.log(`check-prose-rules: ${files.length} files carry no unsupported praise or curly quotes`);

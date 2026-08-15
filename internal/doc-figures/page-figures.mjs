@@ -1345,7 +1345,7 @@ async function composeCompareAgreement(ctx) {
     lesson: meta.lesson,
     description: `Two controlled profiles with the same daytime development at different hours, rendered side by side, with the windowAgreement finding compareForecasts computed from them: ${agreement.voters} voters, unanimous ${String(agreement.unanimous)}.`,
     caption:
-      "Charts and verdict are computed at figure-generation time from the committed comparison pair (re-slugged so each document keeps its own analysis). An edge clipped by a document's horizon reads as “open since at least” and stays out of the timing spread, which is why this pair's start spread is reported as null rather than a number no model stated.",
+      "Charts and verdict are computed at figure-generation time from the committed comparison pair (re-slugged so each document keeps its own analysis). An edge clipped by a document's horizon reads as \"open since at least\" and stays out of the timing spread, which is why this pair's start spread is reported as null rather than a number no model stated.",
     units: "time UTC · heights m MSL · W* m/s",
     bodyWidth,
     bodyHeight: panelHeight + 18 + ledger.height,

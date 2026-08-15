@@ -41,4 +41,4 @@ pnpm build    # -> dist/
 
 `pnpm build` writes the static site to `dist/`; [`wrangler.jsonc`](wrangler.jsonc)
 describes serving it as Worker static assets. Where and how a deployment
-hosts it is the operator’s business, not this README’s.
+hosts it is the operator's business, not this README's.

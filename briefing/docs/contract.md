@@ -42,7 +42,7 @@ export function requireProfile(text: string): SiteForecast {
 ## Site timezone propagation
 
 The optional `site.timeZone` echo and its semantics (absence means the
-document predates the echo, never “the launch uses UTC”) are defined in the
+document predates the echo, never "the launch uses UTC") are defined in the
 [profile reference](/docs/briefing/profile-document/#run-site-and-semantics).
 For an older document without the echo, consumers either supply a known
 fallback or use an API's documented fallback behaviour:

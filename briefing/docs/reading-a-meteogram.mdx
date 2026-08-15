@@ -61,7 +61,7 @@ instant. Nothing below the divider was part of the forecast above it.
 Each vertical slice of the main panel is one atmospheric column at the local time printed below it.
 The left axis gives metres above sea level and the right axis gives feet above sea level. The launch
 marker, winds, temperature contours, cloud layers, and derived heights therefore share one vertical
-coordinate. The coloured field interpolates lapse rate between the model’s pressure levels; it is not
+coordinate. The coloured field interpolates lapse rate between the model's pressure levels; it is not
 a stack of observed layers. The launch marker is supplied by the renderer, not the document: the
 consumer passes a launch elevation at render time, normally the measured `elevation` pick from
 [site-context.json](/docs/briefing/site-context-document/); a render given no launch
@@ -116,7 +116,7 @@ quickly, the parcel can remain warmer than its surroundings and continue upward.
 classes at or below −2.5 °C per 1,000 ft therefore mark the least resistance to dry convection. Between
 about −2.5 and −1.5, a dry parcel loses buoyancy more readily, while a saturated parcel may continue
 because condensation slows its cooling. The exact moist-adiabatic rate changes with temperature and
-moisture, so the chart’s fixed “conditional” bins are a reading aid rather than a parcel calculation.
+moisture, so the chart's fixed "conditional" bins are a reading aid rather than a parcel calculation.
 The −1.5 to −1.2 class sits near the moist-adiabatic range and remains condition-dependent. Values
 from −1.2 to 0 are stable. Positive grey classes are inversions: temperature warms with height and caps
 vertical exchange.
@@ -132,7 +132,7 @@ still has no modelled thermal engine; lapse rate describes susceptibility, while
 
 ## Separate cloud cover, cloud base, and cross-hatching
 
-Cloud percentage is the model’s total column coverage. It does not say where the cloud sits. The dotted
+Cloud percentage is the model's total column coverage. It does not say where the cloud sits. The dotted
 cloud-base line is a lifted-condensation-level estimate for a parcel starting at model terrain. It asks
 where that surface parcel would first saturate, and drops to the model's own cloud when the sampled
 column already saturates below that.
@@ -140,7 +140,7 @@ column already saturates below that.
 The body shading asks a different question. On most models the renderer grades levels by dew-point
 depression (densest below 0.5 °C, the classic hatch threshold), an inference of cloud from
 near-saturation. On a model that publishes its own per-level cloud fraction, the shading comes from
-that cloud directly, and the model’s assertion wins over the inference. Either way, those layers sit
+that cloud directly, and the model's assertion wins over the inference. Either way, those layers sit
 in the model sounding itself; which models assert cloud and which leave it to inference is in
 [What each model can, and cannot, tell you](/docs/forecast/model-capabilities/). A shaded layer above a high
 surface cloud base can therefore represent mid-level or upper cloud that the surface parcel did not
@@ -179,12 +179,12 @@ phase call itself.
 
 - **Boundary-layer top · dashed amber.** A dry parcel lifted from the model surface becomes no warmer
   than the environment at this elevation. It describes thermodynamic depth.
-- **Usable-lift top · solid blue.** canadarasp’s strongest-core profile falls to a 1 m/s sink threshold
+- **Usable-lift top · solid blue.** canadarasp's strongest-core profile falls to a 1 m/s sink threshold
   here, unless cloud base stops it first. It describes a modelled climb limit.
 - **Cloud base · dotted slate.** A surface parcel reaches saturation here, or the sampled column
   already has; the line takes the lower height. When this line pins the solid line, moisture limits
   usable height.
-- **Model boundary-layer top · tighter dash.** The model’s own boundary-layer depth, placed on the
+- **Model boundary-layer top · tighter dash.** The model's own boundary-layer depth, placed on the
   altitude axis and drawn beside the parcel-derived dashed line, on models that publish it. The two
   answer the same question with different physics; separation between them is information, not error.
 
@@ -217,8 +217,8 @@ The shaft points toward the direction the wind comes **from**. A half tick count
 Aviation charts commonly count knots; canadarasp and this project count km/h. Read the printed unit
 before decoding the feathers.
 
-On models that publish a gust, a “G” readout above the surface barb carries the gust in the same
-printed unit. Whether that number means “gusting to” over the past hour or an instantaneous sample is
+On models that publish a gust, a "G" readout above the surface barb carries the gust in the same
+printed unit. Whether that number means "gusting to" over the past hour or an instantaneous sample is
 declared per model; see [What each model can, and cannot, tell you](/docs/forecast/model-capabilities/).
 The wind-profile example publishes no gust, so the barbs carry the whole story: around the selected hour,
 wind strengthens from 23.4 km/h near launch to 99 km/h at

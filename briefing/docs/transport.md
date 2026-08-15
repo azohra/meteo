@@ -41,8 +41,8 @@ once. It resolves to one of three shapes:
 
 - `{ manifest, profile, stale: false }`: a consistent pair; render it.
 - `{ manifest, profile, stale: true }`: the freshest complete pair seen,
-  still torn after the retry. A publish is in flight; render with a “still
-  syncing” note or fall back to a pair you cached earlier. Never mix the two
+  still torn after the retry. A publish is in flight; render with a "still
+  syncing" note or fall back to a pair you cached earlier. Never mix the two
   documents as if they were one forecast.
 - a `DocumentMiss`: nothing to render, with the reason discriminated.
 
@@ -101,7 +101,7 @@ CDN's cache anyway. Misses discriminate absent/invalid exactly as below.
 ## `absent` is routine; `invalid` is loud
 
 A `DocumentMiss` separates two situations that would otherwise present
-identically as “no chart”:
+identically as "no chart":
 
 | `miss` | Meaning | Treat it as |
 | --- | --- | --- |

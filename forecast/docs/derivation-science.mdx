@@ -84,7 +84,7 @@ kind of censoring explicitly.
 
 ## 5. Turn surface heating into w\*
 
-Deardorff’s thermal velocity scale combines virtual heat flux and boundary-layer depth:
+Deardorff's thermal velocity scale combines virtual heat flux and boundary-layer depth:
 
 ```
 Q_v = SHTFL + 0.000245268 × T_K × LHTFL
@@ -92,14 +92,14 @@ Q_v = SHTFL + 0.000245268 × T_K × LHTFL
 w*  = ((0.0075516 / θ) × Q_v × D)⅓
 ```
 
-`D` is boundary-layer depth in metres. The latent term accounts for moist air’s buoyancy contribution;
+`D` is boundary-layer depth in metres. The latent term accounts for moist air's buoyancy contribution;
 the 0.0075516 factor folds gravity, air density, and heat capacity into compatible units. If virtual
 heat flux or depth is non-positive, `w*` is zero. Night, rain, and heavily suppressed heating therefore
 produce no thermal forecast by construction.
 
 ## 6. Find usable lift
 
-canadarasp’s Hcrit logic evaluates the strongest-core profile described in
+canadarasp's Hcrit logic evaluates the strongest-core profile described in
 [Why usable lift can sit above the boundary layer](/logbook/usable-lift-and-boundary-layer/):
 
 1. If `2.02 × w* < 1 m/s`, even the profile maximum cannot beat the sink threshold; publish null.
