@@ -24,6 +24,7 @@ const labels: Record<LogbookThumbnailKind, string> = {
   "terrain-smoothing": "Model terrain",
   "smoke-derate": "Cube root",
   "wire-report": "Measured wire",
+  "observed-sky": "Observed sky",
 };
 const descriptions: Record<LogbookThumbnailKind, string> = {
   "lift-limits": "Parcel top, usable-lift top, and cloud base follow different paths through one day.",
@@ -37,6 +38,8 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   "smoke-derate": "A τ = 2 plume removes about a quarter of the sun's power but only a tenth of thermal strength.",
   "wire-report":
     "Two Datamart hosts at the same five-connection gate: 73 MiB/s clean against 16 MiB/s with one request in ten failing.",
+  "observed-sky":
+    "A plume thins from AOT 3.0 to 1.4 in under two hours while four sites read 554–623 W/m² of downward shortwave.",
 };
 ---
 
@@ -214,6 +217,24 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
         <text x="18" y="130" class="visual-note">ADJUSTED W* = W* × ∛f</text>
       </g>
     )}
+
+    {thumbnail.visual === "observed-sky" && (
+      <g class="observed-sky-visual">
+        <text x="18" y="22" class="visual-title">GOES-18 · FIRST LIVE DAY</text>
+        <rect x="18" y="32" width="284" height="20" class="haze" />
+        <text x="30" y="45" class="visual-note">BC PLUME · THINNING</text>
+        <path d="M40 68 C90 70 150 80 200 90 S262 97 288 99" class="aot-line" />
+        <circle cx="40" cy="68" r="3.5" class="aot-dot" />
+        <circle cx="288" cy="99" r="3.5" class="aot-dot" />
+        <text x="50" y="66" class="metric small">AOT 3.0</text>
+        <text x="230" y="90" class="metric small">1.4 · 2 h</text>
+        <text x="18" y="120" class="bar-label">DSR</text>
+        <rect x="60" y="110" width="160" height="13" class="bar-frame" />
+        <rect x="60" y="110" width="123" height="13" class="dsr-bar" />
+        <text x="228" y="121" class="metric small">554–623 W/m²</text>
+        <text x="18" y="142" class="visual-note">FOUR SITES · OBSERVED, NOT FORECAST</text>
+      </g>
+    )}
   </svg>
 
   <div class="thumbnail-meta" aria-hidden="true">
@@ -284,6 +305,9 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   .bar-label { fill: var(--ink-soft); font-size: 9px; font-weight: 700; }
   .bar-frame { fill: none; stroke: var(--rule-strong); }
   .sun-bar { fill: var(--accent); }
+  .aot-line { fill: none; stroke: var(--accent); stroke-width: 2.6; }
+  .aot-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 1.5; }
+  .dsr-bar { fill: var(--chart-usable); }
   .wstar-bar { fill: var(--chart-usable); }
   .fast-bar { fill: var(--chart-usable); }
   .slow-bar { fill: var(--status-serious); }

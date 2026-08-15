@@ -169,9 +169,7 @@ const stats = manifest.stats;
         </div>
         <figcaption class="fc-caption">
           Between the run's first and last published
-          hour, <code>thermalVelocityMps</code> goes {firstHour.derived.thermalVelocityMps} →
-          {lastHour.derived.thermalVelocityMps} and <code>usableLiftTopM</code> goes
-          {firstHour.derived.usableLiftTopM ?? "null"} → {lastHour.derived.usableLiftTopM ??
+          hour, <code>thermalVelocityMps</code> goes {firstHour.derived.thermalVelocityMps} → {lastHour.derived.thermalVelocityMps} and <code>usableLiftTopM</code> goes {firstHour.derived.usableLiftTopM ?? "null"} → {lastHour.derived.usableLiftTopM ??
             "null"}, derived by the engine from the sampled fields. The equations behind every
           derived quantity are
           in <a href="/docs/forecast/derivation-science/">Meteogram derivations</a>. The full
@@ -183,8 +181,7 @@ const stats = manifest.stats;
     <p class="fc-cost" id="dataset-cost">
       The documents total {formatBytes(totalBytes)}. <code>manifest.stats</code> records
       what building them cost the engine: {stats.downloads} provider
-      downloads, {formatBytes(stats.downloadBytes)} fetched,
-      {Math.round(stats.durationMs / 1000)} s, {stats.retries} retries.
+      downloads, {formatBytes(stats.downloadBytes)} fetched, {Math.round(stats.durationMs / 1000)} s, {stats.retries} retries.
     </p>
   </div>
 </section>
