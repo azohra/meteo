@@ -11,8 +11,9 @@ own](/docs/station/adapters/)), a mountable
 two peer display bindings, React components and light-DOM custom
 elements, [held byte-identical by a parity suite](/docs/station/elements/).
 
-See the components live: [/station/](/station/) renders the custom-elements
-binding on a synthetic season, on the portal itself.
+See the components live: the [component
+gallery](/docs/station/component-gallery/) renders every element of the
+custom-elements binding on a synthetic season, right in these docs.
 
 Station is independent of the forecast and Meteogram capabilities: importing
 it loads no forecast, renderer, or SVG code, and every surface is an explicit
@@ -44,6 +45,7 @@ import { createStationFeedHandler } from "@azohra/meteo.station/server";
 | [Getting started](/docs/station/getting-started/) | Install, mount the handler, render components, the data-level API |
 | [Adapters](/docs/station/adapters/) | The adapter shape, custom adapters, `defineStationAdapter`, environment injection, caching, polling etiquette, with a reference page per shipped vendor: [WindNerd](/docs/station/adapters/windnerd/), [Tempest](/docs/station/adapters/tempest/), [Campbell](/docs/station/adapters/campbell/), [Ecowitt](/docs/station/adapters/ecowitt/) |
 | [What your hardware shows](/docs/station/what-your-hardware-shows/) | Each vendor's declared capabilities, and exactly which surfaces appear, degrade, or stay hidden |
+| [Component gallery](/docs/station/component-gallery/) | Every element in the custom-elements binding, rendered live on a synthetic season |
 | [React](/docs/station/react/) | Provider, hooks, thresholds, composition, SSR seeding |
 | [Custom elements](/docs/station/elements/) | The custom-elements binding: registration, attributes vs properties |
 | [Theming](/docs/station/theming/) | `.meteo-root` scoping, token tables, dark mode, `@layer` |

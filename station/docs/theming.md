@@ -144,8 +144,9 @@ declare more thresholds) to speak your own colour language.
 
 ## Dark-mode notes
 
-- The skin control on the site's `/station/` gallery exercises exactly this
-  mechanism: `data-theme` on `.meteo-root`, nothing else.
+- The site's theme toggle over the
+  [component gallery](/docs/station/component-gallery/) exercises exactly
+  this mechanism: `data-theme` on `.meteo-root`, nothing else.
 - If your page also styles `color-scheme` globally, the root's own
   declaration wins inside `.meteo-root`; the components stay coherent even
   when the page around them disagrees.

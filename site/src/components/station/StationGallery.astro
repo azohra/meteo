@@ -1,0 +1,107 @@
+---
+/* The full catalogue: every <meteo-*> tag below is the real custom-elements
+   binding from @azohra/meteo.station/elements, upgraded by the client
+   script at the bottom and fed a synthetic fleet generated in the reader's
+   browser (src/lib/station-exhibit.ts). Nothing is fetched; nothing is a
+   screenshot.
+
+   The twelve sections are the reference dashboard's own registry (the
+   retired demo app's SECTIONS, in the import's history), ported section
+   for section — one component per section under
+   src/components/station/sections/, the same files /station/ draws its
+   exhibits from. The only edits are grammar: where a note names a react
+   identifier (StationCard, thresholds={null}, windowHours) this page speaks
+   the same fact in this binding's spelling (<meteo-station-card>,
+   thresholds="none", window-hours).
+
+   Rendered by station/docs/component-gallery.mdx inside the Starlight
+   layout; `not-content` keeps the docs typography off the exhibits. */
+import "@azohra/meteo.station/styles.css";
+import "./station.css";
+import StationToolbar from "./StationToolbar.astro";
+import AirSection from "./sections/AirSection.astro";
+import CardsSection from "./sections/CardsSection.astro";
+import ChartsSection from "./sections/ChartsSection.astro";
+import ExplicitSection from "./sections/ExplicitSection.astro";
+import InstrumentsSection from "./sections/InstrumentsSection.astro";
+import PrimitivesSection from "./sections/PrimitivesSection.astro";
+import RosesSection from "./sections/RosesSection.astro";
+import SeasonsSection from "./sections/SeasonsSection.astro";
+import StripsSection from "./sections/StripsSection.astro";
+import TableSection from "./sections/TableSection.astro";
+import TrendsSection from "./sections/TrendsSection.astro";
+import WaysSection from "./sections/WaysSection.astro";
+
+const SECTIONS: { id: string; nav: string }[] = [
+  { id: "ways", nav: "Two ways" },
+  { id: "cards", nav: "Cards" },
+  { id: "instruments", nav: "Instruments" },
+  { id: "charts", nav: "Charts" },
+  { id: "roses", nav: "Roses" },
+  { id: "seasons", nav: "Seasons" },
+  { id: "trends", nav: "Trends" },
+  { id: "air", nav: "Air" },
+  { id: "table", nav: "Table" },
+  { id: "strips", nav: "Strips" },
+  { id: "primitives", nav: "Primitives" },
+  { id: "explicit", nav: "Explicit" },
+];
+---
+
+<div class="station-gallery-embed not-content">
+  <StationToolbar sections={SECTIONS} />
+
+  <div class="meteo-root station-gallery" id="station-gallery">
+    <meteo-station-feed
+      id="station-feed"
+      thresholds='{"unit":"kmh","values":[12,20,28]}'
+    >
+      <div class="station-gallery-inner">
+        <WaysSection />
+        <CardsSection />
+        <InstrumentsSection />
+        <ChartsSection />
+        <RosesSection />
+        <SeasonsSection />
+        <TrendsSection />
+        <AirSection />
+        <TableSection />
+        <StripsSection />
+        <PrimitivesSection />
+      </div>
+    </meteo-station-feed>
+
+    {/* Outside the provider on purpose: everything arrives as explicit
+        properties, proving the provider is an ambient default, not a
+        requirement. */}
+    <div class="station-gallery-inner station-gallery-tail">
+      <ExplicitSection />
+    </div>
+  </div>
+</div>
+
+<script>
+  import { initStationGallery } from "../../lib/station-gallery-client";
+  initStationGallery();
+</script>
+
+<style>
+  /* Inside the docs column the shared band measure is the column itself:
+     no .section-inner gutters, no band tint or closing rule. */
+  .station-gallery-embed {
+    margin-block-start: 1.5rem;
+  }
+
+  .station-gallery-embed .station-gallery {
+    background: none;
+    border-block-end: none;
+  }
+
+  .station-gallery-embed .station-gallery-inner {
+    padding-block: 2rem 0;
+  }
+
+  .station-gallery-embed .station-gallery-tail {
+    padding-block-start: 0;
+  }
+</style>

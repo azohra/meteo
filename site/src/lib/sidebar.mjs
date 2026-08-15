@@ -91,6 +91,7 @@ export const sidebar = [
         ],
       },
       { slug: "docs/station/what-your-hardware-shows", label: "What your hardware shows" },
+      { slug: "docs/station/component-gallery", label: "Component gallery" },
       { slug: "docs/station/react", label: "React" },
       { slug: "docs/station/elements", label: "Custom elements" },
       { slug: "docs/station/theming", label: "Theming" },

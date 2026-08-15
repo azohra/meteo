@@ -2,10 +2,13 @@ import { expect, test } from "@playwright/test";
 import { guardStaticBrowsing } from "./helpers";
 
 /* The station exhibits are living components, not screenshots: these tests
-   hold /station/ (and the homepage card) to actually upgrading the
+   hold the docs component gallery (the full catalogue), the trimmed
+   /station/ product page, and the homepage card to actually upgrading the
    <meteo-*> custom elements, rendering real content from the synthetic
    feed, responding to every control, and doing all of it without a single
    request leaving the preview origin. */
+
+const GALLERY = "/docs/station/component-gallery/";
 
 const SECTION_IDS = [
   "ways",
@@ -22,10 +25,10 @@ const SECTION_IDS = [
   "explicit",
 ];
 
-test.describe("/station/ exhibits the custom-elements binding", () => {
+test.describe("the docs component gallery exhibits the custom-elements binding", () => {
   test("the elements upgrade and render the synthetic feed", async ({ page, baseURL }) => {
     const externalRequests = await guardStaticBrowsing(page, baseURL!);
-    await page.goto("/station/", { waitUntil: "networkidle" });
+    await page.goto(GALLERY, { waitUntil: "networkidle" });
 
     // The flagship card renders its full default composition in light DOM;
     // the second card is authored composition — header, chart, summary.
@@ -95,7 +98,7 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
     // All three freshness states are presented.
     await expect(page.locator("meteo-freshness-badge .meteo-freshness")).toHaveCount(3);
 
-    expect(externalRequests, "/station/ attempted external network access").toEqual([]);
+    expect(externalRequests, "the gallery attempted external network access").toEqual([]);
   });
 
   test("the twelve registry sections all render, and the toolbar anchors them", async ({
@@ -103,7 +106,7 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
     baseURL,
   }) => {
     await guardStaticBrowsing(page, baseURL!);
-    await page.goto("/station/", { waitUntil: "networkidle" });
+    await page.goto(GALLERY, { waitUntil: "networkidle" });
 
     for (const id of SECTION_IDS) {
       await expect(page.locator(`section#${id}`), `section #${id} exists`).toHaveCount(1);
@@ -120,7 +123,7 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
     baseURL,
   }) => {
     await guardStaticBrowsing(page, baseURL!);
-    await page.goto("/station/", { waitUntil: "networkidle" });
+    await page.goto(GALLERY, { waitUntil: "networkidle" });
 
     const speed = page.locator("meteo-speed data.meteo-value").first();
     const explicitDial = page.locator("#explicit-conditions .meteo-wind-dial");
@@ -140,7 +143,7 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
     baseURL,
   }) => {
     await guardStaticBrowsing(page, baseURL!);
-    await page.goto("/station/", { waitUntil: "networkidle" });
+    await page.goto(GALLERY, { waitUntil: "networkidle" });
 
     const instrument = page.locator("#explicit-conditions .meteo-current");
     await expect(instrument).toBeVisible();
@@ -158,7 +161,7 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
     baseURL,
   }) => {
     await guardStaticBrowsing(page, baseURL!);
-    await page.goto("/station/", { waitUntil: "networkidle" });
+    await page.goto(GALLERY, { waitUntil: "networkidle" });
 
     const lab = page.locator("#history-lab");
     await expect(lab.locator(".meteo-wind-chart-svg")).toBeVisible();
@@ -182,6 +185,84 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
 
     await page.getByRole("button", { name: "6 h", exact: true }).click();
     expect(await snapshot()).toBe(sixHours);
+  });
+
+  test("the season filter re-draws the rose from the same points", async ({ page, baseURL }) => {
+    await guardStaticBrowsing(page, baseURL!);
+    await page.goto(GALLERY, { waitUntil: "networkidle" });
+
+    const rose = page.locator("#season-rose");
+    const count = page.locator("#season-count");
+    const all = await rose.innerHTML();
+    const allCount = await count.textContent();
+
+    // "Season" reveals the season picker (Winter is the default pick).
+    await page.getByRole("button", { name: "Season", exact: true }).click();
+    expect(await rose.innerHTML()).not.toBe(all);
+    await page.getByRole("button", { name: "Summer", exact: true }).click();
+    const summer = await rose.innerHTML();
+    expect(summer).not.toBe(all);
+    expect(await count.textContent()).not.toBe(allCount);
+
+    // Time of day narrows through the SAME filter chain.
+    await page.getByRole("button", { name: /Midday/ }).click();
+    expect(await rose.innerHTML()).not.toBe(summer);
+
+    await page.getByRole("button", { name: "All day", exact: true }).click();
+    await page.getByRole("button", { name: "All", exact: true }).click();
+    expect(await rose.innerHTML()).toBe(all);
+    expect(await count.textContent()).toBe(allCount);
+  });
+});
+
+test.describe("/station/ carries the pitch on three live exhibits", () => {
+  test("the hero, cards, charts, and roses render; the catalogue lives in the docs", async ({
+    page,
+    baseURL,
+  }) => {
+    const externalRequests = await guardStaticBrowsing(page, baseURL!);
+    await page.goto("/station/", { waitUntil: "networkidle" });
+
+    // The hero's wire demo prints the reading and draws the same object.
+    await expect(page.locator("#station-wire-json")).toContainText("windAvgMps");
+    await expect(page.locator("#station-hero-feed .meteo-current")).toBeVisible();
+
+    // Exactly the three exhibits: cards, charts, roses — nothing else.
+    for (const id of ["cards", "charts", "roses"]) {
+      await expect(page.locator(`section#${id}`), `section #${id} exists`).toHaveCount(1);
+    }
+    for (const id of SECTION_IDS.filter((id) => !["cards", "charts", "roses"].includes(id))) {
+      await expect(page.locator(`section#${id}`), `section #${id} moved to the docs`).toHaveCount(
+        0,
+      );
+    }
+
+    const card = page.locator("#cards meteo-station-card article.meteo-station-card").first();
+    await expect(card).toBeVisible();
+    await expect(card).toHaveAttribute("data-status", "ok");
+    await expect(card.locator(".meteo-station-card-name")).toHaveText("Launch Ridge");
+    await expect(page.locator("#charts meteo-wind-history-chart .meteo-wind-chart-svg")).toHaveCount(
+      3,
+    );
+    expect(await page.locator("#roses-ridge .meteo-wind-rose-petal").count()).toBeGreaterThan(0);
+
+    // The History Lab controls still work on the product page.
+    const lab = page.locator("#history-lab");
+    await expect(lab.locator(".meteo-wind-chart-svg")).toBeVisible();
+    await page.getByRole("button", { name: "12 h", exact: true }).click();
+    await expect(lab).toHaveAttribute("window-hours", "12");
+
+    // The page ends pointing at the full catalogue and the documentation.
+    await expect(page.getByRole("link", { name: /component\s+gallery/i })).toHaveAttribute(
+      "href",
+      "/docs/station/component-gallery/",
+    );
+    await expect(page.getByRole("link", { name: "the station documentation" })).toHaveAttribute(
+      "href",
+      "/docs/station/",
+    );
+
+    expect(externalRequests, "/station/ attempted external network access").toEqual([]);
   });
 
   test("the site theme toggle pins the components' colour scheme both ways", async ({
@@ -233,33 +314,6 @@ test.describe("/station/ exhibits the custom-elements binding", () => {
         .evaluate((element) => getComputedStyle(element).backgroundColor),
     ).toBe(lightSurface);
   });
-
-  test("the season filter re-draws the rose from the same points", async ({ page, baseURL }) => {
-    await guardStaticBrowsing(page, baseURL!);
-    await page.goto("/station/", { waitUntil: "networkidle" });
-
-    const rose = page.locator("#season-rose");
-    const count = page.locator("#season-count");
-    const all = await rose.innerHTML();
-    const allCount = await count.textContent();
-
-    // "Season" reveals the season picker (Winter is the default pick).
-    await page.getByRole("button", { name: "Season", exact: true }).click();
-    expect(await rose.innerHTML()).not.toBe(all);
-    await page.getByRole("button", { name: "Summer", exact: true }).click();
-    const summer = await rose.innerHTML();
-    expect(summer).not.toBe(all);
-    expect(await count.textContent()).not.toBe(allCount);
-
-    // Time of day narrows through the SAME filter chain.
-    await page.getByRole("button", { name: /Midday/ }).click();
-    expect(await rose.innerHTML()).not.toBe(summer);
-
-    await page.getByRole("button", { name: "All day", exact: true }).click();
-    await page.getByRole("button", { name: "All", exact: true }).click();
-    expect(await rose.innerHTML()).toBe(all);
-    expect(await count.textContent()).toBe(allCount);
-  });
 });
 
 test("the homepage exhibits a live station card and links to the gallery", async ({
@@ -277,7 +331,7 @@ test("the homepage exhibits a live station card and links to the gallery", async
   await expect(card.locator(".meteo-wind-chart-svg")).toBeVisible();
   await expect(section.getByRole("link", { name: /component gallery/i })).toHaveAttribute(
     "href",
-    "/station/",
+    "/docs/station/component-gallery/",
   );
   expect(externalRequests, "the homepage attempted external network access").toEqual([]);
 });
