@@ -1,6 +1,15 @@
+import { createHash } from "node:crypto";
 import { defineConfig } from "@playwright/test";
 
-const port = 4329;
+/* One battery per checkout may run while another checkout's battery runs
+   beside it (parallel worktrees). A fixed port made those runs race: the
+   second suite attached to the first checkout's server — testing a foreign
+   dist/ — and lost it mid-run when that battery tore down. The port is
+   derived from this config's own path, so every checkout gets a stable
+   port of its own, and a server is never reused: this suite must prove
+   THIS tree. */
+const digest = createHash("sha256").update(import.meta.dirname).digest();
+const port = 4400 + (digest.readUInt16BE(0) % 4000);
 
 export default defineConfig({
   testDir: "./test",
@@ -24,7 +33,7 @@ export default defineConfig({
     // Playwright must own a foreground process so teardown is deterministic.
     command: `ASTRO_PREVIEW_BACKGROUND=0 pnpm preview --host 127.0.0.1 --port ${port}`,
     url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     stdout: "pipe",
     stderr: "pipe",
   },
