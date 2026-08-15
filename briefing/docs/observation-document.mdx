@@ -3,8 +3,9 @@ title: Observation document
 description: "The per-site measured time series from GOES-18 (downward shortwave and aerosol optical depth): the observed window, validity discipline, verified product facts, and what the measurements are for."
 ---
 
-The observation document is the contract's third document kind, and its
-first **measurements**: a per-site time series of satellite observations:
+The observation document is the contract's one **measured**
+[document family](/docs/compatibility/#document-families): a per-site
+time series of satellite observations:
 GOES-18's downward shortwave radiation and aerosol optical depth today.
 Every other document here predicts; this one records. It exists because
 the [smoke-adjusted derivation](/logbook/smoke-and-thermals/) makes a
@@ -16,6 +17,16 @@ all. Consumers join an observation series to profile or smoke documents
 by instant, truth beside prediction —
 [measured against the sky](/logbook/measured-against-the-sky/) is the
 case study that established the kind.
+
+The live sample dataset publishes no observation documents: the datasets
+this kind was built against stayed with their operator when the engine
+went public, and are private now. The JSON shown here is therefore
+illustrative — a capture from before that split, not something you can
+fetch. The one committed real capture is the
+[history-archive](/docs/briefing/history-archives/) fixture
+`briefing/test/fixtures/goes18-aod-erie-2026-08.jsonl.gz`: a smoked-in
+afternoon of measured AOT entries, in the archive's
+one-observation-per-line grammar rather than this document shape.
 
 ## On the wire
 
@@ -55,9 +66,9 @@ extent), which `parseForecastManifestJson` does not accept.
 }
 ```
 
-*A document captured from the reference deployment's founding catalogue
-(`dundee`), kept for its real measured values; that dataset went private
-with the engine/instance split.*
+*Captured from the now-private dataset (`dundee`), kept for its real
+measured values; illustrative in the sense above — no published dataset
+serves it today.*
 
 | Field | Unit | Meaning |
 | --- | --- | --- |

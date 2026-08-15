@@ -3,14 +3,21 @@ title: Smoke document
 description: "The per-site wildfire-smoke time series from RAQDPS: fields, units, cadence, verified provider facts, and how it joins a profile."
 ---
 
-The smoke document is the contract's first non-profile document kind: a
-per-site, per-run time series of wildfire smoke from an air-quality
+The smoke document is the contract's wildfire-smoke
+[document family](/docs/compatibility/#document-families): a per-site,
+per-run time series of wildfire smoke from an air-quality
 model: ECCC's RAQDPS (GEM-MACH) today. It exists because the
 wind-profile models this dataset publishes for Canada are smoke-blind,
 and folding another model's smoke into their profiles would break the
 one-model-per-document rule. Consumers join a smoke document to a
 profile by site and `validAt` instead, and label the join with both
 models' runs.
+
+The live sample dataset publishes no smoke documents: the datasets this
+kind was built against stayed with their operator when the engine went
+public, and are private now. Nothing on this page is fetchable from the
+sample; the JSON below is still real, quoted from a committed
+[history-archive](/docs/briefing/history-archives/) fixture.
 
 ## On the wire
 
@@ -28,22 +35,24 @@ models' runs.
 {
   "schemaVersion": 1,
   "model": "raqdps",
-  "run": { "referenceTime": "2026-08-10T00:00:00Z", "generatedAt": "2026-08-10T02:12:41Z" },
-  "site": { "id": "dundee", "name": "Dundee", "latitude": 49.291977, "longitude": -117.183569, "timeZone": "America/Vancouver" },
+  "run": { "referenceTime": "2026-08-10T00:00:00Z", "generatedAt": "2026-08-10T09:57:54Z" },
+  "site": { "id": "erie", "name": "Erie", "latitude": 49.204789, "longitude": -117.406951, "timeZone": "America/Vancouver" },
   "hours": [
     {
       "validAt": "2026-08-10T01:00:00Z",
-      "pm25Ugm3": 37.5,
-      "smokePlumeSurfaceUgm3": 37.5,
-      "smokePlumeColumnMgm2": 4.8
-    }
+      "pm25Ugm3": 46.1,
+      "smokePlumeSurfaceUgm3": 46.1,
+      "smokePlumeColumnMgm2": 5.9
+    },
+    …
   ]
 }
 ```
 
-*A document captured from the reference deployment's founding catalogue
-(`dundee`), kept for its real values; that dataset went private with the
-engine/instance split.*
+*Quoted from the committed fixture
+`briefing/test/fixtures/raqdps-erie-2026-08.jsonl.gz`: the first
+archived run of a real smoked-in August 2026 month, its 72 hours elided
+to one.*
 
 | Field | Unit | Meaning |
 | --- | --- | --- |

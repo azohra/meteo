@@ -24,6 +24,31 @@ profile
     └── smoke? { surfaceUgm3, columnMgm2, aot }
 ```
 
+```json
+{
+  "schemaVersion": 2,
+  "model": "hrdps-continental",
+  "run": { "referenceTime": "2026-08-12T12:00:00Z", "generatedAt": "2026-08-12T18:22:29Z" },
+  "site": { "id": "test-hill", "name": "Test Hill", "latitude": 49.4581, "longitude": -117.3956,
+    "modelElevationM": 1180.8, "timeZone": "America/Vancouver" },
+  "semantics": { "gust": "hourMax", "precipitation": "windowMeanRate" },
+  "hours": [
+    { "validAt": "2026-08-12T20:00:00Z",
+      "surface": { "temperatureC": 20.27, "windSpeedMps": 1.18, "windGustMps": 2.29,
+        "sensibleHeatFluxWm2": 224.4, "capeJkg": 1045, "pblHeightM": 1274, … },
+      "levels": [ { "pressureHpa": 875, "heightM": 1253.8, "temperatureC": 17.99,
+        "dewPointC": 9.06, "windSpeedMps": 1.87, "windDirectionDeg": 5 }, … ],
+      "derived": { "boundaryLayerTopM": 2136.9, "thermalVelocityMps": 1.8,
+        "cloudBaseM": 2362.8, "usableLiftTopM": 2362.8 } },
+    …
+  ]
+}
+```
+
+*Abbreviated from the live sample dataset's committed
+`hrdps-continental/sites/test-hill.json`: real values from the
+peak-w\* hour, with `…` marking elided fields, levels, and hours.*
+
 ## On the wire
 
 | Fact | Value |

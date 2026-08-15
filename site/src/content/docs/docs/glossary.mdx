@@ -103,6 +103,46 @@ atmosphere above one model grid cell.
 [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) explains every
 mark.
 
+### Strip
+
+One of the lanes under the Meteogram's main panel — pressure,
+precipitation, cloud, w\*, and the rest — sharing the time axis, each on
+its own scale. [Reading a Meteogram](/docs/briefing/reading-a-meteogram/).
+
+### Wind barb
+
+The wind symbol: the shaft points where the wind comes **from**; a half
+tick counts 5, a full tick 10, a pennant 50, in the chart's printed unit.
+[Reading a Meteogram](/docs/briefing/reading-a-meteogram/).
+
+### Boundary layer
+
+The layer surface heating mixes — where thermals live. Its top is the
+chart's dashed line, shortened to *BL top* in prose; *PBL* is the model's
+own declared depth (`pblHeightM`, metres AGL) — the same question with
+different physics, drawn beside it.
+[Reading a Meteogram](/docs/briefing/reading-a-meteogram/).
+
+### w\* (thermal velocity)
+
+The convective velocity scale derived from surface heat flux and
+boundary-layer depth — the w\* strip's number, stored as
+`thermalVelocityMps`. An energy scale, not a predicted climb rate.
+[Reading a Meteogram](/docs/briefing/reading-a-meteogram/).
+
+### Usable lift
+
+The modelled climb limit: where the strongest-core lift profile falls to
+the sink threshold, unless cloud base stops it first — the chart's solid
+line, stored as `usableLiftTopM`.
+[Reading a Meteogram](/docs/briefing/reading-a-meteogram/).
+
+### Sink rate
+
+The glider-sink parameter usable lift is computed against: the engine
+stores the 1.0 m/s answer, and the package recomputes the line for any
+other. [Pure derivations](/docs/briefing/derive/).
+
 ### Scene
 
 Serializable, renderer-independent geometry built from one validated
