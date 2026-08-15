@@ -1,5 +1,5 @@
 ---
-"@azohra/meteo.station": minor
+"@azohra/meteo.station": patch
 ---
 
 A fourth built-in vendor: Ecowitt. `vendor: "ecowitt"` reads the Ecowitt
