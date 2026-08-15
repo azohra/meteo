@@ -25,6 +25,7 @@ fields, capabilities, endpoint, and the quirks the adapter guards:
 What each declaration turns on — chart, stream, matrix column — is mapped
 surface by surface in
 [What your hardware shows](/docs/station/what-your-hardware-shows/).
+
 Anything else plugs in as a custom adapter, below.
 
 ## The custom arm

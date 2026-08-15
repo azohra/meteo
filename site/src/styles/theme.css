@@ -328,23 +328,6 @@ a:hover {
   }
 }
 
-.site-footer {
-  border-top: 1px solid var(--rule);
-  padding: 28px 24px 60px;
-  max-width: 1188px;
-  margin: 0 auto;
-  font-size: 13px;
-  color: var(--ink-mute);
-}
-.site-footer a {
-  color: var(--ink-mute);
-  text-decoration: underline;
-  text-decoration-color: var(--rule-strong);
-}
-.site-footer a:hover {
-  color: var(--accent);
-}
-
 /* ---- the theme toggle: a pill that names its state ---- */
 .theme-toggle {
   display: inline-flex;

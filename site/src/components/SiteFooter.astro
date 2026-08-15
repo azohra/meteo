@@ -1,0 +1,104 @@
+---
+import AttributionLine from "./AttributionLine.astro";
+import { GITHUB_URL, NAV_LINKS } from "../lib/nav";
+
+/* The one project footer, everywhere: wayfinding in the site's mono
+   register, the licence line, and the signoff. Docs pages render it flush
+   inside Starlight's content column; standalone pages centre it on the
+   shared section measure. */
+interface Props {
+  flush?: boolean;
+}
+const { flush = false } = Astro.props;
+---
+
+<footer class="meteo-footer">
+  <div class:list={["meteo-footer__inner", { "section-inner": !flush }]}>
+    <div class="meteo-footer__row">
+      <nav class="meteo-footer__nav" aria-label="Project footer">
+        {NAV_LINKS.map(({ label, href }) => <a href={href}>{label}</a>)}
+        <a href={GITHUB_URL}>GitHub</a>
+      </nav>
+      <p class="meteo-footer__signoff">
+        Made with <span class="meteo-footer__heart" aria-hidden="true">♥</span><span
+          class="sr-only">love</span
+        > by Justin Watts.
+      </p>
+    </div>
+    <div class="meteo-footer__legal"><AttributionLine /></div>
+  </div>
+</footer>
+
+<style>
+  .meteo-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--rule);
+    padding: 1.5rem 0 3.5rem;
+    color: var(--ink-mute);
+    font-size: 0.8125rem;
+  }
+
+  .meteo-footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .meteo-footer__row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem 2rem;
+  }
+
+  .meteo-footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+  }
+
+  .meteo-footer__nav a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .meteo-footer__nav a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .meteo-footer__signoff {
+    margin: 0;
+    color: var(--ink-soft);
+  }
+
+  .meteo-footer__heart {
+    color: var(--accent);
+  }
+
+  .meteo-footer__legal :global(.attribution-line) {
+    max-width: 46rem;
+    margin: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 40rem) {
+    .meteo-footer__row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

@@ -26,8 +26,9 @@ the CLI so external site and output paths are scoped consistently.
    Success is one line, `Would build hrrr-conus for N site(s) from … into …`,
    with both paths resolved absolute and nothing written.
 
-3. **Use a short smoke cap when appropriate.** `--max-steps 2` selects the
-   first two scheduled steps. It limits forecast steps, not sites or fields.
+3. **Use a short smoke cap when appropriate.** Append `--max-steps 2` to the
+   dry run to select the first two scheduled steps; it limits forecast
+   steps, not sites or fields.
 4. **Point the engine at your published root.** A real build (never the dry
    run) reads the published dataset to detect what is already there, and
    refuses to guess where that is: without configuration it exits with
@@ -43,8 +44,8 @@ the CLI so external site and output paths are scoped consistently.
    Deployments that read their bucket directly instead leave it unset and
    provide the R2 credential set (`METEO_R2_BUCKET`, `R2_ENDPOINT`,
    `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
-5. **Run the build.** Remove `--dry-run`; remove the cap for the full declared
-   horizon.
+5. **Run the build.** Remove `--dry-run` (and `--max-steps`, if you used
+   it) for the full declared horizon.
 6. **Inspect output before deploying it.** The model manifest and each
    expected site profile must share the same `referenceTime`; one line of
    output means they do:
@@ -108,8 +109,8 @@ not engine surface.
 
 Each builder detects the latest complete provider run and exits without
 rewriting output when that `referenceTime` is already published. "Already
-published" is read from the published dataset itself — the root step 4
-configured — and the same source seeds
+published" is read from the published dataset itself, at the root step 4
+configured, and the same source seeds
 the month archives that history appends continue. A successful
 new run writes current profiles, appends history, and writes the model
 manifest. [Environment and credentials](/docs/forecast/environment/) is the

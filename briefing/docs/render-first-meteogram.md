@@ -5,8 +5,9 @@ description: "Fetch a published forecast, validate it, and serialize a reference
 
 The `@azohra/meteo.briefing` package ships ESM types and requires no DOM:
 the same script runs in Node, workers, and browsers. This page fetches a
-real published document from the live sample dataset and renders it. This
-is what it produces:
+real published document from the live sample dataset and renders it. The
+kind of chart it produces (this one from the Synthetic Ridge teaching
+scenario):
 
 ![A ten-hour Meteogram for the synthetic Synthetic Ridge teaching scenario (morning stability giving way to a deep midday unstable column, with the boundary layer, usable lift, and cloud base tracing distinct arcs beneath light veering wind) and the key derived from its final scene.](figures/first-meteogram.svg)
 

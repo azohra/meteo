@@ -131,8 +131,11 @@ import type { SiteForecast } from "@azohra/meteo.briefing/contract";
 import { buildMeteogramScene, DEFAULT_OVERLAYS } from "@azohra/meteo.briefing/meteogram";
 
 export function buildClubScene(profile: SiteForecast) {
+  const timeZone = profile.site.timeZone;
+  // Absence never implies UTC: an older document needs a caller-owned zone.
+  if (!timeZone) throw new Error("older profile needs an explicit IANA timezone");
   return buildMeteogramScene(profile, {
-    timeZone: profile.site.timeZone ?? "Etc/UTC",
+    timeZone,
     smooth: false,
     overlays: {
       ...DEFAULT_OVERLAYS,

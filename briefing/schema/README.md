@@ -9,7 +9,7 @@ this package's own test suite).
 They are committed rather than build-generated so contract changes appear
 as reviewable diffs, and they ship in the npm tarball (`files` lists this
 directory, exported as `@azohra/meteo.briefing/schema/*.json`) so installed
-consumers — the migrate runner, any non-JavaScript reader of a
+consumers — any non-JavaScript reader of a
 published dataset's documents — can validate against them
 without a TypeScript build. Every schema carries a `$id` under
 `https://meteo.azohra.com/schema/`, and the site build publishes this

@@ -7,7 +7,9 @@ import { Aside, Steps } from "../../site/src/components/docs/starlight";
 import { SITES_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 
 A **launch** is the place you fly; a **site** is that launch's record in
-the data — this page authors those records. Every builder reads the same
+the data — this page authors those records. (Not installed yet? The
+[section landing](/docs/forecast/) carries the install command and the
+Node 22 requirement.) Every builder reads the same
 site catalogue. Pass its path with `--sites`;
 the CLI resolves it to an absolute path for that dispatch, so the file lives
 wherever your project keeps it.
@@ -63,7 +65,7 @@ walks the root files).
 
 1. Choose a stable slug. Renaming it changes every profile and history path.
 2. Record coordinates from an appropriate source for your launches. Do not
-   record elevation anywhere; the engine measures it in the next step.
+   record elevation anywhere; the engine measures it in step 4.
 3. Declare the launch's IANA timezone. Local time changes day windows and the
    meaning of timing findings, so builders echo this value into each profile
    as `site.timeZone`; do not infer it from longitude in presentation code.

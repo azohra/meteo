@@ -8,9 +8,8 @@ natively in your page — never a vendor iframe: one wire contract, vendor
 adapters that normalize into it ([four built in, or your
 own](/docs/station/adapters/)), a mountable
 `Request → Response` feed handler, a framework-free client data layer, and
-two peer display bindings (React components and light-DOM custom elements)
-[held byte-identical by a parity suite](/docs/station/elements/) for
-everything both bindings ship.
+two peer display bindings, React components and light-DOM custom
+elements, [held byte-identical by a parity suite](/docs/station/elements/).
 
 See the components live: [/station/](/station/) renders the custom-elements
 binding on a synthetic season, on the portal itself.

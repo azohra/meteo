@@ -1,5 +1,5 @@
 ---
-import AttributionLine from "../components/AttributionLine.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import BrandLockup from "../components/BrandLockup.astro";
 import ThemeToggle from "../components/ThemeToggle.astro";
 import { DOCS_LINK, GITHUB_URL, PRODUCT_LINKS, QUIET_LINKS, type NavKey } from "../lib/nav";
@@ -112,12 +112,6 @@ const stabilityStyle = plateTokensStyle();
 
     <slot />
 
-    {
-      !hideFooter && (
-        <footer class="site-footer">
-          <AttributionLine />
-        </footer>
-      )
-    }
+    {!hideFooter && <SiteFooter />}
   </body>
 </html>

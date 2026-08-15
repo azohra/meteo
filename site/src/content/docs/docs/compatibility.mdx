@@ -36,8 +36,7 @@ These rules hold across every family:
 - absence of an optional declared-capability field means **not published**, never
   zero;
 - changing a stored field's unit or meaning, removing or renaming one, or
-  making an optional field required changes the `schemaVersion` and ships
-  a migration;
+  making an optional field required changes the `schemaVersion`;
 - readers tolerate unknown additive keys but reject an unsupported
   `schemaVersion`;
 - model identity is an open slug from `models.json`, not a package enum;
@@ -48,8 +47,7 @@ These rules hold across every family:
 Validate with the raw-text guards at every storage or network boundary —
 the [contract guide](/docs/briefing/contract/) carries the worked fence.
 Never patch a rejected document in presentation code: upgrade the
-publisher, choose a compatible package, or run a named migration before
-validation.
+publisher or choose a compatible package before validation.
 
 ## The forecast engine's boundary
 

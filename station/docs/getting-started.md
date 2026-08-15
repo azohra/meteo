@@ -51,6 +51,9 @@ curl 'https://your.host/api/wind/feed?hours=2'       # narrower window (≤ the 
 curl 'https://your.host/api/wind/current?station=summit' # one station, reading only
 ```
 
+(A third route, `/live`, streams raw samples for stations that declare
+the `live` capability — [What your hardware
+shows](/docs/station/what-your-hardware-shows/) maps who has it.)
 `/feed` answers with a `StationFeed`, every configured station on one
 document, whether its upstream answered or not (abbreviated with `…`; the
 field names are real):

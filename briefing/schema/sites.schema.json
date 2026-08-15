@@ -49,5 +49,5 @@
     "schemaVersion",
     "sites"
   ],
-  "description": "sites.json — the hand-maintained site catalogue: every site the builders publish documents for. Identity and build selection only: humans author WHERE; the pipeline measures WHAT (site-context.json). Published to the dataset root verbatim."
+  "description": "sites.json — the hand-maintained site catalogue: every site the builders publish documents for. Identity and build selection only: humans author WHERE; the pipeline measures WHAT (site-context.json). The operator publishes it to the dataset root verbatim."
 }

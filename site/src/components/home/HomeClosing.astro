@@ -26,6 +26,11 @@ import MeteoMark from "../MeteoMark.astro";
           <a href="/about/">About the project <span aria-hidden="true">→</span></a>
         </span>
       </nav>
+      <p class="home-closing__signoff">
+        Made with <span class="home-closing__heart" aria-hidden="true">♥</span><span
+          class="sr-only">love</span
+        > by Justin Watts.
+      </p>
       <div class="home-closing__legal"><AttributionLine /></div>
     </div>
   </div>
@@ -124,6 +129,25 @@ import MeteoMark from "../MeteoMark.astro";
   .home-closing__links a:focus-visible {
     outline: 2px solid #7fd7ec;
     outline-offset: 2px;
+  }
+
+  .home-closing__signoff {
+    margin: 1.6rem 0 0;
+    color: #e7f3f7;
+    font-size: 0.85rem;
+  }
+
+  .home-closing__heart {
+    color: #7fd7ec;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   .home-closing__legal :global(.attribution-line) {
