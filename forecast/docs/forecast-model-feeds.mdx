@@ -6,20 +6,20 @@ description: Verified paths, schedules, fields, retention, transport, and licens
 import ModelCompareGrid from "../../site/src/components/docs/ModelCompareGrid.astro";
 
 export const feedFacts = {
-  "hrdps-west": { transport: "Alpha Datamart, whole-domain GRIB2", verified: "—" },
-  "hrdps-continental": { transport: "Datamart, whole-domain GRIB2", verified: "2026-08-08" },
-  "hrrr-conus": { transport: "Cloud bucket, byte-ranged GRIB2", verified: "2026-08-11" },
-  rrfs: { transport: "noaa-rrfs-pds, byte-ranged GRIB2, two files", verified: "2026-08-13" },
-  rdps: { transport: "Datamart, whole-domain GRIB2", verified: "2026-08-08" },
-  gdps: { transport: "Datamart, whole-domain GRIB2", verified: "2026-08-08" },
-  gfs: { transport: "Cloud bucket, byte-ranged GRIB2", verified: "2026-08-11" },
-  nam: { transport: "noaa-nam-pds, byte-ranged GRIB2", verified: "2026-08-08" },
-  "nam-conus-nest": { transport: "noaa-nam-pds, byte-ranged GRIB2", verified: "2026-08-08" },
-  reps: { transport: "Datamart, all-members GRIB2", verified: "2026-08-08" },
-  geps: { transport: "Datamart, all-members GRIB2", verified: "2026-08-08" },
-  raqdps: { transport: "Datamart, whole-domain GRIB2", verified: "—" },
-  "goes18-dsr": { transport: "noaa-goes18, whole NetCDF granules", verified: "2026-08-10" },
-  "goes18-aod": { transport: "noaa-goes18, whole NetCDF granules", verified: "2026-08-10" },
+  "hrdps-west": { transport: "Alpha Datamart, whole-domain GRIB2", availability: "—", cost: "—", verified: "—" },
+  "hrdps-continental": { transport: "Datamart, whole-domain GRIB2", availability: "T+2:55 → T+3:55", cost: "~7.8 GiB", verified: "2026-08-08" },
+  "hrrr-conus": { transport: "Cloud bucket, byte-ranged GRIB2", availability: "~T+107 min", cost: "—", verified: "2026-08-11" },
+  rrfs: { transport: "noaa-rrfs-pds, byte-ranged GRIB2, two files", availability: "f084 ≈ T+3:33", cost: "—", verified: "2026-08-13" },
+  rdps: { transport: "Datamart, whole-domain GRIB2", availability: "complete ≈ T+3:05–3:10", cost: "~4.1 GiB", verified: "2026-08-08" },
+  gdps: { transport: "Datamart, whole-domain GRIB2", availability: "complete ≈ T+5:05", cost: "~8.3 GiB", verified: "2026-08-08" },
+  gfs: { transport: "Cloud bucket, byte-ranged GRIB2", availability: "—", cost: "—", verified: "2026-08-11" },
+  nam: { transport: "noaa-nam-pds, byte-ranged GRIB2", availability: "complete ≈ T+2:40", cost: "~0.7 GiB", verified: "2026-08-08" },
+  "nam-conus-nest": { transport: "noaa-nam-pds, byte-ranged GRIB2", availability: "complete ≈ T+2:39", cost: "~6.7 GiB", verified: "2026-08-08" },
+  reps: { transport: "Datamart, all-members GRIB2", availability: "complete ≈ T+3:40–3:45", cost: "~9.4 GiB", verified: "2026-08-08" },
+  geps: { transport: "Datamart, all-members GRIB2", availability: "complete ≈ T+5:07", cost: "~14 GiB", verified: "2026-08-08" },
+  raqdps: { transport: "Datamart, whole-domain GRIB2", availability: "—", cost: "~43 MB", verified: "—" },
+  "goes18-dsr": { transport: "noaa-goes18, whole NetCDF granules", availability: "~6–7 min after scan end", cost: "—", verified: "2026-08-10" },
+  "goes18-aod": { transport: "noaa-goes18, whole NetCDF granules", availability: "~3.3 min after scan end", cost: "—", verified: "2026-08-10" },
 };
 
 Every builder supplies the same surface fields, five fields on each pressure
@@ -38,10 +38,12 @@ and update the verification date.
 ## Feed summary
 
 The catalogue columns (slug, provider, kind, grid, cadence, horizon, and
-status flags) render from `models.json` at build time. Transport and
-verification dates are this page's own record; an em dash means no dated
-per-feed verification is recorded here and the model's section below holds
-what is known.
+status flags) render from `models.json` at build time. Availability, cost
+per run, transport, and verification dates are this page's own record,
+each collected from the owning model's fact table below; an em dash means
+that table records no such dated fact and the model's section holds what
+is known. The fourteen rows are the catalogue's eleven forecast models
+plus the RAQDPS smoke feed and the two GOES-18 observation feeds.
 
 <ModelCompareGrid authored={feedFacts} />
 
@@ -149,7 +151,11 @@ Shared quirks, verified 2026-08-08:
   cloud-matching filename in the 00Z listings inventoried 2026-08-08;
   `CloudWater_EAtm` is column-integrated kg/m², not a fraction).
 
-## HRDPS continental 2.5 km — supported
+## Supported models
+
+Catalogue entries carrying no experimental flag and no declared sunset.
+
+### HRDPS continental 2.5 km — supported
 
 Environment and Climate Change Canada's High Resolution Deterministic
 Prediction System.
@@ -179,38 +185,7 @@ Quirks:
 - **Hour 000 publishes no precipitation or flux files.** At every other
   hour, `APCP-Accum1h_Sfc`'s mm over one hour is mm/h directly.
 
-## HRDPS West 1 km — supported, experimental
-
-ECCC also runs an experimental 1 km HRDPS over BC and western Alberta. The
-GRIB decoder handles the grid rotation, so the sampler only ever speaks
-geographic coordinates; the builder downloads each whole-domain file before
-sampling the catalogue. The 1 km feed keeps the old GRIB tokens for the
-science fields. Its gusts follow the shared ECCC hour-max semantics;
-precipitation does not: the builder reads `PRATE_SFC_0` × 3600 and
-declares `precipitation: "instantRate"`, the only ECCC model that does.
-
-| Fact | Value |
-| --- | --- |
-| **Transport** | whole-domain GRIB2 on the **alpha Datamart**, no subsetting |
-| **Retention** | roughly 24 hours |
-| **Science tokens** | `GUST_TGL_10`/`GUST_MAX_TGL_10`, `CAPE_ETAL_10000` (eta 1.0: surface-based), `HPBL_SFC_0` |
-
-Quirks:
-
-- **The curated band is the 9-level 925–600 hPa set**, not the 14-level
-  1015–600 band the other ECCC deterministic feeds sample, and the builder
-  samples no vertical velocity; the catalogue declares
-  `verticalVelocity: false`.
-- **The feed goes dark occasionally**: schedule it as its own job, so a
-  1 km failure warns without blocking a 2.5 km publish.
-- **The 1 km grid earns its terrain:** one launch's measured elevation
-  (site-context's `elevation` pick) is **1,476 m**; model terrain elevation
-  is **1,311 m** at 1 km and **1,072 m** at 2.5 km. The 1 km grid reduces
-  the terrain error from 404 m to 165 m, and that 239 m shift propagates
-  into cloud base, boundary-layer top, and which pressure levels lie above
-  model terrain.
-
-## RDPS 10 km — supported
+### RDPS 10 km — supported
 
 The Regional Deterministic Prediction System extends the Meteogram from
 HRDPS's two days to three and a half, and the run completes **before**
@@ -239,7 +214,7 @@ Quirks:
   components is cheap if the grid definition ever changes.
 - **CIN is ≤ 0 J/kg** (min −1 755 on the verification day).
 
-## GDPS 15 km — supported
+### GDPS 15 km — supported
 
 ECCC's current system description of the Global Deterministic Prediction
 System (checked 2026-08-08) identifies it as a coupled atmosphere, ocean,
@@ -278,7 +253,7 @@ Quirks:
   thinning at every 3-hourly step, so late-horizon hours can carry a gust
   with no CAPE.
 
-## HRRR 3 km — supported
+### HRRR 3 km — supported
 
 NOAA's High-Resolution Rapid Refresh cycles hourly; the catalogue reads
 the synoptic runs (00/06/12/18Z), the cycles that extend to 48 hours.
@@ -331,7 +306,7 @@ Quirks:
   NCEP/UPP convention, not encoded in the files, and not fixed altitudes).
   No per-pressure-level cloud fraction in `wrfprs`.
 
-## GFS 0.25° — supported
+### GFS 0.25° — supported
 
 NOAA's Global Forecast System is the long-horizon leg: since the 2021
 upgrades the output is **3-hourly all the way to f384**.
@@ -380,62 +355,147 @@ Quirks:
   published as `cloudFractionPercent` on the eight curated levels; unlike
   omega it is level-complete within GFS, only model-sparse.
 
-## NAM 12 km and CONUS nest 3 km — supported, retiring
+### REPS 10 km ensemble — supported
 
-NOAA's North American Mesoscale system supplies two catalogue entries.
-**Both retire 2026-10-06 at 12 UTC**, the day RRFS and REFS become
-operational and NAM, HREF, SREF, and HiresW (except Guam) are terminated:
-[SCN 26-48 Updated](https://www.weather.gov/media/notification/pdf_2026/SCN26-048-Updated_RRFS_and_REFS_Implementation.aaa.pdf),
-originally "on or about" 2026-08-31 and since
-[rescheduled to October 6](https://gribstream.com/blog/noaa-rrfs-refs-operational-august-2026).
-Both catalogue entries declare the machine-readable `sunset`
-(date 2026-10-06, successor `rrfs`).
+In ECCC's Regional Ensemble Prediction System, every member is derived as
+its own atmosphere and the published file carries the percentile spread of
+the derived quantities, including per-level **ensemble soundings**. Read
+the product semantics in [Ensemble values](/docs/briefing/ensemble-values/).
 
 | Fact | Value |
 | --- | --- |
-| **Transport** | whole-domain GRIB2 with `.idx` sidecars on the `noaa-nam-pds` bucket |
-| **12 km parent** | `awphys`, AWIPS grid 218; hourly to 36 h then 3-hourly, complete ≈ T+2:40 |
-| **3 km CONUS nest** | `conusnest.hiresf`; complete ≈ T+2:39, on **exactly HRRR's Lambert grid**: 1799 × 1059, Latin 38.5°, LoV 262.5°, founding sites ~200–236 km inside |
-| **Cost** | nest ~111 MiB per forecast hour (**~6.7 GiB per run**); parent ~12 MiB per hour (**~0.7 GiB per run**); ~61 records per forecast hour each |
+| **Members** | **21** (a control plus 20 perturbed) |
+| **Availability** | complete ≈ T+3:40–3:45 |
+| **Path** | Datamart only, under `YYYYMMDD/WXO-DD/ensemble/reps/10km/grib2/HH/hhh/`; the legacy `/ensemble/reps/` tree is dead (404) |
+| **Levels** | isobaric fields (`TMP`, `RH`, `HGT`, `UGRD`, `VGRD`) at a fixed **9-level set: 50/100/200/250/500/700/850/925/1000 hPa** |
+| **Cost** | ~383 MB per step for the Meteogram field set, **~9.4 GiB per run**. There is no partial fetch: whole-domain, all-members, no index |
 | **Verified** | 2026-08-08 |
 
 Quirks:
 
-- **`awphys` is the 12 km isobaric product; `awip12` is not.** Live awip12
-  carries no isobaric band (208 records to awphys's 454); its one unique
-  contribution is layered cloud: `LCDC`/`MCDC`/`HCDC`, which awphys lacks
-  (TCDC only). The parent build reads awphys plus three byte-ranged cloud
-  records per hour from awip12; the two files share grid 218 exactly and
-  their common fields decode bit-identical.
-- **The full 9-level curated band** (TMP/RH/HGT/UGRD/VGRD) exists on both
-  products, with omega (`VVEL`, paramId 135, Pa/s, instantaneous) at all
-  nine levels.
-- **Level moisture is `RH` at all nine levels:** the nest publishes level
-  `DPT` only at 925/850/700 and awphys none, so level dew points are
-  computed from RH. A true 2 m dew point is hourly on both products.
-- **The nest's 3-h-average flux twins** (paramId 235033, PDT 8) sit beside
-  the genuinely instantaneous un-suffixed `SHTFL`/`LHTFL` (PDT 0), cleanly
-  distinguished, and skipped, by the idx `ave` suffix.
-- **Winds are grid-relative on each product's own Lambert cone**: the nest
-  shares HRRR's projection parameters, the parent uses Latin 25°/LoV 265°,
-  so the rotation to true north is a per-product constant (~12° direction
-  bias if skipped; confirmed against earth-relative GFS components). NCEP
-  packs each UGRD/VGRD pair as **two submessages of one GRIB message**
-  (idx lines N.1/N.2 at a shared byte offset), so one ranged fetch returns
-  both components.
-- **The nest's bucket resets every 3 h, the parent's every 12 h** through
-  its hourly phase; the parent's 3-hourly tail (f39–f84) publishes a direct
-  (h−3)–h record. At bucket boundaries **two APCP records coexist** in a
-  parent file (`12-24` beside `21-24` at f24); records are selected by the
-  exact idx window token, never by variable name alone.
-- **Nest fields carry a sparse bitmap** (~76–105 of 1.9M points, surfaced
-  by ecCodes as in-band 9999); the samplers publish a masked gridpoint as
-  absence, never a value.
-- **The science set is complete at every hour:** surface-based CAPE/CIN
-  (plus mixed-layer/most-unstable variants), `HPBL`, and the 2 m/10 m
-  surface set are present at every hour including f00 as analysis records.
+- **Every raw-variable file stacks all 21 members** as GRIB messages keyed
+  by `perturbationNumber`, 0 the control (`typeOfEnsembleForecast` 1, then
+  4 for perturbed members). There are no per-member files and no upstream
+  percentile products for raw variables; the forecast engine computes
+  percentiles from members itself.
+- **Per-member wind exists at every level.** The five curated levels
+  publish as sounding levels (1000/925/850/700/500; 500 doubles as the
+  parcel-search headroom, and 1000 (at mountain sites also 925) typically
+  sits below REPS model terrain and is dropped per member by the
+  derivation's own filter).
+- **No dew point in any form**: level and surface moisture come from `RH`,
+  converted against temperature.
+- **No `WDIR`/`WIND` at levels**: the rotated grid's `UGRD`/`VGRD` are
+  grid-relative (`uvRelativeToGrid=1`) and are rotated to true east/north
+  before the direction convention is applied; skipping the rotation
+  produced a ~24° error in verification. See
+  [Seven forecast-data failures that passed parsing](/logbook/forecast-data-validation-failures/).
+- **Hour 000 publishes no flux or precipitation files.** Every later step
+  carries `SHTFL_SFC`/`LHTFL_SFC` per member.
+- **None of the science-field families exists per member**: no gust, no
+  CAPE/CIN, no PBL height, and only total cloud (full 00Z/024 listing
+  inventoried, 003 re-checked, 2026-08-08). An ensemble-CAPE-spread product
+  cannot be built from this feed; GEPS supplies it.
 
-## RRFS 3 km — supported, experimental
+### GEPS 0.5° ensemble — supported
+
+ECCC's Global Ensemble Prediction System extends the REPS ensemble product
+from three days to sixteen and adds the one thing REPS cannot supply:
+per-member storm-risk spread.
+
+| Fact | Value |
+| --- | --- |
+| **Members** | **21** (a control plus 20 perturbed, one all-members file per field exactly as in REPS) |
+| **Availability** | complete ≈ T+5:07 |
+| **Path** | `YYYYMMDD/WXO-DD/ensemble/geps/grib2/raw/HH/hhh/`; raw members still use the **old CMC naming**, `CMC_geps-raw_<VAR>_<LVL>_<level>_latlon0p5x0p5_YYYYMMDDHH_Phhh_allmbrs.grib2`, not the MSC scheme the deterministic models migrated to |
+| **Retention** | matches REPS; the legacy `/ensemble/geps/` tree is likewise dead |
+| **Cost** | ~150 MB per step for the Meteogram field set (36 all-members files), **~14 GiB per run** over 96 steps, twice daily. The heaviest feed the forecast engine carries; the reference operator schedule builds it last |
+| **Verified** | 2026-08-08 |
+
+Quirks:
+
+- **The feed runs its own schedule**: 3-hourly to 192 hours then 6-hourly
+  to 384; the occasional Thursday 00Z extension to 936 hours is not
+  fetched.
+- **Nothing is rotated, unlike REPS:** a regular global lat-lon grid with
+  `uvRelativeToGrid=0`; components are earth-relative.
+- **The `HGT_SFC` orography is in decametres and its GRIB metadata lies
+  about it** [verified 2026-08-08]: the field decodes as
+  `units=m, paramId=228002` (indistinguishable from REPS's genuinely
+  metric field), but the values are dam (global max 586.3 = the smoothed
+  Himalaya ×10; Dundee 153.6 → 1 536 m beside GDPS's 1 525 m).
+  Pressure-level `HGT_ISBL` files are true metres. The builder scales ×10
+  and guards against both this bug and its inverse; any consumer of the
+  raw feed must too.
+- **Per-member surface-based `CAPE_SFC` and `CIN_SFC` exist at every step**
+  (97 files per step; the inventory is identical at hours 024, 198, and
+  384): the ensemble CAPE/CIN percentile spread REPS cannot provide,
+  published as conditional percentile blocks. The member spread is real:
+  167 to 1 311 J/kg CAPE across the 21 members at one site on the
+  verification day.
+- **GEPS's CAPE sentinel is an exact −1** (the HRDPS family's marker),
+  **not RDPS/GDPS's 9999**: real GEPS member CAPE reached 9 755 J/kg on the
+  verification day, so a 9999 mask would erase genuine extreme instability.
+  **CIN carries no sentinel at all**: it is computed even where CAPE is
+  flagged, and its values nearest −1 are ordinary packing bins, so all 21
+  members rank.
+- **Isobaric fields in the curated band match REPS's shape**: `TMP`/`RH`/
+  `HGT` and per-member `UGRD`/`VGRD` at **1000/925/850/700**, with **500 as
+  the parcel-ceiling headroom** (nothing exists between 700 and 500). Omega
+  is at 850 only and is not published. No dew point in any form (moisture
+  is `RH` at the levels and at 2 m) and no `WDIR` anywhere: direction
+  comes from the earth-relative components.
+- **Heat fluxes are time-integrated from run start** (paramId 146, J/m²,
+  `stepType=accum`, stepRange 0–h), unlike REPS's instantaneous values: the
+  builder publishes the mean W/m² over the window ending at each valid
+  time, (A(h₂)−A(h₁)) / ((h₂−h₁)·3600) per member, the window following
+  the schedule's 3 h then 6 h cadence. Precipitation is the same run-total
+  differencing. Hour 000 publishes neither, so the first window's baseline
+  is zero by definition.
+- **Only total cloud exists per member**: gust and PBL height are absent
+  too, declared false like REPS's.
+- **Verify every download against Content-Length.** One GEPS fetch returned
+  another model's bytes, correct on retry; the Datamart client now
+  length-checks every download because of it. See
+  [Seven forecast-data failures that passed parsing](/logbook/forecast-data-validation-failures/).
+
+## Experimental feeds
+
+Catalogue entries declared `experimental`; each section records what
+keeps the flag on.
+
+### HRDPS West 1 km — supported, experimental
+
+ECCC also runs an experimental 1 km HRDPS over BC and western Alberta. The
+GRIB decoder handles the grid rotation, so the sampler only ever speaks
+geographic coordinates; the builder downloads each whole-domain file before
+sampling the catalogue. The 1 km feed keeps the old GRIB tokens for the
+science fields. Its gusts follow the shared ECCC hour-max semantics;
+precipitation does not: the builder reads `PRATE_SFC_0` × 3600 and
+declares `precipitation: "instantRate"`, the only ECCC model that does.
+
+| Fact | Value |
+| --- | --- |
+| **Transport** | whole-domain GRIB2 on the **alpha Datamart**, no subsetting |
+| **Retention** | roughly 24 hours |
+| **Science tokens** | `GUST_TGL_10`/`GUST_MAX_TGL_10`, `CAPE_ETAL_10000` (eta 1.0: surface-based), `HPBL_SFC_0` |
+
+Quirks:
+
+- **The curated band is the 9-level 925–600 hPa set**, not the 14-level
+  1015–600 band the other ECCC deterministic feeds sample, and the builder
+  samples no vertical velocity; the catalogue declares
+  `verticalVelocity: false`.
+- **The feed goes dark occasionally**: schedule it as its own job, so a
+  1 km failure warns without blocking a 2.5 km publish.
+- **The 1 km grid earns its terrain:** one launch's measured elevation
+  (site-context's `elevation` pick) is **1,476 m**; model terrain elevation
+  is **1,311 m** at 1 km and **1,072 m** at 2.5 km. The 1 km grid reduces
+  the terrain error from 404 m to 165 m, and that 239 m shift propagates
+  into cloud base, boundary-layer top, and which pressure levels lie above
+  model terrain.
+
+### RRFS 3 km — supported, experimental
 
 The Rapid Refresh Forecast System is the verified NAM successor: the two
 NAM entries collapse into a single `rrfs` leg carrying the nest's 3 km
@@ -517,111 +577,70 @@ Quirks:
   00/06/12/18Z, live on the para tree since 2026-08-11) is a potential
   future ensemble leg beside REPS and GEPS.
 
-## REPS 10 km ensemble — supported
+## Retiring feeds
 
-In ECCC's Regional Ensemble Prediction System, every member is derived as
-its own atmosphere and the published file carries the percentile spread of
-the derived quantities, including per-level **ensemble soundings**. Read
-the product semantics in [Ensemble values](/docs/briefing/ensemble-values/).
+Catalogue entries with a declared `sunset`.
+
+### NAM 12 km and CONUS nest 3 km — supported, retiring
+
+NOAA's North American Mesoscale system supplies two catalogue entries.
+**Both retire 2026-10-06 at 12 UTC**, the day RRFS and REFS become
+operational and NAM, HREF, SREF, and HiresW (except Guam) are terminated:
+[SCN 26-48 Updated](https://www.weather.gov/media/notification/pdf_2026/SCN26-048-Updated_RRFS_and_REFS_Implementation.aaa.pdf),
+originally "on or about" 2026-08-31 and since
+[rescheduled to October 6](https://gribstream.com/blog/noaa-rrfs-refs-operational-august-2026).
+Both catalogue entries declare the machine-readable `sunset`
+(date 2026-10-06, successor `rrfs`).
 
 | Fact | Value |
 | --- | --- |
-| **Members** | **21** (a control plus 20 perturbed) |
-| **Availability** | complete ≈ T+3:40–3:45 |
-| **Path** | Datamart only, under `YYYYMMDD/WXO-DD/ensemble/reps/10km/grib2/HH/hhh/`; the legacy `/ensemble/reps/` tree is dead (404) |
-| **Levels** | isobaric fields (`TMP`, `RH`, `HGT`, `UGRD`, `VGRD`) at a fixed **9-level set: 50/100/200/250/500/700/850/925/1000 hPa** |
-| **Cost** | ~383 MB per step for the Meteogram field set, **~9.4 GiB per run**. There is no partial fetch: whole-domain, all-members, no index |
+| **Transport** | whole-domain GRIB2 with `.idx` sidecars on the `noaa-nam-pds` bucket |
+| **12 km parent** | `awphys`, AWIPS grid 218; hourly to 36 h then 3-hourly, complete ≈ T+2:40 |
+| **3 km CONUS nest** | `conusnest.hiresf`; complete ≈ T+2:39, on **exactly HRRR's Lambert grid**: 1799 × 1059, Latin 38.5°, LoV 262.5°, founding sites ~200–236 km inside |
+| **Cost** | nest ~111 MiB per forecast hour (**~6.7 GiB per run**); parent ~12 MiB per hour (**~0.7 GiB per run**); ~61 records per forecast hour each |
 | **Verified** | 2026-08-08 |
 
 Quirks:
 
-- **Every raw-variable file stacks all 21 members** as GRIB messages keyed
-  by `perturbationNumber`, 0 the control (`typeOfEnsembleForecast` 1, then
-  4 for perturbed members). There are no per-member files and no upstream
-  percentile products for raw variables; the forecast engine computes
-  percentiles from members itself.
-- **Per-member wind exists at every level.** The five curated levels
-  publish as sounding levels (1000/925/850/700/500; 500 doubles as the
-  parcel-search headroom, and 1000 (at mountain sites also 925) typically
-  sits below REPS model terrain and is dropped per member by the
-  derivation's own filter).
-- **No dew point in any form**: level and surface moisture come from `RH`,
-  converted against temperature.
-- **No `WDIR`/`WIND` at levels**: the rotated grid's `UGRD`/`VGRD` are
-  grid-relative (`uvRelativeToGrid=1`) and are rotated to true east/north
-  before the direction convention is applied; skipping the rotation
-  produced a ~24° error in verification. See
-  [Seven forecast-data failures that passed parsing](/logbook/forecast-data-validation-failures/).
-- **Hour 000 publishes no flux or precipitation files.** Every later step
-  carries `SHTFL_SFC`/`LHTFL_SFC` per member.
-- **None of the science-field families exists per member**: no gust, no
-  CAPE/CIN, no PBL height, and only total cloud (full 00Z/024 listing
-  inventoried, 003 re-checked, 2026-08-08). An ensemble-CAPE-spread product
-  cannot be built from this feed; GEPS supplies it.
+- **`awphys` is the 12 km isobaric product; `awip12` is not.** Live awip12
+  carries no isobaric band (208 records to awphys's 454); its one unique
+  contribution is layered cloud: `LCDC`/`MCDC`/`HCDC`, which awphys lacks
+  (TCDC only). The parent build reads awphys plus three byte-ranged cloud
+  records per hour from awip12; the two files share grid 218 exactly and
+  their common fields decode bit-identical.
+- **The full 9-level curated band** (TMP/RH/HGT/UGRD/VGRD) exists on both
+  products, with omega (`VVEL`, paramId 135, Pa/s, instantaneous) at all
+  nine levels.
+- **Level moisture is `RH` at all nine levels:** the nest publishes level
+  `DPT` only at 925/850/700 and awphys none, so level dew points are
+  computed from RH. A true 2 m dew point is hourly on both products.
+- **The nest's 3-h-average flux twins** (paramId 235033, PDT 8) sit beside
+  the genuinely instantaneous un-suffixed `SHTFL`/`LHTFL` (PDT 0), cleanly
+  distinguished, and skipped, by the idx `ave` suffix.
+- **Winds are grid-relative on each product's own Lambert cone**: the nest
+  shares HRRR's projection parameters, the parent uses Latin 25°/LoV 265°,
+  so the rotation to true north is a per-product constant (~12° direction
+  bias if skipped; confirmed against earth-relative GFS components). NCEP
+  packs each UGRD/VGRD pair as **two submessages of one GRIB message**
+  (idx lines N.1/N.2 at a shared byte offset), so one ranged fetch returns
+  both components.
+- **The nest's bucket resets every 3 h, the parent's every 12 h** through
+  its hourly phase; the parent's 3-hourly tail (f39–f84) publishes a direct
+  (h−3)–h record. At bucket boundaries **two APCP records coexist** in a
+  parent file (`12-24` beside `21-24` at f24); records are selected by the
+  exact idx window token, never by variable name alone.
+- **Nest fields carry a sparse bitmap** (~76–105 of 1.9M points, surfaced
+  by ecCodes as in-band 9999); the samplers publish a masked gridpoint as
+  absence, never a value.
+- **The science set is complete at every hour:** surface-based CAPE/CIN
+  (plus mixed-layer/most-unstable variants), `HPBL`, and the 2 m/10 m
+  surface set are present at every hour including f00 as analysis records.
 
-## GEPS 0.5° ensemble — supported
+## Smoke and observation feeds
 
-ECCC's Global Ensemble Prediction System extends the REPS ensemble product
-from three days to sixteen and adds the one thing REPS cannot supply:
-per-member storm-risk spread.
+The catalogue's `smokeModels` and `observationModels` entries.
 
-| Fact | Value |
-| --- | --- |
-| **Members** | **21** (a control plus 20 perturbed, one all-members file per field exactly as in REPS) |
-| **Availability** | complete ≈ T+5:07 |
-| **Path** | `YYYYMMDD/WXO-DD/ensemble/geps/grib2/raw/HH/hhh/`; raw members still use the **old CMC naming**, `CMC_geps-raw_<VAR>_<LVL>_<level>_latlon0p5x0p5_YYYYMMDDHH_Phhh_allmbrs.grib2`, not the MSC scheme the deterministic models migrated to |
-| **Retention** | matches REPS; the legacy `/ensemble/geps/` tree is likewise dead |
-| **Cost** | ~150 MB per step for the Meteogram field set (36 all-members files), **~14 GiB per run** over 96 steps, twice daily. The heaviest feed the forecast engine carries; the reference operator schedule builds it last |
-| **Verified** | 2026-08-08 |
-
-Quirks:
-
-- **The feed runs its own schedule**: 3-hourly to 192 hours then 6-hourly
-  to 384; the occasional Thursday 00Z extension to 936 hours is not
-  fetched.
-- **Nothing is rotated, unlike REPS:** a regular global lat-lon grid with
-  `uvRelativeToGrid=0`; components are earth-relative.
-- **The `HGT_SFC` orography is in decametres and its GRIB metadata lies
-  about it** [verified 2026-08-08]: the field decodes as
-  `units=m, paramId=228002` (indistinguishable from REPS's genuinely
-  metric field), but the values are dam (global max 586.3 = the smoothed
-  Himalaya ×10; Dundee 153.6 → 1 536 m beside GDPS's 1 525 m).
-  Pressure-level `HGT_ISBL` files are true metres. The builder scales ×10
-  and guards against both this bug and its inverse; any consumer of the
-  raw feed must too.
-- **Per-member surface-based `CAPE_SFC` and `CIN_SFC` exist at every step**
-  (97 files per step; the inventory is identical at hours 024, 198, and
-  384): the ensemble CAPE/CIN percentile spread REPS cannot provide,
-  published as conditional percentile blocks. The member spread is real:
-  167 to 1 311 J/kg CAPE across the 21 members at one site on the
-  verification day.
-- **GEPS's CAPE sentinel is an exact −1** (the HRDPS family's marker),
-  **not RDPS/GDPS's 9999**: real GEPS member CAPE reached 9 755 J/kg on the
-  verification day, so a 9999 mask would erase genuine extreme instability.
-  **CIN carries no sentinel at all**: it is computed even where CAPE is
-  flagged, and its values nearest −1 are ordinary packing bins, so all 21
-  members rank.
-- **Isobaric fields in the curated band match REPS's shape**: `TMP`/`RH`/
-  `HGT` and per-member `UGRD`/`VGRD` at **1000/925/850/700**, with **500 as
-  the parcel-ceiling headroom** (nothing exists between 700 and 500). Omega
-  is at 850 only and is not published. No dew point in any form (moisture
-  is `RH` at the levels and at 2 m) and no `WDIR` anywhere: direction
-  comes from the earth-relative components.
-- **Heat fluxes are time-integrated from run start** (paramId 146, J/m²,
-  `stepType=accum`, stepRange 0–h), unlike REPS's instantaneous values: the
-  builder publishes the mean W/m² over the window ending at each valid
-  time, (A(h₂)−A(h₁)) / ((h₂−h₁)·3600) per member, the window following
-  the schedule's 3 h then 6 h cadence. Precipitation is the same run-total
-  differencing. Hour 000 publishes neither, so the first window's baseline
-  is zero by definition.
-- **Only total cloud exists per member**: gust and PBL height are absent
-  too, declared false like REPS's.
-- **Verify every download against Content-Length.** One GEPS fetch returned
-  another model's bytes, correct on retry; the Datamart client now
-  length-checks every download because of it. See
-  [Seven forecast-data failures that passed parsing](/logbook/forecast-data-validation-failures/).
-
-## RAQDPS 10 km — supported, experimental, smoke documents
+### RAQDPS 10 km — supported, experimental, smoke documents
 
 ECCC's Regional Air Quality Deterministic Prediction System (GEM-MACH)
 feeds no wind profiles: it is the source of the per-site
@@ -634,7 +653,7 @@ paths, fields, units, and join semantics live. The catalogue lists it under
 | **Transport** | standard Datamart transport shared with the models above |
 | **Cost** | three whole-domain files per hour, ~43 MB per run, the lightest fetch of any ECCC feed |
 
-## GOES-18 DSR and AOD — supported, observations
+### GOES-18 DSR and AOD — supported, observations
 
 NOAA's GOES-18 (GOES-West) supplies the dataset's measurements. The two
 products feed no wind profiles: each is the source of a per-site

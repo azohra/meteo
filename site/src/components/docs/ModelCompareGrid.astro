@@ -4,35 +4,22 @@ import { MODELS, OBSERVATION_MODELS, SMOKE_MODELS } from "../../lib/catalogue";
 /* Generated from models.json at build time (the same single-source pattern as
    CapabilityMatrix), so the catalogue columns — slug, provider, kind, grid,
    cadence, horizon, status flags — can never drift from the catalogue.
-   Transport and verification dates live only in this page's prose, so they
-   arrive authored, keyed by slug; a catalogue model the page has not authored
-   renders an em dash rather than an invented value. Feeds the catalogue does
-   not carry (staged and evaluated models) arrive as fully authored rows. */
+   Availability, per-run cost, transport, and verification dates live only in
+   this page's prose, so they arrive authored, keyed by slug; a fact the page
+   has not authored renders an em dash rather than an invented value. */
 
 interface AuthoredFacts {
   transport: string;
+  availability: string;
+  cost: string;
   verified: string;
-}
-
-interface ExtraRow {
-  label: string;
-  slug: string;
-  provider: string;
-  kind: string;
-  grid: string;
-  cadence: string;
-  horizon: string;
-  transport: string;
-  verified: string;
-  status: string;
 }
 
 interface Props {
   authored?: Record<string, AuthoredFacts>;
-  extraRows?: ExtraRow[];
 }
 
-const { authored = {}, extraRows = [] } = Astro.props;
+const { authored = {} } = Astro.props;
 
 function cycles(intervalHours: number): string {
   if (intervalHours === 6) return "00/06/12/18Z";
@@ -47,7 +34,14 @@ function grid(gridKm: number): string {
 const NONE = "—";
 
 function authoredFacts(slug: string): AuthoredFacts {
-  return authored[slug] ?? { transport: NONE, verified: NONE };
+  return (
+    authored[slug] ?? {
+      transport: NONE,
+      availability: NONE,
+      cost: NONE,
+      verified: NONE,
+    }
+  );
 }
 
 interface Row {
@@ -60,6 +54,8 @@ interface Row {
   cadence: string;
   horizon: string;
   transport: string;
+  availability: string;
+  cost: string;
   verified: string;
 }
 
@@ -103,23 +99,7 @@ const observationRows: Row[] = OBSERVATION_MODELS.map((m) => ({
   ...authoredFacts(m.slug),
 }));
 
-const rows: Row[] = [
-  ...modelRows,
-  ...smokeRows,
-  ...observationRows,
-  ...extraRows.map((r) => ({
-    label: r.label,
-    slug: r.slug,
-    status: r.status,
-    provider: r.provider,
-    kind: r.kind,
-    grid: r.grid,
-    cadence: r.cadence,
-    horizon: r.horizon,
-    transport: r.transport,
-    verified: r.verified,
-  })),
-];
+const rows: Row[] = [...modelRows, ...smokeRows, ...observationRows];
 ---
 
 <div class="mc-grid">
@@ -140,6 +120,8 @@ const rows: Row[] = [
           <th scope="col">Grid</th>
           <th scope="col">Runs used (UTC) · step</th>
           <th scope="col">Horizon</th>
+          <th scope="col">Availability</th>
+          <th scope="col">Cost per run</th>
           <th scope="col">Transport</th>
           <th scope="col">Verified</th>
         </tr>
@@ -158,6 +140,8 @@ const rows: Row[] = [
               <td class="mc-num">{r.grid}</td>
               <td class="mc-num">{r.cadence}</td>
               <td class="mc-num">{r.horizon}</td>
+              <td class="mc-num">{r.availability}</td>
+              <td class="mc-num">{r.cost}</td>
               <td>{r.transport}</td>
               <td class="mc-num">{r.verified}</td>
             </tr>
@@ -185,7 +169,7 @@ const rows: Row[] = [
   }
   table {
     width: 100%;
-    min-width: 940px;
+    min-width: 1200px;
     border-collapse: collapse;
     background: var(--surface);
     border: 1px solid var(--rule);
