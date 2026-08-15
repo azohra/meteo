@@ -38,7 +38,6 @@ The package ships the `meteo` binary in the platform grammar
 pnpm add @azohra/meteo.forecast
 pnpm exec meteo forecast build --model hrrr-conus --sites ./club-sites.json --output ./public/data --dry-run
 pnpm exec meteo forecast terrain --sites ./club-sites.json
-pnpm exec meteo forecast migrate --model gfs   # dry-run by default
 ```
 
 From a workspace checkout, the same commands run as

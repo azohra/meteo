@@ -66,9 +66,9 @@ explicit priority:
 licence attribution of the pick are one join away. In the committed
 document, sites covered by British Columbia's 1 m lidar read from
 LidarBC (`test-hill`, `test-valley`); `test-ridge`, which no 1 m
-lidar covers, reads from MRDEM-30. Since schemaVersion 2
-this block replaces v1's optional `bareEarth` block: the pick *is* the
-best bare-earth answer, and keeping both would duplicate it. The
+lidar covers, reads from MRDEM-30. There is one elevation block by
+design: the pick *is* the
+best bare-earth answer, and a second one would duplicate it. The
 generator cross-checks the pick against `terrain.elevationM` and warns
 when they disagree by more than 100 m: a gap that large suggests the
 pin lands on different terrain in different sources, not canopy.

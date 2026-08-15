@@ -18,7 +18,6 @@ platform grammar (`meteo <capability> <command>`):
 pnpm add @azohra/meteo.forecast
 pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
 pnpm exec meteo forecast terrain --sites ./sites.json
-pnpm exec meteo forecast migrate --model gfs   # dry-run by default
 ```
 
 From a workspace checkout, the same commands run as
@@ -61,5 +60,4 @@ The engine's own reference:
 | [Model capabilities](/docs/forecast/model-capabilities/) | What each model's fields mean, and which absences are stated facts |
 | [Forecast model feeds](/docs/forecast/forecast-model-feeds/) | Dated provider facts: verified paths, schedules, fields, retention, transport, and licensing |
 | [Provider transports](/docs/forecast/provider-transports/) | Whole-file ECCC sampling, indexed NOAA byte ranges, whole-file GOES granules |
-| [Migrate stored v1 documents](/docs/forecast/migrate-v1/) | The one-time runbook that rewrites published schemaVersion 1 profiles and archives as 2 |
 | [Builder contract](/docs/forecast/builder-contract/) | For builder authors: the eight invariants every builder must honour |

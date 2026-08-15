@@ -25,9 +25,7 @@ document with the package you chose, and let the parser answer.
 | Manifests, model catalogue, smoke, observation, run index | <code>{SCHEMA_VERSION}</code> | the same contract |
 | Site catalogue and site context | <code>{SITES_SCHEMA_VERSION}</code>, <code>{SITE_CONTEXT_SCHEMA_VERSION}</code> | `SITES_SCHEMA_VERSION`, `SITE_CONTEXT_SCHEMA_VERSION` in the same contract |
 
-Stored v1 forecast documents migrate mechanically:
-`meteo forecast migrate` (`forecast/src/migrate.ts`) is the executable
-map. The generated JSON Schemas under each package's `schema/` directory
+The generated JSON Schemas under each package's `schema/` directory
 describe the inputs the released package accepts; the zod schemas and
 their parse guards are the behavioural authority.
 

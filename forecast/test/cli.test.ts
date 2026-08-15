@@ -12,7 +12,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { BUILDERS, type RegistryBuildOptions } from "../src/builders/registry.js";
 import { main } from "../src/cli.js";
 import { PublisherConfigurationError, prepareOutputRoot } from "../src/config.js";
-import type { PublishedObjectStore } from "../src/migrate.js";
 import { packagedModelsPath } from "../src/catalogue.js";
 import { stubFetch, useCleanWireEnv } from "./helpers/wire.js";
 
@@ -712,113 +711,6 @@ describe("meteo forecast catalogue", () => {
     expect(catalogue.models.length).toBeGreaterThan(0);
   });
 });
-
-describe("meteo forecast migrate", () => {
-  function memoryStore(): { store: PublishedObjectStore; puts: string[] } {
-    const puts: string[] = [];
-    return {
-      store: {
-        fetchPublished: async () => null,
-        putObject: (key) => void puts.push(key),
-        s3Mode: () => false,
-      },
-      puts,
-    };
-  }
-
-  it("validates the slug against the registry", async () => {
-    const io = capture();
-    const result = await main(["forecast", "migrate", "--model", "nosuch", "--site", "test-hill"], {
-      store: memoryStore().store,
-      ...io,
-    });
-    expect(result).toBe(1);
-    expect(io.err.join("\n")).toContain("unknown model slug 'nosuch'");
-    expect(io.err.join("\n")).toContain("hrdps-west");
-  });
-
-  it("requires --model", async () => {
-    const io = capture();
-    expect(await main(["forecast", "migrate", "--site", "test-hill"], io)).toBe(2);
-    expect(io.err.join("\n")).toContain("--model");
-  });
-
-  it("dry-runs an empty dataset to a report, writing nothing", async () => {
-    const { store, puts } = memoryStore();
-    const io = capture();
-
-    const result = await main(["forecast", "migrate", "--model", "gfs", "--site", "test-hill"], {
-      store,
-      ...io,
-    });
-
-    expect(result).toBe(0);
-    const stdout = io.out.join("\n");
-    expect(stdout).toContain("gfs/test-hill: no current document published.");
-    expect(stdout).toContain("dry run — would upload nothing.");
-    expect(puts).toEqual([]);
-  });
-
-  it("defaults the site list to every catalogued site", async () => {
-    const tmp = scratch();
-    const sites = writeSites(join(tmp, "sites.json"));
-    const { store } = memoryStore();
-    const io = capture();
-
-    const result = await main(["forecast", "migrate", "--model", "gfs", "--sites", sites], {
-      store,
-      ...io,
-    });
-
-    expect(result).toBe(0);
-    expect(io.out.join("\n")).toContain("gfs/test-hill: no current document published.");
-  });
-
-  it("requires a site catalogue when no --site is given", async () => {
-    const io = capture();
-    const result = await main(["forecast", "migrate", "--model", "gfs"], {
-      store: memoryStore().store,
-      ...io,
-    });
-    expect(result).toBe(2);
-    expect(io.err.join("\n")).toContain("METEO_SITES");
-  });
-
-  it("accepts --members on an ensemble model", async () => {
-    const { store, puts } = memoryStore();
-    const io = capture();
-
-    const result = await main(
-      ["forecast", "migrate", "--model", "reps", "--site", "test-hill", "--members", "21"],
-      { store, ...io },
-    );
-
-    expect(result).toBe(0);
-    expect(io.out.join("\n")).toContain("reps/test-hill: no current document published.");
-    expect(puts).toEqual([]);
-  });
-
-  it("refuses --members where the catalogue declares no ensemble", async () => {
-    const io = capture();
-    const result = await main(
-      ["forecast", "migrate", "--model", "gfs", "--site", "test-hill", "--members", "21"],
-      { store: memoryStore().store, ...io },
-    );
-    expect(result).toBe(1);
-    expect(io.err.join("\n")).toContain("'gfs' is deterministic");
-  });
-
-  it("refuses a --members value that is not a whole count", async () => {
-    const io = capture();
-    const result = await main(
-      ["forecast", "migrate", "--model", "reps", "--site", "test-hill", "--members", "twenty"],
-      { store: memoryStore().store, ...io },
-    );
-    expect(result).toBe(2);
-    expect(io.err.join("\n")).toContain("--members");
-  });
-});
-
 describe("meteo forecast terrain", () => {
   it("wires the parsed catalogue and resolved output into generate", async () => {
     const tmp = scratch();

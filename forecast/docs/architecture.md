@@ -42,7 +42,6 @@ provider transport ──→ gridpoint sampling ──→ source-shaped hours
 | Derivation | `derive.ts` | Produce published profile blocks and model-dependent derived values; the usable-lift derivation is imported from `@azohra/meteo.briefing/derive` and stored at the 1 m/s sink |
 | Ensemble aggregation | `ensemble.ts` | Aggregate member profiles, including circular wind and censored counts |
 | Publication | `publish.ts` | Round contract fields, write JSON, append gzip history, build run index |
-| Document migration | `migrate.ts` | The one executable home of the v1 → v2 vocabulary change, plus the one-time `meteo forecast migrate` cutover that rewrites a model's published v1 documents in place |
 | History mechanics | `history.ts` | Split gzip members, recompute each month's [sidecar byte-offset index](/docs/briefing/history-archives/#the-sidecar-index) after every append |
 | Site context | `terrain.ts` | One-shot `site-context.json` enrichment (elevation, slope/aspect, relief, land cover); the geospatial stack loads only when the `terrain` command runs |
 | Teaching scenarios | `scenario/` | Generate fixed inputs through the same derivation authority; source-checkout tooling, not engine surface |

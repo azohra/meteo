@@ -70,9 +70,6 @@ meteo forecast build (--model SLUG | --all) --sites PATH
 
 meteo forecast terrain --sites PATH [--output PATH]
 
-meteo forecast migrate --model SLUG [--site ID ...] [--sites PATH]
-                 [--members N] [--apply]
-
 meteo forecast runs-index [--output PATH]
 
 meteo forecast freshness --model SLUG --manifest PATH
@@ -92,10 +89,7 @@ the [append-only month archives](/docs/briefing/history-archives/) and their sid
 indexes. `--no-history` publishes current documents only.
 
 `terrain` regenerates
-[`site-context.json`](/docs/briefing/site-context-document/); `migrate` is the
-one-time cutover of a model's published
-[schemaVersion 1 documents](/docs/compatibility/), with its runbook at
-[Migrate stored v1 documents](/docs/forecast/migrate-v1/);
+[`site-context.json`](/docs/briefing/site-context-document/);
 `runs-index` regenerates `runs.json` wholesale from the published
 manifests; `freshness` prints exactly `fresh` or `stale` so an upload flow
 can refuse to publish backwards; `catalogue` emits the packaged

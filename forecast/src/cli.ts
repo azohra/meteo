@@ -13,20 +13,16 @@ import {
   type PublisherConfig,
 } from "./config.js";
 import type { DatasetOptions } from "./dataset.js";
-import type { PublishedObjectStore } from "./migrate.js";
 import { parseSites, type Site } from "./sites.js";
 
 class CliFailure extends Error {}
 
 class UsageError extends Error {}
 
-const USAGE = "usage: meteo forecast <build|migrate|terrain|runs-index|freshness|catalogue> ...";
+const USAGE = "usage: meteo forecast <build|terrain|runs-index|freshness|catalogue> ...";
 const BUILD_USAGE =
   "usage: meteo forecast build (--model SLUG | --all) --sites PATH " +
   "[--output PATH] [--max-steps N] [--history|--no-history] [--dry-run]";
-const MIGRATE_USAGE =
-  "usage: meteo forecast migrate --model SLUG [--site ID ...] [--sites PATH] " +
-  "[--members N] [--apply]";
 const TERRAIN_USAGE = "usage: meteo forecast terrain --sites PATH [--output PATH]";
 const RUNS_INDEX_USAGE = "usage: meteo forecast runs-index [--output PATH]";
 const FRESHNESS_USAGE = "usage: meteo forecast freshness --model SLUG --manifest PATH";
@@ -34,7 +30,6 @@ const CATALOGUE_USAGE = "usage: meteo forecast catalogue [--output PATH]";
 
 export interface CliOverrides {
   runBuilder?: (slug: string, options: RegistryBuildOptions) => Promise<unknown>;
-  store?: PublishedObjectStore;
   terrain?: (sites: readonly Site[], outputPath: string) => Promise<number>;
   dataset?: DatasetOptions;
   stdout?: (line: string) => void;
@@ -272,101 +267,6 @@ async function catalogueCommand(args: readonly string[], stdout: Print): Promise
   return 0;
 }
 
-async function productionStore(): Promise<PublishedObjectStore> {
-  const dataset = await import("./dataset.js");
-  const { AwsClient } = await import("aws4fetch");
-  return {
-    fetchPublished: (path) => dataset.fetchPublished(path),
-    s3Mode: () => dataset.s3Mode(),
-    async putObject(key, body, cacheControl, contentType) {
-      const endpoint = (process.env["R2_ENDPOINT"] ?? "").replace(/\/+$/, "");
-      const bucket = process.env["METEO_R2_BUCKET"];
-      if (!bucket) {
-        throw new PublisherConfigurationError(
-          "uploads need a destination bucket: set METEO_R2_BUCKET to the " +
-            "dataset bucket's name",
-        );
-      }
-      const client = new AwsClient({
-        accessKeyId: process.env["AWS_ACCESS_KEY_ID"] ?? "",
-        secretAccessKey: process.env["AWS_SECRET_ACCESS_KEY"] ?? "",
-        service: "s3",
-        region: "auto",
-      });
-      const url = `${endpoint}/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
-      const signed = await client.sign(url, {
-        method: "PUT",
-        headers: { "cache-control": cacheControl, "content-type": contentType },
-        // aws4fetch's BodyInit typing predates typed arrays.
-        body: body as unknown as BodyInit,
-      });
-      const response = await fetch(signed);
-      if (!response.ok) {
-        throw new Error(`PutObject s3://${bucket}/${key} failed with ${response.status}`);
-      }
-    },
-  };
-}
-
-async function migrateCommand(
-  args: readonly string[],
-  overrides: CliOverrides,
-  stdout: Print,
-): Promise<number> {
-  const { values } = parseArgs({
-    args: [...args],
-    options: {
-      model: { type: "string" },
-      site: { type: "string", multiple: true },
-      sites: { type: "string" },
-      members: { type: "string" },
-      apply: { type: "boolean", default: false },
-    },
-    allowPositionals: false,
-  });
-  if (values.model === undefined) {
-    throw new UsageError("the following arguments are required: --model");
-  }
-  if (!BUILDERS.has(values.model)) {
-    const available = [...BUILDERS.keys()].join(", ");
-    throw new PublisherConfigurationError(
-      `unknown model slug '${values.model}'; choose one of: ${available}`,
-    );
-  }
-  let runMembers: number | undefined;
-  if (values.members !== undefined) {
-    runMembers = parsePositiveInteger("--members", values.members);
-    const { cataloguedModelKind } = await import("./catalogue.js");
-    const kind = cataloguedModelKind(values.model);
-    if (kind !== "ensemble") {
-      throw new PublisherConfigurationError(
-        `--members declares an ensemble's member count, but the catalogue says ` +
-          `'${values.model}' is ${kind ?? "an observation dataset"} — drop the flag`,
-      );
-    }
-  }
-  const siteIds =
-    values.site && values.site.length > 0
-      ? values.site
-      : loadSitesForCli(requiredSitesPath(values.sites)).map((site) => site.slug);
-
-  const { migrateModel } = await import("./migrate.js");
-  const store = overrides.store ?? (await productionStore());
-  try {
-    await migrateModel(values.model, siteIds, store, {
-      applyChanges: values.apply ?? false,
-      log: stdout,
-      runMembers,
-    });
-  } catch (error) {
-    if (error instanceof PublisherConfigurationError) {
-      throw error;
-    }
-    throw new CliFailure((error as Error).message, { cause: error });
-  }
-  return 0;
-}
-
 async function terrainCommand(args: readonly string[], overrides: CliOverrides): Promise<number> {
   const { values } = parseArgs({
     args: [...args],
@@ -390,8 +290,6 @@ function usageFor(command: string | undefined): string {
   switch (command) {
     case "build":
       return BUILD_USAGE;
-    case "migrate":
-      return MIGRATE_USAGE;
     case "terrain":
       return TERRAIN_USAGE;
     case "runs-index":
@@ -420,8 +318,6 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
     switch (command) {
       case "build":
         return await buildCommand(rest, overrides, stdout, stderr);
-      case "migrate":
-        return await migrateCommand(rest, overrides, stdout);
       case "terrain":
         return await terrainCommand(rest, overrides);
       case "runs-index":

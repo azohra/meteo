@@ -77,7 +77,7 @@ unit boundaries most likely to cause integration errors:
 
 | Quantity family | Contract convention | Common mistake |
 | --- | --- | --- |
-| Sea-level pressure (`surface.seaLevelPressureHpa`) | hPa: one unit for the whole pressure class, shared with station documents | Reading a v1 document's `pressurePa` (whole pascals) as hPa without migrating |
+| Sea-level pressure (`surface.seaLevelPressureHpa`) | hPa: one unit for the whole pressure class, shared with station documents | Assuming whole pascals; the wire carries hPa |
 | Pressure levels | hPa | Multiplying named isobaric levels by 100 in labels |
 | Heights and elevations | metres; profile altitude values are MSL unless explicitly AGL | Plotting model PBL depth directly on an MSL axis |
 | Model PBL height | metres AGL | Comparing it to `derived.boundaryLayerTopM` without adding `site.modelElevationM` |
@@ -167,6 +167,6 @@ and site context pin `SITES_SCHEMA_VERSION` and
   (`profile.schema.json` and its siblings), so a resolver can reach them
   by specifier as well as by path.
 
-See [Compatibility](/docs/compatibility/) for the document families, the
-schemaVersion 2 boundary, and the migration path for stored v1 documents;
+See [Compatibility](/docs/compatibility/) for the document families and
+the one rule for reading them;
 [Package versioning](/docs/briefing/versioning/) covers the npm axis.

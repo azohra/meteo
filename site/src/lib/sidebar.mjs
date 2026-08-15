@@ -72,7 +72,6 @@ export const sidebar = [
       { slug: "docs/forecast/model-capabilities", label: "Model capabilities" },
       { slug: "docs/forecast/forecast-model-feeds", label: "Forecast model feeds" },
       { slug: "docs/forecast/provider-transports", label: "Provider transports" },
-      { slug: "docs/forecast/migrate-v1", label: "Migrate stored v1 documents" },
       { slug: "docs/forecast/builder-contract", label: "Builder contract" },
     ],
   },

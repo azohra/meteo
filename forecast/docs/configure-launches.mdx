@@ -14,7 +14,7 @@ wherever your project keeps it.
 
 ## Catalogue shape
 
-Since schemaVersion 2 the catalogue is **identity and build selection
+The catalogue is **identity and build selection
 only**: humans author WHERE, and nothing physical. The forecast engine measures
 elevation, terrain, and land cover at those coordinates and publishes them
 in [`site-context.json`](/docs/briefing/site-context-document/).
@@ -49,8 +49,8 @@ walks the root files).
 | `timeZone` | IANA timezone used to read local days and clock times |
 
 <Aside type="note" title="No elevation of any kind lives here">
-  v1 carried a hand-typed `elevationM`; the forecast engine now rejects any file
-  that includes it (or any other unknown field) with a pointer to the
+  The forecast engine rejects any file that includes a hand-typed
+  `elevationM` (or any other unknown field) with a pointer to the
   measured replacement. The launch elevation is `site-context.json`'s
   `elevation` pick, measured from ground observations at the catalogued
   coordinates; each profile records the sampled grid terrain separately as

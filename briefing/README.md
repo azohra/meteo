@@ -32,9 +32,8 @@ JSON Schema artifacts live in [`schema/`](schema/).
 
 ## Stability
 
-Pre-1.0: the wire contract is wire v2 (`schemaVersion: 2`: the `Mps`
-suffix grammar and `seaLevelPressureHpa`; stored v1 documents migrate
-through the forecast engine's `meteo forecast migrate`); the TypeScript
+Pre-1.0: published site-forecast documents carry `schemaVersion: 2` (the
+`Mps` suffix grammar and `seaLevelPressureHpa`); the TypeScript
 surface follows the platform versioning policy in
 [`docs/versioning.mdx`](docs/versioning.mdx).
 
