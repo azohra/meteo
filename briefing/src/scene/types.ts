@@ -93,10 +93,12 @@ export interface MeteogramOptions {
   smoke?: SmokeDocument | null;
   /** Render the smoke-adjusted alternate view (w* derated by slant-path smoke transmittance, lift envelope re-derived); no-ops with no smoke data, a smoke-aware profile, or an unchanged picture. */
   smokeAdjusted?: boolean;
-  /** A site's observation document, joined per rendered hour by nearest instant to draw the measured "Sun" strip. */
+  /** A site's observation document: the measured "Sun" strip draws every sample at the product's native cadence, and the hourly nearest-instant join feeds the dimming cells and pointer packets. */
   observations?: ObservationDocument | null;
-  /** A site's measured-AOT observation document, joined per rendered hour by nearest instant to draw the measured "AOT" strip. */
+  /** A site's measured-AOT observation document: the measured "AOT" strip draws every sample at the product's native cadence, and the hourly nearest-instant join feeds the haze cells and pointer packets. */
   aotObservations?: ObservationDocument | null;
+  /** Largest gap between consecutive measurements the measured lines bridge, minutes; a wider gap (a retrieval outage, night) breaks the line rather than interpolating across it. TRIAL default `DEFAULT_MEASUREMENT_GAP_MINUTES` (45). */
+  measurementGapMinutes?: number;
   /** 1-2-1 smoothing on the cloud-base and usable-lift series; default true. */
   smooth?: boolean;
   /** Class boundaries for the CAPE strip; defaults to `DEFAULT_CAPE_CLASSES`. */
@@ -213,6 +215,10 @@ export interface MetricStrip {
   areaPath: string;
   /** p25-p75 envelope where the source position is an ensemble value. */
   bandPath: string | null;
+  /** Lone measured samples a stroked path cannot show; renderers draw each as a small filled circle classed `${className}-dot`. */
+  dots?: ReadonlyArray<{ x: number; y: number }>;
+  /** Measurement strips: the x of the newest measured instant. The region from here to the plot's right edge is not-yet-measured and renders as a pending tint, distinct from a data gap. Absent when measurement covers the window. */
+  measuredToX?: number;
   /** Full-height classed cells drawn behind the line (CAPE risk classes). */
   cells?: ReadonlyArray<StripCell | null>;
   /** Stacked sub-rows (cloud layers); such strips draw no line. */

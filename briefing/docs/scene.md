@@ -104,25 +104,37 @@ profile's own fluxes are already smoke-aware
 ## Draw measurements beside the forecast
 
 Pass a site's observation document as `options.observations` and the
-**Sun strip** draws: satellite-measured W/m² joined to each rendered
-hour by nearest instant, with a shadow behind the line that deepens as
-the measured sky under-delivers against the clear-sky expectation
-(tint = 1 − observed transmittance). `scene.observationSource` names the
-dataset and its newest measured instant: the strip is another source
-with its own cadence, and renderers must be able to label it; the
-reference key explains the shadow via `KeySpec.measuredDimming`.
-Pointer packets carry `observedIrradianceWm2` and
+**Sun strip** draws: satellite-measured W/m² at the product's own
+cadence — every sample inside the window, where its instant falls —
+with a shadow behind the line that deepens as the measured sky
+under-delivers against the clear-sky expectation (tint = 1 − observed
+transmittance). A measured line stops at its data: it never extends to
+the plot edges the way a forecast strip does, a gap wider than
+`measurementGapMinutes` (TRIAL default 45) breaks it rather than
+interpolating across a retrieval outage, and a lone surviving sample
+draws as a dot (`MetricStrip.dots`) instead of vanishing. The window's
+remainder past the newest measured instant is not a gap, and the strip
+says so: a pending tint fills from `MetricStrip.measuredToX` to the
+right edge. `scene.observationSource` names the dataset and its newest
+measured instant: the strip is another source with its own cadence, and
+renderers must be able to label it; the reference key explains the
+shadow via `KeySpec.measuredDimming`. The shadow cells, pointer
+packets, and the sampling row remain hourly joins by nearest instant —
+per-hour consumers read the hour's nearest measurement, the line reads
+them all. Pointer packets carry `observedIrradianceWm2` and
 `observedTransmittance`, so an inspector reads the measurement where
 the pixels drew it.
 
 Pass an AOD observation document as `options.aotObservations` and the
 **AOT strip** draws beside it: satellite-measured aerosol optical
 thickness at 550 nm (the same quantity, wavelength, and field name the
-smoke document forecasts as `aot`) joined to each rendered hour by
-nearest instant, with `scene.aotObservationSource` naming the dataset
-and its newest measured instant. The haze behind the line is
-deliberately the forecast smoke strip's own cell encoding, same class
-and same scale (full tint at AOT 3), and one key chip,
+profile's per-hour `smoke` block forecasts as `aot`), drawn at the
+product's own cadence under the same rules as the Sun strip — gaps
+break the line, lone retrievals draw as dots, the not-yet-measured
+remainder renders pending — with `scene.aotObservationSource` naming
+the dataset and its newest measured instant. The haze behind the line
+is deliberately the forecast smoke strip's own cell encoding, same
+class and same scale (full tint at AOT 3), and one key chip,
 `KeySpec.smokeHaze`,
 explains both tints. The `observedAot` overlay defaults on, a document
 whose entries are not AOT-shaped contributes nothing, and pointer

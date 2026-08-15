@@ -172,6 +172,17 @@ export function renderMeteogramSvg(
         opacity: 0.45,
       }),
     );
+    if (strip.measuredToX !== undefined) {
+      body.push(
+        el("rect", {
+          x: short(strip.measuredToX),
+          y: strip.top,
+          width: short(plotLeft + plotWidth - strip.measuredToX),
+          height: strip.height,
+          class: "meteo-gram-strip-pending",
+        }),
+      );
+    }
     for (const cell of strip.cells ?? []) {
       if (!cell) continue;
       const attrs: Record<string, AttrValue> = {
@@ -223,6 +234,16 @@ export function renderMeteogramSvg(
           "stroke-width": 1.7,
           "stroke-linecap": "round",
           "stroke-linejoin": "round",
+        }),
+      );
+    }
+    for (const dot of strip.dots ?? []) {
+      body.push(
+        el("circle", {
+          cx: short(dot.x),
+          cy: short(dot.y),
+          r: 1.8,
+          class: `${strip.className}-dot`,
         }),
       );
     }

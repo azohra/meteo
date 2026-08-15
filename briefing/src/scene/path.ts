@@ -47,6 +47,26 @@ export function pointPath(points: ReadonlyArray<PlotPoint | null>): string {
   return paths.join(" ");
 }
 
+/** Curved path plus the lone points a stroke cannot show: nulls split runs, runs of two or more become path segments, and a run of one — which `pointPath` would emit as an invisible bare moveto — surfaces as a dot for the renderer to draw. */
+export function sampledPath(points: ReadonlyArray<PlotPoint | null>): {
+  path: string;
+  dots: PlotPoint[];
+} {
+  const paths: string[] = [];
+  const dots: PlotPoint[] = [];
+  let segment: PlotPoint[] = [];
+  for (const point of [...points, null]) {
+    if (point) {
+      segment.push(point);
+      continue;
+    }
+    if (segment.length === 1) dots.push(segment[0]);
+    else if (segment.length > 1) paths.push(curvedPath(segment));
+    segment = [];
+  }
+  return { path: paths.join(" "), dots };
+}
+
 /** Translucent envelope between two edges (ensemble p25-p75 bands), using the same curved segments as the median line so the line can never exit its own envelope; nulls split the band into runs. */
 export function bandPath(
   points: ReadonlyArray<{ x: number; yLow: number; yHigh: number } | null>,

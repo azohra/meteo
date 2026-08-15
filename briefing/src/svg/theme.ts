@@ -192,9 +192,12 @@ export const DEFAULT_STYLESHEET = `
 .meteo-gram-smoke-cell { fill: ${v("smoke")}; }
 .meteo-gram-strip-observedIrradiance { stroke: ${v("sun")}; }
 .meteo-gram-strip-observedIrradiance-area, .meteo-gram-strip-observedIrradiance-band { fill: ${v("sun")}; }
+.meteo-gram-strip-observedIrradiance-dot { fill: ${v("sun")}; }
 .meteo-gram-dim-cell { fill: ${v("sun-dim")}; }
 .meteo-gram-strip-observedAot { stroke: ${v("smoke")}; }
 .meteo-gram-strip-observedAot-area, .meteo-gram-strip-observedAot-band { fill: ${v("smoke")}; }
+.meteo-gram-strip-observedAot-dot { fill: ${v("smoke")}; }
+.meteo-gram-strip-pending { fill: ${v("ink-mute")}; opacity: 0.07; }
 .meteo-gram-strip-source { fill: ${v("ink-mute")}; font-size: 8px; font-style: italic; }
 .meteo-gram-strip-divider { stroke: ${v("rule")}; stroke-dasharray: 2 3; stroke-width: 0.8; }
 .meteo-gram-strip-divider-label { fill: ${v("ink-mute")}; font-size: 8px; font-style: italic; letter-spacing: 0.04em; }

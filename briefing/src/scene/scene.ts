@@ -1,4 +1,4 @@
-import { type SiteForecast } from "../contract.js";
+import { type ObservationDocument, type SiteForecast } from "../contract.js";
 import {
   cosSolarZenith,
   dewPointDepressionC,
@@ -71,6 +71,58 @@ function shortInstant(instant: string): string {
   const hh = instant.slice(11, 13);
   const mm = instant.slice(14, 16);
   return mm === "00" ? `${date} ${hh}Z` : `${date} ${hh}:${mm}Z`;
+}
+
+/** TRIAL default for `measurementGapMinutes`: two 10-minute scan cadences plus slack, so consecutive granules connect and a failed-retrieval stretch breaks the line. */
+export const DEFAULT_MEASUREMENT_GAP_MINUTES = 45;
+
+/**
+ * Fractional column offset of an instant against the rendered hour grid —
+ * piecewise-linear between the columns' instants, so a mid-column sample
+ * lands where its time says even when the step widens (3-hourly tails).
+ * Null outside the plot (beyond half a step past either edge column).
+ */
+function columnOffsetAt(hourTimesMs: readonly number[], tMs: number): number | null {
+  if (hourTimesMs.length === 0) return null;
+  const first = hourTimesMs[0];
+  const last = hourTimesMs[hourTimesMs.length - 1];
+  const firstStep = hourTimesMs.length > 1 ? hourTimesMs[1] - first : 3_600_000;
+  const lastStep = hourTimesMs.length > 1 ? last - hourTimesMs[hourTimesMs.length - 2] : 3_600_000;
+  if (tMs < first - firstStep / 2 || tMs > last + lastStep / 2) return null;
+  if (tMs <= first) return (tMs - first) / firstStep;
+  if (tMs >= last) return hourTimesMs.length - 1 + (tMs - last) / lastStep;
+  let index = 0;
+  while (hourTimesMs[index + 1] < tMs) index += 1;
+  return index + (tMs - hourTimesMs[index]) / (hourTimesMs[index + 1] - hourTimesMs[index]);
+}
+
+/**
+ * An observation document at its native cadence, as plot-ready column
+ * offsets: entries carrying a finite `valueKey` inside the rendered
+ * window, in time order, with an explicit null wherever consecutive
+ * samples sit further apart than the gap tolerance — a retrieval outage
+ * must break the line, never be interpolated across.
+ */
+function measurementSamples(
+  document: ObservationDocument | null | undefined,
+  valueKey: string,
+  hourTimesMs: readonly number[],
+  gapMinutes: number,
+): Array<{ columnOffset: number; value: number } | null> | undefined {
+  if (!document) return undefined;
+  const samples: Array<{ columnOffset: number; value: number } | null> = [];
+  let previousMs: number | null = null;
+  for (const observation of document.observations) {
+    const value = (observation as Record<string, unknown>)[valueKey];
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    const tMs = Date.parse(observation.observedAt);
+    const columnOffset = columnOffsetAt(hourTimesMs, tMs);
+    if (columnOffset === null) continue;
+    if (previousMs !== null && tMs - previousMs > gapMinutes * 60_000) samples.push(null);
+    samples.push({ columnOffset, value });
+    previousMs = tMs;
+  }
+  return samples.some((entry) => entry !== null) ? samples : undefined;
 }
 
 function pitchBarbScale(columnWidth: number): number {
@@ -343,6 +395,23 @@ export function buildMeteogramScene(
 
   const plotWidth = columnWidth * Math.max(hours.length, 1);
   const stripGeometry: StripGeometry = { marginLeft: MARGIN_LEFT, columnWidth, plotWidth };
+  const hourTimesMs = hours.map((hour) => Date.parse(hour.validAt));
+  const measurementGapMinutes = options.measurementGapMinutes ?? DEFAULT_MEASUREMENT_GAP_MINUTES;
+  // The measured lines draw every sample at the product's own cadence; the
+  // hourly nearest-instant joins below feed only the per-hour consumers —
+  // dimming cells, pointer packets, and the sampling row.
+  const observationSamples = measurementSamples(
+    options.observations,
+    "downwardShortwaveWm2",
+    hourTimesMs,
+    measurementGapMinutes,
+  );
+  const aotObservationSamples = measurementSamples(
+    options.aotObservations,
+    "aot",
+    hourTimesMs,
+    measurementGapMinutes,
+  );
   const observationSeries = hours.map((hour) => {
     if (!options.observations) return null;
     const nearest = nearestObservation(options.observations, hour.validAt, 30);
@@ -357,12 +426,16 @@ export function buildMeteogramScene(
     };
   });
   const observationSource =
-    options.observations && observationSeries.some((entry) => entry !== null)
+    options.observations &&
+    (observationSamples !== undefined || observationSeries.some((entry) => entry !== null))
       ? {
           model: options.observations.model,
           lastObservedAt: options.observations.observed.lastObservedAt,
         }
       : null;
+  const observationMeasuredTo = observationSource
+    ? columnOffsetAt(hourTimesMs, Date.parse(observationSource.lastObservedAt))
+    : null;
 
   const aotObservationSeries = hours.map((hour) => {
     if (!options.aotObservations) return null;
@@ -371,12 +444,16 @@ export function buildMeteogramScene(
     return { aot: nearest.observation.aot };
   });
   const aotObservationSource =
-    options.aotObservations && aotObservationSeries.some((entry) => entry !== null)
+    options.aotObservations &&
+    (aotObservationSamples !== undefined || aotObservationSeries.some((entry) => entry !== null))
       ? {
           model: options.aotObservations.model,
           lastObservedAt: options.aotObservations.observed.lastObservedAt,
         }
       : null;
+  const aotObservationMeasuredTo = aotObservationSource
+    ? columnOffsetAt(hourTimesMs, Date.parse(aotObservationSource.lastObservedAt))
+    : null;
 
   const smokeStripSource = profileHasSmoke
     ? profile.semantics?.smoke === "radiativelyCoupled"
@@ -405,7 +482,11 @@ export function buildMeteogramScene(
     floorM,
     smokeSeries,
     observationSeries,
+    observationSamples,
+    observationMeasuredTo,
     aotObservationSeries,
+    aotObservationSamples,
+    aotObservationMeasuredTo,
     smokeStripSource,
     observationSourceLabel,
     aotObservationSourceLabel,

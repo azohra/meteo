@@ -1,5 +1,5 @@
 import { buoyancyShearRatio, surfaceToBoundaryLayerShearMps } from "../derive/index.js";
-import { bandPath, pointPath, type PlotPoint } from "./path.js";
+import { bandPath, pointPath, sampledPath, short, type PlotPoint } from "./path.js";
 import type { Band, ResolvedHour } from "./resolve.js";
 import type { CapeClassThresholds, MetricStrip, OverlayName, StripCell } from "./types.js";
 
@@ -23,6 +23,10 @@ export interface StripSpec {
   minimum: number;
   maximum: number;
   cells?: Array<StripCell | null>;
+  /** Native-cadence measurements as fractional column offsets, gaps as nulls; present, the line draws from these instead of the hourly `values`, and lone samples surface as dots. */
+  samples?: ReadonlyArray<{ columnOffset: number; value: number } | null>;
+  /** Fractional column offset of the newest measured instant; the region beyond it is not-yet-measured and renders as pending. Null when measurement covers the window. */
+  measuredTo?: number | null;
   /** Row cells without geometry; tops are assigned once the strip has one. */
   rows?: Array<{ label: string; cells: Array<StripCell | null> }>;
   /** MetricStrip.provenance; absent means "model". */
@@ -55,6 +59,10 @@ export function isForeignStrip(spec: { provenance?: MetricStrip["provenance"] })
 const finite = (values: Array<number | null>) =>
   values.filter((value): value is number => value != null && Number.isFinite(value));
 
+const sampleValues = (
+  samples: ReadonlyArray<{ columnOffset: number; value: number } | null> | undefined,
+) => (samples ?? []).flatMap((sample) => (sample === null ? [] : [sample.value]));
+
 export function buildStripSpecs(args: {
   hours: ResolvedHour[];
   overlays: Record<OverlayName, boolean>;
@@ -68,12 +76,20 @@ export function buildStripSpecs(args: {
   smokeStripSource?: { provenance: MetricStrip["provenance"]; sourceLabel?: string };
   /** The Sun strip's inline provenance statement. */
   observationSourceLabel?: string;
-  /** Per-rendered-hour measured irradiance, index-aligned with `hours`; absent/all-null draws no strip. */
+  /** Per-rendered-hour measured irradiance, index-aligned with `hours`; feeds the dimming cells. Without `observationSamples`, absent/all-null draws no strip. */
   observationSeries?: ReadonlyArray<{ wm2: number; transmittance: number | null } | null>;
+  /** Native-cadence measured irradiance (StripSpec.samples shape); present, the Sun line draws from these. */
+  observationSamples?: ReadonlyArray<{ columnOffset: number; value: number } | null>;
+  /** The Sun strip's newest measured instant as a column offset (StripSpec.measuredTo). */
+  observationMeasuredTo?: number | null;
   /** The AOT strip's inline provenance statement. */
   aotObservationSourceLabel?: string;
-  /** Per-rendered-hour measured optical thickness, index-aligned with `hours`; absent/all-null draws no strip. */
+  /** Per-rendered-hour measured optical thickness, index-aligned with `hours`; feeds the haze cells. Without `aotObservationSamples`, absent/all-null draws no strip. */
   aotObservationSeries?: ReadonlyArray<{ aot: number } | null>;
+  /** Native-cadence measured optical thickness (StripSpec.samples shape); present, the AOT line draws from these. */
+  aotObservationSamples?: ReadonlyArray<{ columnOffset: number; value: number } | null>;
+  /** The AOT strip's newest measured instant as a column offset (StripSpec.measuredTo). */
+  aotObservationMeasuredTo?: number | null;
   geometry: StripGeometry;
 }): StripSpec[] {
   const {
@@ -83,7 +99,11 @@ export function buildStripSpecs(args: {
     floorM,
     smokeSeries,
     observationSeries,
+    observationSamples,
+    observationMeasuredTo,
     aotObservationSeries,
+    aotObservationSamples,
+    aotObservationMeasuredTo,
     smokeStripSource,
     observationSourceLabel,
     aotObservationSourceLabel,
@@ -190,7 +210,7 @@ export function buildStripSpecs(args: {
   if (
     overlays.observedIrradiance &&
     observationSeries &&
-    observationSeries.some((entry) => entry !== null)
+    (observationSamples !== undefined || observationSeries.some((entry) => entry !== null))
   ) {
     const measured = observationSeries.map((entry) => (entry === null ? null : entry.wm2));
     stripSpecs.push({
@@ -200,9 +220,11 @@ export function buildStripSpecs(args: {
       label: "Sun",
       unit: "W/m²",
       values: measured,
+      ...(observationSamples ? { samples: observationSamples } : {}),
+      measuredTo: observationMeasuredTo ?? null,
       bands: observationSeries.map(() => null),
       minimum: 0,
-      maximum: Math.max(800, ...finite(measured)),
+      maximum: Math.max(800, ...finite(measured), ...sampleValues(observationSamples)),
       cells: observationSeries.map((entry, index) =>
         entry === null || entry.transmittance === null || entry.transmittance >= 1
           ? null
@@ -218,7 +240,7 @@ export function buildStripSpecs(args: {
   if (
     overlays.observedAot &&
     aotObservationSeries &&
-    aotObservationSeries.some((entry) => entry !== null)
+    (aotObservationSamples !== undefined || aotObservationSeries.some((entry) => entry !== null))
   ) {
     const measuredAot = aotObservationSeries.map((entry) => (entry === null ? null : entry.aot));
     stripSpecs.push({
@@ -228,9 +250,11 @@ export function buildStripSpecs(args: {
       label: "AOT",
       unit: "550 nm",
       values: measuredAot,
+      ...(aotObservationSamples ? { samples: aotObservationSamples } : {}),
+      measuredTo: aotObservationMeasuredTo ?? null,
       bands: aotObservationSeries.map(() => null),
       minimum: 0,
-      maximum: Math.max(3, ...finite(measuredAot)),
+      maximum: Math.max(3, ...finite(measuredAot), ...sampleValues(aotObservationSamples)),
       cells: aotObservationSeries.map((entry, index) =>
         entry === null || entry.aot <= 0
           ? null
@@ -369,6 +393,17 @@ export function layoutStrips(
     const centred: Array<PlotPoint | null> = spec.values.map((value, index) =>
       value == null || !Number.isFinite(value) ? null : { x: xCenter(index), y: yOf(value) },
     );
+    // A measured line draws every sample where its instant falls and stops
+    // at the data: no extension to the plot edges (that would fabricate
+    // measurements) and lone samples become dots instead of vanishing as
+    // bare movetos.
+    const sampled = spec.samples
+      ? sampledPath(
+          spec.samples.map((sample) =>
+            sample === null ? null : { x: xCenter(sample.columnOffset), y: yOf(sample.value) },
+          ),
+        )
+      : null;
     const first = centred[0];
     const last = centred[centred.length - 1];
     const points: Array<PlotPoint | null> = [
@@ -376,12 +411,17 @@ export function layoutStrips(
       ...centred,
       ...(last ? [{ x: marginLeft + plotWidth, y: last.y }] : []),
     ];
-    const linePath = pointPath(points);
-    const complete = centred.every((point) => point !== null);
+    const linePath = sampled ? sampled.path : pointPath(points);
+    const complete = spec.samples === undefined && centred.every((point) => point !== null);
     const areaPath =
       complete && centred.length > 0
         ? `${linePath} L${(marginLeft + plotWidth).toFixed(2)},${bottom} L${marginLeft.toFixed(2)},${bottom} Z`
         : "";
+    const plotRight = marginLeft + plotWidth;
+    const measuredToX =
+      spec.measuredTo == null
+        ? null
+        : Math.min(plotRight, Math.max(marginLeft, xCenter(spec.measuredTo)));
     const bandPoints = spec.bands.map((entry, index) =>
       entry === null ? null : { x: xCenter(index), yLow: yOf(entry.p25), yHigh: yOf(entry.p75) },
     );
@@ -408,6 +448,12 @@ export function layoutStrips(
       areaPath,
       bandPath: band === "" ? null : band,
     };
+    if (sampled && sampled.dots.length > 0) {
+      strip.dots = sampled.dots.map((dot) => ({ x: short(dot.x), y: short(dot.y) }));
+    }
+    if (measuredToX !== null && plotRight - measuredToX > 0.5) {
+      strip.measuredToX = short(measuredToX);
+    }
     if (spec.cells) strip.cells = spec.cells;
     if (spec.rows) {
       const rowHeight = METRIC_BAND_HEIGHT / spec.rows.length;

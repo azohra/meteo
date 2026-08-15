@@ -1,4 +1,4 @@
-export { buildMeteogramScene, M_TO_FT } from "./scene.js";
+export { buildMeteogramScene, DEFAULT_MEASUREMENT_GAP_MINUTES, M_TO_FT } from "./scene.js";
 export { meteogramDisplayHours, type DayWindowOptions } from "./display-window.js";
 export { smooth121 } from "./smoothing.js";
 export {

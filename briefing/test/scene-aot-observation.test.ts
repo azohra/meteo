@@ -96,10 +96,20 @@ describe("the measured AOT strip", () => {
     const profile = tinySceneProfile();
     profile.semantics = { smoke: "radiativelyCoupled" };
     profile.hours[0].smoke = { surfaceUgm3: 100, columnMgm2: 200, aot: 0.9 };
-    const aotObservations = aotObservationsFor(
-      profile.hours.map((hour) => hour.validAt),
-      [0.9, 2.4],
-    );
+    // The product's own ten-minute cadence: consecutive granules connect
+    // into a line, and each hour's nearest sample carries its haze value.
+    const firstHourMs = Date.parse(profile.hours[0].validAt);
+    const aotObservations: ObservationDocument = {
+      ...aotObservationsFor(
+        profile.hours.map((hour) => hour.validAt),
+        [0.9, 2.4],
+        0,
+      ),
+      observations: [0.9, 1.2, 1.5, 1.8, 2.1, 2.4].map((aot, index) => ({
+        observedAt: new Date(firstHourMs + index * 12 * 60_000).toISOString().replace(".000Z", "Z"),
+        aot,
+      })),
+    };
     const scene = buildMeteogramScene(profile, { ...OPTIONS, aotObservations });
 
     const strip = scene.strips.find((entry) => entry.key === "observedAot");
