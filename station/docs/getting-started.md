@@ -221,10 +221,13 @@ and the pure history-slicing functions behind the charts are in
 
 ## Where next
 
-| Topic | Page |
+Route by the question you are carrying out of this page
+(the [section landing](/docs/station/) inventories every page):
+
+| Your next question | Page |
 |---|---|
-| Built-in vendors, custom adapters, environment injection | [Adapters](/docs/station/adapters/) |
-| What your station's declared capabilities turn on | [What your hardware shows](/docs/station/what-your-hardware-shows/) |
-| Hooks, provider, components, SSR | [React](/docs/station/react/) — or [custom elements](/docs/station/elements/) with no framework |
-| Tokens, dark mode, `@layer` | [Theming](/docs/station/theming/) |
-| The document shape, semantics, and HTTP protocol | [Wire contract](/docs/station/wire-contract/) |
+| What does my vendor's config entry take, and what quirks does its adapter guard? | Your vendor's page under [Adapters](/docs/station/adapters/) |
+| Why is my station missing a chart or a column? | [What your hardware shows](/docs/station/what-your-hardware-shows/) |
+| How do I compose more than the card and the table? | [React](/docs/station/react/) — or [custom elements](/docs/station/elements/) with no framework |
+| How do I make it wear my site's palette? | [Theming](/docs/station/theming/) |
+| What exactly travels between handler and page? | [Wire contract](/docs/station/wire-contract/) |

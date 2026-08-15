@@ -13,7 +13,10 @@ declare. Whatever the hardware, the client sees one document.
 ## The shipped adapters
 
 Four vendors are built in; each has its own reference page: config
-fields, capabilities, endpoint, and the quirks the adapter guards:
+fields, capabilities, endpoint, and the quirks the adapter guards. Every
+vendor page ends with the same Setup block — the
+[getting-started](/docs/station/getting-started/) mount with a one-entry
+`stations` array — so the pages differ only in the config entry itself:
 
 | Vendor | Hardware | History | Live | Conditions |
 |---|---|---|---|---|
