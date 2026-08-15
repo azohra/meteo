@@ -24,7 +24,7 @@ Every deterministic builder must supply the same source shape for each site and 
 | Pressure levels | geopotential height, temperature, dew point depression, wind speed and direction |
 | Terrain | model elevation at the launch grid cell |
 
-The pressure levels are curated per model and declared in the model catalogue (`models.json`) —
+The pressure levels are curated per model and declared in the model catalogue (`models.json`):
 the ECCC 2.5–15 km deterministic feeds publish a 14-level 1015–600 hPa band (the 1 km feed and the
 ensembles carry fewer), the NOAA feeds the eight or nine levels their
 files carry. The derivation is transport-independent and tolerates an absent level.
@@ -32,7 +32,7 @@ files carry. The derivation is transport-independent and tolerates an absent lev
 ## 1. Discard levels below model terrain
 
 Pressure levels are sorted by height and discarded unless they are finite and more than 20 m above
-model terrain. In mountains, 925 hPa—and sometimes higher levels—can be underground. Plotting them
+model terrain. In mountains, 925 hPa (and sometimes higher levels) can be underground. Plotting them
 would invent an atmosphere beneath model terrain and corrupt every interpolation above it.
 
 This filter makes model terrain data, not metadata. Change its elevation and boundary-layer depth,
@@ -47,13 +47,13 @@ lapse = (T_next − T) / (z_next − z) × 304.8    # °C per 1000 ft
 ```
 
 Negative means temperature decreases with height. The renderer classifies the result into eight fixed
-stability bands. The renderer hatches a level as model cloud when its dew point depression — derived
-from the published dew point — falls below 0.5 °C; the forecast engine publishes the moisture, not the flag.
+stability bands. The renderer hatches a level as model cloud when its dew point depression (derived
+from the published dew point) falls below 0.5 °C; the forecast engine publishes the moisture, not the flag.
 
 ## 3. Estimate cloud base
 
 The surface parcel's condensation level uses Bolton (1980, eq. 15), which gives the LCL temperature
-explicitly from surface temperature and dew point — no iteration, no lookup:
+explicitly from surface temperature and dew point, no iteration, no lookup:
 
 ```
 T_LCL = 1 / (1/(T_d − 56) + ln(T/T_d)/800) + 56    # kelvin
@@ -64,8 +64,8 @@ Bolton's fit is accurate to 0.1 K across the meteorological range; against Romps
 closed form the height stays within about 1%, most of that the shared dry-lapse constant.
 
 The parcel is not the only evidence. When the published column itself saturates below the parcel
-LCL — dew point depression down at the same 0.5 °C the renderer hatches as dense cloud, the crossing
-interpolated between samples — the model has already put cloud beneath the parcel estimate, and
+LCL (dew point depression down at the same 0.5 °C the renderer hatches as dense cloud, the crossing
+interpolated between samples), the model has already put cloud beneath the parcel estimate, and
 `cloudBaseM` publishes that lower height instead. A drier column publishes the parcel LCL alone; a
 saturated or supersaturated surface puts cloud base at model terrain. The value never sits below
 terrain.
@@ -123,7 +123,7 @@ same code, and an engine regression test holds a real published profile to it.
 
 The forecast engine publishes derived series exactly as computed. The renderer may apply a 1–2–1 temporal
 kernel to cloud base and usable-lift top (`smooth121` in `@azohra/meteo.briefing/meteogram`, on by default to match
-the historical look), and only across values exactly one hour apart — three-hourly models, missing
+the historical look), and only across values exactly one hour apart: three-hourly models, missing
 hours, boundary-layer top, and `w*` are never smoothed. Consumers who want the model's values read the
 JSON; the smoothing is undoable because it no longer happens upstream.
 

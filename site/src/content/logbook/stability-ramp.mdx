@@ -18,35 +18,35 @@ import StabilityRampStrips from "../../components/logbook/StabilityRampStrips.as
 # The stability ramp, measured
 
 The stability field is the first thing a pilot reads on a Meteogram: one glance at the colour says
-what kind of day it is, and every line that matters — usable lift, cloud base, the wind barbs, the
-markers — is drawn on top of it. Its palette therefore holds two jobs at once: loud enough to call
+what kind of day it is, and every line that matters (usable lift, cloud base, the wind barbs, the
+markers) is drawn on top of it. Its palette therefore holds two jobs at once: loud enough to call
 the day, quiet enough that everything drawn over it stays legible. Here is how the shipped
 eight-class ramp resolves that tension, and the one measured defect in its lineage that a validator
 caught where every reviewing eye had signed off.
 
 Colour difference is ΔE, Euclidean distance in the OKLab colour
 space scaled by 100, with colour-vision deficiency simulated by the Machado–Oliveira–Fernandes
-(2009) matrices at full severity — protanopia and deuteranopia, the two axes this article's
+(2009) matrices at full severity: protanopia and deuteranopia, the two axes this article's
 validator simulates. Lightness spans are CIE L*.
 
 ## What the field owes the lines above it
 
 Figure-ground contrast comes first. Every point of saturation a field palette spends on itself is
-taken from the legibility of the content above it, so the whole ramp lives in a pale register —
+taken from the legibility of the content above it, so the whole ramp lives in a pale register:
 just under twenty points of lightness, all of it near the paper. Salience still works, because
 salience is relative: with the field quiet, the warm unstable classes are the loudest thing on the
-chart without spending any ink mass, and the classes that dominate an ordinary summer field —
-conditional instability, stable air — recede instead of shouting. A field earns attention for its
+chart without spending any ink mass, and the classes that dominate an ordinary summer field
+(conditional instability, stable air) recede instead of shouting. A field earns attention for its
 exceptions by being quiet about its rule.
 
 The register has a price, and it is paid openly: 19.6 L* points of lightness across eight classes
 cannot also carry a grayscale-survivable ordering, so none is claimed. Class *identity* rides hue;
-class *order* rides the channels the chart already has — the key names every cell in plain words,
+class *order* rides the channels the chart already has: the key names every cell in plain words,
 the cursor readouts state the class at any point, and the field's own geometry orders it (stable
 air sits where stable air sits). The palest cells stand near 2:1 against the surface because
 receding into the page is the design, not an accident.
 
-See both palettes below — the shipped ramp and its ancestor — with grayscale rows showing exactly
+See both palettes below (the shipped ramp and its ancestor) with grayscale rows showing exactly
 what ordering the register gives up.
 
 <StabilityRampStrips />
@@ -57,38 +57,38 @@ The hues descend from [canadarasp](https://github.com/ajberkley/canadarasp), the
 Meteograms gratefully descend from: warm reds and oranges for instability, pink and lavender for the
 conditional middle, a tan pivot, blue for stable, greys for inversion. Two details from its source
 are worth keeping on the record. It fills nine lapse-rate bands where this project draws
-eight classes — but the extra −0.5 °C per 1,000 ft boundary paints the same colour on both sides,
+eight classes, but the extra −0.5 °C per 1,000 ft boundary paints the same colour on both sides,
 so there were eight visible bands all along, and their boundaries are exactly the classes these
 charts draw. And its colormap file states its design's pivot in six words: "matching the
-background is stable" — stable air disappears into canadarasp's blue page, and everything painted
+background is stable". Stable air disappears into canadarasp's blue page, and everything painted
 is signal. That pivot is brilliant on its own page and does not transfer: these charts sit on
 paper, so this palette keeps stable air *pale* rather than invisible, and owes no debt to a
 background it does not have.
 
 ## Measured, not eyeballed
 
-The ramp's direct ancestor is the canadarasp palette itself — the eight fills its lapse-rate panel
-paints, straight from `windgram-continental-colormap.ncl` — and it carried a defect nobody saw: its
+The ramp's direct ancestor is the canadarasp palette itself (the eight fills its lapse-rate panel
+paints, straight from `windgram-continental-colormap.ncl`), and it carried a defect nobody saw: its
 two conditional purples (`#ff96ff`, `#ccbfff`) sat at adjacent ΔE 11.8 to a normal eye, and 1.8
 under deuteranopia, where roughly 6 is the floor for telling adjacent fills apart and 1.8 is one
 colour. The most common form of colour-vision deficiency erased the boundary between
-conditional-strong and conditional instability — a boundary the chart exists to draw. The defect
+conditional-strong and conditional instability, a boundary the chart exists to draw. The defect
 lived below the threshold of design-by-eye and above the threshold of measurement, which is the
 process lesson: once a palette is measurable, "looks right" stops being the acceptance test.
 
 The shipped default, [`STABILITY_TOKEN_DEFAULTS`](https://github.com/azohra/meteo/blob/main/briefing/src/svg/theme.ts), is that
-ancestry re-set into the pale register — I kept the hue architecture and moved every one of the
+ancestry re-set into the pale register: I kept the hue architecture and moved every one of the
 eight values (per-class ΔE 6.8 to 14.8 from its ancestor). The failing purples are pulled apart (ΔE 1.8
 to 7.0 under deuteranopia), the grey tail is internally light-ordered from stable through strong
 inversion, and every adjacent pair now clears the 6.0 colour-vision floor under both simulated
-deficiencies — adjacent-pair ΔE minima of 7.8 normal, 7.8 protanopic, 7.0 deuteranopic. I found the
-repairs the same way I found the defect — a validator over OKLab with CVD simulation.
+deficiencies: adjacent-pair ΔE minima of 7.8 normal, 7.8 protanopic, 7.0 deuteranopic. I found the
+repairs the same way I found the defect: a validator over OKLab with CVD simulation.
 
 *Ancestor provenance: canadarasp's `windgram-continental.ncl` paints its lapse panel with colormap
-indices 11, 10, 7, 8, 3, 2, 13, 14 of `windgram-continental-colormap.ncl` — most unstable first,
+indices 11, 10, 7, 8, 3, 2, 13, 14 of `windgram-continental-colormap.ncl`: most unstable first,
 the index-2 purple-blue repeated across the invisible −0.5 boundary.*
 
-Check the boundaries yourself below — bars for a normal eye, dots for simulated deuteranopia, both
+Check the boundaries yourself below: bars for a normal eye, dots for simulated deuteranopia, both
 palettes side by side.
 
 <RampAdjacentDeltaE />
@@ -98,5 +98,5 @@ palettes side by side.
 The package ships this palette and no theme catalogue. Anything a consumer legitimately wants
 different is a token: the eight `--meteo-gram-stab-*` custom properties restyle the field without forking
 the renderer, which is precisely how the palette's own ancestor was built and tuned. Defaults are
-argued on claims anyone can re-run — figure-ground first, worst-reader floors on the boundaries the
+argued on claims anyone can re-run: figure-ground first, worst-reader floors on the boundaries the
 register can hold, and the residue documented rather than pretended away.

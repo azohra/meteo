@@ -7,14 +7,14 @@ The `@azohra/meteo.briefing/contract` export is the executable authority for pub
 Its zod schemas, inferred TypeScript types, nullable parse guards, and generated
 JSON Schemas describe the same nine document families.
 
-![A profile document block by block: excerpts of a real profile — the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.](figures/contract-anatomy.svg)
+![A profile document block by block: excerpts of a real profile, the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.](figures/contract-anatomy.svg)
 
 | Document | Parser | Published location |
 | --- | --- | --- |
 | Profile | `parseSiteForecastJson` | `<model>/sites/<site>.json` and each history line |
 | Manifest (forecast and smoke) | `parseForecastManifestJson` | `<model>/manifest.json` |
-| Manifest (observation) | `parseObservationManifestJson` | `<model>/manifest.json` for observation datasets — the same path carries a different manifest shape (`firstObservedAt`, `lastObservedAt`, `observationCount` in place of the forecast-hour extent) |
-| Manifest (either) | `parseManifestJson` | `<model>/manifest.json` when the caller does not know the dataset kind — the union of the two shapes above |
+| Manifest (observation) | `parseObservationManifestJson` | `<model>/manifest.json` for observation datasets; the same path carries a different manifest shape (`firstObservedAt`, `lastObservedAt`, `observationCount` in place of the forecast-hour extent) |
+| Manifest (either) | `parseManifestJson` | `<model>/manifest.json` when the caller does not know the dataset kind: the union of the two shapes above |
 | Models | `parseModelCatalogueJson` | `models.json` |
 | Sites | `parseSitesCatalogueJson` | `sites.json` |
 | Site context | `parseSiteContextJson` | `site-context.json` |
@@ -41,8 +41,8 @@ export function requireProfile(text: string): SiteForecast {
 
 ## Site timezone propagation
 
-The optional `site.timeZone` echo and its semantics — absence means the
-document predates the echo, never “the launch uses UTC” — are defined in the
+The optional `site.timeZone` echo and its semantics (absence means the
+document predates the echo, never “the launch uses UTC”) are defined in the
 [profile reference](/docs/briefing/profile-document/#run-site-and-semantics).
 For an older document without the echo, consumers either supply a known
 fallback or use an API's documented fallback behaviour:
@@ -57,7 +57,7 @@ fallback or use an API's documented fallback behaviour:
 ## Scalar values
 
 Every numeric position under `surface`, `levels`, and `derived` is either a
-number or an ensemble percentile object. Switch on shape, not a model slug —
+number or an ensemble percentile object. Switch on shape, not a model slug;
 the [profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
 carries the worked narrowing fence.
 
@@ -70,14 +70,14 @@ after one checked guard. Run it once per document.
 
 ## Unit boundary map
 
-Every document computes in the platform's shared physical vocabulary —
+Every document computes in the platform's shared physical vocabulary;
 [Units, angles, one wind sign](/docs/core/conventions/) defines the wind
 sign convention and conversion helpers each package uses. These are the
 unit boundaries most likely to cause integration errors:
 
 | Quantity family | Contract convention | Common mistake |
 | --- | --- | --- |
-| Sea-level pressure (`surface.seaLevelPressureHpa`) | hPa — one unit for the whole pressure class, shared with station documents | Reading a v1 document's `pressurePa` (whole pascals) as hPa without migrating |
+| Sea-level pressure (`surface.seaLevelPressureHpa`) | hPa: one unit for the whole pressure class, shared with station documents | Reading a v1 document's `pressurePa` (whole pascals) as hPa without migrating |
 | Pressure levels | hPa | Multiplying named isobaric levels by 100 in labels |
 | Heights and elevations | metres; profile altitude values are MSL unless explicitly AGL | Plotting model PBL depth directly on an MSL axis |
 | Model PBL height | metres AGL | Comparing it to `derived.boundaryLayerTopM` without adding `site.modelElevationM` |
@@ -88,8 +88,8 @@ unit boundaries most likely to cause integration errors:
 | Precipitation | mm/h with declared provider window semantics | Comparing instantaneous and window-mean rates as identical measurements |
 | Cloud and cloud layers | percent | Replacing unavailable fields with 0% |
 | CAPE/CIN | J/kg | Treating absent CIN as zero inhibition |
-| Smoke concentrations | µg/m³ at the surface, mg/m² for columns; optical thickness dimensionless | Assuming provider units — RAQDPS GRIBs carry kg/m³ and kg/m² with no units metadata ([verified in the smoke reference](/docs/briefing/smoke-document/)); builders convert at fetch |
-| Measured shortwave (observations) | W/m², instantaneous at the surface | Treating an absent instant as zero output, or provider DQF 0 as validity — night pixels are fill with DQF 0 |
+| Smoke concentrations | µg/m³ at the surface, mg/m² for columns; optical thickness dimensionless | Assuming provider units: RAQDPS GRIBs carry kg/m³ and kg/m² with no units metadata ([verified in the smoke reference](/docs/briefing/smoke-document/)); builders convert at fetch |
+| Measured shortwave (observations) | W/m², instantaneous at the surface | Treating an absent instant as zero output, or provider DQF 0 as validity: night pixels are fill with DQF 0 |
 
 The contract JSDoc and generated schemas define each field. The
 [profile guide](/docs/briefing/profile-document/) maps document blocks;
@@ -97,7 +97,7 @@ The contract JSDoc and generated schemas define each field. The
 absence and semantics.
 
 A worked height boundary: to place `surface.pblHeightM` beside MSL series,
-add `profile.site.modelElevationM`. Do not add a launch elevation — the
+add `profile.site.modelElevationM`. Do not add a launch elevation: the
 model's PBL depth is referenced to model terrain. For pure unit
 conversions, use package exports such as `msToKmh` from
 [`@azohra/meteo.briefing/derive`](/docs/briefing/derive/).
@@ -106,7 +106,7 @@ conversions, use package exports such as `msToKmh` from
 
 Every block inside the nine document families is itself an exported zod
 schema with an inferred type, so a consumer can validate or type one fragment
-— a single hour, a capability declaration, a manifest stats block — without
+(a single hour, a capability declaration, a manifest stats block) without
 handling a whole document. Each pair feeds exactly one parse entry point.
 
 The document roots are `siteForecastSchema`/`SiteForecast`,
@@ -123,7 +123,7 @@ The document roots are `siteForecastSchema`/`SiteForecast`,
 union of the two manifest roots for callers that read
 `<model>/manifest.json` without knowing the dataset kind. Manifest, models,
 runs, smoke, and observation pin `SCHEMA_VERSION` (1); the profile pins
-its own exported `SITE_FORECAST_SCHEMA_VERSION` (2 — wire v2), and sites
+its own exported `SITE_FORECAST_SCHEMA_VERSION` (2, wire v2), and sites
 and site context pin `SITES_SCHEMA_VERSION` and
 `SITE_CONTEXT_SCHEMA_VERSION` (both 2). Their pieces:
 
@@ -135,16 +135,16 @@ and site context pin `SITES_SCHEMA_VERSION` and
 | `forecastSurfaceSchema` (`ForecastSurface`) | An hour's surface block, optional capability fields absent-not-zero | `parseSiteForecast(Json)` |
 | `forecastLevelSchema` (`ForecastLevel`) | One pressure-level entry in an hour's ascending `levels` array | `parseSiteForecast(Json)` |
 | `forecastDerivedSchema` (`ForecastDerived`) | The forecast engine's `derived` block of an hour | `parseSiteForecast(Json)` |
-| `forecastSiteSchema` (`ForecastSite`) | Sample provenance: identity, coordinates, the model's own terrain (`modelElevationM`), and the optional timezone echo — no launch elevation | `parseSiteForecast(Json)` |
+| `forecastSiteSchema` (`ForecastSite`) | Sample provenance: identity, coordinates, the model's own terrain (`modelElevationM`), and the optional timezone echo; no launch elevation | `parseSiteForecast(Json)` |
 | `forecastRunSchema` (`ForecastRun`) | Publication identity: `referenceTime`, `generatedAt`, optional `members` | `parseSiteForecast(Json)` |
 | `forecastSemanticsSchema` (`ForecastSemantics`) | The optional gust/precipitation meaning tag stored with a document | `parseSiteForecast(Json)` |
 | `forecastManifestSiteSchema` (`ForecastManifestSite`) | One published site name/slug pair in a manifest | `parseForecastManifest(Json)` |
 | `forecastManifestStatsSchema` (`ForecastManifestStats`) | The stable accounting core plus open numeric extension keys | `parseForecastManifest(Json)` |
 | `modelEntrySchema` (`ModelEntry`) | One model catalogue entry: slug, cadence and typical publication lag, levels, lifecycle | `parseModelCatalogue(Json)` |
 | `modelCapabilitiesSchema` (`ModelCapabilities`) | A model's declared capability set, absences included | `parseModelCatalogue(Json)` |
-| `siteCatalogueEntrySchema` (`SiteCatalogueEntry`) | One catalogued site — identity only since sites schemaVersion 2 (slug, name, coordinates, required IANA `timeZone`; nothing physical) | `parseSitesCatalogue(Json)` |
+| `siteCatalogueEntrySchema` (`SiteCatalogueEntry`) | One catalogued site: identity only since sites schemaVersion 2 (slug, name, coordinates, required IANA `timeZone`; nothing physical) | `parseSitesCatalogue(Json)` |
 | `siteContextSourceSchema` (`SiteContextSource`) | One upstream terrain/land-cover source, with the licence attribution that travels with its values | `parseSiteContext(Json)` |
-| `siteContextEntrySchema` (`SiteContextEntry`) | One site's measured ground truth — the launch `elevation` pick, terrain, and land cover — joined to `sites.json` by slug | `parseSiteContext(Json)` |
+| `siteContextEntrySchema` (`SiteContextEntry`) | One site's measured ground truth (the launch `elevation` pick, terrain, and land cover), joined to `sites.json` by slug | `parseSiteContext(Json)` |
 | `runsIndexEntrySchema` (`RunsIndexEntry`) | One model's current `(referenceTime, generatedAt)` pair | `parseRunsIndex(Json)` |
 
 `DeterministicSiteForecast` is the narrowed profile type

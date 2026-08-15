@@ -19,20 +19,20 @@ import LiftProfileDiagram from "../../components/logbook/LiftProfileDiagram.astr
 # Why usable lift can sit above the boundary layer
 
 The solid usable-lift line on the charts often rides above the dashed boundary-layer line.
-If both lines meant “thermal top,” one of them would have to be wrong. Neither is — they answer
+If both lines meant “thermal top,” one of them would have to be wrong. Neither is; they answer
 different questions, and the trail to why runs through Dr Jack’s own caveats, a 1980 aircraft
 campaign over the ocean, and a coefficient choice made in canadarasp’s source.
 
 ## “Hcrit” names a family of methods, not one number
 
 Dr. John “Dr Jack” Glendening’s BLIPMAP documentation defines **Hcrit** as the height where an
-*average dry updraft* falls below 225 ft/min — about 1.14 m/s — and presents it as a practical
+*average dry updraft* falls below 225 ft/min (about 1.14 m/s) and presents it as a practical
 maximum thermalling height over flat ground. He also flags the limits himself: the assumptions lack
 quantitative validation, and boundary-layer top may work better over complex terrain.
 
 canadarasp inherits the name and the idea of a sink threshold, but its meteogram code asks a different
 question: how high might the **strongest core** still beat a 1 m/s sink rate? That is the number I
-ported. Same name, different quantity — “Hcrit” names a family of methods, not a portable
+ported. Same name, different quantity: “Hcrit” names a family of methods, not a portable
 value that every forecast system computes identically.
 
 ## How much the strongest-core choice matters
@@ -40,7 +40,7 @@ value that every forecast system computes identically.
 Lenschow and Stephens fitted a normalized mean-updraft shape from aircraft observations. canadarasp
 applies its strongest-core variant before finding the sink-threshold crossing. The
 [forecast derivations](/docs/forecast/derivation-science/) define the current formula, constants,
-fallback, and cloud cap. See for yourself below: one atmosphere, three sink thresholds — the 1.0 m/s
+fallback, and cloud cap. See for yourself below: one atmosphere, three sink thresholds: the 1.0 m/s
 panel reproduces the published series, and the other two show how much the top owes to that single
 parameter.
 
@@ -55,7 +55,7 @@ into the entrainment zone and the canadarasp curve is evaluated beyond `z/D = 1`
 land above the parcel-derived boundary-layer top. Smoothing cloud base and usable-lift top separately
 can also change the hour-to-hour gap.
 
-So the crossing is not a contradiction — but the solid line is not “more correct” either. The 4.0
+So the crossing is not a contradiction, but the solid line is not “more correct” either. The 4.0
 coefficient is a pragmatic extrapolation from an average profile. The underlying 1980 observations
 came from aircraft legs over the ocean during AMTEX, not from paragliders centring thermals in a
 mountain valley. The code is precise; the physical transfer is an assumption.

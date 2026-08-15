@@ -29,7 +29,7 @@ own, in weak-to-strong reading order; includes the condensation hatch only
 when dense cloud is visible; includes the stability ramp only when that field
 is visible; and adds the p25–p75 note only when a drawn series has an
 ensemble band. Lines that label themselves on the plot (the 10°/20°
-isotherms, the Td isolines) stay out of the key by default — a consumer whose
+isotherms, the Td isolines) stay out of the key by default; a consumer whose
 look keys them anyway opts them in with
 `selfLabeled: ["dewPointIsoline"]` and receives the real style facts instead
 of restating dash and width. `renderKeySvg` serializes that spec with the
@@ -57,7 +57,7 @@ from one of the exported maps:
 - `TOKEN_DEFAULTS` for the renderer's general token surface;
 - `STABILITY_TOKEN_DEFAULTS` for the eight-class stability ramp;
 - `SERIES_TOKENS` for the key-entry id → token correspondence
-  (`"meteo-gram-series-usable"` → `usable`) a legend or focus style needs — read it
+  (`"meteo-gram-series-usable"` → `usable`) a legend or focus style needs; read it
   instead of parsing id strings; and
 - `FIELD_STYLE_DEFAULTS` for each field-overlay class's fill token and
   opacity, the facts an HTML ramp chip needs.
@@ -71,7 +71,7 @@ a downstream presentation.
 
 The stability ramp's eight classes, in order: `very-unstable`,
 `unstable`, `conditional-strong`, `conditional`, `near-neutral`,
-`stable`, `inverted`, `strong-inversion` — each themed by its
+`stable`, `inverted`, `strong-inversion`, each themed by its
 `--meteo-gram-stab-<name>` token. The figure's CAPE thresholds and
 overlay defaults read from the same package exports
 (`DEFAULT_CAPE_CLASSES`, `DEFAULT_OVERLAYS`).

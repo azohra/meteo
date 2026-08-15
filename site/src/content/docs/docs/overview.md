@@ -18,13 +18,13 @@ controls.
 | `@azohra/meteo.forecast`, the forecast engine | Provider input, model-dependent sampling, and quantities that require unpublished inputs or cross-run authority | Published profile values |
 | Versioned JSON | Portable model, site, time, semantics, source-field, and derived-value documents | The data boundary between publisher and consumer |
 | `@azohra/meteo.briefing` npm package | Contract validation, pure document derivations, scene construction, hit-testing, and reference SVG | Reusable analysis and presentation primitives |
-| `@azohra/meteo.station` npm package | Live weather-station reading, derivation, and display — client, server, React, and custom-element bindings | The [station capability](/docs/station/) |
+| `@azohra/meteo.station` npm package | Live weather-station reading, derivation, and display: client, server, React, and custom-element bindings | The [station capability](/docs/station/) |
 | `@azohra/meteo.core`, the shared foundation | Units, angle and wind-vector math with one sign convention platform-wide, zod primitives, and the upstream-failure vocabulary | The [shared physical vocabulary](/docs/core/) every layer imports |
 | This website | Documentation, logbook entries, and reproducible teaching figures | Technical learning and project reference |
 | Downstream publisher | Location selection, schedule, hosting, retention, presentation, access, verification, and safety language | A complete publication for its audience |
 
-An operator's pipeline — the cron schedule, the site catalogue, the storage
-credentials — is the downstream publisher's own repository, composing the
+An operator's pipeline (the cron schedule, the site catalogue, the storage
+credentials) is the downstream publisher's own repository, composing the
 engine; the platform ships the engine, not an instance.
 
 ## Authority by quantity
@@ -32,8 +32,8 @@ engine; the platform ships the engine, not an instance.
 The forecast engine owns values that cannot be derived from the published profile alone, including
 its boundary-layer, thermal-velocity, cloud-base, and usable-lift series. The npm
 package owns pure functions of the published document and the reference renderer. Presentation
-parameters—such as timezone, windows, palette, overlays, and sink-rate choices exposed by the
-renderer—belong to the consumer.
+parameters, such as timezone, windows, palette, overlays, and sink-rate choices exposed by the
+renderer, belong to the consumer.
 
 The parameterized `usableLiftTopM` is the explicit exception spanning that boundary. The
 implementation is the package's pure function; the engine imports it and stores its 1.0 m/s

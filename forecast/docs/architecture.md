@@ -30,13 +30,13 @@ provider transport ──→ gridpoint sampling ──→ source-shaped hours
 
 | Area | Repository home | Responsibility |
 | --- | --- | --- |
-| CLI and scoped paths | `forecast/src/cli.ts`, `forecast/src/config.ts` | Select model(s), validate site/output paths, cap forecast steps (`--max-steps` caps every model, GOES granules included), dispatch safely — configuration is passed explicitly, never held in ambient state |
+| CLI and scoped paths | `forecast/src/cli.ts`, `forecast/src/config.ts` | Select model(s), validate site/output paths, cap forecast steps (`--max-steps` caps every model, GOES granules included), dispatch safely; configuration is passed explicitly, never held in ambient state |
 | Site catalogue | `sites.ts` | Load the versioned, identity-only site envelope; reject shapes the loader does not speak |
 | Provider transport plumbing | `providers/transport.ts` | One User-Agent, one request timeout, and the download telemetry manifests publish |
 | Provider clients | `providers/datamart.ts`, `providers/noaa.ts`, and the workspace's `@azohra/meteo.grib` decoder | Fetch, range-read, decode, sample, and account for transport work |
-| Published-dataset reads | `dataset.ts` | Read what is already published — public HTTPS via `METEO_DATA_BASE`, or the bucket directly when upload credentials are present — to gate rebuilds and seed history |
+| Published-dataset reads | `dataset.ts` | Read what is already published (public HTTPS via `METEO_DATA_BASE`, or the bucket directly when upload credentials are present) to gate rebuilds and seed history |
 | Builder registry | `builders/registry.ts` | Catalogued model slug → options-only build entry, in exact catalogue order; each factory imports its builder module (dynamic `import()`) only when a build runs |
-| Builder helpers | `builders/common.ts` | The machinery every build composes identically — forecast-slot timestamps, the bounded fetch pool, source-hour and level skeletons |
+| Builder helpers | `builders/common.ts` | The machinery every build composes identically: forecast-slot timestamps, the bounded fetch pool, source-hour and level skeletons |
 | Builders | `builders/*.ts` | Verify run completeness, request declared fields, preserve absence, assemble source hours |
 | Shared field science | `moisture.ts`, `sentinel.ts` | Inverse-Magnus dew-point depression for models that publish only RH; masking of ECCC's "not computed" CAPE/CIN sentinels |
 | Derivation | `derive.ts` | Produce published profile blocks and model-dependent derived values; the usable-lift derivation is imported from `@azohra/meteo.briefing/derive` and stored at the 1 m/s sink |
@@ -45,13 +45,13 @@ provider transport ──→ gridpoint sampling ──→ source-shaped hours
 | Wire migration | `migrate.ts` | The one executable home of the v1 → v2 vocabulary change, plus the one-time `meteo forecast migrate` cutover that rewrites a model's published v1 documents in place |
 | History mechanics | `history.ts` | Split gzip members, recompute each month's [sidecar byte-offset index](/docs/briefing/history-archives/#the-sidecar-index) after every append |
 | Terrain catalogue | `terrain.ts` | One-shot `site-context.json` enrichment (elevation, slope/aspect, relief, land cover); the geospatial stack loads only when the `terrain` command runs |
-| Teaching scenarios | `scenario/` (`index.ts`, `json.ts`, `rng.ts`, `shadow.ts`) | Generate fixed inputs through the same derivation authority — split along its seams (definition validation and generation, int/float-preserving JSON, the CPython-compatible RNG, the tagged re-derivation walk) |
+| Teaching scenarios | `scenario/` (`index.ts`, `json.ts`, `rng.ts`, `shadow.ts`) | Generate fixed inputs through the same derivation authority, split along its seams (definition validation and generation, int/float-preserving JSON, the CPython-compatible RNG, the tagged re-derivation walk) |
 | Checkout discovery | The caller's, not the package's | Every scenario entry point takes `repositoryRoot` as an explicit option; the repo's own answer to "where is the checkout root?" lives with the repo tooling (`internal/scenarios.mjs`), never in the package |
 
 ## Authority boundary
 
-Which quantities the forecast engine owns and which belong to `@azohra/meteo.briefing` —
-including the one parameterized exception — is defined once in the
+Which quantities the forecast engine owns and which belong to `@azohra/meteo.briefing`
+(including the one parameterized exception) is defined once in the
 [project overview](/docs/overview/#authority-by-quantity). The
 [Meteogram derivations](/docs/forecast/derivation-science/) define the
 engine's equations, constants, fallbacks, and renderer-only transformations.

@@ -5,24 +5,24 @@ description: Load the append-only month archives with the member-splitting reade
 
 `@azohra/meteo.briefing/history` is documents through time, in two halves that feed each
 other: loaders that read the published
-[month archives](/docs/briefing/history-archives/) — the archive format this
-API reads — into deduped, chronological runs, and
+[month archives](/docs/briefing/history-archives/) (the archive format this
+API reads) into deduped, chronological runs, and
 `compareRuns`, which turns [`@azohra/meteo.briefing/compare`](/docs/briefing/compare/)'s
 member axis from "models at one instant" to "runs of one model" and states
-the convergence ladder — what each successive run said about the same local
+the convergence ladder: what each successive run said about the same local
 day.
 
 This is the forecast capability's one **server-side** subpath: the archive
 reader is built on `node:zlib`, so it runs in Node, Bun, and Deno but not in
-browsers. Every other subpath of the package stays runtime-agnostic —
-[why, below](#why-the-reader-splits-gzip-members-itself).
+browsers. Every other subpath of the package stays runtime-agnostic
+([why, below](#why-the-reader-splits-gzip-members-itself)).
 
 ## Why the reader splits gzip members itself
 
 A month archive is a sequence of **independent gzip members**: each
 forecast engine build appends its run as its own member, so existing archive
 bytes are never rewritten and a closed month can publish immutable.
-Inside a member, one compact-JSON document per line — but never assume
+Inside a member, one compact-JSON document per line, but never assume
 one line per member: forecast archives run one line per member, while
 observation archives batch a whole granule of instants per member
 (re-verified 2026-08-10 across every published model). The reader splits
@@ -31,7 +31,7 @@ members first and lines second.
 WHATWG `DecompressionStream("gzip")` cannot be trusted with these
 archives. The spec treats bytes trailing the first member's end as an
 error, and the archives are deliberately multi-member. Worse, the
-runtimes disagree — measured 2026-08-10:
+runtimes disagree (measured 2026-08-10):
 
 | Runtime | `DecompressionStream("gzip")` on a multi-member archive |
 | --- | --- |
@@ -41,7 +41,7 @@ runtimes disagree — measured 2026-08-10:
 
 Hence `splitHistoryArchive`: a member-splitting reader on `node:zlib`'s
 raw-deflate decoder, which reports exactly how many input bytes each
-member's deflate stream consumed — the boundary `DecompressionStream`
+member's deflate stream consumed: the boundary `DecompressionStream`
 never surfaces. It returns `null` on structurally corrupt bytes (not
 gzip, truncated member, trailer length mismatch), mirroring the contract
 guards' never-throw convention; the loaders report that as a
@@ -60,14 +60,14 @@ stay runtime-agnostic exactly as before.
 ## Load a site's months
 
 `loadForecastHistory` and `loadSmokeHistory` are the typed faces of
-`loadHistory`, whose `guard` parameter types each archive line — a
+`loadHistory`, whose `guard` parameter types each archive line: a
 history line is exactly the published document, so the guards are the
 contract's own (`parseSiteForecastJson`, `parseSmokeDocumentJson`).
 No observation-shaped face ships: `loadHistory`'s line type requires the
 run stamp (`model`, `run.referenceTime`, `run.generatedAt`) that drives
 the dedupe, and an [observation archive](/docs/briefing/history-archives/)
 line is a single observation object that deliberately does not satisfy
-it — a reader of those months splits them with `splitHistoryArchive` and
+it; a reader of those months splits them with `splitHistoryArchive` and
 types the lines itself.
 Transport manners match [`@azohra/meteo.briefing/transport`](/docs/briefing/transport/):
 injected fetch, discriminated `DocumentMiss`, `TransportHttpError` as the
@@ -105,14 +105,14 @@ A `LoadedHistory` carries four statements:
 
 | Field | What it states |
 | --- | --- |
-| `runs` | The deduped runs, ascending by `referenceTime` — one per `(model, referenceTime)`, keep-latest-`generatedAt` |
-| `revisions` | Republications the dedupe discarded — which stamps were superseded, per run |
-| `invalidLines` | Guard-rejected lines, located by archive URL, member byte offset, and line number — log loudly |
-| `misses` | Per requested month with nothing to contribute: `"absent"` is routine (a month file exists only once a run of that month was archived); `"invalid"` — archive bytes that failed to split — never is |
+| `runs` | The deduped runs, ascending by `referenceTime`: one per `(model, referenceTime)`, keep-latest-`generatedAt` |
+| `revisions` | Republications the dedupe discarded: which stamps were superseded, per run |
+| `invalidLines` | Guard-rejected lines, located by archive URL, member byte offset, and line number; log loudly |
+| `misses` | Per requested month with nothing to contribute: `"absent"` is routine (a month file exists only once a run of that month was archived); `"invalid"` (archive bytes that failed to split) never is |
 
 The dedupe is **mandatory, not optional**. The same `referenceTime` can
-legitimately appear on more than one archive line — a corrected
-re-publication appends a new line rather than rewriting bytes — and a
+legitimately appear on more than one archive line (a corrected
+re-publication appends a new line rather than rewriting bytes), and a
 republication is a fact, stated: the loader keeps the line with the
 latest `generatedAt` and reports what it discarded as `revisions`.
 Without that statement, convergence would score a publisher fix as
@@ -136,15 +136,15 @@ member; a `416` past end-of-file means nothing new. The index
 is **advisory, never authoritative**: a missing sidecar (the launch
 state), an unparsable one, any index fetch failure, or a server that
 ignores `Range` and answers `200` with the full body all degrade to the
-full-archive fetch, silently correct — both paths filter identically, so
+full-archive fetch, silently correct: both paths filter identically, so
 index-present and index-absent loads are equivalent.
 
 ## Compare a model's runs through time
 
 `compareRuns` points [compare's discipline](/docs/briefing/compare/)
-— no verdict that does not reduce to stated arithmetic over stated,
+(no verdict that does not reduce to stated arithmetic over stated,
 embedded, caller-movable thresholds; agreement reported, never
-manufactured; every non-vote with a stated reason — at successive runs
+manufactured; every non-vote with a stated reason) at successive runs
 of **one model** at **one site**. Compare vocabulary 2 made the axis
 literal (a member already *is* a `(model, referenceTime)` run), so the
 per-day vote constructions are delegated to `compareAnalyses` wholesale;
@@ -173,27 +173,27 @@ export function convergenceLadder(
 
 The natural feed is the history loader: `runs` is already deduped and
 chronological, and `revisions` passes straight through. Mixed models
-throw — one model through time is this axis; models at one instant are
+throw: one model through time is this axis; models at one instant are
 `compareForecasts`'. `compareRunAnalyses` is the seam `compareRuns`
 wraps, and the same door `compareAnalyses` opened: analyze at the edge,
-cache envelopes as JSON, compare through time later — with every
+cache envelopes as JSON, compare through time later, with every
 coherence check (one site, one zone, one launch, one threshold set,
 duplicate runs, version skew, missing self-description) delegated to
 `compareAnalyses` and thrown as its named errors.
 
 The `RunComparison` envelope carries its own
-`RUN_COMPARISON_VOCABULARY_VERSION` — currently `2` — a **sibling** of `COMPARE_VOCABULARY_VERSION`, versioned
+`RUN_COMPARISON_VOCABULARY_VERSION` (currently `2`), a **sibling** of `COMPARE_VOCABULARY_VERSION`, versioned
 independently so through-time statements can grow without a cross-model
 contract event and vice versa. The same tolerant-reader convention
 applies: readers of serialized envelopes ignore kinds and fields they do
 not know. The `runs` ledger reuses compare's member ledger verbatim,
-newest first — `runAgeHours` and `stepHours` are ledger facts for your
+newest first; `runAgeHours` and `stepHours` are ledger facts for your
 judgment, and `benched` is a benched run's stated reason for appearing
 on no rung.
 
 Every `leadHours` in the envelope is anchored to one instant per target
-day: hour `leadAnchorLocalHour` of that day in the comparison's zone —
-default `12`, local noon — a
+day: hour `leadAnchorLocalHour` of that day in the comparison's zone
+(default `12`, local noon), a
 single instant for "the flying day" that takes no position on window
 timing. Negative lead is arithmetic like any other: a run
 restating a past day reads negative, not wrong.
@@ -201,8 +201,8 @@ restating a past day reads negative, not wrong.
 ## The five run-comparison kinds
 
 `existenceTrajectory` is the worked example: per target local day, every
-unbenched run's vote — window, quiet, or an
-abstention with its reason — newest run first. An existence flip is read
+unbenched run's vote (window, quiet, or an
+abstention with its reason), newest run first. An existence flip is read
 off the `vote` sequence; the finding never names it with an adjective.
 Each rung carries the run's **own** sensitivity flip values against the
 shared floors, so a genuine flip at a threshold knife-edge reads as
@@ -235,12 +235,12 @@ caveats:
 
 | Kind | What it states | Reading caveats |
 | --- | --- | --- |
-| `timingTrajectory` | Window start and end instants across runs (`starts` / `ends`), reusing compare's timing construction verbatim, with per-edge spread facts: `startSpreadHours` / `endSpreadHours` (max − min, null below two) and `startStepHoursMax` / `endStepHoursMax` | Only **unclipped** edges vote — a horizon-clipped edge reads as "open since at least", never as timing; an edge joins the day whose local calendar date contains its instant; every vote carries its window's `stepHours`, and up to that many minus one hours of run-to-run difference is quantization, not drift |
-| `magnitudeTrajectory` | Per voting run: peak W\* (`peakThermalVelocityMps`), launch-relative peak lift, and covered window duration — the numbers whose run-to-run deltas state themselves | Whole-window numbers belong to the window's own day: a run touching the day only via a midnight spanner keyed elsewhere states `null` rather than restating another day's magnitudes. Ensemble runs carry per-day p10–p90 band widths (`bandWidth`) as **evidence with no narrowing verdict** — the recorded spike measured band widths moving both directions as lead fell, so "narrowing = converging" was manufactured |
+| `timingTrajectory` | Window start and end instants across runs (`starts` / `ends`), reusing compare's timing construction verbatim, with per-edge spread facts: `startSpreadHours` / `endSpreadHours` (max − min, null below two) and `startStepHoursMax` / `endStepHoursMax` | Only **unclipped** edges vote: a horizon-clipped edge reads as "open since at least", never as timing; an edge joins the day whose local calendar date contains its instant; every vote carries its window's `stepHours`, and up to that many minus one hours of run-to-run difference is quantization, not drift |
+| `magnitudeTrajectory` | Per voting run: peak W\* (`peakThermalVelocityMps`), launch-relative peak lift, and covered window duration: the numbers whose run-to-run deltas state themselves | Whole-window numbers belong to the window's own day: a run touching the day only via a midnight spanner keyed elsewhere states `null` rather than restating another day's magnitudes. Ensemble runs carry per-day p10–p90 band widths (`bandWidth`) as **evidence with no narrowing verdict**: the recorded spike measured band widths moving both directions as lead fell, so "narrowing = converging" was manufactured |
 | `identityDrift` | Non-meteorological facts that changed between runs: the loader's republication statements pass through verbatim (`revisions`), and a ledger walk names identity facts (`modelElevationM`, `stepHours`, `hours`) that differ between chronologically adjacent runs | Exists so a publisher or model change is never read as weather; day-less, and emitted only when there is drift to state |
-| `settled` | Arithmetic stability per target local day: whether the newest `minRuns` runs' launch-relative lift magnitudes all sit within `magnitudeBandM` of each other (max − min ≤ band), the embedded constants echoed on `thresholds` | A stability statement about **runs** — "the forecast has stopped moving" — and explicitly **not probability and not skill**: a settled forecast can be settled on the wrong answer, and nothing here scores the atmosphere. `settled` is `false` whenever the arithmetic cannot run — fewer runs than `minRuns`, or any sampled run stating no magnitude — with `spreadM` null and the `sample` roster showing which, so "not stable" and "not statable" stay readable apart |
+| `settled` | Arithmetic stability per target local day: whether the newest `minRuns` runs' launch-relative lift magnitudes all sit within `magnitudeBandM` of each other (max − min ≤ band), the embedded constants echoed on `thresholds` | A stability statement about **runs** ("the forecast has stopped moving"), and explicitly **not probability and not skill**: a settled forecast can be settled on the wrong answer, and nothing here scores the atmosphere. `settled` is `false` whenever the arithmetic cannot run (fewer runs than `minRuns`, or any sampled run stating no magnitude), with `spreadM` null and the `sample` roster showing which, so "not stable" and "not statable" stay readable apart |
 
-The default constants — `minRuns: 3`, `magnitudeBandM: 300` — are
+The default constants (`minRuns: 3`, `magnitudeBandM: 300`) are
 **trial values**, calibrated on a thin
 archive (days of runs, one basin), not a sweep over a representative
 one; a re-sweep at two or more weeks of month-file archive is a recorded
@@ -248,26 +248,26 @@ obligation (~2026-08-24). They are caller-movable per call via
 `CompareRunsOptions.settled`, and every finding echoes the values that
 produced it.
 
-![Two schematic five-rung convergence ladders for one target local day, newest run first, each rung labelled with its run, its leadHours to the local-noon anchor, and its vote — window, quiet, or an abstention with the stated reason outOfHorizon. On the settled day the newest minRuns = 3 rungs' magnitudes span 150 m, within magnitudeBandM 300, so settled is true; on the unsettled day they span 990 m, so settled is false.](figures/convergence-ladder.svg)
+![Two schematic five-rung convergence ladders for one target local day, newest run first, each rung labelled with its run, its leadHours to the local-noon anchor, and its vote: window, quiet, or an abstention with the stated reason outOfHorizon. On the settled day the newest minRuns = 3 rungs' magnitudes span 150 m, within magnitudeBandM 300, so settled is true; on the unsettled day they span 990 m, so settled is false.](figures/convergence-ladder.svg)
 
 ## What this vocabulary refuses to say
 
 The standing rejections are binding, not stylistic:
 
-- **no trend adjectives** — no "converging", "diverging", "shrinking",
+- **no trend adjectives**: no "converging", "diverging", "shrinking",
   or "growing" tokens anywhere. Trajectories are series; deltas and
   rosters state themselves, and the reader sees the shape;
-- **no run weighting** — run age is the ledger's `runAgeHours` fact, for
+- **no run weighting**: run age is the ledger's `runAgeHours` fact, for
   your judgment, never applied as a score;
 - **no graded agreement enums**;
-- **no staleness-as-finding** — a target day beyond an old run's horizon
+- **no staleness-as-finding**: a target day beyond an old run's horizon
   is an `outOfHorizon` abstention with a reason, never a "changed
   forecast";
-- **no ensemble-narrowing verdict** — band widths ride the magnitude
+- **no ensemble-narrowing verdict**: band widths ride the magnitude
   trajectory as evidence and nothing more;
-- **no per-finding version tags** — the envelope's `vocabularyVersion`
+- **no per-finding version tags**: the envelope's `vocabularyVersion`
   governs, as everywhere else.
 
-Candidate kinds beyond the core five — flip counts, oscillation
-summaries, cross-model convergence — wait for their own evidence spike.
+Candidate kinds beyond the core five (flip counts, oscillation
+summaries, cross-model convergence) wait for their own evidence spike.
 Nothing here pre-approves them.

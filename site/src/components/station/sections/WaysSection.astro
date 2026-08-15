@@ -23,19 +23,19 @@ const WAYS_RENDER_SNIPPET_HTML =
   <p class="station-note">
     The same summer-midday points, once as the
     object <code>windRose()</code> returns and once as the component that
-    draws it — the headless core and the bindings are peers; take
+    draws it: the headless core and the bindings are peers; take
     either.
   </p>
   <div class="station-ways">
     <div class="station-way">
-      <h3>Headless — the object</h3>
+      <h3>Headless: the object</h3>
       <div class="station-terminal">
         <pre class="station-terminal-code" set:html={WAYS_SNIPPET_HTML} />
         <pre class="station-terminal-output" id="ways-output"></pre>
       </div>
     </div>
     <div class="station-way">
-      <h3>Headed — the same data, drawn</h3>
+      <h3>Headed: the same data, drawn</h3>
       <div class="station-panel station-way-panel">
         <pre class="station-way-code" set:html={WAYS_RENDER_SNIPPET_HTML} />
         <div class="station-rose">

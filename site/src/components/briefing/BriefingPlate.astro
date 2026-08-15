@@ -47,8 +47,8 @@ const { scene } = renderSyntheticMeteogram(scenario, { overlays }, idPrefix);
     <p class="bf-section-lede">
       The Meteogram draws the same forecast the findings read:
       the profile laid out as a renderer-independent scene graph, then
-      serialized to SVG. It is one subpath of the package, not the package
-      — <a href="/docs/briefing/reading-a-meteogram/">Reading a Meteogram</a> explains
+      serialized to SVG. It is one subpath of the package, not the package.
+      <a href="/docs/briefing/reading-a-meteogram/">Reading a Meteogram</a> explains
       every mark, and <a href="/docs/briefing/render-first-meteogram/">Render
       your first Meteogram</a> gets you to this chart from a URL.
     </p>
@@ -59,7 +59,7 @@ const { scene } = renderSyntheticMeteogram(scenario, { overlays }, idPrefix);
         title={scenario.label}
         lesson={scenario.lesson}
         description={scenario.accessibilityDescription}
-        caption={`Usable lift rides the ${segment.evidence.cloudBaseM} m cloud base all afternoon while the boundary layer arcs far above it — ${segment.evidence.boundaryLayerTopM} m at the peak-lift hour. The liftCeiling finding, drawn.`}
+        caption={`Usable lift rides the ${segment.evidence.cloudBaseM} m cloud base all afternoon while the boundary layer arcs far above it, ${segment.evidence.boundaryLayerTopM} m at the peak-lift hour. The liftCeiling finding, drawn.`}
         units="altitude m and ft · wind km/h · temperature °C · precipitation mm · w* m/s"
         {scenario}
         headingLevel="h3"

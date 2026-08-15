@@ -1,7 +1,7 @@
 # `@azohra/meteo.grib`
 
 A GRIB2 decoder in pure TypeScript, written because the forecast engine needs
-grid template 3.1 (rotated latitude-longitude — every ECCC HRDPS, RDPS,
+grid template 3.1 (rotated latitude-longitude: every ECCC HRDPS, RDPS,
 REPS, and RAQDPS field) and multi-field messages (NCEP's paired U/V
 submessages), and no maintained JavaScript decoder provides either.
 The browser-safe core carries no I/O; JPEG 2000 and the worker pool
@@ -13,8 +13,8 @@ pnpm add @azohra/meteo.grib
 
 ## Decode a real field
 
-This decodes a committed HRDPS 2 m temperature field — rotated grid,
-JPEG 2000 packing, the combination that motivated the package — and
+This decodes a committed HRDPS 2 m temperature field (rotated grid,
+JPEG 2000 packing, the combination that motivated the package) and
 samples one launch:
 
 ```js
@@ -56,8 +56,8 @@ frozen twenty-message corpus in [`test/fixtures/`](test/fixtures/README.md).
 
 ## Documentation
 
-The reference lives in [`docs/`](docs/) — coverage, the ecCodes gate,
-and the JPEG 2000 codecs and worker pool each have a page — and is
+The reference lives in [`docs/`](docs/) (coverage, the ecCodes gate,
+and the JPEG 2000 codecs and worker pool each have a page) and is
 served at <https://meteo.azohra.com/docs/grib/>.
 
 MIT © Justin Watts

@@ -30,7 +30,7 @@ const definitions: Record<Mode, WitnessDefinition> = {
     title: "A plausible speed can still point the wrong way",
     lesson: "Vector components become meteorological direction only after their grid convention and projection are resolved.",
     description: "Four-stage validation chain: decode plausible U and V components; read the grid-relative convention from projection metadata; rotate into true east and north; compare the resulting bearing with independent geolocation and sibling-model witnesses. In the recorded REPS check, 261 degrees grid-relative became 236.6 degrees true.",
-    caption: "REPS and HRRR checks as recorded during model-feed verification, through 2026-08-08 — a dated record. Rotation preserves magnitude, so speed alone cannot witness direction.",
+    caption: "REPS and HRRR checks as recorded during model-feed verification, through 2026-08-08, a dated record. Rotation preserves magnitude, so speed alone cannot witness direction.",
     units: "direction degrees true · geolocation comparison degrees",
     stages: [
       { eyebrow: "Parsed payload", title: "U and V decode", detail: "The component magnitudes produce a realistic wind speed." },
@@ -45,7 +45,7 @@ const definitions: Record<Mode, WitnessDefinition> = {
     title: "One unit can describe three different clocks",
     lesson: "A field name and W/m² unit do not say whether a heat-flux value is instantaneous, averaged, or accumulated.",
     description: "A comparison of heat-flux semantics observed in provider products: HRRR and REPS publish instantaneous values; GFS publishes averages over growing windows that reset every six hours; GEPS publishes accumulations that require differencing. Product-definition and time-range metadata, checked as a sequence across resets, identify the semantics.",
-    caption: "The builders preserve each provider's declared time semantics before the shared derivation consumes heat flux. Semantics as observed in provider products through 2026-08-08 — a dated record.",
+    caption: "The builders preserve each provider's declared time semantics before the shared derivation consumes heat flux. Semantics as observed in provider products through 2026-08-08, a dated record.",
     units: "heat flux W/m² · time windows h",
     stages: [
       { eyebrow: "HRRR · REPS", title: "Instantaneous", detail: "The value describes the product's stated instant." },

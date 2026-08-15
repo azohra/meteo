@@ -30,30 +30,30 @@ public JSON shape or renderer behaviour.
 
 ## The shared machinery
 
-A builder implements only what is genuinely model-specific — field tables,
-URLs, and provider quirks — and composes `builders/common.ts` for the walk
+A builder implements only what is genuinely model-specific (field tables,
+URLs, and provider quirks) and composes `builders/common.ts` for the walk
 every build shares. Its exports:
 
-- `BuilderHour` and `BuilderLevel` — the source-hour and level shapes.
+- `BuilderHour` and `BuilderLevel`: the source-hour and level shapes.
   `emptyHour(validAt)` seeds every numeric field with NaN so a fetch task
   that never ran leaves a value the serializer refuses;
   `isCompleteLevel(level)` requires all six level fields before a level
   publishes.
 - `requiredValue(provider, value, fieldName, site)` and
-  `memberRequiredValue(value, field, site, member)` — reject a missing or
+  `memberRequiredValue(value, field, site, member)`: reject a missing or
   non-finite required sample by name.
-- `withDewPointDepression(level)` — swaps a level's relative humidity for
+- `withDewPointDepression(level)`: swaps a level's relative humidity for
   the derived dew-point depression.
 - `validTime(referenceTime, forecastHour)`, `manifestInstant()`, and
-  `profileInstant()` — the shared timestamp forms.
-- `runConcurrent(tasks, maxWorkers)` — the bounded fetch pool.
-- `maxSteps()` — the `METEO_MAX_STEPS` build cap; `KELVIN` and the
+  `profileInstant()`: the shared timestamp forms.
+- `runConcurrent(tasks, maxWorkers)`: the bounded fetch pool.
+- `maxSteps()`: the `METEO_MAX_STEPS` build cap; `KELVIN` and the
   `NamedSite` type round out the module.
 
 Publication authority lives in `derive.ts` and `publish.ts`; a builder never
 open-codes the profile, history, or manifest writes.
 
-A semantics declaration (invariant 6) is one verified line per builder —
+A semantics declaration (invariant 6) is one verified line per builder,
 HRDPS West's, from `forecast/src/builders/hrdps-west.ts`:
 
 ```ts

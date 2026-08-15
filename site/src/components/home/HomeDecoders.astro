@@ -9,7 +9,7 @@ const decoders = [
     name: "@azohra/meteo.grib",
     title: "GRIB2 in pure TypeScript",
     detail:
-      "Rotated lat-lon and Lambert grids, complex packing, multi-field messages, NOMADS .idx byte-range helpers — written because no maintained JavaScript decoder covered the grids ECCC and NOAA actually ship. Decoded values match ecCodes bit for bit.",
+      "Rotated lat-lon and Lambert grids, complex packing, multi-field messages, NOMADS .idx byte-range helpers, written because no maintained JavaScript decoder covered the grids ECCC and NOAA actually ship. Decoded values match ecCodes bit for bit.",
     install: "pnpm add @azohra/meteo.grib",
     href: "/docs/grib/",
   },
@@ -17,7 +17,7 @@ const decoders = [
     name: "@azohra/meteo.j2k",
     title: "The JPEG 2000 inside it",
     detail:
-      "Decodes the codestreams inside ECCC's GRIB2, scoped to exactly the subset those feeds ship — anything outside it fails loudly with a named error. Every step cites its clause of the JPEG 2000 standard, and it is the codec @azohra/meteo.grib runs in production.",
+      "Decodes the codestreams inside ECCC's GRIB2, scoped to exactly the subset those feeds ship; anything outside it fails loudly with a named error. Every step cites its clause of the JPEG 2000 standard, and it is the codec @azohra/meteo.grib runs in production.",
     install: "pnpm add @azohra/meteo.j2k",
     href: "/docs/j2k/",
   },

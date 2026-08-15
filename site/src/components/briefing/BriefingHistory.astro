@@ -12,7 +12,7 @@ const archive = sampleArchive();
 const KINDS: { kind: string; gloss: string }[] = [
   {
     kind: "existenceTrajectory",
-    gloss: "every run's vote on the day — window, quiet, or an abstention with its stated reason",
+    gloss: "every run's vote on the day: window, quiet, or an abstention with its stated reason",
   },
   {
     kind: "timingTrajectory",
@@ -20,7 +20,7 @@ const KINDS: { kind: string; gloss: string }[] = [
   },
   {
     kind: "magnitudeTrajectory",
-    gloss: "peak climb, launch-relative peak lift, and window duration per run — the deltas state themselves",
+    gloss: "peak climb, launch-relative peak lift, and window duration per run; the deltas state themselves",
   },
   {
     kind: "identityDrift",
@@ -28,7 +28,7 @@ const KINDS: { kind: string; gloss: string }[] = [
   },
   {
     kind: "settled",
-    gloss: "whether the newest runs' lift magnitudes sit within one stated band — stability, not skill",
+    gloss: "whether the newest runs' lift magnitudes sit within one stated band: stability, not skill",
   },
 ];
 ---
@@ -39,9 +39,9 @@ const KINDS: { kind: string; gloss: string }[] = [
     <p class="bf-section-lede">
       <code>compareRuns</code> answers by lining up what each successive run
       said about the same local day, newest first. The runs come out of the
-      month archive every engine build appends to — one gzip member per
-      build, existing bytes never rewritten
-      — via <code>loadForecastHistory</code>:
+      month archive every engine build appends to (one gzip member per
+      build, existing bytes never rewritten)
+      via <code>loadForecastHistory</code>:
     </p>
 
     <div class="bf-history-grid">
@@ -67,13 +67,13 @@ const KINDS: { kind: string; gloss: string }[] = [
           <p class="bf-archive-index">
             sidecar {archive.indexPath} lists each member's byte offset and
             length, so a reader can fetch only the runs it is missing with a
-            Range request — advisory, never authoritative
+            Range request: advisory, never authoritative
           </p>
         </div>
         <figcaption class="bf-caption">
           {archive.runs.length === 1
-            ? "one run so far this month — each new build appends one more member"
-            : `${archive.runs.length} runs this month — one member per build`}
+            ? "one run so far this month; each new build appends one more member"
+            : `${archive.runs.length} runs this month; one member per build`}
         </figcaption>
       </figure>
 
@@ -89,7 +89,7 @@ const KINDS: { kind: string; gloss: string }[] = [
         </dl>
         <p class="bf-history-refusals">
           It never editorializes: no "trending better", no weighting one run
-          over another, no agreement grades — just the series and the
+          over another, no agreement grades: just the series and the
           arithmetic, for you to present as you see
           fit. <a href="/docs/briefing/history/">History and run
           convergence</a> documents every kind.

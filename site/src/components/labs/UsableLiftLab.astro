@@ -29,7 +29,7 @@ const { scene: initialScene, svg: initialSvg } = renderUsableLiftChart(source, i
 <Figure
   id="usable-lift-lab"
   title="What stops usable lift first?"
-  lesson="Change only sink rate while the atmospheric column, parcel top, and cloud base remain fixed: some hours answer 'cloud base', others answer 'your sink rate' — and the slider moves the boundary between them."
+  lesson="Change only sink rate while the atmospheric column, parcel top, and cloud base remain fixed: some hours answer 'cloud base', others answer 'your sink rate', and the slider moves the boundary between them."
   description="An interactive Meteogram applying the package's parameterized usable-lift derivation to a convective column whose hours trade between the cloud-base cap and the sink-rate limit."
   caption="The control invokes @azohra/meteo.briefing/derive usableLiftTopM for every hour; the same sink-rate option rebuilds the package scene."
   units="sink m/s · height m MSL · time UTC"
@@ -83,7 +83,7 @@ const { scene: initialScene, svg: initialSvg } = renderUsableLiftChart(source, i
       <strong>Conclusion.</strong> The strongest midday hours are cloud-base-capped: no sink rate the
       slider offers moves them, because condensation stops the climb before the glider does. The
       shoulder hours are sink-limited: raising the sink rate pulls their usable top down and finally
-      erases them. One derivation, two regimes — and the slider walks each hour across the boundary.
+      erases them. One derivation, two regimes, and the slider walks each hour across the boundary.
     </p>
   </div>
 

@@ -1,5 +1,5 @@
 ---
-title: "What each model can — and cannot — tell you"
+title: "What each model can, and cannot, tell you"
 description: "Per-model field meanings, and absences as stated facts"
 ---
 
@@ -17,22 +17,22 @@ display intact.
 
 <CapabilityMatrix />
 
-The rest of this page is the stories behind those cells — where two identical-looking numbers are
+The rest of this page is the stories behind those cells: where two identical-looking numbers are
 different claims, and where a blank is the most honest thing a model said.
 
 ## A 40 km/h gust is two different claims
 
 Both providers publish a 10 m gust, and the catalogue declares a different meaning for each. An
 ECCC gust is the strongest gust the model produced at any internal timestep during the hour ending
-at the valid time — the pilot's "gusting to". A NOAA gust is the model's diagnostic gust at the
+at the valid time, the pilot's "gusting to". A NOAA gust is the model's diagnostic gust at the
 valid time itself: one sample from the hour the ECCC number takes a maximum over. The hour-maximum
 reads systematically higher, so an ECCC 40 beside a NOAA 32 can be two models in agreement, and two
 identical numbers can be two different forecasts.
 
 Neither meaning is wrong; each centre publishes what its system computes. What would be wrong is a
 display that prints both under one label as if they were comparable. The catalogue therefore
-declares gust *semantics*, not gust presence — an hour-maximum, an instantaneous sample, or nothing
-— and the readout wording follows the declaration: only the hour-maximum supports
+declares gust *semantics*, not gust presence (an hour-maximum, an instantaneous
+sample, or nothing), and the readout wording follows the declaration: only the hour-maximum supports
 "gusting to". The evidence, including how the hour-window semantics were established when the
 files' own interval metadata could not answer, is in the
 [forecast model feed reference](/docs/forecast/forecast-model-feeds/).
@@ -41,23 +41,23 @@ files' own interval metadata could not answer, is in the
 
 `capabilities.smoke` carries three values because "this model publishes
 smoke" is only half the fact. `"radiativelyCoupled"` (HRRR, RRFS) means the
-model's forecast smoke attenuates its own shortwave — its published
+model's forecast smoke attenuates its own shortwave: its published
 fluxes, and every thermal quantity derived from them, are **already
 smoke-aware**, so applying a smoke correction on top would double-count
 the plume. `"passive"` means smoke rides along without touching the
 model's radiation, and a correction is legitimate. `false` means no
-smoke at all — for those models smoke arrives, if anywhere, as a
+smoke at all: for those models smoke arrives, if anywhere, as a
 separate [smoke document](/docs/briefing/smoke-document/) from another
 model, never inside the profile. Documents echo the token as
 `semantics.smoke`, and the renderer's smoke-adjusted view refuses to run
 wherever the declaration says the base picture already did the
-arithmetic — see [Smoke and thermals](/logbook/smoke-and-thermals/).
+arithmetic; see [Smoke and thermals](/logbook/smoke-and-thermals/).
 
 ## One model's lift is native, another's is converted
 
 Every omega in the dataset is pascals per second with negative as lift, but not every model
 computed one. Most capable models publish their own omega; RRFS publishes geometric vertical
-velocity instead — metres per second — and the builder converts it at build time through the
+velocity instead (metres per second), and the builder converts it at build time through the
 hydrostatic relation ω ≈ −ρgw, with dry-air density from the level's own pressure and
 temperature. The catalogue therefore declares vertical-velocity *provenance*, not presence:
 `"omega"` for a provider's own pressure tendency, `"fromGeometricW"` for a converted value, so a
@@ -67,15 +67,15 @@ The conversion and its assumptions are recorded in the
 
 ## Surface-based CAPE
 
-NOAA publishes a menu of CAPE variants — several parcel definitions, each answering a different
-storm question — while ECCC publishes exactly one: surface-based. The forecast engine publishes the
+NOAA publishes a menu of CAPE variants (several parcel definitions, each answering
+a different storm question), while ECCC publishes exactly one: surface-based. The forecast engine publishes the
 surface-based variant everywhere, and not merely because it is the one every capable model shares.
 On a surface-heated soaring day, the parcel that might overdevelop *is* the thermal the pilot is
 climbing in, and at peak heating the surface parcel is typically also the most unstable one on
 offer.
 
 Read it for what it is. Surface-based CAPE says how much energy the afternoon's thermals can tap if
-they reach free convection. It does not say whether they get there — a morning cap can hold
+they reach free convection. It does not say whether they get there: a morning cap can hold
 everything down, and that story belongs to CIN. And it is blind to elevated instability above a
 stable surface layer, which matters for night-time storms but rarely for the daytime question this
 chart asks. A large CAPE value is fuel, not a schedule.
@@ -87,15 +87,15 @@ Absence in this dataset comes in two kinds, and both are deliberate.
 The first is within a grid. ECCC encodes "convection not computed at this point" as
 ordinary-looking numbers inside the CAPE and CIN fields, over large fractions of the grid on any
 given run; the [feed reference](/docs/forecast/forecast-model-feeds/) records the sentinel values
-and how much of the field they cover. The builders mask them to absence — never to zero — because
+and how much of the field they cover. The builders mask them to absence, never to zero, because
 zero CAPE is a strong claim of stability the model did not make. A published gap means the model
 declined to answer; a frontend that fills it with 0 converts the gap into misinformation.
 
 The second is a model property. Both HRDPS models compute no CIN at all, so the catalogue declares
-CAPE without CIN — the two capabilities are decoupled precisely because the quantities are so often
+CAPE without CIN: the two capabilities are decoupled precisely because the quantities are so often
 spoken in one breath. On the highest-resolution models the fuel is published without the cap, and a
 renderer must present that incomplete story as incomplete. Showing CIN as 0 there would read as "no
-inhibition, expect early overdevelopment" — a forecast nobody issued.
+inhibition, expect early overdevelopment", a forecast nobody issued.
 
 ## A field can exist at one hour and not the next
 
@@ -104,28 +104,28 @@ earlier than its other surface fields. Late in the horizon, every other column c
 boundary-layer height but no CAPE, while its neighbours carry all three. Absence is not even a
 per-model constant: it varies hour by hour inside a single chart. The document simply omits the
 field at hours the feed does not publish it, and the strip has no cell there. Read the gap as "not
-published for this hour" — never as the risk having passed between two columns.
+published for this hour", never as the risk having passed between two columns.
 
 ## Ensemble spread exists only where members publish
 
-REPS publishes real ensemble soundings — every member's temperature, moisture, and wind, reduced to
-percentiles under the accounting rules in
-[Ensemble values](/docs/briefing/ensemble-values/) — yet none of the gust, CAPE,
+REPS publishes real ensemble soundings (every member's temperature, moisture, and
+wind, reduced to percentiles under the accounting rules in
+[Ensemble values](/docs/briefing/ensemble-values/)), yet none of the gust, CAPE,
 CIN, or boundary-layer-height families exists per member. Its capabilities for all four are false,
 so there is no REPS storm-risk spread to draw, and none can be manufactured from percentile
 temperature blocks after the fact. GEPS, the global ensemble, is where that product lives: its raw
 files carry per-member CAPE and CIN, and the catalogue's `geps` entry publishes their spread as
-percentile blocks — the one feed here whose members disagree about storm energy on the record. An
+percentile blocks, the one feed here whose members disagree about storm energy on the record. An
 ensemble panel showing CAPE spread from any other model is showing something other than members.
 
 ## Cloud shading is two kinds of evidence
 
-GFS is the only model here that publishes cloud fraction on pressure levels — model cloud with
+GFS is the only model here that publishes cloud fraction on pressure levels: model cloud with
 altitude attached. HRRR, RRFS, and both NAM models publish low, middle, and high layer fractions
 without a profile, GFS carries those layers as well as its profile, and every
 ECCC model publishes a single total-column percentage. So the cloud shading in the chart body means
 different things by model. Where the model publishes its own per-level cloud, the renderer shades
-from it: the model asserting cloud. Everywhere else the shading is an inference — levels whose
+from it: the model asserting cloud. Everywhere else the shading is an inference: levels whose
 dew-point depression says the air is nearly saturated, from which cloud is a reasonable guess. The
 two routes land in the same visual classes so the chart speaks one language, the model's own cloud
 wins wherever it exists, and the catalogue's cloud-profile flag declares which regime a model is
@@ -135,8 +135,8 @@ is not a rendering gap but a statement about the feed.
 ## Render the declaration, not an assumption
 
 The catalogue is the machine-readable version of this entry: per model, which pressure levels,
-which fields, and with which semantics. A frontend should render exactly what a model declares — no
-invented zeros, no borrowed semantics, no columns padded for symmetry — and let absence show, with
+which fields, and with which semantics. A frontend should render exactly what a model declares (no
+invented zeros, no borrowed semantics, no columns padded for symmetry) and let absence show, with
 wording that follows the declared meaning rather than the field name. And a reader should distrust
 any display on which every model appears to say the same things. Models genuinely differ; when the
 charts do not, someone between the model and the screen has been filling gaps.

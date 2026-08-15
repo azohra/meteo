@@ -1,6 +1,6 @@
 # Synthetic scenarios
 
-This directory holds deterministic recipes for model-shaped forecast data —
+This directory holds deterministic recipes for model-shaped forecast data:
 the platform's reviewed synthetic corpus and the read side's regression
 goldens. The resulting profiles are synthetic and test artifacts, not
 forecasts. They do not describe present conditions, past conditions, or
@@ -24,7 +24,7 @@ demonstrates:
 Offline model output can calibrate plausible ranges; figures and tests
 consume the fixed, committed profile. A figure built on a scenario needs a
 clear relationship, a meaningful static frame, units, and an accessible
-description — add a caption when method or limits change the reading, and add
+description; add a caption when method or limits change the reading, and add
 controls only when changing an input reveals something the static frame
 cannot. The scenario generator and validation gates own committed documents;
 prose and components consume those artifacts.
@@ -63,8 +63,8 @@ The scenario runner discovers only
 fixtures. It resolves baseline paths from `scenarios/`, not from the definition
 file's directory or the process working directory.
 
-`catalog/` holds the three synthetic sites — `test-hill`, `test-ridge`, and
-`test-valley` — whose `sites.json` and `site-context.json` the documentation's
+`catalog/` holds the three synthetic sites (`test-hill`, `test-ridge`, and
+`test-valley`) whose `sites.json` and `site-context.json` the documentation's
 examples and the committed sample dataset build from. They are the same
 documents the logbook entry
 [The mountain the model sees](https://meteo.azohra.com/docs/models/the-mountain-the-model-sees/)
@@ -88,11 +88,11 @@ Every definition has these required fields:
   profile as `site.timeZone` for local-time analysis, projection, and
   presentation;
 - `site.synthetic` is always `true`; the site block is sample provenance
-  only — generated documents are launch-agnostic;
+  only; generated documents are launch-agnostic;
 - `launch` declares the launch elevation the lesson teaches against. It never
   enters the generated document: the index publishes it, and renderers pass it
   as the package's `MeteogramOptions.launch`. Assertions read it as
-  `launch.elevationM`. Baselines are launch-agnostic too — one carrying the
+  `launch.elevationM`. Baselines are launch-agnostic too; one carrying the
   retired `siteAltitudeM` is rejected with directions;
 - `clock` fixes the UTC reference, generation, and first-valid instants,
   sampling step, hour count, and random seed;
@@ -162,7 +162,7 @@ Ensemble positions are addressed by a trailing percentile key: a field such as
 block, and `.members` names its contributor count. Wind direction (a circular
 median) and the level pressure coordinate publish plain numbers and take no
 suffix. A nearest-height selector positions ensemble levels by their median
-(`p50`) height — the same position the aggregation orders levels by.
+(`p50`) height, the same position the aggregation orders levels by.
 
 ## Baselines and attribution
 

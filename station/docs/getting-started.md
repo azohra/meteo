@@ -4,9 +4,9 @@ description: Install @azohra/meteo.station, mount the station feed handler, rend
 ---
 
 Two moves: mount the feed handler on your server, then render components
-against it. Everything else — [adapters](/docs/station/adapters/),
+against it. Everything else ([adapters](/docs/station/adapters/),
 [theming](/docs/station/theming/), [the React surface](/docs/station/react/),
-[the wire itself](/docs/station/wire-contract/) — layers on top of this page.
+[the wire itself](/docs/station/wire-contract/)) layers on top of this page.
 
 ## Install
 
@@ -45,7 +45,7 @@ curl 'https://your.host/wind/feed?hours=2'           # narrower window (≤ the 
 curl 'https://your.host/wind/current?station=summit' # one station, reading only
 ```
 
-`/feed` answers with a `StationFeed` — every configured station on one
+`/feed` answers with a `StationFeed`, every configured station on one
 document, whether its upstream answered or not (abbreviated with `…`; the
 field names are real):
 
@@ -69,8 +69,8 @@ field names are real):
 ```
 
 `?hours=2` serves the same shape with `history` narrowed to the trailing
-two hours. `/current` answers with a `StationCurrent` — one station,
-reading only, `history` null:
+two hours. `/current` answers with a `StationCurrent` (one station,
+reading only, `history` null):
 
 ```json
 {
@@ -84,25 +84,25 @@ reading only, `history` null:
 ```
 
 A failed upstream keeps its station's slot with `"status": "unavailable"`
-and a machine `reason` — the documents, field by field, are the
+and a machine `reason`; the documents, field by field, are the
 [wire contract](/docs/station/wire-contract/), with committed annotated
 examples in `station/schema/`.
 
-Every field each vendor entry takes — and the quirks its adapter guards —
+Every field each vendor entry takes, and the quirks its adapter guards,
 is on that vendor's reference page:
 [WindNerd](/docs/station/adapters/windnerd/),
 [Tempest](/docs/station/adapters/tempest/),
 [Campbell](/docs/station/adapters/campbell/).
 
 `maxHistoryHours` (default 6) is both the default window and the ceiling for
-`?hours=` — the range and rejection rules are in
+`?hours=`; the range and rejection rules are in
 [the HTTP protocol](/docs/station/wire-contract/#the-http-protocol). Routing
 matches by pathname suffix by default; pass `basePath: "/api/wind"` to pin
 exact-match routes (`/api/wind/feed`, `/api/wind/current`) when several
 handlers are mounted beside each other.
 
 Responses carry `Cache-Control` and a weak `ETag`, so unchanged upstreams
-revalidate to 304 — the derivation is
+revalidate to 304; the derivation is
 [the HTTP protocol's](/docs/station/wire-contract/#the-http-protocol).
 Override caching for a CDN with:
 
@@ -114,7 +114,7 @@ cacheControl: (route, maxAge) =>
 
 ### Dynamic configuration
 
-`stations` may also be a resolver — a database read, a KV fetch — called once
+`stations` may also be a resolver (a database read, a KV fetch) called once
 per assembly, with the `Request` when the handler invoked it:
 
 <!-- meteo-doc-fence: ignore — one-line sketch; readStationsFromDb is the reader's own -->
@@ -123,7 +123,7 @@ createStationFeedHandler({ stations: async (request) => readStationsFromDb(reque
 ```
 
 A station whose config fails validation (or repeats an id) degrades to
-`unavailable`/`not_configured` with the zod issues logged — a bad row never
+`unavailable`/`not_configured` with the zod issues logged; a bad row never
 500s the feed. Static arrays get the same check eagerly at construction,
 which warns loudly but does not throw.
 
@@ -178,7 +178,7 @@ function LiveWind() {
 ![The station card rendered from a synthetic station, Launch Ridge: the wind dial with lull and gust flanks beside a six-hour graded history chart.](figures/hero-light.svg)
 
 No react? The same page is one module script and plain markup with the
-[custom-elements binding](/docs/station/elements/) —
+[custom-elements binding](/docs/station/elements/):
 `<meteo-station-feed src="/api/wind">` polls the same endpoints through the
 same shared stores and its children render the same DOM:
 
@@ -206,7 +206,7 @@ so a season pull calls `loadWindnerdStation` itself rather than going
 through the fleet-feed API.
 
 A live card wants `historyHours: 6` at the default one-minute resolution. A
-season's rose wants months of history at a coarse resolution instead —
+season's rose wants months of history at a coarse resolution instead:
 `{ historyHours: 24 * 120, recordPeriodMinutes: 180 }` pulls four months as
 under a thousand three-hour aggregates, not two hundred thousand raw
 minutes. `history.periodMinutes` on the returned document always reflects
@@ -216,7 +216,7 @@ reader keep judging dropouts correctly regardless of which one you asked for.
 One trap: the 180-minute aggregates bucket by the station's own
 [local standard time, not UTC](/docs/station/adapters/windnerd/#aggregate-buckets-follow-local-standard-time).
 `dailyPattern` and the month and time-of-day filters default to
-`utcOffsetMinutes: 0` — plain UTC — which will look entirely plausible
+`utcOffsetMinutes: 0` (plain UTC), which will look entirely plausible
 right up until you compare it to the station's actual afternoon: pass your
 station's own standard-time offset (you configured it, or you own the
 hardware and already know it) to bucket in local time instead.

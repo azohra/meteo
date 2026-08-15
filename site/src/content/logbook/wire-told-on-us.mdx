@@ -14,19 +14,19 @@ thumbnail: "wire-report"
 # The wire told on us
 
 The pipeline was green. Every tick built, every model published, and I had
-no idea what any of it cost — which is a comfortable way to run something
+no idea what any of it cost, which is a comfortable way to run something
 until the day it isn't. Before touching anything, I wanted numbers, so I
 ran a two-day experiment: a throwaway stopwatch taped over the transport,
 timing every provider request from dispatch to body completion and
-printing one summary per build. Apparatus of the disposable kind — its
+printing one summary per build. Apparatus of the disposable kind: its
 whole job was to be right for two days and then not exist. The scheduled
 ticks did the rest.
 
 ## Finding one: the fetch loop that never got the memo
 
 The very first measured tick caught something code review never had. The
-GOES observation builders — which run on *every* fifteen-minute tick, not
-just when a forecast model publishes — were fetching granules one at a
+GOES observation builders, which run on *every* fifteen-minute tick, not
+just when a forecast model publishes, were fetching granules one at a
 time:
 
 ```text
@@ -35,7 +35,7 @@ wire-busy 31.5 s (96% of wall) · mean concurrency 1.0 · busy throughput 33.0 M
 ```
 
 Ninety-six percent of the wall clock on the wire, at a mean concurrency of
-exactly 1.0 — while every other NOAA builder fetched through a
+exactly 1.0, while every other NOAA builder fetched through a
 ten-connection gate. One builder simply never got the loop. At roughly
 ninety-six ticks a day, that serial walk was worth about twenty-five
 runner-minutes daily, invisible until a number said it out loud.
@@ -44,7 +44,7 @@ runner-minutes daily, invisible until a number said it out loud.
 
 ECCC publishes the same dated tree on `dd.weather.gc.ca` and on the
 sanctioned high-bandwidth mirror, `hpfx.collab.science.gc.ca`. I had
-balanced the two build lanes by bytes — about 22 GiB each side, which felt
+balanced the two build lanes by bytes, about 22 GiB each side, which felt
 principled. Then a full 12Z cycle went through under measurement:
 
 ```text
@@ -55,14 +55,14 @@ REPS  on dd:    8,780 MiB · busy throughput 16.0 MiB/s · 90 of 913 failed
 
 Same gate, same runner class, same afternoon. The mirror delivered five to
 seven times the throughput per connection, and dd was quietly failing one
-REPS request in ten — absorbed by retries, invisible in a green checkmark,
+REPS request in ten: absorbed by retries, invisible in a green checkmark,
 paid for in minutes and tail latency. The byte-balanced split had one lane
 finishing in two minutes and the other in sixteen.
 
 The fix was embarrassingly small: move the ensemble to the mirror's lane
 and rewrite the balancing rule from *bytes* to *measured transfer time*.
 The fifteen-line diff was never the hard part. Knowing it was the right
-diff — that was the two days.
+diff: that was the two days.
 
 *Source: the stopwatch's per-build summaries, measured on the runners of
 the reference operator,
@@ -72,10 +72,10 @@ over the experiment's two days of scheduled ticks.*
 ## What the numbers refused to support
 
 The measurements killed as many ideas as they confirmed, which is most of
-their value. Raising the ECCC connection gate: no — dd was already failing
+their value. Raising the ECCC connection gate: no; dd was already failing
 at five connections, and the fast lane's cpu was within reach of both
-cores. Caching the runner setup: no — the whole install is ten seconds.
-Bigger runners: no — every heavy build already overlaps fetch and decode
+cores. Caching the runner setup: no; the whole install is ten seconds.
+Bigger runners: no; every heavy build already overlaps fetch and decode
 so well that wire time sits near 100% of wall *while* cpu runs past one
 core. The system was healthier than my intuitions about it, everywhere
 except the two places it wasn't.
@@ -85,7 +85,7 @@ except the two places it wasn't.
 The tape came off; the findings stayed. GOES granules now fetch through
 the same per-bucket gate as every other NOAA builder, the NAM gate is
 sized to what round-trip latency actually demands, the ensemble rides the
-mirror — and the engine itself now prints a `[wire]` transport report
+mirror, and the engine itself now prints a `[wire]` transport report
 beside every build's summary line: busy time against wall, concurrency
 against the gate, latency percentiles, a cpu split, a row per host. The
 experiment doesn't need re-running, because its instrument became a
@@ -95,5 +95,5 @@ surfaced all of this is public at
 [`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts),
 reporting on every tick.
 
-Don't tune what you haven't measured — and make the system carry its own
+Don't tune what you haven't measured, and make the system carry its own
 gauge, so the next operator never has to reach for tape.

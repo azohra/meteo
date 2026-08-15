@@ -6,7 +6,7 @@ description: Verify a feed, declare its capabilities, implement transport and bu
 A model is ready only when verified provider facts, catalogue declarations, builder
 behaviour, fixtures, and published documentation agree.
 
-> **Caution — verify before code.** Provider fields, levels, semantics,
+> **Caution: verify before code.** Provider fields, levels, semantics,
 > sentinels, packing, schedules, domains, and access limits are facts that can
 > change. Verify them against the live feed first and record the date in the
 > living forecast feed reference: a `| **Verified** | YYYY-MM-DD |` row in the
@@ -32,11 +32,11 @@ behaviour, fixtures, and published documentation agree.
    optional fields while preserving absence. Pass verified per-document
    semantics into the shared derivation.
 5. **Publish through shared utilities.** Compose `builders/common.ts` and the
-   shared `derive.ts`/`publish.ts` tail — run selection, profile derivation,
-   document publication, and the manifest — rather than open-coding it;
+   shared `derive.ts`/`publish.ts` tail (run selection, profile derivation,
+   document publication, and the manifest) rather than open-coding it;
    shared rounding, history, and run-index conventions come with it.
 6. **Register the builder.** Add one entry to the registry in
-   `forecast/src/builders/registry.ts` — slug → options-only factory,
+   `forecast/src/builders/registry.ts`: slug → options-only factory,
    importing the builder module inside the factory (dynamic `import()`) so
    the CLI stays free of its heavy dependencies; the registry test requires
    exact catalogue order. Add a scheduled invocation only when the model is
@@ -44,9 +44,9 @@ behaviour, fixtures, and published documentation agree.
 7. **Prove the declaration.** Add focused fixture-based tests under
    `forecast/test/builders/` for run selection, URLs/records, conversion,
    sentinels, domain guards, optional fields, semantics, output paths, and
-   error handling. Models sharing a builder share a test file —
+   error handling. Models sharing a builder share a test file (
    `eccc.test.ts` covers HRDPS continental, RDPS, and GDPS; `nam.test.ts`
-   covers both NAM entries — so extend the shared file when your model
+   covers both NAM entries), so extend the shared file when your model
    composes an existing builder and add `<model>.test.ts` only for a new
    one. Assert catalogue capability parity.
 8. **Update affected writing.** Keep the model capability guide and provider

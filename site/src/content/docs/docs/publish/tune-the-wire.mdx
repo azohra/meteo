@@ -4,7 +4,7 @@ description: "Read the transport report every build prints, and let it decide wh
 ---
 
 Every `meteo forecast build` prints a `[wire]` block beside its summary
-line. It is the evidence for every transport decision an operator faces — whether to raise a fetch gate, move a model to a different
+line. It is the evidence for every transport decision an operator faces: whether to raise a fetch gate, move a model to a different
 host, or leave a slow-looking lane exactly as it is.
 
 ```text
@@ -18,35 +18,35 @@ Published 4 profiles for 2026-08-14T12:00:00Z (4129 downloads, 8219 MiB).
 
 Line by line:
 
-- **requests / failed / MiB / wall** — the build's whole transport story in
+- **requests / failed / MiB / wall**: the build's whole transport story in
   one line. Failures here are attempts the engine retried or gave up on;
   a persistent non-zero count is a host telling you something.
-- **wire-busy** — the union of time when at least one request was in
+- **wire-busy**: the union of time when at least one request was in
   flight. Busy ≈ wall means the build never waited on anything *but* the
   wire.
-- **mean concurrency** — in-flight request time divided by busy time. Read
+- **mean concurrency**: in-flight request time divided by busy time. Read
   it against the builder's fetch gate: pinned at the gate means the gate is
   the constraint; stuck at 1.0 means something upstream serializes.
-- **busy throughput** — bytes over busy time. This is the host's delivered
+- **busy throughput**: bytes over busy time. This is the host's delivered
   rate at your concurrency, the number to compare across hosts.
-- **latency p50/p90/max · mean size** — high p50 against small mean sizes
+- **latency p50/p90/max · mean size**: high p50 against small mean sizes
   means round trips dominate and concurrency is the lever; low p50 with low
   throughput means the pipe itself is the ceiling.
-- **cpu user/system** — decode and derivation cost. On a two-core runner,
+- **cpu user/system**: decode and derivation cost. On a two-core runner,
   user time approaching twice the wall means compute, not transport, paces
   the build.
-- **per-host rows** — one model can touch several hosts; the row tells you
+- **per-host rows**: one model can touch several hosts; the row tells you
   which one is slow, failing, or both.
 
 ## Three verdicts
 
 | The report shows | The build is | The lever |
 | --- | --- | --- |
-| busy ≈ wall, concurrency pinned at the gate, low throughput | wire-bound | a faster host, or fewer bytes — not more connections |
+| busy ≈ wall, concurrency pinned at the gate, low throughput | wire-bound | a faster host, or fewer bytes, not more connections |
 | high p50 against small mean sizes, throughput far below the host's known rate | round-trip-bound | more connections, within the provider's budget |
 | cpu ≈ cores × wall while busy falls | compute-bound | the wire is no longer the story; look at decode |
 
-A fourth reading matters as much: **all three in balance** — busy near wall,
+A fourth reading matters as much: **all three in balance**: busy near wall,
 cpu high, gate saturated. That build is already overlapping fetch and decode
 well. Leave it alone.
 
@@ -56,14 +56,14 @@ ECCC publishes the same dated tree on `dd.weather.gc.ca` and on the
 sanctioned high-bandwidth mirror `hpfx.collab.science.gc.ca`
 (`METEO_DATAMART_BASE` selects it). They are not interchangeable in
 practice: two days of reports from one operator's GitHub-hosted runners
-measured dd at 10–16 MiB/s per fresh build — with one ensemble build
-failing a tenth of its requests — while hpfx delivered 73 MiB/s with zero
+measured dd at 10–16 MiB/s per fresh build (with one ensemble build
+failing a tenth of its requests) while hpfx delivered 73 MiB/s with zero
 failures at the same five-connection gate.
 
 The doctrine that follows: **balance lanes by measured transfer time, not
 by bytes.** A byte-balanced split can still leave one lane running seven
 times longer than the other. Put the heavy streams on the mirror, keep
-dd's lane light, and re-read the reports after any move — these are one
+dd's lane light, and re-read the reports after any move: these are one
 operator's numbers from one vantage; measure your own before copying them.
 
 The connection budgets themselves are engine constants, sized against
@@ -76,7 +76,7 @@ saturated; the provider's budget tells you whether it may widen.
 
 The pipeline that publishes real forecasts for acrophobia.ca is public:
 [`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts).
-Its workflow is one worked answer to every question on this page — lanes
+Its workflow is one worked answer to every question on this page: lanes
 grouped by provider host, heavy streams on the mirror, per-model uploads
 that survive a timeout, an engine pin that refuses to run anything
 unpinned, and the scheduling rules from
@@ -86,6 +86,6 @@ reasoning, and its Actions log carries live `[wire]` blocks from every
 tick.
 
 One ordering rule: **publish before you pin.** A
-lockfile cannot resolve an engine version that is not on the registry yet —
+lockfile cannot resolve an engine version that is not on the registry yet:
 release the engine first, then bump the pin and refresh the lockfile in
 the same commit, or the next tick fails at install.

@@ -7,15 +7,15 @@ description: Use published state for pure quantities, local-day projection, and 
 documents: moisture conversions, vector wind, lapse and stability, thermal
 index, shear, the B/S ratio, local-day grouping, projection, valid-time
 alignment, units, run freshness, parameterized usable lift, the
-smoke-correction chain, and measured-irradiance interpretation — display
+smoke-correction chain, and measured-irradiance interpretation; display
 smoothing belongs to `@azohra/meteo.briefing/meteogram`'s `smooth121`. It does not
 duplicate forecast engine derivations that require raw model inputs; that split is
 defined in the [project overview](/docs/overview/#authority-by-quantity).
 
 Usable lift shows the boundary at its cleanest:
-`usableLiftTopM(inputs, sinkRateMps)` is the single implementation — the
+`usableLiftTopM(inputs, sinkRateMps)` is the single implementation (the
 forecast engine imports this very function and stores its answer at the fixed
-`1.0` m/s sink rate — so projecting the published inputs for another sink
+`1.0` m/s sink rate), so projecting the published inputs for another sink
 rate is the same arithmetic as the stored default, and at `1.0` m/s it
 reproduces the engine's parity fixture exactly. The scene does not apply that p50
 recomputation to ensembles because it would not equal a per-member
@@ -128,8 +128,8 @@ profile parser or into `buildMeteogramScene`.
 
 `@azohra/meteo.briefing/derive` carries the smoke-correction chain as small pure
 functions over published values, with the physics constants exported as
-named, cited claims (`SMOKE_MASS_EXTINCTION_M2_PER_G` — Reid et al.
-2005; `SMOKE_TRANSMITTANCE_K_MIDDAY` / `K_VERTICAL` — Donaldson 2021,
+named, cited claims (`SMOKE_MASS_EXTINCTION_M2_PER_G`: Reid et al.
+2005; `SMOKE_TRANSMITTANCE_K_MIDDAY` / `K_VERTICAL`: Donaldson 2021,
 Chubarova 2012, McKendry 2019):
 
 ```ts title="smoke-adjusted-w.ts"
@@ -169,17 +169,17 @@ export function adjustedWStar(
 ```
 
 The guard comes first for a reason: on models whose fluxes already feel
-their own smoke (`isSmokeAwareProfile` — HRRR), the published w* is
+their own smoke (`isSmokeAwareProfile`, HRRR), the published w* is
 already derated and applying the correction again double-counts. The
-adjustment itself is one multiply — `w* × ∛f` — because Deardorff's w*
+adjustment itself is one multiply, `w* × ∛f`, because Deardorff's w*
 is the cube root of the heat flux; no flux re-derivation is needed or
 performed. Scope and derivation narrative:
 [Smoke and thermals](/logbook/smoke-and-thermals/).
 
 One caveat rides `smokeAotFromColumn`'s **input**: the RAQDPS
 `smokePlumeColumnMgm2` field is currently
-[quarantined from derived optics](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)
-— the arithmetic is sound (it reproduced HRRR's own optics to 5 %), the
+[quarantined from derived optics](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect):
+the arithmetic is sound (it reproduced HRRR's own optics to 5 %), the
 provider's column content is not. For profiles with their own smoke
 block, prefer the published `aot` directly.
 
@@ -187,9 +187,9 @@ block, prefer the published `aot` directly.
 
 Observation documents carry measured W/m²; three functions make that
 number mean something beside a forecast. `clearSkyGhiWm2` is the cited
-expectation — Haurwitz (1945), chosen per Reno, Hansen & Stein 2012
+expectation (Haurwitz (1945), chosen per Reno, Hansen & Stein 2012
 (SAND2012-2389) as the best clear-sky model needing only the sun's
-zenith — and `observedTransmittance` is measured over expected: 1 is a
+zenith), and `observedTransmittance` is measured over expected: 1 is a
 textbook sky, ~0.85 a moderate smoke plume, well under 0.5 serious
 cloud, null near the horizon where the ratio means nothing.
 `nearestObservation` is the join: observations live at the product's
@@ -222,7 +222,7 @@ export function transmittanceAtHour(
 
 Put that beside `smokeTransmittance(aot)` from the same site's smoke
 document and you are running the comparison the smoke correction's
-constants were fitted from — measurement against claim, per hour.
+constants were fitted from: measurement against claim, per hour.
 
 ## Intersect instants with `alignByValidAt`
 
@@ -253,15 +253,15 @@ returns no rows; duplicate model slugs throw. Use
 
 `runFreshness(runsEntry, model, now, thresholds)` grades one runs.json entry
 `"current" | "delayed" | "stale"`, split deliberately along the fact/policy
-line. The facts come from the model's catalogue entry — `runIntervalHours`
+line. The facts come from the model's catalogue entry: `runIntervalHours`
 (how often a successor run appears) and `typicalPublicationLagHours` (the
-upper end of normal for this dataset's publish after `referenceTime`) — and
+upper end of normal for this dataset's publish after `referenceTime`);
 the thresholds are the consumer's: both count run intervals of age beyond the
 lag, and they are required parameters because how much lateness a product
 tolerates before warning its users is display policy, never a dataset
-property. Age is `now − referenceTime` — `generatedAt` is accepted so a
+property. Age is `now − referenceTime` (`generatedAt` is accepted so a
 runs.json entry drops in unchanged, but a republish of the same run never
-makes the forecast younger — and an unparseable instant throws a `RangeError`
+makes the forecast younger), and an unparseable instant throws a `RangeError`
 rather than returning a plausible-but-wrong grade. Observation datasets never
 come here: they have no runs; judge them against their catalogue
 `cadenceMinutes`. The polling loop around this function is the

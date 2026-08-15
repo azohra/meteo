@@ -114,7 +114,7 @@ const description = PANELS.map(
   title="What the exact cloud base moved"
   lesson="Metres of change per forecast hour, new − old, on two real recorded columns."
   description={description}
-  caption="Every hour's cloud base rises 35–58 m — Bolton against the retired linear estimate, on dry columns where the saturated-layer floor never fires. The two rust bars falling far below zero are the de-capped hours: usable lift previously published at cloud base, now published at the sink crossing the cap had concealed. A dated record: these values were measured on 2026-08-08, the entry's date, by re-deriving both recorded model columns (HRDPS and HRRR) through the pipeline's derive.py as it stood that day — recorded here by hand."
+  caption="Every hour's cloud base rises 35–58 m: Bolton against the retired linear estimate, on dry columns where the saturated-layer floor never fires. The two rust bars falling far below zero are the de-capped hours: usable lift previously published at cloud base, now published at the sink crossing the cap had concealed. A dated record: these values were measured on 2026-08-08, the entry's date, by re-deriving both recorded model columns (HRDPS and HRRR) through the pipeline's derive.py as it stood that day, recorded here by hand."
   units="Δ metres · hours UTC"
 >
   <div class="meteo-gram-scroll meteo-gram-scroll--plate graphic-scroll" role="region" tabindex="0" aria-label="Scrollable chart of per-hour cloud-base and usable-lift changes">
@@ -155,12 +155,12 @@ const description = PANELS.map(
               return (
                 <g>
                   <path d={barPath(cloudLeft, hourDelta.cloudBase)} class="cbd-bar cbd-cloudbase">
-                    <title>{`${panel.name} — ${hourDelta.hour}: cloud base +${hourDelta.cloudBase.toFixed(1)} m`}</title>
+                    <title>{`${panel.name} · ${hourDelta.hour}: cloud base +${hourDelta.cloudBase.toFixed(1)} m`}</title>
                   </path>
                   {paired && (
                     <path d={barPath(usableLeft, hourDelta.usableLift!)} class="cbd-bar cbd-usable">
                       <title>
-                        {`${panel.name} — ${hourDelta.hour}: usable-lift top ${hourDelta.usableLift! > 0 ? "+" : ""}${hourDelta.usableLift!.toFixed(1)} m${hourDelta.decapped ? " — de-capped: the old value was pinned at cloud base; the sink crossing sits lower" : ""}`}
+                        {`${panel.name} · ${hourDelta.hour}: usable-lift top ${hourDelta.usableLift! > 0 ? "+" : ""}${hourDelta.usableLift!.toFixed(1)} m${hourDelta.decapped ? " (de-capped: the old value was pinned at cloud base; the sink crossing sits lower)" : ""}`}
                       </title>
                     </path>
                   )}

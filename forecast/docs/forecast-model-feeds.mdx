@@ -62,8 +62,8 @@ export const extraFeeds = [
 ];
 
 Every builder supplies the same surface fields, five fields on each pressure
-level — plus vertical velocity and per-level cloud fraction where the
-transport carries them — and model terrain elevation to the shared
+level (plus vertical velocity and per-level cloud fraction where the
+transport carries them) and model terrain elevation to the shared
 derivation. Feeds that publish them also supply the optional science
 fields: 10 m gusts, surface-based CAPE and CIN, model boundary-layer
 height, and layered cloud. Each model's curated pressure-level set and
@@ -76,8 +76,8 @@ and update the verification date.
 
 ## Feed summary
 
-The catalogue columns — slug, provider, kind, grid, cadence, horizon, and
-status flags — render from `models.json` at build time. Transport and
+The catalogue columns (slug, provider, kind, grid, cadence, horizon, and
+status flags) render from `models.json` at build time. Transport and
 verification dates are this page's own record; an em dash means no dated
 per-feed verification is recorded here and the model's section below holds
 what is known.
@@ -114,38 +114,38 @@ profiles, so no column applies to them. Behind the cells:
   computed" is encoded in the values: **9999** in RDPS/GDPS CAPE *and* CIN
   (collocated), **−1** in HRDPS-family and GEPS member CAPE; REPS publishes
   no CAPE at all. The builders mask sentinels to absence before anything
-  reaches a document — an unmasked GDPS field "means" CAPE 4 152 J/kg on a
+  reaches a document; an unmasked GDPS field "means" CAPE 4 152 J/kg on a
   naive average. [verified 2026-08-08]
 - **The two gust semantics are not directly comparable:** ECCC's hour-max
   runs 20–30 % higher systematically than NOAA's instantaneous diagnostic
   (paramId 260065, `stepType=instant`, verified by decode 2026-08-08), and
   NOAA publishes no hour-max gust.
 - **HRDPS continental, RDPS, and GDPS instant fluxes decode as
-  paramId 231**, W/m² — they feed w\* with no differencing.
+  paramId 231**, W/m²; they feed w\* with no differencing.
 - **HRDPS encodes GRIB `forecastTime` in minutes** where RDPS/GDPS use
-  hours — the builders take valid times from the schedule and never read the
+  hours; the builders take valid times from the schedule and never read the
   raw key.
 - **PT000-only terrain is fetched from the `000/` directory** even when
   hour 0 is otherwise skipped.
 
 ## ECCC Datamart transport — shared facts
 
-Five of the six ECCC forecast models below — HRDPS continental 2.5 km, RDPS,
-GDPS, REPS, and GEPS — read whole-domain GRIB2 from the main
+Five of the six ECCC forecast models below (HRDPS continental 2.5 km, RDPS,
+GDPS, REPS, and GEPS) read whole-domain GRIB2 from the main
 [Datamart](https://eccc-msc.github.io/open-data/msc-datamart/readme_en/);
 HRDPS West 1 km reads the same way from the separate alpha Datamart.
 
 | Fact | Value |
 | --- | --- |
-| **Hosts** | `dd.weather.gc.ca` (primary) · `hpfx.collab.science.gc.ca` (mirror, identical paths) · `dd.alpha.weather.gc.ca` (alpha Datamart, the 1 km feed — unmirrored, and its tree is not date-rooted) |
-| **Tree** | `https://dd.weather.gc.ca/YYYYMMDD/WXO-DD/<model path>/HH/hhh/` — date-rooted; the old undated trees are gone from the root listing |
+| **Hosts** | `dd.weather.gc.ca` (primary) · `hpfx.collab.science.gc.ca` (mirror, identical paths) · `dd.alpha.weather.gc.ca` (alpha Datamart, the 1 km feed; unmirrored, and its tree is not date-rooted) |
+| **Tree** | `https://dd.weather.gc.ca/YYYYMMDD/WXO-DD/<model path>/HH/hhh/`: date-rooted; the old undated trees are gone from the root listing |
 | **Filenames** | deterministic files use the MSC scheme `YYYYMMDDTHHZ_MSC_<MODEL>_<Var>_<Level>_<Grid>_PThhhH.grib2` |
-| **Fetch unit** | the whole-domain file — **no `.idx` sidecars exist**, deterministic files are one GRIB message per file, so NOAA-style byte-ranging is impossible |
-| **Retention** | ~30 days on dd, ~51 days on hpfx (live root listings — the docs claim 30 days on both) |
+| **Fetch unit** | the whole-domain file: **no `.idx` sidecars exist**, deterministic files are one GRIB message per file, so NOAA-style byte-ranging is impossible |
+| **Retention** | ~30 days on dd, ~51 days on hpfx (live root listings; the docs claim 30 days on both) |
 | **Host selection** | per invocation via `METEO_DATAMART_BASE` |
-| **Rate limits** | the [usage policy](https://eccc-msc.github.io/open-data/usage-policy/readme_en/) caps an application at 86,400 requests/day (~1 request per second, averaged) and documents **no HTTP connection ceiling** — the 500-connection limit applies to AMQP clients only |
+| **Rate limits** | the [usage policy](https://eccc-msc.github.io/open-data/usage-policy/readme_en/) caps an application at 86,400 requests/day (~1 request per second, averaged) and documents **no HTTP connection ceiling**: the 500-connection limit applies to AMQP clients only |
 | **Packing** | `grid_jpeg`; ecCodes 2.48.0 decodes it |
-| **Verified** | 2026-08-08 — HRDPS and GEPS listings filename-identical across the two hosts; the builders' probe URLs answered 200 on hpfx |
+| **Verified** | 2026-08-08: HRDPS and GEPS listings filename-identical across the two hosts; the builders' probe URLs answered 200 on hpfx |
 
 The mirror is MSC's documented [alternative
 server](https://eccc-msc.github.io/open-data/msc-datamart/readme_en/) and
@@ -156,7 +156,7 @@ back to dd.
 Shared quirks, verified 2026-08-08:
 
 - **Polling etiquette:** the usage policy asks for a meaningful User-Agent,
-  no `no-cache` headers, and no directory-listing polls — AMQPS is the
+  no `no-cache` headers, and no directory-listing polls. AMQPS is the
   sanctioned push channel; `wget`/`curl` are "reserved for ad hoc data
   retrieval". The builders send a project User-Agent and probe availability
   with one HEAD of a concrete file per model per tick, never a listing; a
@@ -164,24 +164,24 @@ Shared quirks, verified 2026-08-08:
 - **Per-element reads re-decode the whole field:** every
   `codes_get_double_element` call re-decodes the *entire* field internally
   (~0.21 s per call on HRDPS's 3.3M points, identical to a full
-  `codes_get_values`) — samplers decode a message's values once and index
+  `codes_get_values`); samplers decode a message's values once and index
   into the array.
 - **Gusts come in two semantics per step** (verified by decode): an
   instantaneous 10 m gust (paramId 228029, `stepType=instant`) and an hourly
   Max/Min pair (paramId 237318, PDT 8). The Max files' interval metadata is
   **broken** (`lengthOfTimeRange=0`), so the window semantics were
   established empirically on full fields: Max at PT hh is the maximum
-  model-timestep gust over the hour (hh−1, hh] — Max24 \< Max23 at ~46–56 %
+  model-timestep gust over the hour (hh−1, hh]: Max24 \< Max23 at ~46–56 %
   of points (not a run-length max), Max24 ≥ instant24 at 100.0 % of points,
   and Max24 > max(instant23, instant24) at 59 % (the max is over internal
   timesteps, not hourly outputs). The builders publish the hour-max as
-  `windGustMps` (capabilities `gust: "hourMax"` — the pilot's "gusting to")
+  `windGustMps` (capabilities `gust: "hourMax"`, the pilot's "gusting to")
   and re-assert Max ≥ instant at the sampled sites on every build. The
   instantaneous file runs systematically lower (field means 5.03 vs
   6.59 m/s at PT024).
 - **CAPE is GRIB 0-7-6 in all four models**; RDPS/GDPS add 0-7-7 CIN.
-- **PBL height is metres above ground:** paramId 159 `blh` — night-side
-  minima of ~2 m are only possible AGL — at every populated step. Renderers
+- **PBL height is metres above ground:** paramId 159 `blh` (night-side
+  minima of ~2 m are only possible AGL) at every populated step. Renderers
   must add model terrain before plotting it on an MSL altitude axis.
 - **Cloud is total-only:** no low/mid/high layers and no per-pressure-level
   cloud fraction exist anywhere on Datamart for these models (every
@@ -199,7 +199,7 @@ Prediction System.
 | **Path** | `model_hrdps/continental/2.5km` |
 | **Variable names** | old-style tokens (`TMP_ISBL_0850`, `SHTFL_Sfc`, `WDIR_AGL-10m`) |
 | **Levels** | **28 isobaric levels** published per field; the build samples the curated 14-level 1015–600 hPa band |
-| **Science fields** | `GUST`/`GUST-Max_AGL-10m`, `CAPE_Sfc`, `HPBL_Sfc` — hourly including hour 000 |
+| **Science fields** | `GUST`/`GUST-Max_AGL-10m`, `CAPE_Sfc`, `HPBL_Sfc`, hourly including hour 000 |
 | **Cost** | ~166 MB per forecast step for the curated field set, **~7.8 GiB per run**, four runs a day; the science fields add ~0.4 GiB per run |
 | **Verified** | 2026-08-08 |
 
@@ -210,8 +210,8 @@ Quirks:
   it (1000/850/700).
 - **A true 2 m dew point exists** (`DPT_AGL-2m`). Level moisture remains a
   dew-point depression (`DEPR`, Td = T − DEPR) and the depression **clamps
-  at exactly 30 K** — dew points in very dry air saturate at T − 30.
-- **`WDIR`/`WIND` are earth-relative** despite the rotated grid — verified
+  at exactly 30 K**: dew points in very dry air saturate at T − 30.
+- **`WDIR`/`WIND` are earth-relative** despite the rotated grid, verified
   at four points against `UGRD`/`VGRD` rotated through the grid transform,
   agreeing to ≤0.3° where the unrotated component direction was off by up to
   32°. Wind is consumed directly with no rotation.
@@ -225,12 +225,12 @@ GRIB decoder handles the grid rotation, so the sampler only ever speaks
 geographic coordinates; the builder downloads each whole-domain file before
 sampling the catalogue. The 1 km feed keeps the old GRIB tokens for the
 science fields. Its gusts follow the shared ECCC hour-max semantics;
-precipitation does not — the builder reads `PRATE_SFC_0` × 3600 and
+precipitation does not: the builder reads `PRATE_SFC_0` × 3600 and
 declares `precipitation: "instantRate"`, the only ECCC model that does.
 
 | Fact | Value |
 | --- | --- |
-| **Transport** | whole-domain GRIB2 on the **alpha Datamart** — no subsetting |
+| **Transport** | whole-domain GRIB2 on the **alpha Datamart**, no subsetting |
 | **Retention** | roughly 24 hours |
 | **Science tokens** | `GUST_TGL_10`/`GUST_MAX_TGL_10`, `CAPE_ETAL_10000` (eta 1.0: surface-based), `HPBL_SFC_0` |
 
@@ -238,9 +238,9 @@ Quirks:
 
 - **The curated band is the 9-level 925–600 hPa set**, not the 14-level
   1015–600 band the other ECCC deterministic feeds sample, and the builder
-  samples no vertical velocity — the catalogue declares
+  samples no vertical velocity; the catalogue declares
   `verticalVelocity: false`.
-- **The feed goes dark occasionally** — schedule it as its own job, so a
+- **The feed goes dark occasionally**: schedule it as its own job, so a
   1 km failure warns without blocking a 2.5 km publish.
 - **The 1 km grid earns its terrain:** one launch's measured elevation
   (site-context's `elevation` pick) is **1,476 m**; model terrain elevation
@@ -261,7 +261,7 @@ HRDPS.
 | **Path** | `model_rdps/10km` |
 | **Variable names** | English CamelCase (`AirTemp_IsbL-0850`, `SensibleHeatNetFlux_Sfc`, `WindDir_AGL-10m`) |
 | **Levels** | the **full 33-level column is published every hour**; the build samples the curated 14-level band |
-| **Science fields** | `WindGust`/`WindGust-Max_AGL-10m`, `CAPE_Sfc` **and** `CIN_Sfc`, `PlanetaryBoundaryLayerHeight_Sfc` — all hourly |
+| **Science fields** | `WindGust`/`WindGust-Max_AGL-10m`, `CAPE_Sfc` **and** `CIN_Sfc`, `PlanetaryBoundaryLayerHeight_Sfc`, all hourly |
 | **Cost** | ~50 MB per step, **~4.1 GiB per run**; the science fields add ~0.5 GiB per run |
 | **Verified** | 2026-08-08 |
 
@@ -271,10 +271,10 @@ Quirks:
   published on curated 850/700.
 - **A true 2 m dew point** (`DewPoint_AGL-2m`) exists at the surface; level
   moisture is `DewPointDepression`.
-- **`Precip-Accum1h_Sfc` spans the whole horizon** — no run-total
+- **`Precip-Accum1h_Sfc` spans the whole horizon**: no run-total
   differencing anywhere.
 - **`WindDir` earth-relativeness is inferred** from HRDPS's verified
-  behaviour — same MSC production chain; spot-check against rotated
+  behaviour (same MSC production chain); spot-check against rotated
   components is cheap if the grid definition ever changes.
 - **CIN is ≤ 0 J/kg** (min −1 755 on the verification day).
 
@@ -283,7 +283,7 @@ Quirks:
 ECCC's current system description of the Global Deterministic Prediction
 System (checked 2026-08-08) identifies it as a coupled atmosphere, ocean,
 and sea-ice forecast whose large-scale temperature and wind are spectrally
-nudged toward its GEML data-driven weather model — a material change in
+nudged toward its GEML data-driven weather model, a material change in
 lineage under a familiar open-data contract. A ten-day Meteogram still has
 published sensible and latent heat fluxes rather than proxy surface
 heating.
@@ -299,21 +299,21 @@ heating.
 Quirks:
 
 - **Nothing is rotated:** a regular global lat-lon grid with
-  `uvRelativeToGrid=0` — components are earth-relative.
+  `uvRelativeToGrid=0`; components are earth-relative.
 - **The level set thins past hour 168:** the 33-level column is 3-hourly to
   hour 168; past 168, steps on a 6-hour boundary stay complete while the
-  intermediate 3-hourly steps carry a **reduced level set** — of the curated
+  intermediate 3-hourly steps carry a **reduced level set**: of the curated
   band only 1000/925/850/700 survive there. The builder tolerates a level
   absent at a valid time, so intermediate late-horizon columns ride on the
   four survivors.
 - **Omega is sparse:** `VerticalVelocity` exists at
   **200/250/500/600/700/850**; published on curated 850/700/600.
 - **Fixed-window precipitation accumulations stop at hour 168**, so the run
-  total (`Precip-Accum_Sfc`) is the one quantity that spans the horizon —
+  total (`Precip-Accum_Sfc`) is the one quantity that spans the horizon;
   hence the differencing.
 - **CAPE/CIN thin out one regime earlier than the other surface fields**:
   3-hourly to 168 h, then **6-hourly only** (present 003/024/174/240, absent
-  001/171 — verified 2026-08-08). Gusts and PBL height survive the post-168
+  001/171; verified 2026-08-08). Gusts and PBL height survive the post-168
   thinning at every 3-hourly step, so late-horizon hours can carry a gust
   with no CAPE.
 
@@ -334,7 +334,7 @@ Quirks:
 
 - **The domain reaches farther north than its famous corner:** the
   oft-quoted 47.8°N northern limit is the *eastern* corner of the Lambert
-  conformal grid. At −117.7°W the boundary is at **51.24°N** — the
+  conformal grid. At −117.7°W the boundary is at **51.24°N**: the
   southern-BC founding sites sit about 215 km inside the domain. Check the
   corner nearest *your* longitude before assuming HRRR excludes you.
 - **Omega is published at all nine curated levels**: `VVEL` (paramId 135,
@@ -344,21 +344,21 @@ Quirks:
   projection point along grid axes, not geographic east/north. Skip the
   rotation and wind directions bias by 10–15° at these latitudes.
 - **The `WIND … max fcst` record beside `GUST:surface` is hourly-max
-  *sustained* wind, not gust** — the gust itself is the model's diagnostic
+  *sustained* wind, not gust**: the gust itself is the model's diagnostic
   at the valid time, not an interval max.
-- **CAPE/CIN come in the full variant menu** — surface-based, mixed-layer
-  90 mb and 180 mb, most-unstable 255 mb, plus 0–3 km CAPE — all J/kg,
+- **CAPE/CIN come in the full variant menu**: surface-based, mixed-layer
+  90 mb and 180 mb, most-unstable 255 mb, plus 0–3 km CAPE, all J/kg,
   instantaneous. The forecast engine publishes the surface-based
   pair, the one variant every capable model shares.
 - **PBL height:** `HPBL:surface` is paramId 159 `blh`, metres AGL.
 - **Prognostic wildfire smoke ships in the same files** (verified
   2026-08-09 in both `wrfprs` and `wrfsfc` indexes): `MASSDEN` at 8 m AGL
   (kg/m³ → published µg/m³), `COLMD` column mass (kg/m² → mg/m²), and
-  `AOTK` column aerosol optical thickness — three extra ranged fetches per
+  `AOTK` column aerosol optical thickness; three extra ranged fetches per
   hour, published as the profile's per-hour `smoke` block.
 - **`AOTK` is effectively smoke optical depth:** HRRRv4's only prognostic
   aerosol is smoke.
-- **The smoke is radiatively coupled** — forecast smoke attenuates the
+- **The smoke is radiatively coupled**: forecast smoke attenuates the
   model's own shortwave, so published fluxes and derived w\* are already
   smoke-aware (Dowell et al. 2022, WAF, §2d; declared
   `smoke: "radiativelyCoupled"` in the catalogue and echoed per document).
@@ -366,7 +366,7 @@ Quirks:
   evaluation (Chace et al. 2026, WAF).
 - **Layered cloud exists**: `LCDC`/`MCDC`/`HCDC`, instantaneous %, on
   NCEP's terrain-following sigma layers (fixed-surface types 214/224/234;
-  low σ 1.0–0.642, middle 0.642–0.35, high 0.35–0.15 of surface pressure —
+  low σ 1.0–0.642, middle 0.642–0.35, high 0.35–0.15 of surface pressure;
   NCEP/UPP convention, not encoded in the files, and not fixed altitudes).
   No per-pressure-level cloud fraction in `wrfprs`.
 
@@ -391,9 +391,9 @@ Quirks:
   forecast hour.
 - **Omega is published at all eight curated levels through f384**: `VVEL`
   (paramId 135, Pa/s, `stepType=instant`), the isobaric record count
-  matching TMP's — no late-horizon thinning relative to the mass fields
+  matching TMP's: no late-horizon thinning relative to the mass fields
   (verified 2026-08-08 at f003, f024, f240, and f384).
-- **Pressure-level dew point isn't published** — it must be computed from
+- **Pressure-level dew point isn't published**: it must be computed from
   temperature and relative humidity per level.
 - **Flux time semantics:** `SHTFL`/`LHTFL` exist only as *averages over a
   growing window* that resets every 6 hours: f001 averages hour 0–1, f002
@@ -411,19 +411,19 @@ Quirks:
 - **`HPBL` is NCEP local parameter 0-3-196**, metres AGL.
 - **Layered cloud publishes in two flavours per step**: instantaneous
   (`:N hour fcst:`) and a 6-h-bucket average (`:M-N hour ave:`) that resets
-  at synoptic hours. The builder reads the **instantaneous** records — they
+  at synoptic hours. The builder reads the **instantaneous** records: they
   match every other field's valid-time semantics. Only the instant flavour
   exists at f000.
 - **GFS is the only published model with a cloud profile**: `TCDC` at 22
   isobaric levels (50–1000 hPa, instantaneous, every step incl. f000),
-  published as `cloudFractionPercent` on the eight curated levels — unlike
+  published as `cloudFractionPercent` on the eight curated levels; unlike
   omega it is level-complete within GFS, only model-sparse.
 
 ## NAM 12 km and CONUS nest 3 km — supported, retiring
 
 NOAA's North American Mesoscale system supplies two catalogue entries.
 **Both retire 2026-10-06 at 12 UTC**, the day RRFS and REFS become
-operational and NAM, HREF, SREF, and HiresW (except Guam) are terminated —
+operational and NAM, HREF, SREF, and HiresW (except Guam) are terminated:
 [SCN 26-48 Updated](https://www.weather.gov/media/notification/pdf_2026/SCN26-048-Updated_RRFS_and_REFS_Implementation.aaa.pdf),
 originally "on or about" 2026-08-31 and since
 [rescheduled to October 6](https://gribstream.com/blog/noaa-rrfs-refs-operational-august-2026).
@@ -433,16 +433,16 @@ Both catalogue entries declare the machine-readable `sunset`
 | Fact | Value |
 | --- | --- |
 | **Transport** | whole-domain GRIB2 with `.idx` sidecars on the `noaa-nam-pds` bucket |
-| **12 km parent** | `awphys`, AWIPS grid 218 — hourly to 36 h then 3-hourly, complete ≈ T+2:40 |
-| **3 km CONUS nest** | `conusnest.hiresf` — complete ≈ T+2:39, on **exactly HRRR's Lambert grid**: 1799 × 1059, Latin 38.5°, LoV 262.5°, founding sites ~200–236 km inside |
-| **Cost** | nest ~111 MiB per forecast hour (**~6.7 GiB per run**); parent ~12 MiB per hour (**~0.7 GiB per run**) — ~61 records per forecast hour each |
+| **12 km parent** | `awphys`, AWIPS grid 218; hourly to 36 h then 3-hourly, complete ≈ T+2:40 |
+| **3 km CONUS nest** | `conusnest.hiresf`; complete ≈ T+2:39, on **exactly HRRR's Lambert grid**: 1799 × 1059, Latin 38.5°, LoV 262.5°, founding sites ~200–236 km inside |
+| **Cost** | nest ~111 MiB per forecast hour (**~6.7 GiB per run**); parent ~12 MiB per hour (**~0.7 GiB per run**); ~61 records per forecast hour each |
 | **Verified** | 2026-08-08 |
 
 Quirks:
 
 - **`awphys` is the 12 km isobaric product; `awip12` is not.** Live awip12
   carries no isobaric band (208 records to awphys's 454); its one unique
-  contribution is layered cloud — `LCDC`/`MCDC`/`HCDC`, which awphys lacks
+  contribution is layered cloud: `LCDC`/`MCDC`/`HCDC`, which awphys lacks
   (TCDC only). The parent build reads awphys plus three byte-ranged cloud
   records per hour from awip12; the two files share grid 218 exactly and
   their common fields decode bit-identical.
@@ -454,7 +454,7 @@ Quirks:
   computed from RH. A true 2 m dew point is hourly on both products.
 - **The nest's 3-h-average flux twins** (paramId 235033, PDT 8) sit beside
   the genuinely instantaneous un-suffixed `SHTFL`/`LHTFL` (PDT 0), cleanly
-  distinguished — and skipped — by the idx `ave` suffix.
+  distinguished, and skipped, by the idx `ave` suffix.
 - **Winds are grid-relative on each product's own Lambert cone**: the nest
   shares HRRR's projection parameters, the parent uses Latin 25°/LoV 265°,
   so the rotation to true north is a per-product constant (~12° direction
@@ -465,7 +465,7 @@ Quirks:
 - **The nest's bucket resets every 3 h, the parent's every 12 h** through
   its hourly phase; the parent's 3-hourly tail (f39–f84) publishes a direct
   (h−3)–h record. At bucket boundaries **two APCP records coexist** in a
-  parent file (`12-24` beside `21-24` at f24) — records are selected by the
+  parent file (`12-24` beside `21-24` at f24); records are selected by the
   exact idx window token, never by variable name alone.
 - **Nest fields carry a sparse bitmap** (~76–105 of 1.9M points, surfaced
   by ecCodes as in-band 9999); the samplers publish a masked gridpoint as
@@ -486,9 +486,9 @@ scheduled run survives.
 
 | Fact | Value |
 | --- | --- |
-| **Transport** | the `noaa-rrfs-pds` bucket: `rrfs.tCCz.prslev.3km.fFFF.conus.grib2` plus the `rrfs.tCCz.2dfld.3km.fFFF.conus.grib2` science companion, both with `.idx`, fetched by byte range — the operational naming from SCN 26-48, verified layout-identical on the parallel and prototype trees |
+| **Transport** | the `noaa-rrfs-pds` bucket: `rrfs.tCCz.prslev.3km.fFFF.conus.grib2` plus the `rrfs.tCCz.2dfld.3km.fFFF.conus.grib2` science companion, both with `.idx`, fetched by byte range; the operational naming from SCN 26-48, verified layout-identical on the parallel and prototype trees |
 | **Availability** | t00z f084 landed ≈ **T+3:33** (bucket object timestamps, 2026-08-12) |
-| **Cost** | ~588 MB per whole prslev file (675 records) — ranged reads are not an optimization but the difference between ~70 records and ~50 GiB per run |
+| **Cost** | ~588 MB per whole prslev file (675 records); ranged reads are not an optimization but the difference between ~70 records and ~50 GiB per run |
 | **Verified** | 2026-08-13, against the live parallel feed and the last prototype cycles |
 
 During the parallel phase (verified 2026-08-13) the NOMADS para tree
@@ -506,29 +506,29 @@ Quirks:
 
 - **Only 00/06/12/18Z publish the isobaric `prslev` files**, to 84 h; the
   other hourly cycles publish sub-hourly `2dfld` output to 18 h and nothing
-  a profile can build from (verified live 2026-08-13 on the para tree) —
+  a profile can build from (verified live 2026-08-13 on the para tree);
   hence the catalogue's 6-hour cadence.
 - **One 3 km North-America integration**; `conus`, `ak`, `hi`, and `pr` are
-  distribution cutouts, and the CONUS cutout is **exactly the HRRR grid** —
+  distribution cutouts, and the CONUS cutout is **exactly the HRRR grid**:
   Lambert 1799 × 1059, Latin 38.5°, LoV 262.5°, 3 km, grid-relative winds,
   re-verified by decode 2026-08-13 (sites 224–236 km inside). Which cutout a
-  builder fetches is transport detail — hence the slug `rrfs`, not
+  builder fetches is transport detail; hence the slug `rrfs`, not
   `rrfs-conus`.
 - **Vertical velocity is geometric:** `prslev` carries the full 9-level
-  curated band with TMP/RH/**DPT**/HGT/UGRD/VGRD — a true level dew point —
+  curated band with TMP/RH/**DPT**/HGT/UGRD/VGRD (a true level dew point),
   but vertical velocity is `DZDT` (geometric w, m/s) at all nine levels;
   **VVEL does not exist** (zero records in the live index). The builder converts through
   the hydrostatic relation ω ≈ −ρgw with dry-air density ρ = p/(R_d·T) from
   the level's own temperature (the ignored virtual-temperature correction
   is ≲1 %), and the catalogue declares `verticalVelocity: "fromGeometricW"`
   so consumers can label converted lift differently from native omega.
-- **MSL pressure is `MSLET`** — not HRRR's MSLMA or NAM's PRMSL; records
+- **MSL pressure is `MSLET`**, not HRRR's MSLMA or NAM's PRMSL; records
   are selected by that exact name.
 - **APCP publishes a `(h−1)–h hour acc` record at every step** beside the
   run total, so mm over one hour is mm/h directly with no differencing. An
   instantaneous PRATE and an hourly-max PRATE are published too and left
   unread.
-- **RRFS-SD speciates its aerosols — the idx qualifier is load-bearing:**
+- **RRFS-SD speciates its aerosols; the idx qualifier is load-bearing:**
   where HRRR carried one unspeciated smoke tracer, RRFS publishes MASSDEN
   and COLMD once per species (`aerosol=Particulate organic matter dry`,
   `aerosol=Dust dry`, in size bins) on the *same* variable/level/forecast
@@ -539,18 +539,18 @@ Quirks:
   16.7 µg/m³ at a founding site on the smoky verification day) and COLMD
   column mass (kg/m² → mg/m²).
 - **`AOTK` is published unqualified and is the total-aerosol optical
-  thickness** — smoke plus dust — the model's own sun-dimming number,
+  thickness** (smoke plus dust), the model's own sun-dimming number,
   published as the smoke block's `aot`.
 - **The aerosols are radiatively coupled:** RRFS-SD v1 includes the aerosol
   direct feedback to radiation (Li et al. 2025, GRL, 10.1029/2025GL115384),
-  so published fluxes and derived quantities are already smoke-aware —
+  so published fluxes and derived quantities are already smoke-aware;
   declared `smoke: "radiativelyCoupled"` in the catalogue and echoed per
   document.
 - **The science set is otherwise complete hourly:** instantaneous GUST,
   surface-based CAPE/CIN plus the variant menu, HPBL, and LCDC/MCDC/HCDC
   plus a boundary-layer TCDC.
 - **Content may still move before implementation:** NCEP warns that record
-  content, order, and scaling may change — these facts are re-verified
+  content, order, and scaling may change; these facts are re-verified
   against the production paths at cutover.
 - **REFS** (five RRFS members plus HRRR-initialized members, to 60 h at
   00/06/12/18Z, live on the para tree since 2026-08-11) is a potential
@@ -560,16 +560,16 @@ Quirks:
 
 In ECCC's Regional Ensemble Prediction System, every member is derived as
 its own atmosphere and the published file carries the percentile spread of
-the derived quantities — including per-level **ensemble soundings**. Read
+the derived quantities, including per-level **ensemble soundings**. Read
 the product semantics in [Ensemble values](/docs/briefing/ensemble-values/).
 
 | Fact | Value |
 | --- | --- |
 | **Members** | **21** (a control plus 20 perturbed) |
 | **Availability** | complete ≈ T+3:40–3:45 |
-| **Path** | Datamart only, under `YYYYMMDD/WXO-DD/ensemble/reps/10km/grib2/HH/hhh/` — the legacy `/ensemble/reps/` tree is dead (404) |
+| **Path** | Datamart only, under `YYYYMMDD/WXO-DD/ensemble/reps/10km/grib2/HH/hhh/`; the legacy `/ensemble/reps/` tree is dead (404) |
 | **Levels** | isobaric fields (`TMP`, `RH`, `HGT`, `UGRD`, `VGRD`) at a fixed **9-level set: 50/100/200/250/500/700/850/925/1000 hPa** |
-| **Cost** | ~383 MB per step for the Meteogram field set — **~9.4 GiB per run**. There is no partial fetch: whole-domain, all-members, no index |
+| **Cost** | ~383 MB per step for the Meteogram field set, **~9.4 GiB per run**. There is no partial fetch: whole-domain, all-members, no index |
 | **Verified** | 2026-08-08 |
 
 Quirks:
@@ -577,14 +577,14 @@ Quirks:
 - **Every raw-variable file stacks all 21 members** as GRIB messages keyed
   by `perturbationNumber`, 0 the control (`typeOfEnsembleForecast` 1, then
   4 for perturbed members). There are no per-member files and no upstream
-  percentile products for raw variables — the forecast engine computes
+  percentile products for raw variables; the forecast engine computes
   percentiles from members itself.
 - **Per-member wind exists at every level.** The five curated levels
   publish as sounding levels (1000/925/850/700/500; 500 doubles as the
-  parcel-search headroom, and 1000 — at mountain sites also 925 — typically
+  parcel-search headroom, and 1000 (at mountain sites also 925) typically
   sits below REPS model terrain and is dropped per member by the
   derivation's own filter).
-- **No dew point in any form** — level and surface moisture come from `RH`,
+- **No dew point in any form**: level and surface moisture come from `RH`,
   converted against temperature.
 - **No `WDIR`/`WIND` at levels**: the rotated grid's `UGRD`/`VGRD` are
   grid-relative (`uvRelativeToGrid=1`) and are rotated to true east/north
@@ -593,7 +593,7 @@ Quirks:
   [Seven forecast-data failures that passed parsing](/logbook/forecast-data-validation-failures/).
 - **Hour 000 publishes no flux or precipitation files.** Every later step
   carries `SHTFL_SFC`/`LHTFL_SFC` per member.
-- **None of the science-field families exists per member** — no gust, no
+- **None of the science-field families exists per member**: no gust, no
   CAPE/CIN, no PBL height, and only total cloud (full 00Z/024 listing
   inventoried, 003 re-checked, 2026-08-08). An ensemble-CAPE-spread product
   cannot be built from this feed; GEPS supplies it.
@@ -608,43 +608,43 @@ per-member storm-risk spread.
 | --- | --- |
 | **Members** | **21** (a control plus 20 perturbed, one all-members file per field exactly as in REPS) |
 | **Availability** | complete ≈ T+5:07 |
-| **Path** | `YYYYMMDD/WXO-DD/ensemble/geps/grib2/raw/HH/hhh/` — raw members still use the **old CMC naming**, `CMC_geps-raw_<VAR>_<LVL>_<level>_latlon0p5x0p5_YYYYMMDDHH_Phhh_allmbrs.grib2`, not the MSC scheme the deterministic models migrated to |
+| **Path** | `YYYYMMDD/WXO-DD/ensemble/geps/grib2/raw/HH/hhh/`; raw members still use the **old CMC naming**, `CMC_geps-raw_<VAR>_<LVL>_<level>_latlon0p5x0p5_YYYYMMDDHH_Phhh_allmbrs.grib2`, not the MSC scheme the deterministic models migrated to |
 | **Retention** | matches REPS; the legacy `/ensemble/geps/` tree is likewise dead |
-| **Cost** | ~150 MB per step for the Meteogram field set (36 all-members files) — **~14 GiB per run** over 96 steps, twice daily. The heaviest feed the forecast engine carries; the reference operator schedule builds it last |
+| **Cost** | ~150 MB per step for the Meteogram field set (36 all-members files), **~14 GiB per run** over 96 steps, twice daily. The heaviest feed the forecast engine carries; the reference operator schedule builds it last |
 | **Verified** | 2026-08-08 |
 
 Quirks:
 
-- **The feed runs its own schedule** — 3-hourly to 192 hours then 6-hourly
+- **The feed runs its own schedule**: 3-hourly to 192 hours then 6-hourly
   to 384; the occasional Thursday 00Z extension to 936 hours is not
   fetched.
 - **Nothing is rotated, unlike REPS:** a regular global lat-lon grid with
-  `uvRelativeToGrid=0` — components are earth-relative.
+  `uvRelativeToGrid=0`; components are earth-relative.
 - **The `HGT_SFC` orography is in decametres and its GRIB metadata lies
   about it** [verified 2026-08-08]: the field decodes as
-  `units=m, paramId=228002` — indistinguishable from REPS's genuinely
-  metric field — but the values are dam (global max 586.3 = the smoothed
+  `units=m, paramId=228002` (indistinguishable from REPS's genuinely
+  metric field), but the values are dam (global max 586.3 = the smoothed
   Himalaya ×10; Dundee 153.6 → 1 536 m beside GDPS's 1 525 m).
   Pressure-level `HGT_ISBL` files are true metres. The builder scales ×10
   and guards against both this bug and its inverse; any consumer of the
   raw feed must too.
 - **Per-member surface-based `CAPE_SFC` and `CIN_SFC` exist at every step**
   (97 files per step; the inventory is identical at hours 024, 198, and
-  384) — the ensemble CAPE/CIN percentile spread REPS cannot provide,
-  published as conditional percentile blocks. The member spread is real —
+  384): the ensemble CAPE/CIN percentile spread REPS cannot provide,
+  published as conditional percentile blocks. The member spread is real:
   167 to 1 311 J/kg CAPE across the 21 members at one site on the
   verification day.
-- **GEPS's CAPE sentinel is an exact −1** (the HRDPS family's marker) —
+- **GEPS's CAPE sentinel is an exact −1** (the HRDPS family's marker),
   **not RDPS/GDPS's 9999**: real GEPS member CAPE reached 9 755 J/kg on the
   verification day, so a 9999 mask would erase genuine extreme instability.
-  **CIN carries no sentinel at all** — it is computed even where CAPE is
+  **CIN carries no sentinel at all**: it is computed even where CAPE is
   flagged, and its values nearest −1 are ordinary packing bins, so all 21
   members rank.
 - **Isobaric fields in the curated band match REPS's shape**: `TMP`/`RH`/
   `HGT` and per-member `UGRD`/`VGRD` at **1000/925/850/700**, with **500 as
   the parcel-ceiling headroom** (nothing exists between 700 and 500). Omega
-  is at 850 only and is not published. No dew point in any form — moisture
-  is `RH` at the levels and at 2 m — and no `WDIR` anywhere: direction
+  is at 850 only and is not published. No dew point in any form (moisture
+  is `RH` at the levels and at 2 m) and no `WDIR` anywhere: direction
   comes from the earth-relative components.
 - **Heat fluxes are time-integrated from run start** (paramId 146, J/m²,
   `stepType=accum`, stepRange 0–h), unlike REPS's instantaneous values: the
@@ -653,7 +653,7 @@ Quirks:
   the schedule's 3 h then 6 h cadence. Precipitation is the same run-total
   differencing. Hour 000 publishes neither, so the first window's baseline
   is zero by definition.
-- **Only total cloud exists per member** — gust and PBL height are absent
+- **Only total cloud exists per member**: gust and PBL height are absent
   too, declared false like REPS's.
 - **Verify every download against Content-Length.** One GEPS fetch returned
   another model's bytes, correct on retry; the Datamart client now
@@ -663,7 +663,7 @@ Quirks:
 ## RAQDPS 10 km — supported, experimental, smoke documents
 
 ECCC's Regional Air Quality Deterministic Prediction System (GEM-MACH)
-feeds no wind profiles — it is the source of the per-site
+feeds no wind profiles: it is the source of the per-site
 **[smoke documents](/docs/briefing/smoke-document/)**, where its verified
 paths, fields, units, and join semantics live. The catalogue lists it under
 `smokeModels`, separate from `models` so pre-smoke consumers keep parsing.
@@ -671,12 +671,12 @@ paths, fields, units, and join semantics live. The catalogue lists it under
 | Fact | Value |
 | --- | --- |
 | **Transport** | standard Datamart transport shared with the models above |
-| **Cost** | three whole-domain files per hour, ~43 MB per run — the lightest fetch of any ECCC feed |
+| **Cost** | three whole-domain files per hour, ~43 MB per run, the lightest fetch of any ECCC feed |
 
 ## GOES-18 DSR and AOD — supported, observations
 
 NOAA's GOES-18 (GOES-West) supplies the dataset's measurements. The two
-products feed no wind profiles — each is the source of a per-site
+products feed no wind profiles: each is the source of a per-site
 **[observation dataset](/docs/briefing/observation-document/)**
 (`goes18-dsr`, `goes18-aod`), where the products' decode, quality, and
 geometry facts live. The catalogue lists them under `observationModels`,
@@ -687,7 +687,7 @@ separate from `models` like `smokeModels`.
 | **Products** | two ABI L2 full-disk products: Downward Shortwave Radiation under `ABI-L2-DSRF` and Aerosol Optical Depth under `ABI-L2-AODF` |
 | **Transport** | anonymous NetCDF on the `noaa-goes18` bucket |
 | **Cadence** | scan Mode 6, starts at :00/:10/…. No runs, no forecast hours: the builder fetches granules newer than the last published instant |
-| **Latency** | DSRF lands on the bucket ~6–7 minutes after scan end — roughly 16 minutes after scan start; AODF is quicker at ~3.3 minutes after scan end |
+| **Latency** | DSRF lands on the bucket ~6–7 minutes after scan end, roughly 16 minutes after scan start; AODF is quicker at ~3.3 minutes after scan end |
 | **Granule sizes** | track daylight on the disk: DSRF runs 9 MB (night) to 40 MB (full daylight), AODF 0.6–1 MB at night and 32–41 MB in daylight |
 | **Verified** | 2026-08-10 |
 
@@ -697,11 +697,11 @@ Quirks:
   2024-04-16, NOAA OSPO message MSG_20240307_1955): the Baseline
   algorithm's **hourly** full-disk DSR on a 0.5° lat/lon grid was replaced
   by the Enterprise algorithm's **10-minute** product at 2 km on the ABI
-  fixed grid. Older documentation — including the PUG Volume 5 DSR
-  chapter — describes the legacy product; the operative authorities are the
+  fixed grid. Older documentation (including the PUG Volume 5 DSR
+  chapter) describes the legacy product; the operative authorities are the
   file metadata and the Enterprise SRB ATBD v5.0 (Laszlo, Kim & Liu 2020).
 - **AODF switched to the Enterprise (EPS) retrieval on 2024-02-06.** The
-  file format held, but the retrieval changed — most consequentially the
+  file format held, but the retrieval changed: most consequentially the
   quantitative view-zenith limit, raised from 60° to 78.5°; what that means
   for a published value lives in the
   [observation document reference](/docs/briefing/observation-document/).
@@ -709,7 +709,7 @@ Quirks:
 - **The chunk layout supports byte-ranged ingest** [verified 2026-08-10,
   live]: both products' value variables are gzip+shuffle uint16 in
   (24, 5424) full-row chunks, and the reference deployment's four-site
-  catalogue spanned rows 470–481 — two value plus two DQF chunks per
+  catalogue spanned rows 470–481: two value plus two DQF chunks per
   granule, ~757 KB per AODF granule against 40.6 MB whole-file (54×),
   ~849 KB against 39.7 MB for DSRF (47×), about 230 MB/day instead of
   ~11 GB. The current builder downloads each granule whole;
@@ -726,7 +726,7 @@ ECMWF's open-data IFS offers a 15-day horizon (360 h at 00/12Z since cycle
   defensible forecast than models that publish surface fluxes and requires
   a different product label.
 - **Only four levels of the curated 1015–600 hPa band exist** in the
-  open-data set (925/850/700/600) — and at the founding mountain sites,
+  open-data set (925/850/700/600), and at the founding mountain sites,
   925 hPa is below the model terrain. Three usable levels do not define a
   sounding; interpolation would dominate the boundary-layer and stability
   estimates.
@@ -738,7 +738,7 @@ a deeper pressure column.
 ## RAP 13 km — evaluated, not adopted
 
 NOAA's Rapid Refresh survives the 2026-10-06 retirements (RRFSv1 replaces
-NAM, HREF, SREF, and HiresW only) and cycles hourly — to 21 h every hour
+NAM, HREF, SREF, and HiresW only) and cycles hourly: to 21 h every hour
 and **51 h at 03/09/15/21Z**, complete ≈ T+1:15–1:35 (verified 2026-08-08).
 Two findings decided against it:
 
@@ -746,7 +746,7 @@ Two findings decided against it:
   (rotated lat-lon, Arakawa non-E), which ecCodes cannot geolocate. The
   usable `awp130pgrb` carries the full 9-level curated band and the science
   set but **no heat fluxes**, which live only in the `awp130bgrb`
-  companion — two files per hour for the contract.
+  companion; two files per hour for the contract.
 - Everything it publishes for this product, HRRR already publishes at
   3 km; the only addition would be the 51 h tail on four cycles, and its
   own lifetime is bounded by RRFSv2 (MPAS engine, 2027–28).
@@ -758,24 +758,24 @@ job here is already done by a finer sibling on the same buckets.
 
 DWD's global ICON (~13 km) is the one candidate that would add a
 **non-North-American physics and data-assimilation lineage** to the
-catalogue — a genuine cross-model disagreement signal, published as open
+catalogue, a genuine cross-model disagreement signal, published as open
 data under CC-BY 4.0. Verified facts (2026-08-08):
 
 - Open data serves only the **native icosahedral grid** (R3B07), one
-  bz2-compressed GRIB2 file per field, level, and step — no `.idx`,
+  bz2-compressed GRIB2 file per field, level, and step: no `.idx`,
   ~1-day retention (fetch-fresh only); the 00Z 180 h file landed ≈ T+3:29.
-  ICON-EU and ICON-D2 do not cover BC. Sampling is tractable — DWD
+  ICON-EU and ICON-D2 do not cover BC. Sampling is tractable (DWD
   publishes time-invariant CLAT/CLON, so a cached nearest-cell index per
-  site works — but adoption costs a new transport (bz2, thousands of
+  site works), but adoption costs a new transport (bz2, thousands of
   per-field files, an unstructured-grid sampler), not new physics work.
 - The pressure-level set holds only **6 of the 9 curated band levels**
-  (925/900/850/800/700/600 — no 875/750/650).
-- Fluxes (`ASHFL_S`/`ALHFL_S`) are **averages since model start** —
+  (925/900/850/800/700/600; no 875/750/650).
+- Fluxes (`ASHFL_S`/`ALHFL_S`) are **averages since model start**:
   GFS/GEPS-style differencing, plus DWD's positive-downward sign
   convention to verify and flip at build. Gust is `VMAX_10M` (hour-max
   family); layered cloud (CLCT/CLCL/CLCM/CLCH) exists.
 - **No PBL height, no surface-based CAPE, no CIN** (only CAPE_ML and
-  CAPE_CON) — under the current contract's surface-based pair, `cape`,
+  CAPE_CON); under the current contract's surface-based pair, `cape`,
   `cin`, and `pblHeight` would all be declared false.
 
 Not adopted for now: the feed poses no blocker, and whether the
@@ -787,12 +787,12 @@ catalogue can revisit.
 - **ECCC** (HRDPS, RDPS, GDPS, REPS, GEPS): used under the
   [Environment and Climate Change Canada Data Server End-use Licence](https://eccc-msc.github.io/open-data/licence/readme_en/).
   Derived profiles carry the attribution requirement.
-- **NOAA** (HRRR, RRFS, GFS, NAM, GOES-18 — and RAP if adopted): U.S.
+- **NOAA** (HRRR, RRFS, GFS, NAM, GOES-18, and RAP if adopted): U.S.
   government open data. Attribution is requested, and use implies no NOAA
   endorsement of this project.
-- **ECMWF** open data is CC-BY-4.0 — relevant only if an IFS-based leg is
+- **ECMWF** open data is CC-BY-4.0, relevant only if an IFS-based leg is
   adopted later.
-- **DWD** open data is CC-BY 4.0 — relevant only if an ICON leg is adopted
+- **DWD** open data is CC-BY 4.0, relevant only if an ICON leg is adopted
   later.
 
 Provider overviews: [HRDPS](https://eccc-msc.github.io/open-data/msc-data/nwp_hrdps/readme_hrdps_en/),

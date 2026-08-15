@@ -45,7 +45,7 @@ const TREE: TreeRow[] = [
     indent: 1,
     name: "site-context.json",
     path: "site-context.json",
-    note: "measured terrain per site: elevation, slope, aspect, relief, land cover — sources named",
+    note: "measured terrain per site: elevation, slope, aspect, relief, land cover; sources named",
   },
   { indent: 1, name: "hrdps-continental/" },
   {
@@ -139,7 +139,7 @@ const stats = manifest.stats;
     <p class="fc-section-lede">
       Point the engine at a site catalogue and an output directory, and this tree is what lands
       there. This one is an HRDPS continental run over three test sites, served
-      at <code>meteo.azohra.com/data-sample/</code> — curl any path in it.
+      at <code>meteo.azohra.com/data-sample/</code>; curl any path in it.
     </p>
 
     <div class="fc-dataset-grid">
@@ -172,7 +172,7 @@ const stats = manifest.stats;
           hour, <code>thermalVelocityMps</code> goes {firstHour.derived.thermalVelocityMps} →
           {lastHour.derived.thermalVelocityMps} and <code>usableLiftTopM</code> goes
           {firstHour.derived.usableLiftTopM ?? "null"} → {lastHour.derived.usableLiftTopM ??
-            "null"} — derived by the engine from the sampled fields. The equations behind every
+            "null"}, derived by the engine from the sampled fields. The equations behind every
           derived quantity are
           in <a href="/docs/forecast/derivation-science/">Meteogram derivations</a>. The full
           file: <a href="/data-sample/hrdps-continental/sites/test-hill.json">test-hill.json</a>.

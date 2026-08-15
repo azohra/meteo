@@ -26,9 +26,9 @@ profile
 
 | Fact | Value |
 | --- | --- |
-| **Published at** | `<model>/sites/<site>.json` — and each [history archive](/docs/briefing/history-archives/) line is the same document |
+| **Published at** | `<model>/sites/<site>.json`; each [history archive](/docs/briefing/history-archives/) line is the same document |
 | **Parse** | `parseSiteForecastJson` (raw text) / `parseSiteForecast` (parsed value) from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
-| **Zod authority** | `siteForecastSchema`, pinning `SITE_FORECAST_SCHEMA_VERSION` (2 — wire v2) |
+| **Zod authority** | `siteForecastSchema`, pinning `SITE_FORECAST_SCHEMA_VERSION` (2, wire v2) |
 | **JSON Schema** | [`profile.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/profile.schema.json) |
 | **Discovery** | the [model catalogue](/docs/briefing/catalogue/)'s `models` array names every model that publishes profiles |
 
@@ -48,11 +48,11 @@ publication. Ensemble documents also declare total membership once at
 
 The `site` block is **sample provenance**: where the atmosphere was sampled
 (`id`, `name`, `latitude`, `longitude`, optional `timeZone`) and what the
-model thinks the ground there is (`site.modelElevationM` — the plot floor and
-physics reference). It carries no launch elevation — a baked-in launch
+model thinks the ground there is (`site.modelElevationM`, the plot floor and
+physics reference). It carries no launch elevation: a baked-in launch
 would silently bind a grid forecast to one launch. The measured launch elevation lives in
 [site-context.json](/docs/briefing/site-context-document/)'s `elevation`
-pick, and consumers pass it at render time as `MeteogramOptions.launch` — one
+pick, and consumers pass it at render time as `MeteogramOptions.launch`; one
 document serves every launch its cell covers. Older stored documents may
 still carry an `altitudeM` field; current parsers ignore it.
 
@@ -60,7 +60,7 @@ The optional `site.timeZone` is echoed from the
 site catalogue's required IANA zone, so new documents carry their own
 local-time context without a catalogue join. The field is optional because
 older stored profiles predate it; absence means the document predates the
-echo — never that the launch uses UTC — and requires a caller-owned timezone
+echo (never that the launch uses UTC) and requires a caller-owned timezone
 choice. The
 [contract guide](/docs/briefing/contract/#site-timezone-propagation) lists
 each API's documented fallback behaviour.
@@ -68,7 +68,7 @@ each API's documented fallback behaviour.
 The optional `semantics` block lets a stored document retain gust,
 precipitation, and smoke meaning without joining the catalogue. Its absence
 creates no default. Where a model declares smoke (`radiativelyCoupled` or
-`passive`), each hour may also carry an optional `smoke` block (`surfaceUgm3`, `columnMgm2`, `aot` —
+`passive`), each hour may also carry an optional `smoke` block (`surfaceUgm3`, `columnMgm2`, `aot`,
 all three required within it); the
 [smoke document reference](/docs/briefing/smoke-document/) covers the
 semantics.

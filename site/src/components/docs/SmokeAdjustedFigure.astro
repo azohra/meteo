@@ -26,7 +26,7 @@ const adjusted = renderSyntheticMeteogram(
   "smoke-figure-adjusted",
 );
 const label = adjusted.scene.smokeAdjustment
-  ? `Smoke-adjusted view — ${adjusted.scene.smokeAdjustment.smokeModel} ${adjusted.scene.smokeAdjustment.smokeRun}, w* × ∛f`
+  ? `Smoke-adjusted view: ${adjusted.scene.smokeAdjustment.smokeModel} ${adjusted.scene.smokeAdjustment.smokeRun}, w* × ∛f`
   : "Smoke-adjusted view";
 ---
 
@@ -35,13 +35,13 @@ const label = adjusted.scene.smokeAdjustment
   title="The same afternoon, before and after the smoke correction"
   lesson={scenario.lesson}
   description={scenario.accessibilityDescription}
-  caption="Both panels draw one scenario profile; only the render options differ. The base panel is the smoke-blind read — no plume drawn, full-strength w* — even though the model publishes the smoke it cannot feel. The adjusted panel draws that plume and derates: its w* bump sits visibly lower under the severe afternoon smoke. The correction is deliberately gentle (cube-root), because diffuse light still drives thermals under smoke."
+  caption="Both panels draw one scenario profile; only the render options differ. The base panel is the smoke-blind read (no plume drawn, full-strength w*) even though the model publishes the smoke it cannot feel. The adjusted panel draws that plume and derates: its w* bump sits visibly lower under the severe afternoon smoke. The correction is deliberately gentle (cube-root), because diffuse light still drives thermals under smoke."
   units="altitude m and ft · w* m/s · smoke µg/m³ · haze tint = optical depth"
   {scenario}
 >
   <div class="smoke-compare">
     <div>
-      <p class="smoke-panel-label">Base view — the smoke-blind read: no plume drawn, full-strength thermals</p>
+      <p class="smoke-panel-label">Base view, the smoke-blind read: no plume drawn, full-strength thermals</p>
       <Fragment set:html={base.svg} />
     </div>
     <div>

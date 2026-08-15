@@ -7,7 +7,7 @@ The `@azohra/meteo.briefing` package ships ESM types and requires no DOM. This e
 a profile from disk, keeping loading policy separate from rendering. This is
 what it produces:
 
-![A ten-hour Meteogram for the synthetic Synthetic Ridge teaching scenario — morning stability giving way to a deep midday unstable column, with the boundary layer, usable lift, and cloud base tracing distinct arcs beneath light veering wind — and the key derived from its final scene.](figures/first-meteogram.svg)
+![A ten-hour Meteogram for the synthetic Synthetic Ridge teaching scenario (morning stability giving way to a deep midday unstable column, with the boundary layer, usable lift, and cloud base tracing distinct arcs beneath light veering wind) and the key derived from its final scene.](figures/first-meteogram.svg)
 
 1. Install the package:
 
@@ -52,7 +52,7 @@ what it produces:
    complete `<svg>` document with the same token authority. Rebuild the
    scene-derived key whenever controls rebuild the scene.
 
-> **Note — timezone is explicit presentation input.** Profiles store UTC
+> **Note: timezone is explicit presentation input.** Profiles store UTC
 > instants. `buildMeteogramScene` requires the chosen zone, so pass the
 > document's optional
 > [`site.timeZone` echo](/docs/briefing/profile-document/#run-site-and-semantics)

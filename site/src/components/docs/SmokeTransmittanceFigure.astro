@@ -37,9 +37,9 @@ const severeW = Math.cbrt(severeF);
 
 <Figure
   id="smoke-transmittance"
-  title="Smoke dims the sun far less than intuition says — and thermals even less"
-  description={`Line chart of the fraction of surface irradiance and of thermal strength retained as smoke optical depth grows from 0 to ${MAX_TAU}. The measured transmittance curve exp(−${SMOKE_TRANSMITTANCE_K_MIDDAY}·τ) falls gently, the naive exp(−τ) plunges, and the w* curve — the cube root of the transmittance — stays highest: at optical depth 2, irradiance keeps ${(severeF * 100).toFixed(0)} percent and thermal strength ${(severeW * 100).toFixed(0)} percent.`}
-  caption={`Computed from the package's cited constants (Donaldson 2021, Chubarova 2012, McKendry 2019 — three datasets converging on k ≈ 0.14–0.22). At a severe-episode optical depth of ${severeTau}, irradiance keeps ${(severeF * 100).toFixed(0)} % and w* keeps ${(severeW * 100).toFixed(0)} % — the headline numbers of the smoke correction.`}
+  title="Smoke dims the sun far less than intuition says, and thermals even less"
+  description={`Line chart of the fraction of surface irradiance and of thermal strength retained as smoke optical depth grows from 0 to ${MAX_TAU}. The measured transmittance curve exp(−${SMOKE_TRANSMITTANCE_K_MIDDAY}·τ) falls gently, the naive exp(−τ) plunges, and the w* curve (the cube root of the transmittance) stays highest: at optical depth 2, irradiance keeps ${(severeF * 100).toFixed(0)} percent and thermal strength ${(severeW * 100).toFixed(0)} percent.`}
+  caption={`Computed from the package's cited constants (Donaldson 2021, Chubarova 2012, McKendry 2019: three datasets converging on k ≈ 0.14–0.22). At a severe-episode optical depth of ${severeTau}, irradiance keeps ${(severeF * 100).toFixed(0)} % and w* keeps ${(severeW * 100).toFixed(0)} %: the headline numbers of the smoke correction.`}
   units="x: smoke optical depth τ (mid-visible) · y: fraction retained"
 >
   <svg
@@ -64,13 +64,13 @@ const severeW = Math.cbrt(severeF);
     <path class="curve wstar" d={wStarPath} />
     <line class="marker" x1={x(severeTau)} y1={y(0)} x2={x(severeTau)} y2={y(1)} />
     <text class="label naive-label" x={x(1.15)} y={y(Math.exp(-1.15)) - 8}>
-      exp(−τ) — the intuition
+      exp(−τ): the intuition
     </text>
     <text class="label observed-label" x={x(2.7)} y={y(smokeTransmittance(2.7)) + 18}>
       irradiance, measured (k = {SMOKE_TRANSMITTANCE_K_MIDDAY})
     </text>
     <text class="label wstar-label" x={x(2.7)} y={y(Math.cbrt(smokeTransmittance(2.7))) - 10}>
-      w* retained — ∛ of irradiance
+      w* retained: ∛ of irradiance
     </text>
     <text class="label marker-label" x={x(severeTau) + 6} y={y(0.06)}>
       τ 2: severe BC episode

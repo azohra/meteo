@@ -77,27 +77,27 @@ divergence across those findings while preserving each model's run, cadence,
 elevation, and availability.
 
 [History and run convergence](/docs/briefing/history/) reads the published
-month archives and compares successive runs of one model — the forecast
+month archives and compares successive runs of one model; it is the forecast
 capability's one server-side subpath (Node, Bun, Deno; not browsers).
 
 The platform's sibling package `@azohra/meteo.station` covers the
 [station capability](/docs/station/): live weather-station reading,
 derivation, and display, with client, server, React, and custom-element
-bindings — [its own getting started](/docs/station/getting-started/)
+bindings; [its own getting started](/docs/station/getting-started/)
 begins there.
 
 ## Decoder user
 
-The decoders beneath the engine install on their own — no forecast
+The decoders beneath the engine install on their own, with no forecast
 documents or engine required:
 
 ```sh title="Terminal"
 pnpm add @azohra/meteo.grib
 ```
 
-[`@azohra/meteo.grib`](/docs/grib/) decodes GRIB2 in pure TypeScript — rotated
+[`@azohra/meteo.grib`](/docs/grib/) decodes GRIB2 in pure TypeScript (rotated
 and Lambert grids, complex packing, multi-field messages, NOMADS `.idx`
-byte-range helpers — gated bit-for-bit against ecCodes. Its documentation
+byte-range helpers), gated bit-for-bit against ecCodes. Its documentation
 opens with a complete worked decode: a committed HRDPS fixture in, a 2 m
 temperature at a named launch out.
 

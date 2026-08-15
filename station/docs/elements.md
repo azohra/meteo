@@ -1,15 +1,15 @@
 ---
 title: Custom elements
-description: The station surface as light-DOM custom elements — registration, the provider element, attributes vs properties, composition, and server HTML.
+description: "The station surface as light-DOM custom elements: registration, the provider element, attributes vs properties, composition, and server HTML."
 ---
 
 `@azohra/meteo.station/elements`: the station surface as light-DOM custom
-elements — a full peer of the [react binding](/docs/station/react/), not a
+elements, a full peer of the [react binding](/docs/station/react/), not a
 wrapper around it. Both bindings render from the same shared core (the
 strings, formatting, display-resolution, and instrument geometry on
 `@azohra/meteo.station`; the polling stores on
 [`@azohra/meteo.station/client`](/docs/station/client-data/)) and emit the
-same DOM under the same [stylesheet](/docs/station/theming/) — a parity
+same DOM under the same [stylesheet](/docs/station/theming/); a parity
 suite holds them byte-identical, so neither is "the reference".
 
 ## Registration
@@ -21,8 +21,8 @@ suite holds them byte-identical, so neither is "the reference".
 ```
 
 Apps that need control over timing import the side-effect-free index
-instead: `import { defineMeteoElements } from "@azohra/meteo.station/elements"`
-— it is idempotent, defines providers before consumers, and accepts a
+instead: `import { defineMeteoElements } from "@azohra/meteo.station/elements"`.
+It is idempotent, defines providers before consumers, and accepts a
 `CustomElementRegistry` for scoped-registry setups. Tag names are fixed:
 internal composition and the documented markup contract depend on them.
 
@@ -34,7 +34,7 @@ bindings apart.
 ## The provider element
 
 `<meteo-station-feed>` is the ambient default the react
-`StationFeedProvider` is — plus the data layer the hooks are over there:
+`StationFeedProvider` is, plus the data layer the hooks are over there:
 
 ```html
 <meteo-station-feed src="/api/wind" station="launch"
@@ -45,12 +45,12 @@ bindings apart.
 ```
 
 - `src` is the MOUNT BASE; the element polls `${src}/feed` (and, when
-  `station` names an id, the light `${src}/current` — folded in with the
+  `station` names an id, the light `${src}/current`, folded in with the
   shared merge and clock rule) via the
   [client stores](/docs/station/client-data/). `poll-seconds` /
   `current-poll-seconds` override cadence, `paused` stops the loops without
   dropping the held document, and `refresh()` refetches now. There is no
-  `live` attribute: this binding polls feed and current only — the `/live`
+  `live` attribute: this binding polls feed and current only; the `/live`
   stream is reached through
   [`createStationLiveStore`](/docs/station/client-data/#the-live-store) or
   the react `useStationLive`.
@@ -82,7 +82,7 @@ Every react component has its tag twin, rendering the identical DOM:
 
 | Tag | React twin | Notes |
 |---|---|---|
-| `<meteo-station-card>` | `StationCard` | Compound — below |
+| `<meteo-station-card>` | `StationCard` | Compound (below) |
 | `<meteo-station-card-header>` `-instrument` `-chart` `-summary` | `StationCard.Header` et al. | The card's composable pieces; a part outside `<meteo-station-card>` throws |
 | `<meteo-current-conditions>` | `CurrentConditions` | |
 | `<meteo-wind-history-chart>` | `WindHistoryChart` | `plot-height`, `window-hours`, `compare-offset-days` (`1\|2\|3`, absent when history doesn't reach back that far); the full inspector (preview, pin by timestamp, touch-safe); a persistent compass-letter row and Avg row above/below every vane |
@@ -106,7 +106,7 @@ Station resolution and the wiring error are the shared rules: explicit
 
 `<meteo-station-card>` mirrors the react compound: with **no authored
 children** it renders the full default card; any authored child means
-composition mode — your pieces move into the card and only they appear.
+composition mode: your pieces move into the card and only they appear.
 The `compose` attribute is the markup stand-in for react's
 authored-but-empty edge (an empty card, never a surprise default).
 
@@ -124,10 +124,10 @@ Each part accepts its own `thresholds`/`unit` attributes and
 
 ## Client rendering and server HTML
 
-Elements are client-rendered light DOM — there is no declarative shadow DOM
+Elements are client-rendered light DOM: there is no declarative shadow DOM
 and no hydration. Server HTML may contain the tags; they are inert until
 `defineMeteoElements()` runs, then render themselves on upgrade, REPLACING
-any pre-existing children (usable as a static skeleton) — except
+any pre-existing children (usable as a static skeleton), except
 `<meteo-station-card>`, where authored children are the composition signal.
 Pages that need server-rendered, hydrated markup use the
 [react binding](/docs/station/react/#ssr-and-app-router); the two share

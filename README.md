@@ -1,6 +1,6 @@
 # meteo by Azohra
 
-![meteo by Azohra — six TypeScript packages for forecasts, live stations, and provider-byte decoding](readme-hero.svg)
+![meteo by Azohra: six TypeScript packages for forecasts, live stations, and provider-byte decoding](readme-hero.svg)
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/azohra/meteo?label=licence" alt="MIT licence"></a>
@@ -24,10 +24,10 @@ typed data into a custom UI, or run the engine end to end.
 | Package | Home | What it provides |
 | --- | --- | --- |
 | **`@azohra/meteo.forecast`** | [`forecast/`](forecast/) | The forecast engine and `meteo` CLI: fetches ECCC and NOAA model fields, samples each catalogued site, derives soaring quantities, and publishes versioned documents plus append-only history. |
-| **`@azohra/meteo.briefing`** | [`briefing/`](briefing/) | Reads a published forecast and tells you what kind of day it is: zod contract and types, pure derivations, typed findings, cross-model and through-time comparison, transport guards, history loaders — and the Meteogram renderer (`/meteogram`). |
+| **`@azohra/meteo.briefing`** | [`briefing/`](briefing/) | Reads a published forecast and tells you what kind of day it is: zod contract and types, pure derivations, typed findings, cross-model and through-time comparison, transport guards, history loaders, and the Meteogram renderer (`/meteogram`). |
 | **`@azohra/meteo.station`** | [`station/`](station/) | Live weather stations: one wire contract, vendor adapters (WindNerd, Tempest, Campbell), a mountable feed handler, a framework-free client layer, and peer React and custom-element bindings. |
 | **`@azohra/meteo.core`** | [`core/`](core/) | The shared foundation: units, angle and wind-vector math (one sign convention platform-wide), zod primitives, the transport failure vocabulary, schema-artifact tooling. |
-| **`@azohra/meteo.grib`** | [`grib/`](grib/) | A pure-TypeScript GRIB2 decoder — rotated and Lambert grids, complex packing, multi-field messages, `.idx` helpers — validated bit-for-bit against ecCodes golden fixtures. |
+| **`@azohra/meteo.grib`** | [`grib/`](grib/) | A pure-TypeScript GRIB2 decoder (rotated and Lambert grids, complex packing, multi-field messages, `.idx` helpers), validated bit-for-bit against ecCodes golden fixtures. |
 | **`@azohra/meteo.j2k`** | [`j2k/`](j2k/) | A pure-TypeScript JPEG 2000 decoder scoped to exactly the codestream subset ECCC ships; the production codec behind `@azohra/meteo.grib`. |
 
 ## Install
@@ -81,7 +81,7 @@ const svg = renderMeteogramSvg(
 );
 ```
 
-Documents are launch-agnostic — one forecast serves every launch its grid
+Documents are launch-agnostic: one forecast serves every launch its grid
 cell covers; a launch marker and its measured elevation are render inputs.
 The [TypeScript documentation](https://meteo.azohra.com/docs/briefing/render-first-meteogram/)
 covers the contract, transport, derivations, analysis, scene graph,
@@ -99,7 +99,7 @@ explains every mark on the chart, illustrated by the committed
 
 `@azohra/meteo.station` reads live weather stations through one wire contract:
 vendor adapters normalize WindNerd, WeatherFlow Tempest, and Campbell
-Scientific loggers into it — or your own hardware, through
+Scientific loggers into it, or your own hardware, through
 `defineStationAdapter`. A mountable `Request → Response` handler serves the
 whole inventory as a single feed, and hooks and components render it
 natively, in your design system, with no vendor iframe:
@@ -133,22 +133,22 @@ theming.
 Beneath the engine sit two decoders written for this workspace and
 published on their own:
 
-- [`@azohra/meteo.grib`](grib/) decodes GRIB2 in pure TypeScript — rotated
+- [`@azohra/meteo.grib`](grib/) decodes GRIB2 in pure TypeScript (rotated
   lat-lon and Lambert grids, complex packing, multi-field messages,
-  NOMADS `.idx` byte-range helpers — written because no maintained
+  NOMADS `.idx` byte-range helpers), written because no maintained
   JavaScript decoder covered the grids ECCC and NOAA actually ship. Its
   acceptance gate is bit-for-bit: twenty real messages harvested from
   every live feed the forecast engine reads, each decoded to exact equality
-  against ecCodes — one inexact double is a decoder bug, never a
+  against ecCodes: one inexact double is a decoder bug, never a
   tolerance question.
 - [`@azohra/meteo.j2k`](j2k/) decodes the JPEG 2000 codestreams inside ECCC's
-  GRIB2, scoped to exactly the subset those feeds ship — every marker,
+  GRIB2, scoped to exactly the subset those feeds ship: every marker,
   MQ context, and lifting step cites its clause of ITU-T T.800, and
   anything outside the subset fails loudly with a named error. It decodes
   only the codeblocks your sites touch: sampling a few gridpoints costs
   ~16× less per core than a full decode and is bit-identical to it. Full
   decodes parallelize too, fanning one field's independent codeblocks
-  across a worker pool — single-threaded, whole-image OpenJPEG can do
+  across a worker pool; single-threaded, whole-image OpenJPEG can do
   neither.
 
 Both cores are browser-safe by construction: no `node:` imports, no
@@ -175,23 +175,23 @@ The [publisher documentation](https://meteo.azohra.com/docs/publish/run-one-mode
 covers launch catalogues, output paths, smoke caps, full builds, and the
 history flag (`--history`, on by default), which appends month archives
 beside the current documents.
-Builders move real provider volume — per-model transports and transfer
+Builders move real provider volume (per-model transports and transfer
 costs are recorded in the
-[feed reference](https://meteo.azohra.com/docs/forecast/forecast-model-feeds/) —
+[feed reference](https://meteo.azohra.com/docs/forecast/forecast-model-feeds/))
 and must not run more often than their model publishes.
 
-An operator's pipeline — the cron schedule, the site catalogue, the bucket
-credentials — is your own repository composing the engine; the platform ships
+An operator's pipeline (the cron schedule, the site catalogue, the bucket
+credentials) is your own repository composing the engine; the platform ships
 no production instance. Adding a launch is a catalogue entry (slug, name,
-coordinates, timezone — identity only) plus one command:
+coordinates, timezone: identity only) plus one command:
 `pnpm exec meteo forecast terrain --sites ./sites.json`, which measures
 elevation, terrain, and land cover into a committed `site-context.json`.
 
 ## Lineage
 
 meteo by Azohra descends from
-[canadarasp](https://github.com/ajberkley/canadarasp) — the first
-derivations here were ports of its constants — and follows
+[canadarasp](https://github.com/ajberkley/canadarasp) (the first
+derivations here were ports of its constants) and follows
 [soaringmeteo](https://soaringmeteo.org/) in publishing open soaring
 forecasts.
 
@@ -204,4 +204,4 @@ issue to discuss it before sending a pull request.
 
 ECCC source data is used under the [Environment and Climate Change Canada Data Server End-use Licence](https://eccc-msc.github.io/open-data/licence/readme_en/); derived forecasts retain its attribution requirement. NOAA HRRR, GFS, and NAM data are public-domain products distributed through the [Open Data Dissemination program](https://www.noaa.gov/information-technology/open-data-dissemination). Code is [MIT licensed](LICENSE).
 
-Made with ♥ in Nelson, BC — by a pilot, for pilots.
+Made with ♥ in Nelson, BC, by a pilot, for pilots.

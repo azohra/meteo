@@ -50,7 +50,7 @@ v2); manifests, the model catalogue, smoke and observation documents, and
 the run index stay at `schemaVersion: 1`, their shapes untouched by the
 vocabulary change. `sites.json` and `site-context.json` use
 `schemaVersion: 2`. Stored v1 forecast
-documents migrate mechanically — `forecast/src/migrate.ts`, behind
+documents migrate mechanically: `forecast/src/migrate.ts`, behind
 `meteo forecast migrate`, is the executable map. The generated JSON Schemas under
 each capability package's `schema/` directory describe the inputs accepted by the released
 package (npm <code>{BRIEFING_PACKAGE_VERSION}</code>); the zod schemas and
@@ -83,9 +83,9 @@ is the exact executable compatibility test. The
 [profile reference](/docs/briefing/profile-document/#run-site-and-semantics)
 defines the optional timezone echo's semantics, and the launch elevation
 lives in `site-context.json`'s `elevation` pick, supplied at render
-time — never in the profile.
+time, never in the profile.
 
-Use the raw-text guards at every storage or network boundary — the
+Use the raw-text guards at every storage or network boundary; the
 [contract guide](/docs/briefing/contract/) carries the worked fence.
 Do not patch a rejected document in presentation code. Upgrade the publisher,
 choose a compatible package, or perform a named migration before validation.

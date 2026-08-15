@@ -34,17 +34,17 @@ const statements: StatementRow[] = [
     kind: "windowAgreement",
     term: "Window agreement",
     statement:
-      `${agreement.voters} voters, unanimous — both members call a thermal window. ` +
+      `${agreement.voters} voters, unanimous: both members call a thermal window. ` +
       `Only ${statedStart.model} states a start the day can time: ${statedStart.at}. ` +
       `The other window's opening edge is clipped by its document's horizon, so it reads ` +
-      `"open since at least" and stays out of the timing envelope — startSpreadHours is ` +
+      `"open since at least" and stays out of the timing envelope; startSpreadHours is ` +
       `null, not a number no model stated.`,
   },
   {
     kind: "heightSpread",
     term: "Height spread",
     statement:
-      `${heights.spreadM} m between the members' peak lifts — ` +
+      `${heights.spreadM} m between the members' peak lifts: ` +
       peaks.map((peak) => `${peak.model} puts ${peak.aboveLaunchM} m above launch at ${peak.at}`).join("; ") +
       `. No mean, no consensus height: the spread is stated, weighting is yours.`,
   },
@@ -68,7 +68,7 @@ const statements: StatementRow[] = [
       <code>compareForecasts</code> answers with statements, not a winner: it
       analyzes every model's document under your launch and thresholds, then
       reports where they agree and how far they spread. Here it reads two
-      documents for the same day — the same development, two hours apart:
+      documents for the same day: the same development, two hours apart:
     </p>
 
     <Figure

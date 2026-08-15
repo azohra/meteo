@@ -1,14 +1,14 @@
 ---
 title: Wire an inspector
-description: Connect pointer, keyboard, and pinned selections to the scene's pure queries — the recipe for the state the package deliberately does not ship.
+description: "Connect pointer, keyboard, and pinned selections to the scene's pure queries: the recipe for the state the package deliberately does not ship."
 ---
 
-An inspector — the readout that follows a pointer, pins on a click, and
-steps with the arrow keys — is two different kinds of code. The geometry
+An inspector (the readout that follows a pointer, pins on a click, and
+steps with the arrow keys) is two different kinds of code. The geometry
 questions ("which hour is under this pixel", "which drawn barb is nearest",
 "where does this instant fall") are pure functions of the scene, and the
-package answers every one of them. The state between events — preview
-versus pin, what a touch does, what survives a model switch — is a small
+package answers every one of them. The state between events (preview
+versus pin, what a touch does, what survives a model switch) is a small
 machine whose shape belongs to the consumer and its framework. The first
 production consumer's machine is two-dimensional, never empty, and
 keyboard-driven; a second consumer's will differ. This page is the recipe
@@ -54,7 +54,7 @@ export function selectionAtPoint(
 ```
 
 Three decisions in that code are worth making deliberately. The `clamp`
-means the strips and margins still select an hour — a pointer over the
+means the strips and margins still select an hour: a pointer over the
 pressure strip is asking about that hour, not about nothing. The snap goes
 to *drawn* barbs: `nearestDrawnBarb` already knows about the barb stride,
 the min-gap thinning, and the surface row's lifted position
@@ -62,8 +62,8 @@ the min-gap thinning, and the surface row's lifted position
 that is not there. And above or below the plot the selection degrades to
 the hour alone rather than inventing an altitude.
 
-For continuous readouts — temperature, wind, lapse rate at the exact
-cursor altitude — call `cursorReading(scene, point.x, point.y)` with the
+For continuous readouts (temperature, wind, lapse rate at the exact
+cursor altitude), call `cursorReading(scene, point.x, point.y)` with the
 same converted point. The interpolated reading and the discrete snap
 answer different questions; inspectors usually want both.
 
@@ -77,7 +77,7 @@ the pin, because a finger that must touch the chart to point at it should
 not fight a phantom hover state. Leaving the chart clears a preview but
 never a pin. Clicking the already-pinned target unpins; clicking anywhere
 else re-pins. Escape unpins. Written as a reducer it is a handful of
-cases over `{ selection, preview, pinned }` — small enough that owning it
+cases over `{ selection, preview, pinned }`, small enough that owning it
 outright costs less than adapting a shipped one to your framework's
 rendering model, which is why it ships here as a recipe and not as code.
 
@@ -87,7 +87,7 @@ its selection is never empty (it initializes to the first hour at the
 site's altitude, so the inspector always reads a real place in the
 forecast); unpinning requires clicking the same hour *and* level, so a
 click at a different altitude re-pins instead; and the arrow keys form a
-second input axis — left and right step hours, up and down walk the drawn
+second input axis: left and right step hours, up and down walk the drawn
 ladder from `drawnBarbsForHour`, with the readout's `aria-live` enabled
 only while pinned so hover motion never spams a screen reader.
 
@@ -95,7 +95,7 @@ only while pinned so hover motion never spams a screen reader.
 
 A pinned selection is worth a rebuild: pass it as the `selection` option
 and the reference serializer draws the column, hairline, and barb ring
-from the same scales as everything else — the figure above is exactly that
+from the same scales as everything else; the figure above is exactly that
 output. Pixels and readout cannot disagree, and the marks retheme with one
 token (`--meteo-gram-selection`).
 
@@ -117,8 +117,8 @@ Pins change on clicks and key presses, so rebuilding on each is cheap.
 Hover previews fire per pointer event; if a rebuild per move measures too
 hot on your target hardware, draw the preview as a consumer overlay and
 reserve the scene option for the pin. Position the overlay with
-`resolveSelection(scene, { hourIndex, altitudeM })` — the same function
-`buildMeteogramScene` runs for its `selection` option — so the preview and the
+`resolveSelection(scene, { hourIndex, altitudeM })` (the same function
+`buildMeteogramScene` runs for its `selection` option), so the preview and the
 serializer-drawn pin resolve through one implementation and cannot
 disagree about where the selection is.
 
@@ -145,7 +145,7 @@ export function carrySelection(
 
 Whether to carry at all is a product decision, not a correctness one. The
 worked example deliberately resets its pin on every model and day switch
-and carries only overlay toggles — a pilot who turned on the thermal
+and carries only overlay toggles: a pilot who turned on the thermal
 index is asking a question of the day, and the answer should survive the
 switch; a pin on 2 p.m. may not deserve to. If you do carry, carry by
 `validAt` as above, and decide explicitly what a `null` answer means for
@@ -154,8 +154,8 @@ rendered hour.
 
 ## Time cursors
 
-For marks that live between columns — a "now" line, sunrise and sunset
-ticks — `xForTime(scene, instant)` interpolates between hour centres and
+For marks that live between columns (a "now" line, sunrise and sunset
+ticks), `xForTime(scene, instant)` interpolates between hour centres and
 is null outside the rendered window; `xForTime(scene, instant, { clamp:
 true })` pins it to the frame edge instead, which is what a shading band
 that starts before the window wants. `xForHour` stays the right call for

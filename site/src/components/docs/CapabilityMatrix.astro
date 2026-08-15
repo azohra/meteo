@@ -132,7 +132,7 @@ const description = rows
           <text x="36" y={top + 22} class="cm-name">{model.label}</text>
           <text x="36" y={top + 39} class="cm-name-sub">
             {meta}
-            {flag && <tspan> — <tspan class="cm-flag">{flag}</tspan></tspan>}
+            {flag && <tspan> · <tspan class="cm-flag">{flag}</tspan></tspan>}
           </text>
           {capabilityColumns.map(({ key }, columnIndex) =>
             key === "gust" ? (

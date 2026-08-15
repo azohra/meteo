@@ -21,7 +21,7 @@ import SmokeTransmittanceFigure from "../../components/docs/SmokeTransmittanceFi
 Wildfire smoke is the biggest unmodelled factor in a British Columbia
 summer forecast: from July to September it routinely caps thermal
 strength and visibility while the wind-profile models carry on as if the
-sun were clean. meteo treats smoke the way it treats everything else —
+sun were clean. meteo treats smoke the way it treats everything else:
 published raw with its provenance, derived openly, and never silently
 blended into another model's numbers.
 
@@ -31,13 +31,13 @@ Two independent models supply it, and they disagree in useful ways:
 
 - **HRRR carries its own smoke.** The operational HRRRv4 runs a
   prognostic smoke tracer, and its profiles publish a per-hour
-  [`smoke` block](/docs/briefing/profile-document/) — near-surface
-  concentration, column mass, and optical thickness — from the same run
+  [`smoke` block](/docs/briefing/profile-document/) (near-surface
+  concentration, column mass, and optical thickness) from the same run
   as every other value.
 - **The ECCC models are smoke-blind.** HRDPS, RDPS, and GDPS see no
   smoke at all. For their sites, smoke arrives as a separate
   [smoke document](/docs/briefing/smoke-document/) from ECCC's RAQDPS
-  air-quality model, joined to a profile hour by hour at read time —
+  air-quality model, joined to a profile hour by hour at read time,
   never folded into the profile itself, because one document carries one
   model's values.
 
@@ -47,7 +47,7 @@ deepens with optical depth (the sun-dimming number). The tint appears
 only when the model publishes its own optical depth (HRRR); a joined
 smoke document draws the line without a tint, because the only optical
 depth it could offer would derive from the
-[quarantined RAQDPS column](/docs/briefing/smoke-document/) — a
+[quarantined RAQDPS column](/docs/briefing/smoke-document/), and a
 too-faint haze under heavy smoke is the worst direction to be wrong
 in. A joined strip is labelled with the smoke model and run it came
 from, so borrowed smoke never passes as the profile's own.
@@ -56,8 +56,8 @@ from, so borrowed smoke never passes as the profile's own.
 
 Thermals run on surface heating. Smoke of optical depth τ cuts the
 irradiance reaching the ground by a factor *f*, the heat fluxes scale
-with the irradiance, and Deardorff's w* — the thermal-strength scale the
-Meteogram draws — is the **cube root** of the heat flux. So the whole
+with the irradiance, and Deardorff's w* (the thermal-strength scale the
+Meteogram draws) is the **cube root** of the heat flux. So the whole
 correction collapses to one line:
 
 > adjusted w* = published w* × ∛f
@@ -69,12 +69,12 @@ both are worth internalizing before a smoky-day flight decision:
 
 First, smoke scatters far more than it absorbs (single-scattering albedo
 around 0.95), so most of the "blocked" light still arrives as diffuse
-sky — measured dimming follows exp(−0.16·τ), not the Beer–Lambert
+sky: measured dimming follows exp(−0.16·τ), not the Beer–Lambert
 exp(−τ). Second, the cube root compresses whatever remains. A severe
 plume at τ = 2 removes about a quarter of the sun's power but only about
 a tenth of w*. If a smoked-out day feels far worse than that, the
 missing effects are real but different: a shallower boundary layer,
-visibility, and air quality — which is why the correction is labelled a
+visibility, and air quality. That is why the correction is labelled a
 partial one, and why the raw smoke numbers are always published beside
 it.
 
@@ -82,7 +82,7 @@ The constants in that chain are versioned physics claims with citations,
 not tuning knobs: the 4.7 m²/g mass-extinction efficiency converting a
 smoke column to optical depth is Reid et al. 2005's aged temperate/boreal
 value, and the transmittance coefficient comes from three independent
-datasets — California 2020 solar-generation data (Donaldson et al. 2021),
+datasets: California 2020 solar-generation data (Donaldson et al. 2021),
 pyranometers under extreme Russian smoke (Chubarova et al. 2012), and the
 July 2015 British Columbia episode itself (McKendry et al. 2019). They
 live in [`@azohra/meteo.briefing/derive`](/docs/briefing/derive/) next to the
@@ -90,8 +90,8 @@ functions that use them.
 
 One asterisk on the RAQDPS side of that chain: the column-mass
 field the conversion starts from currently carries a
-[verified provider defect](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)
-— it measures a thin near-surface slab rather than the whole atmosphere
+[verified provider defect](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect):
+it measures a thin near-surface slab rather than the whole atmosphere
 it declares, so RAQDPS-derived optical depth runs low in exactly the
 heavy-smoke situations where it matters most. Read it with that note in
 hand; the surface concentration does not share the problem.
@@ -100,7 +100,7 @@ hand; the surface concentration does not share the problem.
 
 Because every input is published, the correction never has to happen in
 the forecast engine: the stored document keeps the model's own derivation, and
-the **smoke-adjusted view** is re-derived in the renderer, hour by hour —
+the **smoke-adjusted view** is re-derived in the renderer, hour by hour:
 w* derated by the slant-path transmittance for that hour's actual sun
 angle, and the usable-lift envelope recomputed from the derated value.
 
@@ -119,7 +119,7 @@ figures on this page exercise the adjusted view through synthetic
 scenarios; the machinery waits for a smoke-carrying model whose
 radiation has not already felt its own plume.
 
-Feel the relationship directly — drag a plume of any thickness over the
+Feel the relationship directly by dragging a plume of any thickness over the
 same afternoon:
 
 <SmokeLab />
@@ -127,14 +127,14 @@ same afternoon:
 ## When the correction must NOT apply
 
 HRRR's smoke is radiatively coupled: its forecast smoke attenuates its
-own shortwave radiation, so its published heat fluxes — and the w*
-derived from them — are **already smoke-aware**. Derating an HRRR
+own shortwave radiation, so its published heat fluxes, and the w*
+derived from them, are **already smoke-aware**. Derating an HRRR
 Meteogram again would double-count the smoke. The catalogue declares this
 per model (`capabilities.smoke: "radiativelyCoupled"`), every HRRR
 document echoes it (`semantics.smoke`), and the adjusted view quietly
 refuses on such profiles. The declaration cuts the other way too: on an
 HRRR Meteogram, weak afternoon thermals under a thick haze strip are not
-a contradiction — the model already did the arithmetic this page
+a contradiction; the model already did the arithmetic this page
 describes.
 
 One caveat rides along: evaluation of the 2023 season found HRRR
@@ -146,11 +146,11 @@ events.
 
 When both sources cover a site, their disagreement is signal, not noise.
 On the first live day of this feature, HRRR put five times more smoke
-over a Fraser Valley site than RAQDPS did — two independent emission and
+over a Fraser Valley site than RAQDPS did: two independent emission and
 transport models reading the same fires differently. A reader who can
 see both, each labelled with its model and run, knows more than a reader
 shown one blended number: that is the provenance thesis, applied to
-smoke. The same event brought a third opinion — the sky itself,
-measured by GOES-18 — as
+smoke. The same event brought a third opinion (the sky itself,
+measured by GOES-18), as
 [Measured against the sky](/logbook/measured-against-the-sky/)
 describes.

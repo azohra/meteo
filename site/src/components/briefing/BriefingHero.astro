@@ -18,11 +18,11 @@ const exceedanceRun = bandExceedance.runs[0] ?? fail("the exceedance finding car
 const briefingLines = [
   {
     term: "Thermal window",
-    statement: `${clock(window.start)}–${clock(window.end)} — peak climb ${window.peakThermalVelocityMps} m/s`,
+    statement: `${clock(window.start)}–${clock(window.end)} · peak climb ${window.peakThermalVelocityMps} m/s`,
   },
   {
     term: "Lift ceiling",
-    statement: `${segment.evidence.peakUsableLiftTopM} m — pinned to cloud base, under a boundary layer reaching ${segment.evidence.boundaryLayerTopM} m`,
+    statement: `${segment.evidence.peakUsableLiftTopM} m, pinned to cloud base, under a boundary layer reaching ${segment.evidence.boundaryLayerTopM} m`,
   },
   {
     term: "Wind check",
@@ -48,7 +48,7 @@ const DOC_LINKS = [
         <p class="bf-lede">
           Point <code>@azohra/meteo.briefing</code> at a published forecast
           and get back answers you can put in front of pilots: when the day
-          works, how high it goes, whether the wind crosses your limits —
+          works, how high it goes, whether the wind crosses your limits:
           typed data your site renders its own way, plus the Meteogram when
           the answer should be a chart.
         </p>

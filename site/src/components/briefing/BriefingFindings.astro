@@ -35,8 +35,8 @@ const codeHtml = [
     </p>
     <pre class="bf-call" set:html={codeHtml} />
     <p class="bf-section-lede">
-      Here is everything that call returned for the sample day
-      — {rows.length} findings:
+      Here is everything that call returned for the sample day,
+      {rows.length} findings:
     </p>
     <dl class="bf-finding-rows">
       {
@@ -51,8 +51,8 @@ const codeHtml = [
       }
     </dl>
     <p class="bf-findings-note">
-      Each row is a typed object — a <code>kind</code>, its numbers, the hours
-      it cites, and the thresholds it was computed with — so your site decides
+      Each row is a typed object (a <code>kind</code>, its numbers, the hours
+      it cites, and the thresholds it was computed with), so your site decides
       what to show and how. The two wind ceilings
       ({DAY_WIND_CEILINGS.surfaceMps} and {DAY_WIND_CEILINGS.bandMps} m/s)
       came from the call: the package ships no safe-wind numbers, and

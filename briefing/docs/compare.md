@@ -40,7 +40,7 @@ each member's source analysis under `analyses`.
 to every member's analysis (`AnalyzeOptions.launch`): documents are
 launch-agnostic, and launch-relative votes compare only when every member
 reads against the same launch. Without one the comparison degrades
-gracefully — each member's reference falls back to its model's own ground,
+gracefully: each member's reference falls back to its model's own ground,
 the ledger's `elevationDeltaM` is null, no member is benched for terrain
 mismatch, and the launch-relative `heightSpread` finding is not emitted.
 The envelope echoes the launch it used as `site.launchAltitudeM` (`null`
@@ -48,13 +48,13 @@ when none was supplied).
 
 ## Compare cached analyses
 
-`compareForecasts` is a wrapper — one construction — over the real seam:
+`compareForecasts` is a wrapper (one construction) over the real seam:
 `compareAnalyses`, which compares one site's **analysis envelopes** at the
 findings level. It is the door for cached and edge-produced envelopes:
 analyze each profile where the document lives, serialize the
 [self-describing envelope](/docs/briefing/analyze/#the-envelope-self-describes)
 as JSON, and compare later without re-opening any profile. Note what its
-options deliberately lack — `timeZone`, `launch`, `thresholds` come **from
+options deliberately lack: `timeZone`, `launch`, `thresholds` come **from
 the members** and are validated, never supplied; that is the whole point
 of the envelope's self-description.
 
@@ -88,23 +88,23 @@ Coherence is **validated instead of reconstructed**, and every failure is
 a distinct, named error:
 
 - an empty member list;
-- `site.id` mismatch — one comparison, one site;
-- a duplicate `(model, referenceTime)` member — the same run twice is a
+- `site.id` mismatch: one comparison, one site;
+- a duplicate `(model, referenceTime)` member: the same run twice is a
   programming error, not a second member;
 - `vocabularyVersion` skew against this package's own
   `ANALYZE_VOCABULARY_VERSION`, with the remedy named (strict equality is
-  v1 of this surface — tolerating older envelopes is a later,
+  v1 of this surface; tolerating older envelopes is a later,
   evidence-bearing decision, not a default);
-- missing self-description — an envelope serialized by an old enough
+- missing self-description: an envelope serialized by an old enough
   release lacks `thresholds` / `deterministic` / `coveredDays`, and the
   runtime check is the only door for parsed JSON the compile-time type
   cannot vouch for;
-- `timeZone` mismatch — day keys pair only in one zone;
+- `timeZone` mismatch: day keys pair only in one zone;
 - launch mismatch (`site.launchAltitudeM`, null vs number included);
 - thresholds deep-inequality, naming the first differing path
   (`thermalWindow.wstarMinMps: 0.9 vs 0.8`).
 
-Deliberately **not** validated: anything votes don't read —
+Deliberately **not** validated: anything votes don't read;
 `windCeilings` and `smoke` are analysis inputs that shape kinds compare
 never consumes.
 
@@ -122,7 +122,7 @@ two runs of one model are two members, each with its own ledger row, votes,
 and `analyses` entry. Passing the same run twice is a programming error and
 throws.
 
-The identity change re-keys the envelope — **a documented breaking change**
+The identity change re-keys the envelope, **a documented breaking change**
 for vocabulary-1 consumers: the `analyses` record is keyed by the composite
 member key `"{model}@{referenceTime}"` (the exported `comparisonMemberKey`
 builds it) for **every** member, not by the model slug, because a model-slug
@@ -132,7 +132,7 @@ roster entry carries both `member` (the `analyses` / ledger key) and `model`
 
 Turning the member axis fully onto one model's runs through time is
 [`compareRuns`](/docs/briefing/history/#compare-a-models-runs-through-time)
-in `@azohra/meteo.briefing/history` — the same discipline, the inverse axis, with its own
+in `@azohra/meteo.briefing/history`: the same discipline, the inverse axis, with its own
 independently versioned vocabulary.
 
 ```ts title="join-provenance.ts"
@@ -161,8 +161,8 @@ Each `ComparisonMemberLedger` states the facts that affect comparability:
 | `modelElevationM` / `elevationDeltaM` | Grid terrain and its difference from the comparison's launch (null without a launch) |
 | `benched` | A terrain mismatch whose published lift never reaches the comparison's launch |
 
-These are stated facts for the consumer's judgment, never applied as scores
-— weighting is downstream. Transport misses belong in `options.unavailable`,
+These are stated facts for the consumer's judgment, never applied as scores;
+weighting is downstream. Transport misses belong in `options.unavailable`,
 preserving the expected model roster even when a document is absent or
 invalid.
 
@@ -220,12 +220,12 @@ export function comparisonRows(comparison: ForecastComparison) {
 `windowAgreement` counts qualifying windows and complete quiet days as
 votes, per local day. Every non-vote has a stated reason:
 
-- a **truncated quiet day abstains** (`truncatedDay`) — a model lacking a
+- a **truncated quiet day abstains** (`truncatedDay`): a model lacking a
   day's data does not get to call the day;
 - a member whose horizon covers **zero hours** of a day abstains as
   `outOfHorizon`, so "voters 3, unanimous true" cannot read as consensus
   when seven members never reached the day;
-- a **benched** member appears in no roster — the ledger's `benched` entry
+- a **benched** member appears in no roster; the ledger's `benched` entry
   is its stated reason for every day;
 - a window spanning local midnight **votes on every day its cited hours
   touch**. On days other than the window's own start day the vote carries
@@ -235,28 +235,28 @@ votes, per local day. Every non-vote has a stated reason:
 A day's finding is suppressed only when it has zero voters **and** zero
 abstentions: a horizon-edge day whose roster is pure abstentions keeps its
 record, because "nobody could call the day" is a statement with reasons.
-`unanimous` is null below two voters — unanimity of one is not a statement.
+`unanimous` is null below two voters: unanimity of one is not a statement.
 
 Window votes carry `minimalPassingPercentile`: the member's same-day
 `percentileCrossing` token (the lowest published percentile whose day
 verdict passes the window floors). Null means the member emitted no
-crossing — always for deterministic members, and for ensemble members
+crossing: always for deterministic members, and for ensemble members
 because every percentile agreed with p50. It is the absence of a crossing,
 not a confidence claim.
 
 `sensitivity` states the smallest threshold move that would flip a voter,
-as the flip value itself — the voter's own peak nearest each floor. For
+as the flip value itself: the voter's own peak nearest each floor. For
 window votes the flip is exact; for quiet votes it is necessary but not
 sufficient, because the day peaks are per-quantity maxima at possibly
 different hours and a window needs both floors met in the same hour.
 
-The timing envelope uses **unclipped edges only** — an edge set by a
+The timing envelope uses **unclipped edges only**: an edge set by a
 document's horizon reads as "open since at least" / "still open at", not as
 timing. Every contributing edge carries its window's `stepHours`, and
 `startStepHoursMax` / `endStepHoursMax` state the widest step among the
 contributors: a 3-hourly member's 11:00 edge means "somewhere in
 08:00–11:00", so up to that many minus one hours of spread is quantization,
-not disagreement. Multi-hour members stay in the spread — confession over
+not disagreement. Multi-hour members stay in the spread: confession over
 exclusion.
 
 ### heightSpread
@@ -267,7 +267,7 @@ consensus height: measured spreads among comparable members run to
 thousands of metres, and an average of that is a forecast no model made.
 
 Ensemble peaks carry `bandP10P90AboveLaunchM`, the member's own p10–p90
-lift-top band at its peak hour — **context only, never an outlier
+lift-top band at its peak hour, **context only, never an outlier
 detector**: measured live, 57 of 61 deterministic peaks falling outside an
 ensemble band sat *above* it. Exceedance is the norm (physics and
 vertical-resolution regimes differ), so "outside the band" carries no
@@ -276,16 +276,16 @@ verdict weight.
 ### windDivergence
 
 `windDivergence` rosters each window voter's in-window climb-band wind
-maximum and gust maximum (its `windSummary` restated), with the spread —
-wind is a common flyability veto, and vocabulary 1 could not express
+maximum and gust maximum (its `windSummary` restated), with the spread.
+Wind is a common flyability veto, and vocabulary 1 could not express
 a wind split at all. The shape encodes the measured constraints:
 
 - every entry carries `modelElevationM`, mandatorily: cross-model mean-wind
   ratios spanned 0.18–1.22 at matched mountain sites, because models
   grounding a site hundreds of metres apart forecast different flow
-  *regimes* — a spread read without the grounds beside it manufactures
+  *regimes*: a spread read without the grounds beside it manufactures
   disagreement;
-- gust rosters group strictly within one declared semantics class —
+- gust rosters group strictly within one declared semantics class:
   `hourMax` and `instant` are never pooled; the
   [measured gap between the classes](/docs/briefing/analyze/) is why one
   spread cannot serve both. Members without a declared gust semantics
@@ -294,35 +294,35 @@ a wind split at all. The shape encodes the measured constraints:
   undeclared gust;
 - **no shear rates appear anywhere in compare**: subsampling a dense model
   to a five-level ensemble grid read a median 0.41× of the dense rate on
-  identical hours — the sparse column reports a different, smeared layer,
+  identical hours: the sparse column reports a different, smeared layer,
   so the rates are not comparable across level densities. `bandShear` stays
   an analyze-only statement;
-- no directions here — that is `windDirectionSpread`'s job.
+- no directions here: that is `windDirectionSpread`'s job.
 
 ### windDirectionSpread
 
 `windDirectionSpread` states the surface-flow direction split among a day's
 **deterministic** window voters: each member's window vector-mean direction,
 the maximum pairwise angular separation, and the max-separation pair with
-both members' model elevations. Ensembles never enter — published direction
+both members' model elevations. Ensembles never enter: published direction
 percentiles are not circular statistics, and the analyze kind's own gate
 keeps them out. All aggregation is vector math; raw degrees are never
 averaged, and a member whose vector-mean speed sits under the embedded
 floor has no direction to roster.
 
 The elevation-regime caveat rides the statement, never a footnote: measured
-live, most daytime max-separations straddled a >300 m model-ground delta —
+live, most daytime max-separations straddled a >300 m model-ground delta:
 a low-terrain member forecasting a different flow regime, not a
 disagreement about the same flow. Read `maxSeparation.elevationDeltaM`
 before reading the angle.
 
 ## Versioning
 
-`COMPARE_VOCABULARY_VERSION` — currently `3` — versions these finding
+`COMPARE_VOCABULARY_VERSION` (currently `3`) versions these finding
 kinds independently of the published profile `schemaVersion`; the
 [package changelog](https://github.com/azohra/meteo/blob/main/briefing/CHANGELOG.md)
 records each boundary. Readers of serialized comparison envelopes check
-the version at runtime and ignore kinds and fields they do not know —
+the version at runtime and ignore kinds and fields they do not know;
 the [tolerant-reader convention](/docs/briefing/analyze/#versioning-reads-tolerantly)
 governs readers of the closed set, never the set, which stays
 spike-gated and first-party. Downstream publishers choose weighting,

@@ -1,10 +1,10 @@
 ---
 title: "GRIB2 in pure TypeScript"
-description: "The @azohra/meteo.grib package — GRIB2 section parsing, rotated and Lambert grids with O(1) nearest-gridpoint lookup, complex packing, JPEG 2000 through an injected decoder seam, and NOMADS .idx helpers, gated bit-for-bit against ecCodes."
+description: "The @azohra/meteo.grib package: GRIB2 section parsing, rotated and Lambert grids with O(1) nearest-gridpoint lookup, complex packing, JPEG 2000 through an injected decoder seam, and NOMADS .idx helpers, gated bit-for-bit against ecCodes."
 ---
 
 **`@azohra/meteo.grib`** is a GRIB2 decoder in pure TypeScript, written because
-the forecast engine needs grid template 3.1 (rotated latitude-longitude —
+the forecast engine needs grid template 3.1 (rotated latitude-longitude:
 every ECCC HRDPS, RDPS, REPS, and RAQDPS field) and multi-field messages
 (NCEP's paired U/V submessages), and no maintained JavaScript decoder
 provides either.
@@ -12,14 +12,14 @@ provides either.
 The core is browser-safe by construction
 ([what the core never does](/docs/grib/coverage/#what-the-core-never-does));
 Node callers get JPEG 2000 from the separate `@azohra/meteo.grib/j2k-node`
-subpath — see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
+subpath; see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
 ## Decode a real field
 
 [`test/fixtures/`](https://github.com/azohra/meteo/tree/main/grib/test/fixtures)
 holds real provider messages. This decodes a committed HRDPS 2 m
-temperature field — a rotated-grid, JPEG 2000-packed message, the
-combination that motivated the package — and samples one launch:
+temperature field (a rotated-grid, JPEG 2000-packed message, the
+combination that motivated the package) and samples one launch:
 
 ```js
 // decode-fixture.mjs — run inside grib/ after `pnpm build`
@@ -88,12 +88,12 @@ tools/             decode, pool, and codec benches
 
 ## Built on
 
-ecCodes (Apache-2.0, ECMWF) is the oracle — the golden corpus is its
+ecCodes (Apache-2.0, ECMWF) is the oracle: the golden corpus is its
 answers, and the decode arithmetic follows its exact semantics. wgrib2's
 `unpk_complex.c` (public domain, Wesley Ebisuzaki) guided complex
 packing; grib2class (MIT, archmoj) served as a pure-JS cross-check.
 JPEG 2000 comes from the workspace's own [`@azohra/meteo.j2k`](/docs/j2k/) by
 default, with `@cornerstonejs/codec-openjpeg` (MIT, the cornerstone.js
-team — carrying OpenJPEG itself) as the selectable fallback. numpy's
+team, carrying OpenJPEG itself) as the selectable fallback. numpy's
 pairwise summation (BSD-3-Clause) is ported in the golden suite.
 Thanks, all.

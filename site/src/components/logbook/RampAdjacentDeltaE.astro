@@ -111,12 +111,12 @@ const description = series
             <g>
               <path d={barPath(barX(pairIndex, seriesIndex), y(pair.normal))} class={`de-bar ${ramp.css}`}>
                 <title>
-                  {`${ramp.name} — ${pairName(pair)}: ΔE ${pair.normal.toFixed(1)} normal, ${pair.deutan.toFixed(1)} deuteranopia, ${pair.protan.toFixed(1)} protanopia`}
+                  {`${ramp.name} · ${pairName(pair)}: ΔE ${pair.normal.toFixed(1)} normal, ${pair.deutan.toFixed(1)} deuteranopia, ${pair.protan.toFixed(1)} protanopia`}
                 </title>
               </path>
               <circle cx={barX(pairIndex, seriesIndex) + BAR / 2} cy={y(pair.deutan)} r="4.5" class="de-dot">
                 <title>
-                  {`${ramp.name} — ${pairName(pair)} under deuteranopia: ΔE ${pair.deutan.toFixed(1)}`}
+                  {`${ramp.name} · ${pairName(pair)} under deuteranopia: ΔE ${pair.deutan.toFixed(1)}`}
                 </title>
               </circle>
               {pair.normal === ramp.minNormal && (

@@ -15,8 +15,8 @@ import WindBarbGuide from "../../site/src/components/docs/WindBarbGuide.astro";
 A Meteogram aligns surface forcing with the atmosphere above one model grid cell. Each vertical slice
 is a forecast sounding; the horizontal axis connects those soundings through the day. Read the chart
 from the flight band outward: usable height, stability and moisture, wind through that height, then
-the surface fields driving the change. What a chart carries varies by model — the catalogue declares
-each model's fields, and [What each model can — and cannot — tell you](/docs/forecast/model-capabilities/) is the
+the surface fields driving the change. What a chart carries varies by model: the catalogue declares
+each model's fields, and [What each model can, and cannot, tell you](/docs/forecast/model-capabilities/) is the
 companion for those differences.
 
 <ExampleMeteogram />
@@ -50,11 +50,11 @@ layer strip:
 | **CAPE · J/kg** | Surface-based CAPE at the grid cell. | Fuel for overdevelopment, not a storm forecast; a dimmed cell means a CIN cap is holding it down. |
 | **Layers · %** | Low, middle, and high cloud fraction, on models that publish them. | The rows are terrain-following model layers, not fixed altitudes. |
 | **Smoke · µg/m³** | Near-surface wildfire smoke, with a haze tint that deepens with the model's own published optical depth. Smoke joined from another model is labelled with that model and its run, and draws no tint (its column is quarantined). | Surface air can be clean under an elevated plume (line low, tint deep) and vice versa; see [Smoke and thermals](/logbook/smoke-and-thermals/). |
-| **Sun · W/m²** | Satellite-measured surface sunlight (GOES-18), with a shadow that deepens as the sky under-delivers against a clear-sky expectation. | A measurement, never a forecast — it always renders below the provenance divider. |
-| **AOT · 550 nm** | Satellite-measured aerosol optical thickness (GOES-18) — the same sun-dimming number the smoke strip forecasts, tinted with the same haze encoding so the two compare directly. | A measurement, never a forecast — below the divider, daytime only; a missing hour means no accepted retrieval, not clear air. |
+| **Sun · W/m²** | Satellite-measured surface sunlight (GOES-18), with a shadow that deepens as the sky under-delivers against a clear-sky expectation. | A measurement, never a forecast; it always renders below the provenance divider. |
+| **AOT · 550 nm** | Satellite-measured aerosol optical thickness (GOES-18): the same sun-dimming number the smoke strip forecasts, tinted with the same haze encoding so the two compare directly. | A measurement, never a forecast; below the divider, daytime only; a missing hour means no accepted retrieval, not clear air. |
 
-Strips below the dashed divider — labelled *beside this model — not in
-its physics* — come from another source entirely: a different model's
+Strips below the dashed divider (labelled *beside this model — not in
+its physics*) come from another source entirely: a different model's
 forecast or a satellite measurement, each named inline with its run or
 instant. Nothing below the divider was part of the forecast above it.
 
@@ -62,10 +62,10 @@ Each vertical slice of the main panel is one atmospheric column at the local tim
 The left axis gives metres above sea level and the right axis gives feet above sea level. The launch
 marker, winds, temperature contours, cloud layers, and derived heights therefore share one vertical
 coordinate. The coloured field interpolates lapse rate between the model’s pressure levels; it is not
-a stack of observed layers. The launch marker is supplied by the renderer, not the document — the
+a stack of observed layers. The launch marker is supplied by the renderer, not the document: the
 consumer passes a launch elevation at render time, normally the measured `elevation` pick from
 [site-context.json](/docs/briefing/site-context-document/); a render given no launch
-draws no marker. Surface values are referenced to the model's own smoothed terrain —
+draws no marker. Surface values are referenced to the model's own smoothed terrain;
 [The mountain the model sees](/docs/models/the-mountain-the-model-sees/) shows how large that gap is
 and how to read across it.
 
@@ -85,7 +85,7 @@ scenario carries that controlled sequence: a calm cell begins under −180 J/kg 
 watch cell remains dimmed while CIN is −59 J/kg, and a 330 J/kg watch cell becomes undimmed after
 CIN weakens to −34 J/kg. What surface-based CAPE measures, and why an empty cell is a statement
 rather than a zero, is in
-[What each model can — and cannot — tell you](/docs/forecast/model-capabilities/).
+[What each model can, and cannot, tell you](/docs/forecast/model-capabilities/).
 
 ## Read pressure as a tendency
 
@@ -134,15 +134,15 @@ still has no modelled thermal engine; lapse rate describes susceptibility, while
 
 Cloud percentage is the model’s total column coverage. It does not say where the cloud sits. The dotted
 cloud-base line is a lifted-condensation-level estimate for a parcel starting at model terrain. It asks
-where that surface parcel would first saturate — and drops to the model's own cloud when the sampled
+where that surface parcel would first saturate, and drops to the model's own cloud when the sampled
 column already saturates below that.
 
 The body shading asks a different question. On most models the renderer grades levels by dew-point
-depression — densest below 0.5 °C, the classic hatch threshold — an inference of cloud from
+depression (densest below 0.5 °C, the classic hatch threshold), an inference of cloud from
 near-saturation. On a model that publishes its own per-level cloud fraction, the shading comes from
 that cloud directly, and the model’s assertion wins over the inference. Either way, those layers sit
 in the model sounding itself; which models assert cloud and which leave it to inference is in
-[What each model can — and cannot — tell you](/docs/forecast/model-capabilities/). A shaded layer above a high
+[What each model can, and cannot, tell you](/docs/forecast/model-capabilities/). A shaded layer above a high
 surface cloud base can therefore represent mid-level or upper cloud that the surface parcel did not
 create. Shading through the flight band means the model places cloud in the air pilots would occupy.
 
@@ -177,20 +177,20 @@ phase call itself.
 
 ## Boundary-layer top, usable-lift top, and cloud base answer different questions
 
-- **Boundary-layer top — dashed amber.** A dry parcel lifted from the model surface becomes no warmer
+- **Boundary-layer top · dashed amber.** A dry parcel lifted from the model surface becomes no warmer
   than the environment at this elevation. It describes thermodynamic depth.
-- **Usable-lift top — solid blue.** canadarasp’s strongest-core profile falls to a 1 m/s sink threshold
+- **Usable-lift top · solid blue.** canadarasp’s strongest-core profile falls to a 1 m/s sink threshold
   here, unless cloud base stops it first. It describes a modelled climb limit.
-- **Cloud base — dotted slate.** A surface parcel reaches saturation here, or the sampled column
-  already has — the line takes the lower height. When this line pins the solid line, moisture limits
+- **Cloud base · dotted slate.** A surface parcel reaches saturation here, or the sampled column
+  already has; the line takes the lower height. When this line pins the solid line, moisture limits
   usable height.
-- **Model boundary-layer top — tighter dash.** The model’s own boundary-layer depth, placed on the
+- **Model boundary-layer top · tighter dash.** The model’s own boundary-layer depth, placed on the
   altitude axis and drawn beside the parcel-derived dashed line, on models that publish it. The two
   answer the same question with different physics; separation between them is information, not error.
 
 The complete example shows the energy-limited case. At 15:00 UTC the document puts usable lift at
 3,082 m, above the parcel boundary layer at 2,829 m, while cloud base stays higher still at
-3,490 m — moisture never enters that climb's limit. Read those numbers from the figure's readout
+3,490 m: moisture never enters that climb's limit. Read those numbers from the figure's readout
 panel rather than the line vertices: the renderer smooths the cloud-base and usable-lift lines by
 default, so a sharp one-hour spike like this one draws flattened while the published value stays
 exact. The cloud-limited example shows the opposite
@@ -199,13 +199,13 @@ parcel-derived boundary layer reaches 4,215 m. Different physics remain separate
 
 Thin isotherms show the elevation of fixed temperatures. The emphasized 0 °C contour is the freezing
 level. Body shading and cloud base remain separate: the shading shows every near-saturated layer
-through the column, while the cloud-base line commits to a single height — the lowest a climb would
+through the column, while the cloud-base line commits to a single height: the lowest a climb would
 meet cloud, lifted parcel or model layer.
 
 The boundary-layer and usable-lift lines can cross because they do not estimate the same quantity.
 [Why usable lift can sit above the boundary layer](/logbook/usable-lift-and-boundary-layer/) explains the
 updraft coefficient and sink threshold behind the solid line. On an ensemble model, each of these
-series carries a p25–p75 band — member spread, not a confidence interval;
+series carries a p25–p75 band: member spread, not a confidence interval;
 [Ensemble values](/docs/briefing/ensemble-values/) defines how to read it.
 
 <HeightLinesFigure />
@@ -219,7 +219,7 @@ before decoding the feathers.
 
 On models that publish a gust, a “G” readout above the surface barb carries the gust in the same
 printed unit. Whether that number means “gusting to” over the past hour or an instantaneous sample is
-declared per model — see [What each model can — and cannot — tell you](/docs/forecast/model-capabilities/).
+declared per model; see [What each model can, and cannot, tell you](/docs/forecast/model-capabilities/).
 The wind-profile example publishes no gust, so the barbs carry the whole story: around the selected hour,
 wind strengthens from 23.4 km/h near launch to 99 km/h at
 3,025 m while turning from 5° to 124°.

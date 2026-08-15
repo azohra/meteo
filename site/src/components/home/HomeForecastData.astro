@@ -12,7 +12,7 @@ const references = [
   },
   {
     title: "Model catalogue",
-    detail: "models.json declares each model's grid, cadence, capabilities, and lifecycle — absences included.",
+    detail: "models.json declares each model's grid, cadence, capabilities, and lifecycle, absences included.",
     href: "/docs/briefing/catalogue/",
   },
   {
@@ -22,7 +22,7 @@ const references = [
   },
   {
     title: "Forecast history",
-    detail: "Append-only monthly archives beside every current run — compare a forecast with what was published before.",
+    detail: "Append-only monthly archives beside every current run: compare a forecast with what was published before.",
     href: "/docs/briefing/history-archives/",
   },
 ];
@@ -35,7 +35,7 @@ const references = [
       eyebrow="@azohra/meteo.forecast"
       title="Publish forecasts anyone can read"
       titleId="home-data-title"
-      intro="meteo forecast build fetches each model's newest run, derives the soaring numbers, and writes static JSON at stable paths — a schemaVersion on every document. curl is a complete client."
+      intro="meteo forecast build fetches each model's newest run, derives the soaring numbers, and writes static JSON at stable paths, a schemaVersion on every document. curl is a complete client."
     />
 
     <div class="home-data__layout">
@@ -44,7 +44,7 @@ const references = [
         aria-label="A complete session: publish forecasts, then read the published JSON"
       >
         <p class="home-data__terminal-title">publish, then read it back · meteo.azohra.com/data-sample</p>
-        <pre><code><span class="t-comment"># your sites.json in — derived forecasts out, on your schedule</span>
+        <pre><code><span class="t-comment"># your sites.json in, derived forecasts out, on your schedule</span>
 <span class="t-prompt">$</span> meteo forecast build</code></pre>
         <pre><code><span class="t-comment"># one site, one model, every forecast hour + derived quantities</span>
 <span class="t-prompt">$</span> curl -sS \

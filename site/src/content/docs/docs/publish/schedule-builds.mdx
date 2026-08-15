@@ -29,7 +29,7 @@ scheduler tick
 
 - Give each model its own step and its own failure label; group steps into
   jobs by provider rate-limit domain rather than by model, so a provider host
-  never sees more than one builder's connections at once — the reference
+  never sees more than one builder's connections at once; the reference
   operator instance does exactly this.
 - Prevent overlapping jobs against the same output directory.
 - Treat a zero exit as command completion, then inspect whether a new manifest
@@ -41,8 +41,8 @@ scheduler tick
 - Preserve logs containing model slug, start/end time, exit status, and the
   published `(referenceTime, generatedAt)` pair.
 
-An operator's pipeline — the scheduler, the site catalogue, the storage
-credentials — is its own repository composing this CLI; the reference
+An operator's pipeline (the scheduler, the site catalogue, the storage
+credentials) is its own repository composing this CLI; the reference
 operator is public at
 [`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts),
 scheduling every rule on this page. An operator may choose any

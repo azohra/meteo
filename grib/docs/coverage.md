@@ -1,13 +1,13 @@
 ---
 title: "What it decodes"
-description: "The GRIB2 surface @azohra/meteo.grib covers — grid templates 3.0, 3.1, and 3.30, data representation templates 5.0, 5.2, 5.3, and 5.40, multi-field messages, bitmaps, wind rotation, and the NOMADS .idx byte-range helpers."
+description: "The GRIB2 surface @azohra/meteo.grib covers: grid templates 3.0, 3.1, and 3.30, data representation templates 5.0, 5.2, 5.3, and 5.40, multi-field messages, bitmaps, wind rotation, and the NOMADS .idx byte-range helpers."
 ---
 
 Coverage is driven by the feeds the forecast engine actually reads, not by
 the GRIB2 specification's full surface. The package parses sections over
 raw GRIB2 bytes, including repeated sections 2–7 (multi-field messages)
 and section 6 bitmaps, and decodes the grid and packing templates below.
-Anything else is rejected with a named error, not approximated — for
+Anything else is rejected with a named error, not approximated; for
 example, an unsupported packing template fails with the exact template
 number and the supported list.
 
@@ -23,14 +23,14 @@ lookup is O(1) per point.
 | 3.30 | Lambert conformal | HRRR CONUS 3 km, NAM 12 km and CONUS nest |
 
 `nearestGridpoint` reports the great-circle distance alongside the
-index, because callers use distance as the out-of-domain guard — it
+index, because callers use distance as the out-of-domain guard: it
 deliberately clamps and reports rather than throwing.
 [`src/grid.ts`](https://github.com/azohra/meteo/blob/main/grib/src/grid.ts)
 holds the inverses;
 [`src/nearest.ts`](https://github.com/azohra/meteo/blob/main/grib/src/nearest.ts)
 the lookup.
 
-![The rotated graticule drawn over the true one: a schematic globe with the rotated south pole marked and the HRDPS domain lying along the rotated equator, and beside it the launch neighbourhood where tilted rotated gridlines cross the true graticule — toRotated maps the launch to fractional grid coordinates and a storage index, with the great-circle residual nearestGridpoint reports drawn in a magnified inset.](figures/rotated-grid.svg)
+![The rotated graticule drawn over the true one: a schematic globe with the rotated south pole marked and the HRDPS domain lying along the rotated equator, and beside it the launch neighbourhood where tilted rotated gridlines cross the true graticule; toRotated maps the launch to fractional grid coordinates and a storage index, with the great-circle residual nearestGridpoint reports drawn in a magnified inset.](figures/rotated-grid.svg)
 
 ## Data representation templates (section 5)
 
@@ -62,13 +62,13 @@ with byte offsets. [`src/idx.ts`](https://github.com/azohra/meteo/blob/main/grib
 parses the sidecar and fetches single records by HTTP Range request,
 with fetch injected rather than ambient:
 
-- `parseIdx` / `findRecord` — parse the sidecar text and locate a record
+- `parseIdx` / `findRecord`: parse the sidecar text and locate a record
   by its fields.
-- `byteRange` — the inclusive HTTP Range header value for a record,
+- `byteRange`: the inclusive HTTP Range header value for a record,
   open-ended for the last record.
-- `pairSpan` — the combined span of a paired U/V record set.
-- `fetchIndex` — fetch and parse a sidecar (a plain, unranged GET).
-- `fetchRecord` — fetch one record's bytes with a Range request.
+- `pairSpan`: the combined span of a paired U/V record set.
+- `fetchIndex`: fetch and parse a sidecar (a plain, unranged GET).
+- `fetchRecord`: fetch one record's bytes with a Range request.
 
 One rule is load-bearing: **a 200 response to a Range request is a
 failure, never a body to use.** A 200 means the server ignored `Range`
@@ -79,6 +79,6 @@ offending status.
 ## What the core never does
 
 The browser-safe barrel (`@azohra/meteo.grib`) contains no `node:` imports, no
-ambient I/O, and no WASM. Everything that needs a runtime — the JPEG
-2000 codecs, the worker pool — lives behind the Node-only
+ambient I/O, and no WASM. Everything that needs a runtime (the JPEG
+2000 codecs, the worker pool) lives behind the Node-only
 `@azohra/meteo.grib/j2k-node` subpath.

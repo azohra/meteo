@@ -1,12 +1,12 @@
 ---
 title: "A T.800 decoder in TypeScript"
-description: "The @azohra/meteo.j2k package — a pure-TypeScript JPEG 2000 (ITU-T T.800) decoder scoped to exactly the codestream subset ECCC's GRIB2 feeds ship, with every marker, MQ context, and lifting step readable against its clause of the spec."
+description: "The @azohra/meteo.j2k package: a pure-TypeScript JPEG 2000 (ITU-T T.800) decoder scoped to exactly the codestream subset ECCC's GRIB2 feeds ship, with every marker, MQ context, and lifting step readable against its clause of the spec."
 ---
 
 **`@azohra/meteo.j2k`** is a JPEG 2000 (ITU-T T.800) decoder in pure
 TypeScript, scoped to exactly the codestream subset ECCC's GRIB2 feeds
 ship. It was written because the forecast engine's hottest loop used to run
-through a non-SIMD WASM build of OpenJPEG — and, for 20-bit fields,
+through a non-SIMD WASM build of OpenJPEG and, for 20-bit fields,
 through OpenJPEG.js, an asm.js-era artifact. Neither was explainable or
 patchable in this repository.
 
@@ -19,9 +19,9 @@ field's hundreds of codeblocks can decode in parallel across workers
 is that seam). And the same independence runs the other way:
 `decodeJ2kRegion`
 ([`src/region.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/region.ts))
-decodes *only* the codeblocks a handful of requested gridpoints touch —
-bit-identical to the full decode at those points, ~16× faster per core on
-the largest ECCC field — which is exactly the shape a site-sampling
+decodes *only* the codeblocks a handful of requested gridpoints touch
+(bit-identical to the full decode at those points, ~16× faster per core on
+the largest ECCC field), which is exactly the shape a site-sampling
 forecast engine asks for.
 
 This decoder is the production path: it is
@@ -58,12 +58,12 @@ first samples: 1166, 1166, 1166, 1166
 
 ## Decode four points, not three million
 
-When only a few gridpoints matter — a forecast engine sampling sites —
+When only a few gridpoints matter (a forecast engine sampling sites),
 `decodeJ2kRegion` takes full-grid raster indexes and entropy-decodes only
 the codeblocks those points touch, then runs window-bounded inverse
 lifts. The values are **bit-identical** to `decodeJ2k`'s at those indexes
-— region decode is a cheaper route to the same integers, never an
-approximation — and the envelope is the package's usual subset, guarded
+(region decode is a cheaper route to the same integers, never an
+approximation), and the envelope is the package's usual subset, guarded
 by the same loud errors:
 
 ```js
@@ -83,13 +83,13 @@ codeblocks; the measured table is in
 
 `decodeJ2k` returns raw integer samples shaped exactly like
 `@azohra/meteo.grib`'s `J2kSamples`, so it drops straight into
-`decodeFieldValues`' `DecodeJ2k` injection seam — no adapter:
+`decodeFieldValues`' `DecodeJ2k` injection seam, no adapter:
 
 ```js
 const { values } = decodeFieldValues(field, { decodeJ2k });
 ```
 
-In `@azohra/meteo.grib`'s Node path this wiring already exists —
+In `@azohra/meteo.grib`'s Node path this wiring already exists:
 `createNodeJ2kDecoder()` and the worker pool default to this decoder;
 see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
@@ -106,15 +106,15 @@ see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 Written against named references, per house convention, vendoring
 nothing:
 
-- **ITU-T T.800** — the spec; Annex B (packets, cited in `packets.ts`),
+- **ITU-T T.800**: the spec; Annex B (packets, cited in `packets.ts`),
   Annex C (MQ coder, `mq.ts`), Annex D (coefficient bit modelling,
   `t1.ts`), Annex F (the reversible 5/3 inverse, `dwt.ts`).
-- **OpenJPEG** (BSD-2, © Université catholique de Louvain) — the
+- **OpenJPEG** (BSD-2, © Université catholique de Louvain), the
   behavioural reference: pass gating and midpoint arithmetic (t1.c),
   lifting order and edge cases (dwt.c), tag trees (tgt.c), header
   reading order (t2.c). Also the oracle, through the two codec packages
   `@azohra/meteo.grib/j2k-node` wraps.
-- **pdf.js's jpx.js and ArithmeticDecoder** (Apache-2.0, Mozilla) — the
+- **pdf.js's jpx.js and ArithmeticDecoder** (Apache-2.0, Mozilla), the
   pure-JavaScript cross-reference for MQ register conventions and Tier-1
   neighbourhood bookkeeping, proven on MSC data via grib2class's lineage.
 
@@ -137,5 +137,5 @@ test/              header parse + guards, parallel-plan equality, the JasPer sha
 tools/bench.ts     single-thread decodeJ2k timing over the corpus
 ```
 
-Zero runtime dependencies, and no Node APIs in `src/` — the package is
+Zero runtime dependencies, and no Node APIs in `src/`: the package is
 browser-safe by construction.

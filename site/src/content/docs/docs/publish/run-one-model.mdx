@@ -5,7 +5,7 @@ description: "Build your first forecast: one model, your launches, one CLI comma
 
 import { Aside, Steps } from '@astrojs/starlight/components';
 
-The supported publisher interface is `meteo forecast build` — the CLI
+The supported publisher interface is `meteo forecast build`, the CLI
 `@azohra/meteo.forecast` installs (`pnpm exec meteo forecast build`).
 Model-specific builder modules
 remain implementation details; downstream automation should use
@@ -23,7 +23,7 @@ the CLI so external site and output paths are scoped consistently.
    pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
    ```
 
-   Success is one line — `Would build hrrr-conus for N site(s) from … into …` —
+   Success is one line, `Would build hrrr-conus for N site(s) from … into …`,
    with both paths resolved absolute and nothing written.
 
 3. **Use a short smoke cap when appropriate.** `--max-steps 2` selects the
@@ -56,21 +56,21 @@ meteo forecast freshness --model SLUG --manifest PATH
 meteo forecast catalogue [--output PATH]
 ```
 
-A site catalogue is required — `--sites` or `METEO_SITES`; which sites an
+A site catalogue is required (`--sites` or `METEO_SITES`); which sites an
 operator publishes is their decision, so there is no default. The output
 root defaults to `./data`. `--model` and `--all` are mutually exclusive.
 Unknown model slugs, missing or unreadable site files, invalid site
 catalogues, and unusable output paths fail with an actionable error.
 
-History publication is the operator's flag: `--history` is the default —
+History publication is the operator's flag: `--history` is the default:
 the **static history profile**, where every successful build also appends
 the [append-only month archives](/docs/briefing/history-archives/) and their sidecar
-indexes — and `--no-history` publishes current documents only.
+indexes. `--no-history` publishes current documents only.
 
 `terrain` regenerates the
 [site context catalogue](/docs/publish/configure-launches/); `migrate` is the
 one-time [wire v2](/docs/briefing/versioning/) cutover of a model's published
-documents — its runbook is [below](#runbook-the-wire-v2-archive-cutover);
+documents, with its runbook [below](#runbook-the-wire-v2-archive-cutover);
 `runs-index` regenerates `runs.json` wholesale from the published
 manifests; `freshness` prints exactly `fresh` or `stale` so an upload flow
 can refuse to publish backwards; `catalogue` emits the packaged
@@ -93,7 +93,7 @@ published" is read from the published dataset itself: point `METEO_DATA_BASE`
 at your own published root for a public-HTTPS read, or leave it unset with
 the R2 upload credentials present and the engine reads the bucket directly
 through the S3 API (`METEO_R2_BUCKET`) so no CDN mediates its own reads.
-There is no default root — where your instance publishes is your decision,
+There is no default root: where your instance publishes is your decision,
 and the engine refuses to guess. The same source seeds
 the month archives that history appends continue. A successful
 new run writes current profiles, appends history, and writes the model
@@ -103,16 +103,16 @@ catalogued publication cadence to recurring jobs.
 ## Runbook: the wire v2 archive cutover
 
 `meteo forecast migrate` rewrites one profile model's published
-[wire v1 documents as wire v2](/docs/briefing/versioning/) in place — the
+[wire v1 documents as wire v2](/docs/briefing/versioning/) in place: the
 current `sites/<site>.json` documents and every line of every month history
 archive. Manifests and `runs.json` are untouched: their shapes did not
-change. Run it by hand, once per model, with the upload credentials — never
+change. Run it by hand, once per model, with the upload credentials, never
 from the scheduled build, and never concurrently with the same model's
 scheduled build.
 
 <Steps>
 
-1. **Dry-run first — it is the default posture.**
+1. **Dry-run first; it is the default posture.**
 
    ```sh title="Terminal"
    pnpm exec meteo forecast migrate --model hrrr-conus
@@ -120,19 +120,19 @@ scheduled build.
 
    fetches every published document for the catalogued sites (`--site`
    narrows the set), migrates and verifies everything in memory, reports
-   per archive and in total — N archives, M lines, K already v2 — and
+   per archive and in total (N archives, M lines, K already v2) and
    writes nothing.
 2. **Trust the verification, and stop on its failures.** Before anything
    may upload, every output archive must keep its exact line count, and
    every output document must say `schemaVersion: 2` and validate against
-   `briefing/schema/profile.schema.json` — which is why the command covers profile
+   `briefing/schema/profile.schema.json`, which is why the command covers profile
    models only; a smoke or observation dataset fails that verification
    loudly instead of migrating wrong. A stored pre-declaration ensemble
    document (percentile blocks without `run.members`) refuses to migrate
    rather than be misread as deterministic: declare the run's member count
    with `--members N` (REPS and GEPS carry the control member plus 20
-   perturbations — 21). The count is checked against the documents
-   themselves — a percentile block reporting more contributing members
+   perturbations: 21). The count is checked against the documents
+   themselves; a percentile block reporting more contributing members
    than declared stops the migration.
 3. **Apply with the upload credentials.** Add `--apply` with `R2_ENDPOINT`,
    `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` in the environment and
@@ -152,7 +152,7 @@ scheduled build.
 
 ## Render a published profile into your own page
 
-Everything below runs against the committed sample dataset — one real
+Everything below runs against the committed sample dataset: one real
 HRDPS run captured by the engine and served by this site, byte-for-byte
 the document shapes any operator's instance publishes. Mirror the
 model's manifest and one launch profile into your project's static tree:
@@ -172,7 +172,7 @@ Then `render.mjs` is the whole publisher: validate the documents against the
 contract, confirm manifest and profile describe the same model run, build the
 scene in the launch's own declared timezone with the measured launch
 elevation from the site context, and write a self-contained page. The
-profile carries no launch elevation — documents are launch-agnostic — so the
+profile carries no launch elevation (documents are launch-agnostic), so the
 renderer supplies it from `site-context.json`'s `elevation` pick.
 
 ```ts
@@ -254,7 +254,7 @@ const page = `<!doctype html>
 await writeFile("public/index.html", page);
 ```
 
-`node render.mjs` leaves `public/` as a complete static tree — page, chart,
+`node render.mjs` leaves `public/` as a complete static tree: page, chart,
 scene-derived key, and the inspectable contract documents it was rendered
 from:
 

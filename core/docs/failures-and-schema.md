@@ -6,7 +6,7 @@ description: The closed upstream-failure vocabulary transports share, the shared
 Three pieces of shared machinery keep the platform's boundaries honest: a
 closed vocabulary for upstream failure, zod schema primitives capability
 configs share, and one renderer for the JSON Schema artifacts each
-capability publishes — defined by
+capability publishes, defined by
 [`failures.ts`](https://github.com/azohra/meteo/blob/main/core/src/failures.ts),
 [`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts),
 and
@@ -15,7 +15,7 @@ and
 ## The failure vocabulary
 
 When an upstream fails, the wire carries a reason code, not prose. The
-vocabulary is closed — `UPSTREAM_FAILURE_REASONS` declares exactly four
+vocabulary is closed. `UPSTREAM_FAILURE_REASONS` declares exactly four
 codes:
 
 | Reason | Meaning |
@@ -26,14 +26,14 @@ codes:
 | `contract_break` | The upstream answered, but not in the shape the contract promises. |
 
 Two types partition the vocabulary. `UpstreamFailureReason` is all four
-codes — what the wire may carry. `UpstreamErrorReason` excludes
+codes: what the wire may carry. `UpstreamErrorReason` excludes
 `contract_break`: it is the set an `UpstreamError` may be *thrown* with,
 because `contract_break` is only ever the mapper's verdict, never thrown.
 
-- **`UpstreamError`** — the error transports throw when they know why an
+- **`UpstreamError`**: the error transports throw when they know why an
   upstream failed. It carries a `reason` (default `"upstream_error"`)
   alongside the human message.
-- **`unavailableReasonForError(error)`** — maps any thrown value onto the
+- **`unavailableReasonForError(error)`**: maps any thrown value onto the
   wire's reason codes: an `UpstreamError` keeps its own reason; an `Error`
   named `TimeoutError` or `AbortError` becomes `timeout`; a `TypeError`
   becomes `upstream_error`, because `fetch` rejects network refusals as
@@ -54,8 +54,8 @@ consumer's.
 
 Closed binds what a transport may report, not what a capability's wire may
 carry: a wire may extend the vocabulary with failures that are its own.
-Station's `UNAVAILABLE_REASONS` is these four codes plus `not_configured` —
-a config verdict no upstream ever produced — as
+Station's `UNAVAILABLE_REASONS` is these four codes plus `not_configured`
+(a config verdict no upstream ever produced), as
 [its wire contract](/docs/station/wire-contract/) documents.
 
 ## Schema primitives
@@ -64,12 +64,12 @@ Three zod building blocks in
 [`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts)
 recur in capability configs:
 
-- **`ianaTimeZone`** — a string `Intl.DateTimeFormat` accepts as a time
+- **`ianaTimeZone`**: a string `Intl.DateTimeFormat` accepts as a time
   zone; anything else fails with `not an IANA time zone`.
-- **`httpUrl`** — a parseable URL whose protocol is `http:` or `https:`.
-- **`positionFields`** — the position-claim fields station configs spread
+- **`httpUrl`**: a parseable URL whose protocol is `http:` or `https:`.
+- **`positionFields`**: the position-claim fields station configs spread
   in: `elevationM` (finite), `latitude` (−90 to 90), and `longitude` (−180
-  inclusive to 180 exclusive — exactly 180 is rejected, so every position
+  inclusive to 180 exclusive: exactly 180 is rejected, so every position
   has one canonical longitude; the
   [Tempest adapter](/docs/station/adapters/tempest/) normalizes a payload's
   180 to −180 before validating). All three are nullish: a config that
@@ -78,15 +78,15 @@ recur in capability configs:
 ## Schema artifacts
 
 Each capability that publishes wire documents also publishes JSON Schema
-for them — committed under its own `schema/` directory
+for them, committed under its own `schema/` directory
 ([briefing](https://github.com/azohra/meteo/tree/main/briefing/schema),
-[station](https://github.com/azohra/meteo/tree/main/station/schema)) —
+[station](https://github.com/azohra/meteo/tree/main/station/schema)),
 and this module is the one renderer behind those files.
 
 - **`SchemaArtifact`** declares one artifact: `fileName`, `title`, the zod
   `schema` it is generated from, and an optional `description`.
 - **`ExampleArtifact`** declares an example wire document committed beside
-  the schemas, validated against its schema before writing — a committed
+  the schemas, validated against its schema before writing: a committed
   example can never drift from its contract.
 - **`schemaArtifactJson(artifact)`** produces the artifact's JSON Schema
   document, exactly as shipped: the zod schema converted to JSON Schema
@@ -99,7 +99,7 @@ and this module is the one renderer behind those files.
 
 One deliberate choice: the conversion runs with zod's `io: "input"`, so a
 published schema never carries `additionalProperties: false`. Wire readers
-ignore unknown keys — that is how the contracts evolve — and a schema that
+ignore unknown keys (that is how the contracts evolve), and a schema that
 rejected unknown keys would contradict the wire's own semantics.
 
 Regenerate every committed artifact with `pnpm schemas` from the repository

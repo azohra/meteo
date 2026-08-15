@@ -4,7 +4,7 @@ description: The unit vocabulary, angle helpers, and the single wind sign conven
 ---
 
 The station and briefing packages compute with the same physical vocabulary
-— units, angles, and one wind sign convention — defined by
+(units, angles, and one wind sign convention), defined by
 [`units.ts`](https://github.com/azohra/meteo/blob/main/core/src/units.ts),
 [`angles.ts`](https://github.com/azohra/meteo/blob/main/core/src/angles.ts),
 and [`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts).
@@ -14,7 +14,7 @@ and [`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts).
 Wind values carry two complementary representations, and the sign convention
 between them is fixed platform-wide:
 
-**Direction is meteorological — the compass bearing the wind blows *from*,
+**Direction is meteorological: the compass bearing the wind blows *from*,
 in degrees clockwise from north. Components are the velocity of the air
 itself: `uMps` is the zonal component, positive eastward; `vMps` is the
 meridional component, positive northward; both in m/s.**
@@ -26,7 +26,7 @@ minus sign so no other package ever writes it:
   `uMps = -speed · sin(θ)` and `vMps = -speed · cos(θ)`, where θ is the
   from-direction in radians.
 - `componentsToWind(uMps, vMps)` recovers speed and from-direction. Calm air
-  — both components exactly zero — reports direction `0`.
+  (both components exactly zero) reports direction `0`.
 
 So a 10 m/s wind *from* the west (direction 270°) has `uMps = 10`: the air
 moves eastward.
@@ -49,7 +49,7 @@ wherever it travels between packages.
 ### Mean direction
 
 `meanDirectionDeg(directionsDeg)` is the unit-vector circular mean of
-from-directions — every direction weighted equally, regardless of speed —
+from-directions (every direction weighted equally, regardless of speed)
 and returns `null` on empty input. Averaging compass degrees arithmetically
 is wrong across north (350° and 10° average to 180°); the circular mean
 reports 0°.
@@ -58,17 +58,17 @@ reports 0°.
 
 Speeds compute in m/s; km/h is a display conversion:
 
-- `KMH_PER_MPS` — the constant `3.6`.
-- `kmhToMps(value)` — divides by `KMH_PER_MPS`.
-- `plausibleWindMps(value, subject)` — returns the wind speed unchanged, or
+- `KMH_PER_MPS`: the constant `3.6`.
+- `kmhToMps(value)`: divides by `KMH_PER_MPS`.
+- `plausibleWindMps(value, subject)`: returns the wind speed unchanged, or
   throws when it is outside the plausible 0–140 m/s range. The `subject`
   names the source in the error message, so a decoder or adapter that
   produces an impossible speed fails loudly with its name attached.
 
 ## Angles
 
-- `DEGREES_TO_RADIANS` — the constant `Math.PI / 180`.
-- `degreesToRadians(degrees)` / `radiansToDegrees(radians)` — the two
+- `DEGREES_TO_RADIANS`: the constant `Math.PI / 180`.
+- `degreesToRadians(degrees)` / `radiansToDegrees(radians)`: the two
   conversions.
-- `normalizeDegrees(degrees)` — wraps any degree value, including negative
+- `normalizeDegrees(degrees)`: wraps any degree value, including negative
   values, into `[0, 360)`.

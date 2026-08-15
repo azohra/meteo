@@ -88,10 +88,10 @@ const attributions = ["glo30", "lidarbc", "mrdem30"].map((id) => {
 
 <Figure
   id="elevation-ladder"
-  title="Measured answers within metres — and one far away"
+  title="Measured answers within metres, and one far away"
   lesson="The catalogue's measured elevation pick and the GLO-30 surface model agree within metres; a weather model's terrain does not."
-  description={`Per-site elevation ladder on a fine metre scale. ${description} Each profile's site.modelElevationM — the weather model's smoothed terrain — is live data and typically sits tens to hundreds of metres off these scales.`}
-  caption="Elevations are read from site-context.json: the catalogue lane is the measured elevation pick (lidarbc → mrdem30 → glo30 by priority) — the launch elevation consumers render with. The weather model's own terrain is deliberately absent: it is live data — read site.modelElevationM from any profile and place it against this ladder yourself."
+  description={`Per-site elevation ladder on a fine metre scale. ${description} Each profile's site.modelElevationM (the weather model's smoothed terrain) is live data and typically sits tens to hundreds of metres off these scales.`}
+  caption="Elevations are read from site-context.json: the catalogue lane is the measured elevation pick (lidarbc → mrdem30 → glo30 by priority): the launch elevation consumers render with. The weather model's own terrain is deliberately absent: it is live data; read site.modelElevationM from any profile and place it against this ladder yourself."
   units="elevation m MSL · deltas vs the catalogue pick"
 >
   <div class="meteo-gram-scroll meteo-gram-scroll--plate graphic-scroll" role="region" tabindex="0" aria-label="Scrollable per-site elevation ladder">

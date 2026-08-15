@@ -15,7 +15,7 @@ in the dataset; provider evidence lives in the dated
 | **Parse** | `parseModelCatalogueJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
 | **Zod authority** | `modelCatalogueSchema` |
 | **JSON Schema** | [`models.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/models.schema.json) |
-| **Discovery** | this document *is* discovery — `models`, plus the optional `smokeModels` and `observationModels` arrays |
+| **Discovery** | this document *is* discovery: `models`, plus the optional `smokeModels` and `observationModels` arrays |
 
 ## Entry structure
 
@@ -34,7 +34,7 @@ dated [forecast feed reference](/docs/forecast/forecast-model-feeds/) records ea
 cadence.
 
 `typicalPublicationLagHours` is the upper end of normal for *this dataset's*
-publish of a run after its `referenceTime` — the provider's
+publish of a run after its `referenceTime`: the provider's
 complete-availability time plus publisher overhead, rounded up.
 [`runFreshness`](/docs/briefing/derive/#judge-run-freshness) is the grader
 that reads it. The values were seeded
@@ -61,14 +61,14 @@ export function modelLabels(text: string): string[] {
 Non-profile datasets discover separately: the optional `smokeModels`
 array lists smoke-document models (RAQDPS today) with the same identity
 and cadence metadata but no profile capabilities. It is deliberately not
-part of `models` — a capabilities-less entry there would fail every
+part of `models`: a capabilities-less entry there would fail every
 already-deployed catalogue guard, while an unknown top-level key is
 stripped harmlessly. Absence of the array means the catalogue predates
 smoke documents; see the
 [smoke document reference](/docs/briefing/smoke-document/). The optional
 `observationModels` array follows the same compatibility logic for
 observation datasets (GOES-18 DSR and AOD today): identity, `gridKm`, and a
-`cadenceMinutes` freshness yardstick in place of run scheduling — see the
+`cadenceMinutes` freshness yardstick in place of run scheduling; see the
 [observation document reference](/docs/briefing/observation-document/).
 
 A new catalogue entry is not a package enum change.
@@ -77,8 +77,8 @@ A new catalogue entry is not a package enum change.
 
 `site-context.json` is the third catalogue-root file, published at the
 dataset root beside `models.json` and `sites.json`: static,
-machine-measured ground truth — the launch `elevation` pick, terrain
-analysis, and land cover — joined against the identity-only `sites.json`
+machine-measured ground truth (the launch `elevation` pick, terrain
+analysis, and land cover) joined against the identity-only `sites.json`
 by slug. Its shape, sources, licences, generation, and join semantics
 live in the
 [site context reference](/docs/briefing/site-context-document/).

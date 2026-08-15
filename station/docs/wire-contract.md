@@ -5,8 +5,8 @@ description: The document shapes, semantics, evolution rules, HTTP protocol, and
 
 The contract between a station feed handler and its clients. JSON Schema and
 annotated examples live in
-[`schema/`](https://github.com/azohra/meteo/tree/main/station/schema) — regenerate
-with `pnpm schemas`; a drift test keeps the committed files
+[`schema/`](https://github.com/azohra/meteo/tree/main/station/schema).
+Regenerate with `pnpm schemas`; a drift test keeps the committed files
 in sync. The zod source of truth is
 [`station/src/contract.ts`](https://github.com/azohra/meteo/blob/main/station/src/contract.ts),
 exported from `@azohra/meteo.station`.
@@ -17,36 +17,36 @@ exported from `@azohra/meteo.station`.
 Each station carries its identity and declared capabilities on both arms of a
 status union:
 
-- `status: "ok"` — a `reading` (windowed average, gust/lull, direction,
+- `status: "ok"`: a `reading` (windowed average, gust/lull, direction,
   temperature, optional extended `conditions`) plus `history` when the
   station keeps one. Two nullish blocks ride this arm where the source
-  serves them: `telemetry` (device health — today `batteryVoltage`, volts)
+  serves them: `telemetry` (device health: today `batteryVoltage`, volts)
   and `samples` (`{ intervalSeconds, points }` of instantaneous
   `LiveSample`s).
-- `status: "unavailable"` — a machine `reason` code; `reading` and
+- `status: "unavailable"`: a machine `reason` code; `reading` and
   `history` are null. Never prose, never stale numbers. The vocabulary is
   [core's four upstream-failure codes](/docs/core/failures-and-schema/#the-failure-vocabulary)
-  plus one of station's own, `not_configured` — `UNAVAILABLE_REASONS` in
-  `contract.ts`.
+  plus one of station's own, `not_configured` (`UNAVAILABLE_REASONS` in
+  `contract.ts`).
 
-`StationCurrent` is `{ schemaVersion, servedAt, station }` — one station,
+`StationCurrent` is `{ schemaVersion, servedAt, station }`: one station,
 reading only, history null. It reuses the station shape so clients need one
 decoder.
 
-`StationLiveFrame` is the unit of the `/live` stream — one JSON document per
+`StationLiveFrame` is the unit of the `/live` stream: one JSON document per
 SSE data event, discriminated on `type`:
 
 | Frame | Carries | Cadence |
 |---|---|---|
-| `init` | `{ schemaVersion, servedAt, station }` — a full ok station with its sample ring | once per connection |
-| `samples` | `{ stationId, samples }` — the newest batch of instantaneous samples | as the source batches them |
-| `reading` | `{ stationId, servedAt, reading, telemetry }` — a fresh reading | as the source digests |
-| `ping` | `{ servedAt }` — keepalive; feeds the client's idle watchdog | ~20 s |
-| `unavailable` | `{ stationId, reason }` — terminal; the stream closes after it | on failure |
+| `init` | `{ schemaVersion, servedAt, station }`: a full ok station with its sample ring | once per connection |
+| `samples` | `{ stationId, samples }`: the newest batch of instantaneous samples | as the source batches them |
+| `reading` | `{ stationId, servedAt, reading, telemetry }`: a fresh reading | as the source digests |
+| `ping` | `{ servedAt }`: keepalive; feeds the client's idle watchdog | ~20 s |
+| `unavailable` | `{ stationId, reason }`: terminal; the stream closes after it | on failure |
 
 One station entry from the committed example
-[`schema/example-feed.json`](https://github.com/azohra/meteo/blob/main/station/schema/example-feed.json)
-— the `unavailable` arm, identity and capabilities intact, `reading` and
+[`schema/example-feed.json`](https://github.com/azohra/meteo/blob/main/station/schema/example-feed.json):
+the `unavailable` arm, identity and capabilities intact, `reading` and
 `history` null:
 
 ```json
@@ -76,7 +76,7 @@ One station entry from the committed example
 
 Parse helpers ship with the contract: `parseStationFeed(Json)` /
 `parseStationCurrent(Json)` / `parseStationLiveFrame(Json)` return the typed
-document or null — never throw.
+document or null; they never throw.
 
 ## Semantics
 
@@ -87,13 +87,13 @@ document or null — never throw.
 - **Absence stays absent.** A missing quantity is null, never zero.
   `windGustMps: null` means "not measured", not "no gust".
 - **Calm carries no direction.** Below the WMO calm threshold (0.5 m/s,
-  `CALM_THRESHOLD_MPS`) `windDirectionDeg` is null — a vane parked below its
+  `CALM_THRESHOLD_MPS`) `windDirectionDeg` is null: a vane parked below its
   start-up torque, or a sonic head reading thermal drift, would fabricate a
   bearing. The measured speed still travels. A null direction on a blowing
   reading is a dead vane.
 - **A dropout is an absent record, never a zeroed one.** Gaps in
   `history.points` carry no points; `periodMinutes` is on the wire because
-  wind run, vane thinning, and dropout detection are all functions of it — a
+  wind run, vane thinning, and dropout detection are all functions of it; a
   client cannot treat 1-minute records and 5-minute logger records alike.
 - **A `LiveSample` is an instant, not a mean.** `HistoryPoint.windAvgMps` is
   contractually a period mean; `LiveSample.windMps` is a single anemometer
@@ -101,7 +101,7 @@ document or null — never throw.
   and dropout rules apply to both.
 - **Telemetry is device health, not weather.** `batteryVoltage` sits in its
   own block beside the reading, gated by the `battery` capability, and never
-  inside `conditions` — air data stays air data. Like every sensor field, a
+  inside `conditions`: air data stays air data. Like every sensor field, a
   declared battery that reports nothing is null, not absent structure.
 - **No prose on the wire.** Failures carry a reason code; degrees, not
   compass words. Display language, units, and colours are the client's.
@@ -110,10 +110,10 @@ document or null — never throw.
   km (lightning distance), W/m², degrees.
 - **The `conditions` block is extensible, not universal.** It is
   WeatherFlow-shaped (pressure-trend enum, one-hour lightning bucket,
-  station-local "today" fields — the
+  station-local "today" fields; the
   [Tempest adapter](/docs/station/adapters/tempest/) fills every field of
   it) and every field is nullable; null means "not reported here" and does
-  not distinguish a missing sensor from a dark one — the station-level
+  not distinguish a missing sensor from a dark one; the station-level
   capability flag gates the block.
 
 ## Evolution rules
@@ -122,7 +122,7 @@ Normative, not advisory:
 
 - An **additive change** (a new field) never bumps `STATION_SCHEMA_VERSION`. New
   fields arrive nullable, with null meaning what absence meant before.
-  Readers ignore unknown keys — the schemas parse in strip mode, and that is
+  Readers ignore unknown keys; the schemas parse in strip mode, and that is
   load-bearing.
 - New **capability keys** must arrive nullish (null = undeclared = false): a
   required boolean would brick every already-published document that predates
@@ -140,14 +140,14 @@ exact-matched under `basePath`):
 
 | Route | Document | Notes |
 |---|---|---|
-| `GET …/feed` | `StationFeed` | Every station + history. `?hours=` narrows the window — it must be in `(0, maxHistoryHours]` (default 6), out of range is a 400; valid values snap to quarter-hour steps. |
-| `GET …/current?station=<id>` | `StationCurrent` | One station, reading only — the light poll. |
-| `GET …/live?station=<id>` | `StationLiveFrame` stream | SSE (`text/event-stream`), one frame per data event. `?hours=` is ignored — live carries no history. |
+| `GET …/feed` | `StationFeed` | Every station + history. `?hours=` narrows the window; it must be in `(0, maxHistoryHours]` (default 6), out of range is a 400; valid values snap to quarter-hour steps. |
+| `GET …/current?station=<id>` | `StationCurrent` | One station, reading only: the light poll. |
+| `GET …/live?station=<id>` | `StationLiveFrame` stream | SSE (`text/event-stream`), one frame per data event. `?hours=` is ignored; live carries no history. |
 
 Feed and current responses carry `Cache-Control` derived from upstream cache
 TTLs and a weak `ETag` computed over station content excluding `servedAt`, so
 unchanged upstreams revalidate to 304. One broken station degrades to a
-reason code; the feed survives — a handler 500s only when it cannot produce a
+reason code; the feed survives. A handler 500s only when it cannot produce a
 document at all.
 
 The live route never caches (`Cache-Control: no-cache, no-store`, no ETag).
@@ -156,7 +156,7 @@ Errors before the stream opens are JSON with a status: 400 with no
 live arm, 502 with `{ error, reason }` when the upstream connect fails.
 After the stream opens, failure is a terminal `unavailable` frame and a
 close; the client reconnects, and the fresh `init` frame is the resume
-story — there are no SSE ids. Each client connection holds one upstream
+story: there are no SSE ids. Each client connection holds one upstream
 connection: the handler does not multiplex, so a host expecting many
 concurrent viewers of one station terminates fan-out in its own
 infrastructure using the exported `openWindnerdLive` + `encodeStationLiveSse`
@@ -176,10 +176,10 @@ age = (servedAt − observedAt) + (now − receivedAtMs)
 so a wrong client clock cannot declare a live station stale (or a dead one
 live). `freshness()` in `@azohra/meteo.station` grades that age into
 `"live" | "aging" | "stale"`; `stationFreshnessThresholds()` scales the
-cutoffs to the station's own cadence — ten minutes of silence is routine for
+cutoffs to the station's own cadence: ten minutes of silence is routine for
 a five-minute logger and a dead feed for a three-second one.
 
 ![Three timeline lanes (station, server, client) with the four instants the freshness model reads: the station stamps observedAt, the server stamps servedAt, and the client records receivedAtMs and later reads now on a wall clock running four minutes fast. Braces mark the age's two terms, 15 seconds measured entirely from wire values and 30 seconds measured entirely on the client, summing to 45 seconds, while the naive now minus observedAt on the fast client clock would read 4 minutes 52 seconds and misread a live station as stale.](figures/freshness-clocks.svg)
 
 Each station also advertises `recommendedPollSeconds`, matched to upstream
-cache TTLs — see [polling etiquette](/docs/station/adapters/#polling-etiquette).
+cache TTLs; see [polling etiquette](/docs/station/adapters/#polling-etiquette).

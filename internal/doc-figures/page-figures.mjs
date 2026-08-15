@@ -171,18 +171,18 @@ async function composeTornRead() {
   <rect x="40" y="60" width="430" height="92" fill="${STRIP_BG}" stroke="${ACCENT}" stroke-width="1.6"/>
   ${t(56, 82, "data/<model>/manifest.json", { font: MONO, size: 12, weight: 700 })}
   ${runLabel(56, 104, "referenceTime", "06Z", ACCENT_STRONG)}
-  ${t(56, 130, "cache entry expired first — the new run is visible", { font: MONO, size: 10.5, fill: INK_MUTE })}
+  ${t(56, 130, "cache entry expired first: the new run is visible", { font: MONO, size: 10.5, fill: INK_MUTE })}
 
   <rect x="510" y="60" width="446" height="92" fill="${STRIP_BG}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
   ${t(526, 82, "data/<model>/sites/<site>.json", { font: MONO, size: 12, weight: 700 })}
   ${runLabel(526, 104, "run.referenceTime", "00Z", INK)}
-  ${t(526, 130, "cache entry still valid — the old run is still served", { font: MONO, size: 10.5, fill: INK_MUTE })}
+  ${t(526, 130, "cache entry still valid: the old run is still served", { font: MONO, size: 10.5, fill: INK_MUTE })}
 
-  ${t(490, 178, "06Z against 00Z — a torn pair. Rendering it as one forecast lies about both runs.", { size: 13, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}
+  ${t(490, 178, "06Z against 00Z: a torn pair. Rendering it as one forecast lies about both runs.", { size: 13, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}
 
   ${panelChip(24, 204, "2")}
   ${t(58, 222, "THE SKEW DANCE", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(956, 221, "loadForecast — fetch, compare, retry once", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  ${t(956, 221, "loadForecast: fetch, compare, retry once", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
   <line x1="24" y1="238" x2="956" y2="238" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
   <rect x="40" y="258" width="200" height="58" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
@@ -217,16 +217,16 @@ async function composeTornRead() {
 
   <rect x="40" y="418" width="286" height="66" fill="${SURFACE}" stroke="${ACCENT}" stroke-width="1.6"/>
   ${t(56, 440, "{ manifest, profile, stale: false }", { font: MONO, size: 11.5, weight: 700 })}
-  ${t(56, 458, "a consistent pair — render it", { size: 10.5, fill: INK_MUTE })}
+  ${t(56, 458, "a consistent pair: render it", { size: 10.5, fill: INK_MUTE })}
 
   <rect x="346" y="418" width="286" height="66" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
   ${t(362, 440, "{ manifest, profile, stale: true }", { font: MONO, size: 11.5, weight: 700 })}
-  ${t(362, 458, "freshest complete pair, still torn —", { size: 10.5, fill: INK_MUTE })}
+  ${t(362, 458, "freshest complete pair, still torn;", { size: 10.5, fill: INK_MUTE })}
   ${t(362, 472, "note it or fall back; never mix the two", { size: 10.5, fill: INK_MUTE })}
 
   <rect x="652" y="418" width="304" height="66" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
   ${t(668, 440, '{ miss: "absent" | "invalid", url }', { font: MONO, size: 11.5, weight: 700 })}
-  ${t(668, 458, "absent: routine 404 · invalid: contract break —", { size: 10.5, fill: INK_MUTE })}
+  ${t(668, 458, "absent: routine 404 · invalid: contract break;", { size: 10.5, fill: INK_MUTE })}
   ${t(668, 472, "log it loudly; other HTTP errors throw", { size: 10.5, fill: INK_MUTE })}`;
 
   return frame({
@@ -237,7 +237,7 @@ async function composeTornRead() {
     description:
       "A sequence diagram of the transport's reference-time skew dance. A publish refreshes the manifest cache entry before the profile cache entry, so a consumer fetching both receives a manifest from the 06Z run and a profile from the 00Z run. loadForecast compares the pair's reference times with runsConsistent, waits 1.5 seconds, refetches, and returns either a consistent pair, the freshest complete pair marked stale, or a discriminated DocumentMiss.",
     caption:
-      "The retry delay defaults to 1500 ms and is injectable. The transport keeps no cache and writes no storage — the stale flag is a report, and the policy it triggers belongs to the caller.",
+      "The retry delay defaults to 1500 ms and is injectable. The transport keeps no cache and writes no storage: the stale flag is a report, and the policy it triggers belongs to the caller.",
     units: "one publish cycle; no numeric scale",
     bodyWidth: 980,
     bodyHeight: 492,
@@ -275,7 +275,7 @@ async function composePointerStates() {
   ${label(593, 138, "click / tap")}
 
   ${flow("M130 186 C130 262 750 262 750 190")}
-  ${label(440, 248, "click / tap — a touch pointer pins without previewing")}
+  ${label(440, 248, "click / tap: a touch pointer pins without previewing")}
 
   ${flow("M750 110 C750 44 130 44 130 106")}
   ${label(440, 58, "click the pinned target again · Escape")}
@@ -286,7 +286,7 @@ async function composePointerStates() {
   <rect x="620" y="272" width="260" height="38" rx="8" fill="${SURFACE_SUNKEN}" stroke="${RULE}"/>
   ${flow("M750 190 V268", true)}
   ${t(750, 288, "model / day swap", { size: 11.5, weight: 700, anchor: "middle" })}
-  ${t(750, 302, "reset, or carry by validAt — consumer decides", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}`;
+  ${t(750, 302, "reset, or carry by validAt; consumer decides", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}`;
 
   return frame({
     id: "pointer-states",
@@ -296,7 +296,7 @@ async function composePointerStates() {
     description:
       "A three-state diagram: Resting, Previewing, and Pinned. Pointer movement with a non-touch pointer previews; leaving the chart clears the preview; a click or tap pins from any state; clicking the pinned target again, or Escape, unpins; a model or day swap exits the machine entirely, where the consumer chooses reset or carry.",
     caption:
-      "Touch pointers skip the Previewing state — a finger cannot hover, so a tap pins directly. The swap edge is the carry-or-reset decision: key the stored selection by validAt and re-resolve it with hourIndexForValidAt, or reset, as the measured first consumer does.",
+      "Touch pointers skip the Previewing state: a finger cannot hover, so a tap pins directly. The swap edge is the carry-or-reset decision: key the stored selection by validAt and re-resolve it with hourIndexForValidAt, or reset, as the measured first consumer does.",
     bodyWidth: 900,
     bodyHeight: 318,
     body,
@@ -450,7 +450,7 @@ async function composeTwoTransports(ctx) {
   <line x1="24" y1="42" x2="956" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
   <rect x="40" y="58" width="280" height="122" fill="${STRIP_BG}" stroke="${RULE}"/>
-  ${t(54, 78, ".idx SIDECAR — PLAIN TEXT, FREE", { font: MONO, size: 11, weight: 700, ls: 0.55 })}
+  ${t(54, 78, ".idx SIDECAR · PLAIN TEXT, FREE", { font: MONO, size: 11, weight: 700, ls: 0.55 })}
   ${hits
     .map(
       (hit, index) => `${numChip(62, 96 + index * 20, hit.n)}
@@ -469,7 +469,7 @@ async function composeTwoTransports(ctx) {
     .join("\n  ")}
   ${t(340, 156, "unshaded bytes never leave NOAA's bucket", { font: MONO, size: 10.5, fill: INK_MUTE })}
   ${t(40, 204, "the index alone places records", { font: MONO, size: 10.5, fill: INK_MUTE })}
-  ${t(40, 218, `beyond byte ${bytes(maxOffset)} — over ${fileFloorMb} MB`, { font: MONO, size: 10.5, fill: INK_MUTE })}
+  ${t(40, 218, `beyond byte ${bytes(maxOffset)}, over ${fileFloorMb} MB`, { font: MONO, size: 10.5, fill: INK_MUTE })}
 
   ${hits
     .map(
@@ -484,7 +484,7 @@ async function composeTwoTransports(ctx) {
 
   ${panelChip(24, 252, "B")}
   ${t(58, 270, "WHOLE-DOMAIN STREAM", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(956, 269, "ECCC · HRDPS, RDPS, GDPS, REPS, GEPS — Datamart has no index", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  ${t(956, 269, "ECCC · HRDPS, RDPS, GDPS, REPS, GEPS; Datamart has no index", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
   <line x1="24" y1="286" x2="956" y2="286" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
   ${t(150, 312, "1 · FETCH", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
@@ -514,14 +514,14 @@ async function composeTwoTransports(ctx) {
   ${t(750, 424, "released before the", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
   ${t(750, 438, "next fetch begins", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
 
-  ${t(490, 464, "repeat, file after file, through the run — memory never holds more than a handful of files", { font: MONO, size: 11.5, weight: 600, fill: INK_SOFT, anchor: "middle" })}
+  ${t(490, 464, "repeat, file after file, through the run; memory never holds more than a handful of files", { font: MONO, size: 11.5, weight: 600, fill: INK_SOFT, anchor: "middle" })}
 
   <line x1="490" y1="478" x2="490" y2="522" stroke="${RULE}" stroke-width="1"/>
   ${t(60, 506, "4–8 GiB", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
   ${t(200, 496, "moved per deterministic run;", { size: 11, fill: INK_MUTE })}
   ${t(200, 511, "~9 GiB REPS · ~14 GiB GEPS", { size: 11, fill: INK_MUTE })}
   ${t(530, 506, "kilobytes kept", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
-  ${t(756, 496, "per site and run — the profile JSON", { size: 11, fill: INK_MUTE })}
+  ${t(756, 496, "per site and run: the profile JSON", { size: 11, fill: INK_MUTE })}
   ${t(756, 511, "is what actually gets published", { size: 11, fill: INK_MUTE })}`;
 
   return frame({
@@ -694,9 +694,9 @@ async function composeRotatedGrid(ctx) {
   ${haloT(pole.x + 11, pole.y - 1, "rotated south pole", { font: MONO, size: 10, weight: 700, fill: INK })}
   ${haloT(pole.x + 11, pole.y + 12, `${deg(grid.southPoleLatitude)}, ${deg(poleLon)}`, { font: MONO, size: 9.5, fill: INK_MUTE })}
   <path d="M40 428 h26" stroke="${RULE_STRONG}" stroke-width="1.4"/>
-  ${t(76, 432, "true graticule — solid", { font: MONO, size: 10, fill: INK_SOFT })}
+  ${t(76, 432, "true graticule · solid", { font: MONO, size: 10, fill: INK_SOFT })}
   <path d="M40 446 h26" stroke="${INK_SOFT}" stroke-width="1.2" stroke-dasharray="4 3"/>
-  ${t(76, 450, "rotated graticule — dashed · heavy dash: rotated equator", { font: MONO, size: 10, fill: INK_SOFT })}`;
+  ${t(76, 450, "rotated graticule · dashed · heavy dash: rotated equator", { font: MONO, size: 10, fill: INK_SOFT })}`;
 
   /* ── Panel B: the inverse at the launch, gridlines mapped through fromRotated ── */
   const bx = 470;
@@ -883,7 +883,7 @@ async function composeRotatedGrid(ctx) {
     {
       term: "rotated pole",
       text:
-        `south pole of the rotated frame at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)} — ` +
+        `south pole of the rotated frame at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)}: ` +
         `the graticule tilted until the domain lies along the rotated equator`,
     },
     {
@@ -898,7 +898,7 @@ async function composeRotatedGrid(ctx) {
       term: "residual",
       text:
         `nearestGridpoint -> ${deg(nearest.latitude)}, ${deg(nearest.longitude)} at ` +
-        `distanceKm ${nearest.distanceKm.toFixed(3)} km — reported, never thrown: ` +
+        `distanceKm ${nearest.distanceKm.toFixed(3)} km (reported, never thrown): ` +
         `the distance is the caller's out-of-domain guard`,
     },
   ];
@@ -908,10 +908,10 @@ async function composeRotatedGrid(ctx) {
     id: "rotated-grid",
     title: "Why template 3.1 needs an analytic inverse",
     lesson:
-      "A rotated grid's rows follow a tilted frame, not the true graticule — toRotated maps a geographic point straight to fractional grid coordinates, and the reported distance is the residual.",
+      "A rotated grid's rows follow a tilted frame, not the true graticule: toRotated maps a geographic point straight to fractional grid coordinates, and the reported distance is the residual.",
     description: `Two panels. Left, a schematic globe: the true graticule in solid strokes, the rotated graticule in dashed strokes, the rotated south pole marked at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)}, and the HRDPS continental domain lying along the rotated equator. Right, the neighbourhood of the launch at ${deg(launch.latitude)}, ${deg(launch.longitude)}: dashed rotated gridlines at ${di.toFixed(4)}° spacing tilted against the solid true graticule, the launch mapped by toRotated to rotated (${deg(rot.latitude)}, ${deg(rot.longitude)}), fractional cell (${iFrac.toFixed(2)}, ${jFrac.toFixed(2)}), nearest gridpoint (i ${iIndex}, j ${jIndex}) = storage index ${nearest.index}, with the ${nearest.distanceKm.toFixed(3)} km residual drawn in a magnified inset.`,
     caption:
-      "Every number is computed at figure-generation time from the committed HRDPS continental fixture through the built package — parseGrid for the pole and spacing, toRotated for the inverse, nearestGridpoint for the index and distance. The globe is schematic; the pole, domain, gridlines, index, and residual are the fixture's real values.",
+      "Every number is computed at figure-generation time from the committed HRDPS continental fixture through the built package: parseGrid for the pole and spacing, toRotated for the inverse, nearestGridpoint for the index and distance. The globe is schematic; the pole, domain, gridlines, index, and residual are the fixture's real values.",
     units: "coordinates degrees · grid spacing degrees (rotated frame) · residual km and m",
     bodyWidth: 980,
     bodyHeight: 512 + ledger.height,
@@ -950,7 +950,7 @@ async function composeContractAnatomy(ctx) {
     },
     {
       path: "site",
-      role: "Sample provenance: identity, coordinates, the model's own terrain (modelElevationM), and the optional timezone echo. No launch elevation — the launch is supplied at render time, not stored in the document.",
+      role: "Sample provenance: identity, coordinates, the model's own terrain (modelElevationM), and the optional timezone echo. No launch elevation: the launch is supplied at render time, not stored in the document.",
       json: show(profile.site),
     },
     ...(profile.semantics
@@ -964,7 +964,7 @@ async function composeContractAnatomy(ctx) {
       : []),
     {
       path: `hours[${hourIndex}].surface`,
-      role: `One of ${profile.hours.length} chronological UTC hours — the peak-W* hour here. Optional capability fields are absent, never zero.`,
+      role: `One of ${profile.hours.length} chronological UTC hours, the peak-W* hour here. Optional capability fields are absent, never zero.`,
       json: show({ validAt: hour.validAt, surface: hour.surface }),
     },
     {
@@ -1033,7 +1033,7 @@ async function composeContractAnatomy(ctx) {
       "One document carries its own contract version, publication identity, site context, semantics, and every forecast hour.",
     description:
       "Excerpts of a real teaching profile: the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.",
-    caption: `Every fragment is stringified from the parsed committed profile at figure-generation time — these are the document's actual published values. The excerpted hour is hours[${hourIndex}] of ${profile.hours.length}; each hour repeats the surface/levels/derived shape.`,
+    caption: `Every fragment is stringified from the parsed committed profile at figure-generation time: these are the document's actual published values. The excerpted hour is hours[${hourIndex}] of ${profile.hours.length}; each hour repeats the surface/levels/derived shape.`,
     units: "heights m MSL · temperatures °C · wind m/s · pressure Pa",
     bodyWidth: codeX + codeWidth,
     bodyHeight: y - 14,
@@ -1107,7 +1107,7 @@ async function composeDeriveSinkRate(ctx) {
 
   const legendSpec = { family: "ibm-plex-mono", weight: 400, size: 11 };
   const legendText =
-    `published series (1.0 m/s, pipeline authority) · projected at ${SINK_RATE_MS} m/s sink — ` +
+    `published series (1.0 m/s, pipeline authority) · projected at ${SINK_RATE_MS} m/s sink: ` +
     `a heavier wing climbs to ${localeRound(peak.altitudeM)} m instead of ` +
     `${peak.publishedM === null ? "null" : localeRound(peak.publishedM)} m at ${peak.local}`;
   const legendLines = wrapText(legendText, scene.width - 100, legendSpec);
@@ -1128,7 +1128,7 @@ async function composeDeriveSinkRate(ctx) {
 
   return frame({
     id: "derive-sink-rate",
-    title: "One document, a second sink rate — no republication",
+    title: "One document, a second sink rate: no republication",
     lesson:
       "usableLiftTopM(inputs, sinkRateMps) projects the published inputs for another glider without replacing the stored default.",
     description: `A teaching Meteogram whose solid usable-lift line is the pipeline's stored 1.0 m/s series, overlaid with a dashed line recomputed at ${SINK_RATE_MS} m/s sink by the package's usableLiftTopM. At the peak hour the projection reaches ${localeRound(peak.altitudeM)} m against the published ${peak.publishedM === null ? "null" : localeRound(peak.publishedM)} m.`,
@@ -1322,7 +1322,7 @@ async function composeCompareAgreement(ctx) {
       term: "windowAgreement",
       text:
         `${agreement.windows.length} of ${agreement.voters} voters report a window` +
-        `${agreement.unanimous ? " — unanimous" : ""}; start spread ` +
+        `${agreement.unanimous ? " · unanimous" : ""}; start spread ` +
         `${JSON.stringify(agreement.timing.startSpreadHours)} (clipped edges abstain)`,
     },
     ...(heightSpread
@@ -1332,7 +1332,7 @@ async function composeCompareAgreement(ctx) {
             text:
               `${heightSpread.spreadM} m between peaks the models place ` +
               `${heightSpread.peaks.map((entry) => `at ${localTime(entry.at.local)}`).join(" and ")}` +
-              " — the same height, two hours apart, stated without a consensus",
+              ": the same height, two hours apart, stated without a consensus",
           },
         ]
       : []),
@@ -1345,7 +1345,7 @@ async function composeCompareAgreement(ctx) {
     lesson: meta.lesson,
     description: `Two controlled profiles with the same daytime development at different hours, rendered side by side, with the windowAgreement finding compareForecasts computed from them: ${agreement.voters} voters, unanimous ${String(agreement.unanimous)}.`,
     caption:
-      "Charts and verdict are computed at figure-generation time from the committed comparison pair (re-slugged so each document keeps its own analysis). An edge clipped by a document's horizon reads as “open since at least” and stays out of the timing spread — which is why this pair's start spread is reported as null rather than a number no model stated.",
+      "Charts and verdict are computed at figure-generation time from the committed comparison pair (re-slugged so each document keeps its own analysis). An edge clipped by a document's horizon reads as “open since at least” and stays out of the timing spread, which is why this pair's start spread is reported as null rather than a number no model stated.",
     units: "time UTC · heights m MSL · W* m/s",
     bodyWidth,
     bodyHeight: panelHeight + 18 + ledger.height,
@@ -1375,7 +1375,7 @@ async function composeFirstMeteogram(ctx) {
     description:
       "A complete teaching Meteogram and the key derived from its final scene, exactly as the page's twelve-line example serializes them.",
     caption:
-      "Rendered by the released package — validate, build a scene, serialize the chart, then derive the key from that final scene. Swap the committed teaching profile for your published one and the code below is the whole program.",
+      "Rendered by the released package: validate, build a scene, serialize the chart, then derive the key from that final scene. Swap the committed teaching profile for your published one and the code below is the whole program.",
     units:
       "altitude m and ft · wind km/h · temperature °C · pressure kPa · precipitation mm/h · w* m/s",
     bodyWidth: Math.max(scene.width, key.width),
@@ -1439,7 +1439,7 @@ async function composeSceneAnatomy(ctx) {
       w: s.plotWidth,
       h: stripsBottom - firstStripTop,
       name: "Metric strips",
-      source: `scene.strips[] — ${stripKeys}`,
+      source: `scene.strips[] (${stripKeys})`,
       detail: "one MetricStrip per row with top, height, min/max, and line/area/band paths",
     },
   ];
@@ -1447,19 +1447,19 @@ async function composeSceneAnatomy(ctx) {
   const legendEntries = [
     ...regions.map((region) => ({
       n: region.n,
-      text: `${region.name} — ${region.source}: ${region.detail}`,
+      text: `${region.name} · ${region.source}: ${region.detail}`,
     })),
     ...(scene.launch
       ? [
           {
             n: 5,
-            text: `Launch line — scene.launch: y, altitude, and label for the launch supplied at render time via MeteogramOptions.launch (${scene.launch.label})`,
+            text: `Launch line · scene.launch: y, altitude, and label for the launch supplied at render time via MeteogramOptions.launch (${scene.launch.label})`,
           },
         ]
       : []),
     {
       n: 6,
-      text: "Selected hour — scene.selectedHourIndex: the day's peak-W* column, highlighted by the selectedHour overlay",
+      text: "Selected hour · scene.selectedHourIndex: the day's peak-W* column, highlighted by the selectedHour overlay",
     },
   ];
   const legend = legendRows(legendEntries, scene.width, scene.height + 16);
@@ -1485,7 +1485,7 @@ async function composeSceneAnatomy(ctx) {
     description:
       "A rendered teaching Meteogram with outlined regions naming the MeteogramScene collections that draw them: the time–height plot (fields, series, barbs, markers), the altitude axes, the hour-label and surface-temperature row, the metric strips, the launch line, and the selected-hour column.",
     caption:
-      "Region boxes are positioned from this scene's own scales and strip geometry at figure-generation time — scene.scales places the plot, each MetricStrip carries its top and height, and the launch line and selected hour are scene fields, not renderer guesses. The launch itself is a render input (MeteogramOptions.launch, supplied at render time) — the document carries none.",
+      "Region boxes are positioned from this scene's own scales and strip geometry at figure-generation time: scene.scales places the plot, each MetricStrip carries its top and height, and the launch line and selected hour are scene fields, not renderer guesses. The launch itself is a render input (MeteogramOptions.launch, supplied at render time); the document carries none.",
     units: "scene px · altitude m and ft · time UTC",
     bodyWidth: scene.width,
     bodyHeight: scene.height + 16 + legend.height,
@@ -1521,24 +1521,24 @@ async function composeInspectorSelection(ctx) {
   const legendEntries = [
     {
       n: 1,
-      text: "Selection column — scene.selection.x · width · top · bottom: the tinted column and its span, strips to plot floor (meteo-gram-selection-column)",
+      text: "Selection column · scene.selection.x · width · top · bottom: the tinted column and its span, strips to plot floor (meteo-gram-selection-column)",
     },
     {
       n: 2,
-      text: "Hairline — scene.selection.centerX: the column-centre time line (meteo-gram-selection-line)",
+      text: "Hairline · scene.selection.centerX: the column-centre time line (meteo-gram-selection-line)",
     },
     ...(selection.barb
       ? [
           {
             n: 3,
-            text: "Barb ring — scene.selection.barb: the requested altitude snapped to the nearest drawn barb, ringed at its drawn position (meteo-gram-selection-ring, themed by --meteo-gram-selection)",
+            text: "Barb ring · scene.selection.barb: the requested altitude snapped to the nearest drawn barb, ringed at its drawn position (meteo-gram-selection-ring, themed by --meteo-gram-selection)",
           },
         ]
       : []),
     {
       n: 4,
       muted: true,
-      text: "Not the selection — scene.selectedHourIndex: the scene's own computed peak-W* highlight, a different fact with its own toggle",
+      text: "Not the selection · scene.selectedHourIndex: the scene's own computed peak-W* highlight, a different fact with its own toggle",
     },
   ];
   const legend = legendRows(legendEntries, scene.width, scene.height + 16);
@@ -1552,9 +1552,9 @@ async function composeInspectorSelection(ctx) {
     id: "inspector-selection",
     title: "A selection the scene resolved and the serializer drew",
     lesson:
-      "Pass selection to buildMeteogramScene and the reference render marks it — the inspector and the pixels share one authority.",
+      "Pass selection to buildMeteogramScene and the reference render marks it: the inspector and the pixels share one authority.",
     description: `A rendered teaching Meteogram whose build received selection: { hourIndex: ${selection.hourIndex}, altitudeM: ${Math.round(target?.altitudeM ?? 0)} }. The serializer drew the tinted selection column with its centre hairline, and a ring on the drawn wind barb the requested altitude snapped to. The scene's own computed best-hour highlight is visible on a different column.`,
-    caption: `scene.selection resolved the ring to the drawn barb at ${Math.round(selection.barb?.altitudeM ?? 0)} m — the nearest DRAWN barb to the request, the same answer nearestDrawnBarb gives. The paler highlight at hour ${scene.selectedHourIndex} is scene.selectedHourIndex, the computed peak-W* column: the two marks are different facts.`,
+    caption: `scene.selection resolved the ring to the drawn barb at ${Math.round(selection.barb?.altitudeM ?? 0)} m, the nearest DRAWN barb to the request, the same answer nearestDrawnBarb gives. The paler highlight at hour ${scene.selectedHourIndex} is scene.selectedHourIndex, the computed peak-W* column: the two marks are different facts.`,
     units: "scene px · altitude m",
     bodyWidth: scene.width,
     bodyHeight: scene.height + 16 + legend.height,
@@ -1653,13 +1653,13 @@ async function composeTokenContrast(ctx) {
 
   return frame({
     id: "token-contrast",
-    title: "Same scene, same bytes — two token sets",
+    title: "Same scene, same bytes: two token sets",
     lesson:
       "Palette is not scene data: a downstream look is CSS custom properties on an ancestor, never a forked serializer.",
     description:
       "The same teaching Meteogram rendered twice from one scene. The left panel uses the package's default tokens; the right panel resolves the same markup with surface, ink, temperature, and halo tokens overridden to a dark club palette. The scene geometry of both panels is identical.",
     caption:
-      "Both panels serialize the same DEFAULT_STYLESHEET; the right panel only swaps the resolved values of --meteo-gram-surface, --meteo-gram-strip-bg, --meteo-gram-ink, --meteo-gram-ink-soft, --meteo-gram-ink-mute, --meteo-gram-rule, --meteo-gram-temp, --meteo-gram-halo, and --meteo-gram-halo-barb — the ancestor-override path the page documents. In this committed plate each panel is pinned to its resolved values, so the demonstration itself never restyles with the page around it.",
+      "Both panels serialize the same DEFAULT_STYLESHEET; the right panel only swaps the resolved values of --meteo-gram-surface, --meteo-gram-strip-bg, --meteo-gram-ink, --meteo-gram-ink-soft, --meteo-gram-ink-mute, --meteo-gram-rule, --meteo-gram-temp, --meteo-gram-halo, and --meteo-gram-halo-barb: the ancestor-override path the page documents. In this committed plate each panel is pinned to its resolved values, so the demonstration itself never restyles with the page around it.",
     units: "altitude m and ft · time UTC",
     bodyWidth: panelWidth * 2 + gap,
     bodyHeight: panelHeight,
@@ -1743,13 +1743,13 @@ async function composeTokenReference(ctx) {
   const parts = [];
   let y = 12;
 
-  parts.push(heading(y, `Stability ramp — STABILITY_TOKEN_DEFAULTS`));
+  parts.push(heading(y, `Stability ramp: STABILITY_TOKEN_DEFAULTS`));
   y += 12;
   const ramp = grid(stability, y);
   parts.push(ramp.markup);
   y += ramp.height + 22;
 
-  parts.push(heading(y, "Scene defaults — DEFAULT_CAPE_CLASSES · DEFAULT_OVERLAYS"));
+  parts.push(heading(y, "Scene defaults: DEFAULT_CAPE_CLASSES · DEFAULT_OVERLAYS"));
   y += 18;
   const lineSpec = { family: "ibm-plex-mono", weight: 400, size: 10.5 };
   const sceneLines = [
@@ -1760,7 +1760,7 @@ async function composeTokenReference(ctx) {
   parts.push(wrapped(0, y, sceneLines, { font: MONO, size: 10.5, fill: INK_SOFT }, 15));
   y += sceneLines.length * 15 + 16;
 
-  parts.push(heading(y, `Renderer tokens — TOKEN_DEFAULTS (${tokens.length})`));
+  parts.push(heading(y, `Renderer tokens: TOKEN_DEFAULTS (${tokens.length})`));
   y += 12;
   const tokenGrid = grid(tokens, y);
   parts.push(tokenGrid.markup);
@@ -1824,7 +1824,7 @@ async function composePlatformBoundary() {
 
   const sourceY = 14;
   parts.push(
-    t(leftCx, sourceY, "provider model files — GRIB2 · JPEG 2000", {
+    t(leftCx, sourceY, "provider model files: GRIB2 · JPEG 2000", {
       font: MONO,
       size: 12,
       fill: INK_MUTE,
@@ -1919,7 +1919,7 @@ async function composePlatformBoundary() {
     t(
       width / 2,
       coreY + 19,
-      "@azohra/meteo.core — units · one wind sign · failure vocabulary (imported by briefing and station)",
+      "@azohra/meteo.core: units · one wind sign · failure vocabulary (imported by briefing and station)",
       {
         font: MONO,
         size: 11.5,
@@ -2208,7 +2208,7 @@ async function composeRegionDecode(ctx) {
     t(
       barX,
       barsBottom + 20,
-      `points ×${pointsFactor} -> codeblocks ×${Math.round(blocksFactor)} — nearby points share windows, and every point's coarse-level ancestry converges`,
+      `points ×${pointsFactor} -> codeblocks ×${Math.round(blocksFactor)}: nearby points share windows, and every point's coarse-level ancestry converges`,
       {
         font: MONO,
         size: 10.5,
@@ -2228,12 +2228,12 @@ async function composeRegionDecode(ctx) {
       term: "untouched",
       text:
         `outline only: the other ${total - four.decoded} codeblocks are skipped after the ` +
-        `packet-structure parse — their bytes are never entropy-decoded`,
+        `packet-structure parse; their bytes are never entropy-decoded`,
     },
     {
       term: "crosses",
       text:
-        "each requested point's coefficient position in the three finest subbands — the same " +
+        "each requested point's coefficient position in the three finest subbands; the same " +
         "four neighbourhoods recur at every coarser level, which is why cost tracks codeblocks, not points",
     },
   ];
@@ -2259,8 +2259,8 @@ async function composeRegionDecode(ctx) {
   return frame({
     id: "region-decode",
     title: "Region-decode cost tracks codeblocks, not points",
-    lesson: `decodeJ2kRegion entropy-decodes only the codeblocks the requested points touch — 4 points on the ${samples.toLocaleString("en-CA")}-sample HRDPS continental field decode ${four.decoded} of ${total}.`,
-    description: `Three panels. Left, the ${width} × ${height} HRDPS continental field with the bench's 4 scattered sample points marked. Centre, the codestream's tile buffer: all ${total} codeblocks drawn across ${levels} decomposition levels, with the ${four.decoded} codeblocks this 4-point decode actually entropy-decoded filled and hatched, clustering around each point's coefficient position in every subband. Below, the touched count as the same scatter grows: ${series.map((entry) => `${entry.count} point${entry.count === 1 ? "" : "s"} -> ${entry.decoded}`).join(", ")} of ${total} codeblocks — points ×${pointsFactor} costs only ×${Math.round(blocksFactor)} in codeblocks.`,
+    lesson: `decodeJ2kRegion entropy-decodes only the codeblocks the requested points touch: 4 points on the ${samples.toLocaleString("en-CA")}-sample HRDPS continental field decode ${four.decoded} of ${total}.`,
+    description: `Three panels. Left, the ${width} × ${height} HRDPS continental field with the bench's 4 scattered sample points marked. Centre, the codestream's tile buffer: all ${total} codeblocks drawn across ${levels} decomposition levels, with the ${four.decoded} codeblocks this 4-point decode actually entropy-decoded filled and hatched, clustering around each point's coefficient position in every subband. Below, the touched count as the same scatter grows: ${series.map((entry) => `${entry.count} point${entry.count === 1 ? "" : "s"} -> ${entry.decoded}`).join(", ")} of ${total} codeblocks; points ×${pointsFactor} costs only ×${Math.round(blocksFactor)} in codeblocks.`,
     caption:
       "Every count is computed at figure-generation time by calling decodeJ2kRegion on the JPEG 2000 codestream embedded in the committed fixture (grib/test/fixtures/hrdps-continental-tmp-2m.grib2), with the point scatter reproducing the committed bench's seed (j2k/test/region.test.ts). The highlighted blocks are the exact set whose bytes that decode read, verified equal to its reported codeblocksDecoded.",
     units: "codeblocks count · points count · samples count · coordinates gridpoints",
@@ -2311,7 +2311,7 @@ async function composeConvergenceLadder() {
       `<rect x="${x0 + 8}" y="96" width="430" height="126" fill="${SURFACE_ACCENT}" stroke="${ACCENT_STRONG}" stroke-width="1.4"/>`,
     );
     parts.push(
-      t(x0 + 16, 114, "SETTLED SAMPLE — NEWEST minRuns = 3 RUNGS", {
+      t(x0 + 16, 114, "SETTLED SAMPLE · NEWEST minRuns = 3 RUNGS", {
         font: MONO,
         size: 9.5,
         weight: 700,
@@ -2337,7 +2337,7 @@ async function composeConvergenceLadder() {
       );
     });
     parts.push(
-      t(x0 + 16, 302, "rungs below the band are read, not sampled — settled sees the newest 3", {
+      t(x0 + 16, 302, "rungs below the band are read, not sampled; settled sees the newest 3", {
         font: MONO,
         size: 9.5,
         fill: INK_MUTE,
@@ -2394,7 +2394,7 @@ async function composeConvergenceLadder() {
     {
       term: "rungs",
       text:
-        "newest run first — votes and abstention reasons are existenceTrajectory rungs; " +
+        "newest run first: votes and abstention reasons are existenceTrajectory rungs; " +
         "magnitudes are the settled sample's peakLiftAboveLaunchM: a window rung's peak " +
         "lift above launch, a quiet rung's peakLiftDepthM",
     },
@@ -2402,19 +2402,19 @@ async function composeConvergenceLadder() {
       term: "leadHours",
       text:
         "hours from the run's referenceTime to hour leadAnchorLocalHour of the target day " +
-        "(default 12, local noon) — negative restates a past day, arithmetic like any other",
+        "(default 12, local noon); negative restates a past day, arithmetic like any other",
     },
     {
       term: "settled",
       text:
         "true exactly when the newest minRuns rungs all state a magnitude and max - min <= " +
         "magnitudeBandM; fewer runs, or any null magnitude, reads settled: false with spreadM " +
-        "null — not stable and not statable stay readable apart",
+        "null; not stable and not statable stay readable apart",
     },
     {
       term: "thresholds",
       text:
-        "{ minRuns: 3, magnitudeBandM: 300 } — embedded trial defaults, caller-movable via " +
+        "{ minRuns: 3, magnitudeBandM: 300 }: embedded trial defaults, caller-movable via " +
         "CompareRunsOptions.settled, and every finding echoes the values that produced it",
     },
   ];
@@ -2429,11 +2429,11 @@ async function composeConvergenceLadder() {
     id: "convergence-ladder",
     title: "The convergence ladder, settled beside unsettled",
     lesson:
-      "compareRuns stacks successive runs of one model against one target local day; settled is arithmetic over the newest minRuns rungs' magnitudes — a statement about runs, not probability and not skill.",
+      "compareRuns stacks successive runs of one model against one target local day; settled is arithmetic over the newest minRuns rungs' magnitudes: a statement about runs, not probability and not skill.",
     description:
       "Two five-rung convergence ladders for the same schematic target local day, newest run first, each rung labelled with its run reference time, its leadHours to the day's local-noon anchor (19 to 67 hours), and its vote. Left, a settled day: the newest three rungs vote window with magnitudes 1480, 1370, and 1520 m above launch; spreadM = 1520 - 1370 = 150 m, within magnitudeBandM 300, so settled is true. Right, an unsettled day: window rungs at 1980 and 1420 m and a quiet rung at 990 m of depth give spreadM = 1980 - 990 = 990 m, over the band, so settled is false. In both ladders the settled band encloses only the newest minRuns = 3 rungs; an older rung votes outside the band, and the oldest rung is an abstention with the stated reason outOfHorizon and no magnitude.",
     caption:
-      "Rung values are schematic — a structural diagram, not measured runs — but every printed number obeys the arithmetic it illustrates: leads step 12 hours for a twice-daily model against a local-noon anchor seven hours behind UTC, and each spreadM is max - min over its sample. minRuns 3 and magnitudeBandM 300 are the embedded defaults (DEFAULT_SETTLED_THRESHOLDS), trial values calibrated on a thin archive.",
+      "Rung values are schematic (a structural diagram, not measured runs), but every printed number obeys the arithmetic it illustrates: leads step 12 hours for a twice-daily model against a local-noon anchor seven hours behind UTC, and each spreadM is max - min over its sample. minRuns 3 and magnitudeBandM 300 are the embedded defaults (DEFAULT_SETTLED_THRESHOLDS), trial values calibrated on a thin archive.",
     units:
       "leads hours · magnitudes m above launch (quiet rungs: m of depth) · schematic; no measured data",
     bodyWidth: 980,
@@ -2455,7 +2455,7 @@ async function composeIngestLoop() {
     `<path d="${d}" stroke="${INK_SOFT}" stroke-width="1.5" fill="none"${dashed ? ' stroke-dasharray="5 4"' : ""} marker-end="url(#ingest-loop-head)"/>`;
 
   const body = `${flowMarker("ingest-loop-head")}
-  ${step(40, 58, 190, "1", "POLL runs.json", ["loadRuns — one small fetch;", "the poll is the subscription"])}
+  ${step(40, 58, 190, "1", "POLL runs.json", ["loadRuns: one small fetch;", "the poll is the subscription"])}
   ${flow("M230 92 H268")}
 
   ${step(272, 58, 230, "2", "(referenceTime, generatedAt)", ["the identity pair, compared", "against seen[slug] per model"], MONO, 11)}
@@ -2466,42 +2466,42 @@ async function composeIngestLoop() {
   ${flow("M754 92 H792")}
   ${t(773, 38, "still mixed after one retry", { font: MONO, size: 9, fill: INK_SOFT, anchor: "middle" })}
 
-  ${step(796, 58, 160, "4", "syncing: true", ["a publish mid-flight —", "runsSeen names the runs"], MONO, 12)}
+  ${step(796, 58, 160, "4", "syncing: true", ["a publish mid-flight;", "runsSeen names the runs"], MONO, 12)}
 
   ${flow("M387 126 V296")}
-  ${t(379, 170, "unchanged pair —", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+  ${t(379, 170, "unchanged pair;", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
   ${t(379, 184, "nothing new this tick", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
 
   ${flow("M649 126 V174")}
-  ${t(659, 154, "syncing: false — one run anchors the whole set", { font: MONO, size: 10, fill: INK_SOFT })}
+  ${t(659, 154, "syncing: false; one run anchors the whole set", { font: MONO, size: 10, fill: INK_SOFT })}
 
   ${step(544, 178, 210, "5", "ATOMIC SWAP", ["store the set under its new", "referenceTime · advance seen[slug]"], DISPLAY, 15)}
   ${flow("M649 246 V296")}
   ${t(639, 276, "the new run becomes what you serve", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
 
   ${flow("M876 126 V296")}
-  ${t(868, 262, "ingest nothing — the store keeps", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
+  ${t(868, 262, "ingest nothing; the store keeps", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
   ${t(868, 276, "serving what it already holds", { font: MONO, size: 10, fill: INK_SOFT, anchor: "end" })}
 
   ${flow("M135 300 V130", true)}
-  ${t(145, 216, "next tick — your cadence,", { font: MONO, size: 10, fill: INK_MUTE })}
+  ${t(145, 216, "next tick; your cadence,", { font: MONO, size: 10, fill: INK_MUTE })}
   ${t(145, 230, "a small fraction of the fastest", { font: MONO, size: 10, fill: INK_MUTE })}
   ${t(145, 244, "runIntervalHours you serve", { font: MONO, size: 10, fill: INK_MUTE })}
 
   <rect x="40" y="300" width="916" height="84" fill="${STRIP_BG}" stroke="${ACCENT}" stroke-width="1.8"/>
-  ${t(498, 330, "SERVING — THE NEWEST COHERENT PUBLICATION THE STORE HOLDS", { font: DISPLAY, size: 19, weight: 800, ls: 0.4, anchor: "middle" })}
+  ${t(498, 330, "SERVING: THE NEWEST COHERENT PUBLICATION THE STORE HOLDS", { font: DISPLAY, size: 19, weight: 800, ls: 0.4, anchor: "middle" })}
   ${t(498, 351, "the standing state, not a step: the predecessor keeps serving through syncing sets, late runs, and dead ticks", { size: 11, fill: INK_SOFT, anchor: "middle" })}
-  ${t(498, 369, 'never a partially ingested run · never delete on a miss — "this is the 06Z run; the 12Z is late"', { font: MONO, size: 10, fill: INK_MUTE, anchor: "middle" })}`;
+  ${t(498, 369, 'never a partially ingested run · never delete on a miss: "this is the 06Z run; the 12Z is late"', { font: MONO, size: 10, fill: INK_MUTE, anchor: "middle" })}`;
 
   return frame({
     id: "ingest-loop",
     title: "The ingest loop returns to serving",
     lesson:
-      "Five package-verb steps — poll, compare the identity pair, fetch the coherent set, refuse a syncing one, swap atomically — all return to one standing state: serve the newest coherent publication the store holds.",
+      "Five package-verb steps (poll, compare the identity pair, fetch the coherent set, refuse a syncing one, swap atomically) all return to one standing state: serve the newest coherent publication the store holds.",
     description:
-      "A cycle diagram of the ingest loop. Step 1 polls runs.json with loadRuns; step 2 compares each model's (referenceTime, generatedAt) identity pair against the last pair seen — an unchanged pair returns to serving with nothing new this tick. A changed pair leads to step 3, loadSiteSet, where the manifest fetched once is the commit point and per-site misses never poison the set. If the set still mixes runs after one retry, step 4's syncing: true branch ingests nothing — runsSeen names the runs observed — and returns to serving what the store already holds. A coherent set reaches step 5, the atomic swap: store the set under its new referenceTime and advance seen. Beneath the steps, the standing state every path returns to: serving the newest coherent publication the store holds — the predecessor through syncing sets, late runs, and dead ticks — with a dashed edge back to step 1 on the next tick of your own cadence.",
+      "A cycle diagram of the ingest loop. Step 1 polls runs.json with loadRuns; step 2 compares each model's (referenceTime, generatedAt) identity pair against the last pair seen; an unchanged pair returns to serving with nothing new this tick. A changed pair leads to step 3, loadSiteSet, where the manifest fetched once is the commit point and per-site misses never poison the set. If the set still mixes runs after one retry, step 4's syncing: true branch ingests nothing (runsSeen names the runs observed) and returns to serving what the store already holds. A coherent set reaches step 5, the atomic swap: store the set under its new referenceTime and advance seen. Beneath the steps, the standing state every path returns to: serving the newest coherent publication the store holds (the predecessor through syncing sets, late runs, and dead ticks), with a dashed edge back to step 1 on the next tick of your own cadence.",
     caption:
-      "A later generatedAt for the same referenceTime is a corrected re-publication, and re-ingesting it is exactly as mandatory as a new run. loadSiteSet retries a mid-publish mix once before reporting syncing: true. How many predecessors to keep is retention — consumer policy, never a dataset property.",
+      "A later generatedAt for the same referenceTime is a corrected re-publication, and re-ingesting it is exactly as mandatory as a new run. loadSiteSet retries a mid-publish mix once before reporting syncing: true. How many predecessors to keep is retention: consumer policy, never a dataset property.",
     units: "one poll tick; no numeric scale",
     bodyWidth: 980,
     bodyHeight: 392,

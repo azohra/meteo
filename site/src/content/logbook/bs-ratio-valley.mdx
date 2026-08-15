@@ -16,18 +16,18 @@ import WindShearLab from "../../components/labs/WindShearLab.astro";
 
 # B/S does not transfer to the valley
 
-A classic light-wind summer Sunday at Red Mountain — flyable nine to six, cloud base near
-4,000 m — and the buoyancy/shear ratio condemned it three times over: 0.53, 0.60, 0.65, all deep in
+A classic light-wind summer Sunday at Red Mountain (flyable nine to six, cloud base near
+4,000 m), and the buoyancy/shear ratio condemned it three times over: 0.53, 0.60, 0.65, all deep in
 the zone where flatland doctrine says organized shear tears thermals apart before a glider can work
 them. The ratio has a long pedigree: divide the boundary layer's convective velocity scale W* by
 the vector wind difference between the surface and the boundary-layer top, and low values warn of
 broken lift. I compute it exactly as its predecessors plot it, so pilots can compare
-numbers directly — which is how the assumption hiding inside the ratio finally surfaced at a
+numbers directly, which is how the assumption hiding inside the ratio finally surfaced at a
 mountain site.
 
 ## The trace
 
-The reading is a production consumer's — hrdps-continental at Red Mountain, a 1,537 m Kootenays
+The reading is a production consumer's: hrdps-continental at Red Mountain, a 1,537 m Kootenays
 valley site, run 2026-08-08T18Z, valid the Sunday that followed, gusts under 24 km/h:
 
 | hour    | W*  | BL top  | 10 m wind      | BL-top wind (interpolated) | vector shear | B/S  |
@@ -36,16 +36,16 @@ valley site, run 2026-08-08T18Z, valid the Sunday that followed, gusts under 24 
 | 1 p.m.  | 3.1 | 4,177 m | 9 km/h @ 180°  | 19 km/h @ 249°             | 5.1 m/s      | 0.60 |
 | 3 p.m.  | 2.9 | 4,178 m | 10 km/h @ 193° | 17 km/h @ 258°             | 4.4 m/s      | 0.65 |
 
-The BL-top wind column is the strip's own input — the wind interpolated component-wise at the
+The BL-top wind column is the strip's own input (the wind interpolated component-wise at the
 boundary-layer top, which is what the shear term actually subtracts, not the nearest published
-level's barb — so the two wind columns reproduce the shear column. Every wind in that table is
+level's barb), so the two wind columns reproduce the shear column. Every wind in that table is
 light, and the two ends cross at 65–91°: much of the "shear" is the angle between two different
-wind systems. By the flatland reading — where the strip's 0–5 axis puts anything under 1 deep in
-the broken zone — this stellar day is condemned three times over, and so is essentially every good
+wind systems. By the flatland reading, where the strip's 0–5 axis puts anything under 1 deep in
+the broken zone, this stellar day is condemned three times over, and so is essentially every good
 summer day at sites like it.
 
-*Source: a production forecast — hrdps-continental, run 2026-08-08T18Z, hours 18Z/20Z/22Z, Red
-Mountain — from the month archives of the reference operator,
+*Source: a production forecast (hrdps-continental, run 2026-08-08T18Z, hours 18Z/20Z/22Z, Red
+Mountain) from the month archives of the reference operator,
 [`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts), whose forecast
 data is private; the
 [sample dataset](https://meteo.azohra.com/data-sample/hrdps-continental/history/test-hill/2026-08.jsonl.gz)
@@ -58,12 +58,12 @@ The ratio's shear term subtracts two wind vectors and calls the magnitude "shear
 something dynamical only when both vectors sample the same flow. On flat ground they do: the 10 m
 wind is the bottom of the boundary layer's own profile, and a large vector difference across the
 layer is a real gradient a thermal must climb through. In a mountain valley the model's 10 m wind
-is something else — thermally driven circulation, anabatic flow that rotates with the sun and is
+is something else: thermally driven circulation, anabatic flow that rotates with the sun and is
 decoupled from the flow at boundary-layer top. Subtracting a valley breeze from a ridge-top wind
 does not measure a gradient any parcel experiences; it measures the angle between two different
 wind systems, and on the best days that angle is large by construction, because the valley wind
 follows the heating while the flow aloft follows the synoptics. The ratio is not noisy at such
-sites. It is structurally pinned to 0.3–0.7 precisely when conditions are best — a doctrine
+sites. It is structurally pinned to 0.3–0.7 precisely when conditions are best: a doctrine
 answering the wrong question with full confidence.
 
 See it for yourself: the lab below interpolates the wind through the lift band and computes the
@@ -78,16 +78,16 @@ Three dispositions, in the order the evidence supports them:
 1. **The assumption is documented at the quantity's home.** `surfaceToBoundaryLayerShearMps` and
    `buoyancyShearRatio` in the [derivation API](/docs/briefing/derive/) now state
    the same-air-mass assumption, carry this trace, and point terrain-driven consumers at the
-   height-resolved `windShear` field — which measures shear layer by layer *within* the column
+   height-resolved `windShear` field, which measures shear layer by layer *within* the column
    and never straddles the decoupling, so it survives terrain the way launch-relative heights
    survive elevation bias. No classed-cell treatment ("good/broken" doctrine) ships on B/S.
-2. **Unbounded is not missing.** Zero shear makes the ratio infinite — buoyancy fully unopposed,
-   the best possible reading — and the strip used to render it as the same gap as "no ratio
+2. **Unbounded is not missing.** Zero shear makes the ratio infinite (buoyancy fully unopposed,
+   the best possible reading), and the strip used to render it as the same gap as "no ratio
    computable", which read as missing data. An unopposed hour now draws its own classed cell
    (`meteo-gram-bs-unopposed`); the gap again means only what a gap should.
 3. **The tempting repair stays unproven.** Re-anchoring the shear vector's lower end above the
    valley circulation (the first published level, or launch height) might restore the ratio's
-   meaning at mountain sites — and might not, and would quietly make the number model-dependent,
+   meaning at mountain sites, and might not, and would quietly make the number model-dependent,
    since models publish different lowest levels. That variant ships nothing until it is
    prototyped against days pilots actually rated, the same bar every threshold in `analyze`
    had to clear.

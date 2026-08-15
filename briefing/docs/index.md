@@ -1,19 +1,19 @@
 ---
 title: "Forecast: the read side"
-description: The forecast capability — the published site-forecast contract and its pure functions, plus the Meteogram presentation tier that renders validated documents as point-forecast time-height charts.
+description: "The forecast capability: the published site-forecast contract and its pure functions, plus the Meteogram presentation tier that renders validated documents as point-forecast time-height charts."
 ---
 
 The **briefing** capability is the published site-forecast contract and
-everything that is a pure function of it — validation, derivation, analysis,
+everything that is a pure function of it: validation, derivation, analysis,
 comparison across models and across a model's own successive runs,
 transport, and the append-only history. If a result is meaningful without a
 chart, it lives here.
 
-The package has two tiers. The **data tier** — contract, derivations,
-analysis, comparison, transport, history — needs no DOM and produces typed
-values and findings; what it reads is the published-document family —
-profiles, manifests, catalogues, smoke, observation, and site-context
-documents — each with its own reference page below. The **presentation tier** — `/meteogram` — is
+The package has two tiers. The **data tier** (contract, derivations,
+analysis, comparison, transport, history) needs no DOM and produces typed
+values and findings; what it reads is the published-document family
+(profiles, manifests, catalogues, smoke, observation, and site-context
+documents), each with its own reference page below. The **presentation tier** (`/meteogram`) is
 the Meteogram: a validated document becomes a serializable scene graph,
 and the scene becomes deterministic SVG. Every surface is an explicit
 subpath of `@azohra/meteo.briefing`:
@@ -24,8 +24,8 @@ import { analyzeForecast } from "@azohra/meteo.briefing/analyze";
 import { buildMeteogramScene, renderMeteogramSvg } from "@azohra/meteo.briefing/meteogram";
 ```
 
-The producing side — the engine that samples providers and publishes the
-documents this capability consumes — is
+The producing side (the engine that samples providers and publishes the
+documents this capability consumes) is
 [`@azohra/meteo.forecast`](/docs/forecast/). `/history` is the one Node-only
 subpath (`node:zlib`).
 
@@ -40,7 +40,7 @@ both tiers in one working example.
 | Page | Covers |
 |---|---|
 | [Contract validation](/docs/briefing/contract/) | Accepting profile, manifest, model, site, and run-index documents at an explicit trust boundary |
-| [Load published documents](/docs/briefing/transport/) | Fetching consistent publications — run-stamp guards, retries, misses discriminated from failures |
+| [Load published documents](/docs/briefing/transport/) | Fetching consistent publications: run-stamp guards, retries, misses discriminated from failures |
 | [Pure derivations](/docs/briefing/derive/) | Pure quantities from published state, local-day projection, valid-time alignment |
 | [Analyze a profile](/docs/briefing/analyze/) | `analyzeForecast`: typed findings over one forecast, with thresholds and evidence attached |
 | [Compare model profiles](/docs/briefing/compare/) | `compareForecasts` / `compareAnalyses`: cross-model agreement, spread, and divergence for one site |
@@ -50,12 +50,12 @@ both tiers in one working example.
 
 | Page | Covers |
 |---|---|
-| [Profile document](/docs/briefing/profile-document/) | The per-site forecast document — blocks, run and site provenance, semantics |
-| [Smoke document](/docs/briefing/smoke-document/) | The per-site wildfire-smoke series — fields, units, verified provider facts, the profile join |
-| [Observation document](/docs/briefing/observation-document/) | The measured GOES-18 series — DSR and AOD, validity discipline, product facts |
-| [Site context document](/docs/briefing/site-context-document/) | Static measured ground truth per site — the elevation pick, terrain, land cover, licences |
+| [Profile document](/docs/briefing/profile-document/) | The per-site forecast document: blocks, run and site provenance, semantics |
+| [Smoke document](/docs/briefing/smoke-document/) | The per-site wildfire-smoke series: fields, units, verified provider facts, the profile join |
+| [Observation document](/docs/briefing/observation-document/) | The measured GOES-18 series: DSR and AOD, validity discipline, product facts |
+| [Site context document](/docs/briefing/site-context-document/) | Static measured ground truth per site: the elevation pick, terrain, land cover, licences |
 | [Model manifest](/docs/briefing/manifest/) | One model publication's identity, extent, sites, and build accounting |
-| [Model catalogue](/docs/briefing/catalogue/) | `models.json` — model discovery and declared capabilities |
+| [Model catalogue](/docs/briefing/catalogue/) | `models.json`: model discovery and declared capabilities |
 | [Ensemble values](/docs/briefing/ensemble-values/) | Percentile blocks, contributor counts, censoring, circular wind |
 | [History archives](/docs/briefing/history-archives/) | The append-only monthly gzip archives and their sidecar indexes |
 | [Data and package versioning](/docs/briefing/versioning/) | The dataset and npm version axes and their compatibility rules |
@@ -81,5 +81,5 @@ recipes over its pure queries and transports:
 
 JSON Schema for the published documents lives in
 [`schema/`](https://github.com/azohra/meteo/tree/main/briefing/schema),
-with committed annotated examples — the same convention the station wire
+with committed annotated examples, the same convention the station wire
 schemas follow in their own package.

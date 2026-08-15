@@ -12,7 +12,7 @@ wherever your project keeps it.
 ## Catalogue shape
 
 Since schemaVersion 2 the catalogue is **identity and build selection
-only** — humans author WHERE, and nothing physical. The forecast engine measures
+only**: humans author WHERE, and nothing physical. The forecast engine measures
 elevation, terrain, and land cover at those coordinates and publishes them
 in [`site-context.json`](/docs/briefing/site-context-document/).
 
@@ -58,7 +58,7 @@ to the dataset root **verbatim**.
 
 1. Choose a stable slug. Renaming it changes every profile and history path.
 2. Record coordinates from an appropriate source for your launches. Do not
-   record elevation anywhere — the engine measures it in the next step.
+   record elevation anywhere; the engine measures it in the next step.
 3. Declare the launch's IANA timezone. Local time changes day windows and the
    meaning of timing findings, so builders echo this value into each profile
    as `site.timeZone`; do not infer it from longitude in presentation code.
@@ -70,7 +70,7 @@ to the dataset root **verbatim**.
    pnpm exec meteo forecast terrain --sites ./sites.json --output ./site-context.json
    ```
 
-   The geospatial stack loads only when this command runs — a scheduled
+   The geospatial stack loads only when this command runs; a scheduled
    `forecast build` never pays for it. The command reads the `--sites`
    catalogue and rewrites the `--output` site-context file. Its shape,
    the elevation-pick priority, and its sources are in the

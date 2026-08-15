@@ -1,6 +1,6 @@
 ---
 title: Load published documents
-description: Fetch published documents as consistent publications — pairs and whole site sets — with misses discriminated and staleness reported.
+description: Fetch published documents as consistent publications (pairs and whole site sets) with misses discriminated and staleness reported.
 ---
 
 `@azohra/meteo.briefing/transport` fetches published documents correctly. Its problem is
@@ -39,17 +39,17 @@ and compares them with `runsConsistent`. On disagreement it waits (1500 ms by
 default, configurable and injectable through `retry`) and refetches the pair
 once. It resolves to one of three shapes:
 
-- `{ manifest, profile, stale: false }` — a consistent pair; render it.
-- `{ manifest, profile, stale: true }` — the freshest complete pair seen,
+- `{ manifest, profile, stale: false }`: a consistent pair; render it.
+- `{ manifest, profile, stale: true }`: the freshest complete pair seen,
   still torn after the retry. A publish is in flight; render with a “still
   syncing” note or fall back to a pair you cached earlier. Never mix the two
   documents as if they were one forecast.
-- a `DocumentMiss` — nothing to render, with the reason discriminated.
+- a `DocumentMiss`: nothing to render, with the reason discriminated.
 
 ## One dance for every run-stamped kind
 
 `loadForecast` is the profile-typed face of `loadDocument`, which runs the
-same dance for any site document that carries the run stamp — `model` plus
+same dance for any site document that carries the run stamp: `model` plus
 `run.referenceTime`, the exported `RunStampedDocument` interface. Its `guard`
 parameter types the site document (`parseSiteForecastJson`,
 `parseSmokeDocumentJson`, …); the manifest side of the pair is always guarded
@@ -68,26 +68,26 @@ document, and requires each document to carry that manifest's run. On a
 mid-publish mix it retries once, refetching the manifest and only the
 disagreeing documents. The result discriminates on `syncing`:
 
-- `{ syncing: false, referenceTime, manifest, documents, misses }` — one
-  coherent publication: every document in `documents` (site slug → document)
+- `{ syncing: false, referenceTime, manifest, documents, misses }`: one
+  coherent publication. Every document in `documents` (site slug → document)
   carries the manifest's run. Per-site misses stay discriminated in `misses`
   and never poison the set. A coherent set may be the *previous*
-  publication — all-old is not syncing, it is the newest complete forecast
+  publication: all-old is not syncing, it is the newest complete forecast
   there is.
-- `{ syncing: true, runsSeen }` — the set still mixed runs after the retry: a
+- `{ syncing: true, runsSeen }`: the set still mixed runs after the retry. A
   publish is mid-flight, and `runsSeen` lists the distinct reference times
   observed. Ingest nothing; the next poll reads coherently.
 
-A manifest miss returns that `DocumentMiss` directly — the model not
+A manifest miss returns that `DocumentMiss` directly: the model not
 publishing at all is the root cause of every site missing. The store-and-serve
 loop around this verb is the [ingest recipe](/docs/briefing/run-an-ingest/).
 
 ## Observations: one guarded fetch, no dance
 
 `loadObservation({ fetch, baseUrl, modelSlug, siteSlug })` fetches one site's
-observation document alone — no manifest, no retry option. That is a proof,
+observation document alone: no manifest, no retry option. That is a proof,
 not an omission. There is no pair invariant to defend: an observation
-document has no run — it is a self-contained rolling window of measured
+document has no run; it is a self-contained rolling window of measured
 instants, its identity carried by its own `observed` block, and the
 observation manifest's `referenceTime` is the newest instant across *all* the
 dataset's sites (a max), so manifest-versus-document skew is the normal state
@@ -95,7 +95,7 @@ for every site that is not the newest. The forecast-manifest guard cannot
 even parse an observation manifest, so a pair dance would report every load
 as invalid. And the worst case is harmless and un-retryable: at most one
 internally-consistent granule behind, timestamped by
-`observed.lastObservedAt`, healed by the next poll — a retry cannot beat the
+`observed.lastObservedAt`, healed by the next poll; a retry cannot beat the
 CDN's cache anyway. Misses discriminate absent/invalid exactly as below.
 
 ## `absent` is routine; `invalid` is loud
@@ -105,8 +105,8 @@ identically as “no chart”:
 
 | `miss` | Meaning | Treat it as |
 | --- | --- | --- |
-| `"absent"` | HTTP 404 — the model or site is not published at this root | Routine; a site outside a model's domain reads this way |
-| `"invalid"` | The document exists but failed its contract guard | Never routine — a contract break or prototype data; log the `url` loudly |
+| `"absent"` | HTTP 404: the model or site is not published at this root | Routine; a site outside a model's domain reads this way |
+| `"invalid"` | The document exists but failed its contract guard | Never routine: a contract break or prototype data; log the `url` loudly |
 
 Discriminate with `"miss" in result`. Any non-404 HTTP failure throws
 `TransportHttpError` (carrying `status` and `url`) instead of masking itself
@@ -116,7 +116,7 @@ publishing at all is the root cause of its site documents missing too.
 ## Check freshness with `loadRuns`
 
 `loadRuns({ fetch, baseUrl })` fetches `runs.json` from the data root, the cross-model run
-index — each published model's current `(referenceTime, generatedAt)`, keyed
+index: each published model's current `(referenceTime, generatedAt)`, keyed
 by slug. It is a single document, so there is no pair to tear; it exists so
 run discovery gets the same miss semantics as `loadForecast`. Judge its
 entries with [`runFreshness`](/docs/briefing/derive/#judge-run-freshness)
@@ -124,17 +124,17 @@ from `@azohra/meteo.briefing/derive`: the facts are the catalogue's `runInterval
 `typicalPublicationLagHours`; the current/delayed/stale boundaries are yours.
 
 The pure pair check is exported too: `runsConsistent(manifest, profile)` is
-true exactly when both documents name the same model and run — useful when
+true exactly when both documents name the same model and run; useful when
 documents arrive through your own storage rather than these loaders.
 
 ## The caller owns fetch and storage
 
 `fetch` is a parameter, not an import. Pass the runtime's own WHATWG-shaped
-fetch — browser, Node, workers, undici, or a test stub — which keeps this
+fetch (browser, Node, workers, undici, or a test stub), which keeps this
 module runtime-agnostic. The one other subpath that fetches,
 [`@azohra/meteo.briefing/history`](/docs/briefing/history/), follows the same manners
 (injected fetch, discriminated misses, `TransportHttpError` as the only
-throw) but is server-side by construction — its gzip reader needs
+throw) but is server-side by construction: its gzip reader needs
 `node:zlib`. Every remaining subpath of the package is I/O-free; the
 `station/*` subpaths are a separate capability with their own
 [client/server split](/docs/station/client-data/).

@@ -1,6 +1,6 @@
 ---
 title: "The ecCodes gate"
-description: "How @azohra/meteo.grib is accepted — bit-for-bit equality against ecCodes over a frozen twenty-message golden corpus, with exact-equality assertions and no tolerances."
+description: "How @azohra/meteo.grib is accepted: bit-for-bit equality against ecCodes over a frozen twenty-message golden corpus, with exact-equality assertions and no tolerances."
 ---
 
 The decoder's acceptance gate is bit-for-bit agreement with ecCodes,
@@ -10,11 +10,11 @@ identical.
 ## Why exact equality is possible
 
 Decoded GRIB values are integers scaled by powers of two and ten, so
-every value assertion is exact equality — an inexact double is a decoder
+every value assertion is exact equality: an inexact double is a decoder
 bug, never a tolerance question. Two deliberate refinements the gate
 forced:
 
-- Scale factors use ecCodes' iterated `codes_power`, not `Math.pow` —
+- Scale factors use ecCodes' iterated `codes_power`, not `Math.pow`;
   they differ by an ulp at decimal scale 6.
 - The recorded mean is recomputed with numpy's pairwise summation,
   because a naive left-to-right sum differs in the last ulp over
@@ -25,8 +25,8 @@ forced:
 The golden corpus in
 [`test/fixtures/`](https://github.com/azohra/meteo/tree/main/grib/test/fixtures)
 is twenty real messages harvested from every live feed the forecast engine
-reads — GFS, HRRR, NAM, HRDPS (continental and West 1 km), RDPS, GDPS,
-REPS, GEPS, RAQDPS — each paired with an ecCodes-derived (2.48.0)
+reads: GFS, HRRR, NAM, HRDPS (continental and West 1 km), RDPS, GDPS,
+REPS, GEPS, RAQDPS. Each is paired with an ecCodes-derived (2.48.0)
 expectation sidecar:
 
 - a sha256 of the decoded Float64Array (serialized as little-endian
@@ -45,9 +45,9 @@ decametres despite metadata claiming metres.
 
 ## A frozen corpus, by design
 
-The fixtures README —
-[`grib/test/fixtures/README.md`](https://github.com/azohra/meteo/blob/main/grib/test/fixtures/README.md)
-— tells the full story: provenance URLs, the harvest process, and why
+The fixtures README,
+[`grib/test/fixtures/README.md`](https://github.com/azohra/meteo/blob/main/grib/test/fixtures/README.md),
+tells the full story: provenance URLs, the harvest process, and why
 the corpus cannot be regenerated. In short: ECCC's Datamart keeps
 roughly one day of files, so every ECCC source URL expired within ~24 h
 of harvest and no harvester ships in this repository; and the site
@@ -68,6 +68,6 @@ suites that gate this fixture name it directly. Its role in the JPEG
 
 The golden suite lives in the package's `test/` directory alongside the
 module suites. The JPEG 2000 codec configurations sit behind the same
-gate — every codec and strategy combination must reproduce the golden
+gate: every codec and strategy combination must reproduce the golden
 answers, full-decode and sampled
 ([`test/j2k-configs.test.ts`](https://github.com/azohra/meteo/blob/main/grib/test/j2k-configs.test.ts)).

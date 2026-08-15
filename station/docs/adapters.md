@@ -1,24 +1,24 @@
 ---
 title: Adapters
-description: How station hardware becomes wire documents — the shipped vendor adapters, custom adapters, defineStationAdapter, environment injection, caching, and polling etiquette.
+description: "How station hardware becomes wire documents: the shipped vendor adapters, custom adapters, defineStationAdapter, environment injection, caching, and polling etiquette."
 ---
 
 How station hardware becomes wire documents. An adapter is two functions:
 `meta` declares the station's identity and capabilities from config alone,
 and `load` fetches the vendor's upstream, validates it in the vendor's own
 units, and normalizes it into the shapes specified in
-[the wire contract](/docs/station/wire-contract/) — fetch, normalize,
+[the wire contract](/docs/station/wire-contract/): fetch, normalize,
 declare. Whatever the hardware, the client sees one document.
 
 ## The shipped adapters
 
-Three vendors are built in; each has its own reference page — config
+Three vendors are built in; each has its own reference page: config
 fields, capabilities, endpoint, and the quirks the adapter guards:
 
 | Vendor | Hardware | History | Conditions |
 |---|---|---|---|
 | [WindNerd](/docs/station/adapters/windnerd/) | windnerd.net wind stations | yes | pressure, when configured |
-| [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest | no — the REST endpoint serves one observation | the full conditions block |
+| [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest | no; the REST endpoint serves one observation | the full conditions block |
 | [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers | yes | none |
 
 Anything else plugs in as a custom adapter, below.
@@ -52,13 +52,13 @@ The returned document is validated against the wire schema; an invalid return
 degrades that station to `unavailable`/`contract_break` and the rest of the
 feed survives. A loader that **throws** degrades through the same reason
 mapping the built-in adapters use: a thrown `UpstreamError("…", "timeout")`
-surfaces as `timeout`, a network `TypeError` as `upstream_error` —
+surfaces as `timeout`, a network `TypeError` as `upstream_error`;
 `contract_break` is reserved for invalid returned documents and unclassified
 throws.
 
 ## The plugin-factory pattern
 
-A third-party vendor package ships the same thing as a **plugin factory** — a
+A third-party vendor package ships the same thing as a **plugin factory**, a
 function closing over vendor options and returning a config entry:
 
 <!-- meteo-doc-fence: ignore — a vendor-package sketch; toStation is the vendor's own mapping -->
@@ -94,7 +94,7 @@ export function acmeStation(options: {
 Vendor packages that want the full built-in treatment build their loader with
 `defineStationAdapter({ meta, load })` from `@azohra/meteo.station/server`.
 It owns environment resolution, meta assembly, the try/catch degradation
-belt, failure logging, reason mapping, and `mode: "current"` slimming — the
+belt, failure logging, reason mapping, and `mode: "current"` slimming; the
 adapter body is then parse + map, nothing else. Inside its `load`, throw
 freely; the belt degrades.
 
@@ -111,10 +111,10 @@ The rules below bind what an adapter *returns*, however it is built:
   travels.
 - Plausibility bounds live in the adapter, in the VENDOR's units (0–500 km/h
   for km/h upstreams, 0–140 m/s for m/s ones), where a lying instrument costs
-  one station — the contract only validates shape.
+  one station; the contract only validates shape.
 - Cache keys name the upstream identity (vendor + endpoint/station), never a
   host-chosen label.
-- `mode: "current"` means history `null` with meta intact — same decoder,
+- `mode: "current"` means history `null` with meta intact: same decoder,
   lighter document.
 
 `emptyConditions()` from `@azohra/meteo.station` is the starting point
@@ -127,23 +127,23 @@ Adapters touch the world only through an injected environment:
 `{ fetch, cache, logger, userAgent, now }`. Upstream documents go through
 `fetchUpstreamText`, which enforces a 4-second timeout and a 512 KiB
 response cap, and maps HTTP 429 to `rate_limited`. Upstream streams go
-through `fetchUpstreamStream`, whose deadline covers only the connect —
-headers must arrive within 10 seconds; the open body answers to the
-caller's `signal` and an idle watchdog, never to a whole-response timeout —
+through `fetchUpstreamStream`, whose deadline covers only the connect
+(headers must arrive within 10 seconds; the open body answers to the
+caller's `signal` and an idle watchdog, never to a whole-response timeout),
 with the same failure mapping and no cache: a stream is a connection, not a
 document, and every caller owns its own.
 
-- **`cache`** — provide a `FeedCache` backed by KV/Redis when your platform
+- **`cache`**: provide a `FeedCache` backed by KV/Redis when your platform
   runs multiple isolates, so they share one upstream poll instead of each
   keeping a private memory cache.
-- **`logger`** — the default writes degradations to the console
+- **`logger`**: the default writes degradations to the console
   (`warn`/`error`); inject your own to route them, or a no-op to silence
   them. Every `LogEvent` carries a stable `code` (`"upstream_failure"`,
-  `"config_invalid"`, `"clock_skew"`, …) — match alerting on codes, never on
+  `"config_invalid"`, `"clock_skew"`, …); match alerting on codes, never on
   the prose `message`.
-- **`userAgent`** — overrides the default
+- **`userAgent`**: overrides the default
   `azohra-meteo/0.1 (+https://meteo.azohra.com)`.
-- **`now`** — injectable clock, for tests and replay.
+- **`now`**: injectable clock, for tests and replay.
 
 ## The cache trust model
 
@@ -151,18 +151,18 @@ document, and every caller owns its own.
 every handler and bare adapter call in the process shares one bounded
 in-memory cache, and concurrent misses on a key coalesce into a single
 upstream hit. Cache keys name the *upstream* (vendor + endpoint/station
-identity), never credentials or host-chosen labels —
+identity), never credentials or host-chosen labels:
 [Tempest keys deliberately exclude the token](/docs/station/adapters/tempest/#endpoint-and-the-token-free-cache-key),
 so a config carrying a wrong token can be served a payload another config's
 valid token warmed. That is by design (payloads are per-station, not
 per-credential), but it means the default cache trusts every tenant in the
-process: multi-tenant hosts whose tenants must not share payloads — or must
-re-prove credentials per request — should inject a cache per tenant.
+process: multi-tenant hosts whose tenants must not share payloads, or must
+re-prove credentials per request, should inject a cache per tenant.
 
 ## Polling etiquette
 
 Every response advertises `recommendedPollSeconds` per station, derived from
-upstream cache TTLs — polling faster only reheats a cache. Upstreams that
+upstream cache TTLs; polling faster only reheats a cache. Upstreams that
 are not official APIs are treated as guests: validate everything, degrade to
 `unavailable` on any contract break rather than guessing, and identify
 yourself with a User-Agent that names the project.
