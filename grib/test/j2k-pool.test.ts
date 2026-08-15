@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -194,4 +195,28 @@ describePool("J2K worker pool", () => {
     expect(Array.from(codestream.subarray(0, 8))).toEqual(head);
     expect(Array.from(indices)).toEqual([0, 5, 9]);
   });
+});
+
+const packageRoot = fileURLToPath(new URL("..", import.meta.url));
+const distEntry = join(packageRoot, "dist", "j2k-node.js");
+const itWithDist = existsSync(distEntry) ? it : it.skip;
+
+// Workers inherit the host's execArgv, and Node rejects --input-type for
+// file-entry workers, so a host started via `node --input-type=module -e`
+// (the doc-fence runner's shape) must still be able to spawn the pool.
+itWithDist("boots from a host started via node --input-type=module -e", () => {
+  const script = [
+    'const { createNodeJ2kDecoderPool } = await import("./dist/j2k-node.js");',
+    "const pool = await createNodeJ2kDecoderPool({ size: 1 });",
+    "await pool.close();",
+    'console.log("pool booted");',
+  ].join("\n");
+  const child = spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+    cwd: packageRoot,
+    encoding: "utf-8",
+    timeout: 60_000,
+  });
+  expect(child.stderr, "child stderr").not.toMatch(/ERR_INPUT_TYPE_NOT_ALLOWED/);
+  expect(child.status, child.stderr).toBe(0);
+  expect(child.stdout.trim()).toBe("pool booted");
 });

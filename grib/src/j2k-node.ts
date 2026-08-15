@@ -67,6 +67,24 @@ function workerEntry(): URL {
     : new URL("./j2k-worker.ts", import.meta.url);
 }
 
+/* Workers inherit the host's execArgv, and Node rejects --input-type for
+   file-entry workers (ERR_INPUT_TYPE_NOT_ALLOWED), so a host started via
+   `node --input-type=module -e ...` could never spawn the pool. Node
+   keeps the flag exactly as typed — one "--input-type=module" element or
+   a detached "--input-type", "module" pair — so drop both spellings. */
+function workerExecArgv(): string[] {
+  const args: string[] = [];
+  for (let i = 0; i < process.execArgv.length; i += 1) {
+    const arg = process.execArgv[i]!;
+    if (arg === "--input-type") {
+      i += 1; // its value rides as the next element
+      continue;
+    }
+    if (!arg.startsWith("--input-type=")) args.push(arg);
+  }
+  return args;
+}
+
 type J2kJobResponse = Extract<
   J2kWorkerResponse,
   { type: "decoded" } | { type: "sampled" } | { type: "done" }
@@ -174,7 +192,7 @@ export async function createNodeJ2kDecoderPool(
   const spawn = (): Promise<PoolWorker> =>
     new Promise((resolve, reject) => {
       const bootData: J2kWorkerData = { __gribJ2kWorker: J2K_WORKER_TAG, codec };
-      const worker = new Worker(entry, { workerData: bootData });
+      const worker = new Worker(entry, { workerData: bootData, execArgv: workerExecArgv() });
       const handle: PoolWorker = { worker, inFlight: undefined };
       let booted = false;
       worker.on("message", (response: J2kWorkerResponse) => {
