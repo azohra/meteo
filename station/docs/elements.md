@@ -86,13 +86,13 @@ Every react component has its tag twin, rendering the identical DOM:
 | `<meteo-station-card-header>` `-instrument` `-chart` `-summary` | `StationCard.Header` et al. | The card's composable pieces; a part outside `<meteo-station-card>` throws |
 | `<meteo-current-conditions>` | `CurrentConditions` | |
 | `<meteo-wind-history-chart>` | `WindHistoryChart` | `plot-height`, `window-hours`, `compare-offset-days` (`1\|2\|3`, absent when history doesn't reach back that far); the full inspector (preview, pin by timestamp, touch-safe); a persistent compass-letter row and Avg row above/below every vane |
-| `<meteo-trend-chart>` | `TrendChart` | `series="temperature|pressure"` required |
+| `<meteo-trend-chart>` | `TrendChart` | `series="temperature\|pressure"` required |
 | `<meteo-wind-rose>` | `WindRose` | `sector-count`; `points` / `favorableDirections` properties |
 | `<meteo-daily-pattern>` | `DailyPattern` | `slot-minutes`, `utc-offset-minutes`; `points` property; a persistent compass-letter row and Avg row (dashed for a void slot) |
 | `<meteo-station-table>` | `StationTable` | `stationMeta` property: `(station) => string \| Node \| null` |
 | `<meteo-station-strip>` | `StationStrip` | |
 | `<meteo-air-matrix>` | `AirMatrix` | Disclosure state is the element's own |
-| `<meteo-freshness-badge>` | `FreshnessBadge` | `status="live|aging|stale"` |
+| `<meteo-freshness-badge>` | `FreshnessBadge` | `status="live\|aging\|stale"` |
 | `<meteo-dial>` | `Dial` | `size`, `no-calm-word` |
 | `<meteo-sparkline>` | `Sparkline` | `width`, `height`, `no-band` |
 | `<meteo-wind-arrow>` | `WindArrow` | `deg`, `size` |

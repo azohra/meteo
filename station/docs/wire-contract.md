@@ -179,5 +179,7 @@ live). `freshness()` in `@azohra/meteo.station` grades that age into
 cutoffs to the station's own cadence — ten minutes of silence is routine for
 a five-minute logger and a dead feed for a three-second one.
 
+![Three timeline lanes (station, server, client) with the four instants the freshness model reads: the station stamps observedAt, the server stamps servedAt, and the client records receivedAtMs and later reads now on a wall clock running four minutes fast. Braces mark the age's two terms, 15 seconds measured entirely from wire values and 30 seconds measured entirely on the client, summing to 45 seconds, while the naive now minus observedAt on the fast client clock would read 4 minutes 52 seconds and misread a live station as stale.](figures/freshness-clocks.svg)
+
 Each station also advertises `recommendedPollSeconds`, matched to upstream
 cache TTLs — see [polling etiquette](/docs/station/adapters/#polling-etiquette).

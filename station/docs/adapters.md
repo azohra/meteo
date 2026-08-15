@@ -43,7 +43,7 @@ const stations = [{
     // position, zone, pageUrl — nullish claims normalized to null), so meta
     // never re-declares the fields written three lines up.
     const body = await environment.fetch("https://acme.example/latest");
-    return toStation(station, await body.json()); // must be a valid Station
+    return toStation(station, await body.json()); // your mapping; must return a valid Station
   },
 }];
 ```
@@ -80,7 +80,7 @@ export function acmeStation(options: {
         cacheTtlSeconds: 30,
         subject: `AcmeWind ${options.deviceUrl}`,
       });
-      return toStation(station, JSON.parse(text));
+      return toStation(station, JSON.parse(text)); // the vendor package's own mapping
     },
   };
 }

@@ -192,6 +192,8 @@ envelope — only code that constructs `ForecastAnalysis` values by hand
 envelope as JSON, and compare later: the self-description is what a
 later compare validates against.
 
+![The envelope analyzeForecast computed for the committed teaching profile, quoted field by field with the required self-description highlighted (the fully resolved thresholds, the precomputed deterministic flag, coveredDays, and extensions absent rather than empty), beside the six named validations compareAnalyses runs against those same fields: vocabulary-version skew, site and launch mismatch, timezone mismatch, thresholds deep-inequality, missing self-description, and duplicate member identity.](figures/analyze-envelope.svg)
+
 ## Versioning reads tolerantly
 
 `vocabularyVersion` is typed `number`, not the version literal — a

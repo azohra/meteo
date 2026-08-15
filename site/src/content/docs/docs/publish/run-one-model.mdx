@@ -256,7 +256,23 @@ await writeFile("public/index.html", page);
 
 `node render.mjs` leaves `public/` as a complete static tree — page, chart,
 scene-derived key, and the inspectable contract documents it was rendered
-from. Copy it to any static host; you supply the access,
+from:
+
+```
+public/
+  index.html
+  assets/
+    test-hill.svg
+    test-hill-key.svg
+  data/
+    site-context.json
+    hrdps-continental/
+      manifest.json
+      sites/
+        test-hill.json
+```
+
+Copy it to any static host; you supply the access,
 presentation, and retention policy. The sample is a frozen run, so to
 publish current forecasts for your own launches, run the
 [builder CLI](#complete-command-surface) with your catalogue and point the

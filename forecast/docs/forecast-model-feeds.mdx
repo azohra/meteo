@@ -70,7 +70,7 @@ height, and layered cloud. Each model's curated pressure-level set and
 science-field capabilities are declared in
 [`models.json`](https://github.com/azohra/meteo/blob/main/forecast/models.json).
 
-Measurements use live service responses checked through 2026-08-13. When
+Measurements use live service responses checked through 2026-08-14. When
 provider documentation and live capabilities disagree, use the live response
 and update the verification date.
 
@@ -98,7 +98,7 @@ each model's section holds the exact tokens, windows, and levels.
 | RRFS | every hour | instant | 1 h bucket | instant | none | present | geometric w → omega |
 | RDPS | PT000 only | instant | 1 h window | hour-max | 9999 | present | omega, 2 levels |
 | GDPS | PT000 only | instant | run total, differenced | hour-max | 9999 | present | omega, 3 levels |
-| GFS | — | window averages, differenced | resetting buckets, differenced | instant | none | present | omega, all levels |
+| GFS | every step | window averages, differenced | resetting buckets, differenced | instant | none | present | omega, all levels |
 | NAM 12 km | every hour | instant | resetting buckets | instant | none | present | omega, all levels |
 | NAM CONUS nest | every hour | instant | resetting buckets | instant | none | present | omega, all levels |
 | REPS | PT000, per member | instant, per member | run total, differenced | none | — | absent | none |
@@ -385,6 +385,10 @@ Quirks:
 - **875 hPa does not exist** in the `pgrb2.0p25` files, which is why the
   GFS entry in `models.json` declares eight levels where the other NOAA
   deterministic feeds declare nine.
+- **Model terrain ships every step**: one `HGT:surface` record per
+  `pgrb2.0p25` file, f000 (`anl`) through f384 [verified 2026-08-14 at
+  f000/f003/f024/f384]; the builder reads it once, from the run's first
+  forecast hour.
 - **Omega is published at all eight curated levels through f384**: `VVEL`
   (paramId 135, Pa/s, `stepType=instant`), the isobaric record count
   matching TMP's — no late-horizon thinning relative to the mass fields

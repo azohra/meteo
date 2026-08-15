@@ -5,11 +5,8 @@ import Figure from "../figure/Figure.astro";
 const maxHours = 384;
 const ticks = [0, 48, 84, 240, 384];
 const chartModels = MODELS.filter((model) => model.kind === "deterministic")
-  .map((model, colorIndex) => ({ model, colorIndex: colorIndex + 1 }))
-  .sort(
-    (left, right) =>
-      left.model.horizonHours - right.model.horizonHours || left.model.gridKm - right.model.gridKm,
-  );
+  .sort((left, right) => left.horizonHours - right.horizonHours || left.gridKm - right.gridKm)
+  .map((model, rowIndex) => ({ model, colorIndex: (rowIndex % 6) + 1 }));
 const description = chartModels
   .map(({ model }) => `${model.label}: ${model.gridKm} kilometre grid and ${model.horizonHours} hour horizon.`)
   .join(" ");

@@ -2509,6 +2509,692 @@ async function composeIngestLoop() {
   });
 }
 
+async function composeAnalyzeEnvelope(ctx) {
+  const { analyzeForecast, ANALYZE_VOCABULARY_VERSION } =
+    await ctx.importPackage("briefing/analyze");
+  const meta = ctx.scenarioMeta("convective-cycle");
+  const profile = await ctx.loadProfile("convective-cycle");
+  const envelope = analyzeForecast(profile, { launch: meta.launch });
+  if (envelope.extensions !== undefined) {
+    throw new Error(
+      "[analyze-envelope] the teaching envelope grew extensions; this figure states their absence",
+    );
+  }
+
+  /* The left card quotes the envelope analyzeForecast computed at
+     figure-generation time; the right column is compare.md's validation
+     list. The chips pair each validated field with its validation. */
+  const cardW = 452;
+  const q = (value) => `"${value}"`;
+  const groups = [
+    {
+      label: "IDENTITY · THE MEMBER KEY AND ITS SITE",
+      rows: [
+        { chip: "1", text: `vocabularyVersion: ${envelope.vocabularyVersion}` },
+        { chip: "6", text: `model: ${q(envelope.model)}` },
+        { text: `run: { referenceTime: ${q(envelope.run.referenceTime)} }` },
+        { chip: "2", text: `site: { id: ${q(envelope.site.id)},` },
+        { text: `        launchAltitudeM: ${envelope.site.launchAltitudeM},` },
+        { text: `        modelElevationM: ${envelope.site.modelElevationM} }` },
+        { chip: "3", text: `timeZone: ${q(envelope.timeZone)} (${envelope.timeZoneSource})` },
+      ],
+    },
+    {
+      label: "THE SELF-DESCRIPTION · REQUIRED SINCE V4",
+      accent: true,
+      rows: [
+        {
+          chip: "4",
+          text: `thresholds: { ${Object.keys(envelope.thresholds).length} kinds, fully resolved }`,
+        },
+        { chip: "5", text: `deterministic: ${envelope.deterministic}` },
+        { chip: "5", text: `coveredDays: [${envelope.coveredDays.map(q).join(", ")}]` },
+        { text: "extensions: absent, not empty" },
+      ],
+    },
+    {
+      label: "THE STATEMENTS",
+      rows: [
+        { text: `findings: [ ${envelope.findings.length} findings, each carrying` },
+        { text: "            its thresholds and cited evidence ]" },
+        {
+          text: `stepHours: ${envelope.stepHours} · hours: ${envelope.hours}`,
+        },
+      ],
+    },
+  ];
+
+  const card = [];
+  card.push(
+    t(16, 26, "ONE SERIALIZED ENVELOPE", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 }),
+  );
+  card.push(
+    t(cardW - 16, 25, "computed by analyzeForecast", {
+      font: MONO,
+      size: 9.5,
+      fill: INK_MUTE,
+      anchor: "end",
+    }),
+  );
+  card.push(
+    `<line x1="0" y1="40" x2="${cardW}" y2="40" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+  );
+  let cy = 64;
+  for (const group of groups) {
+    if (group.accent) {
+      const boxTop = cy - 16;
+      const boxHeight = 22 + group.rows.length * 22;
+      card.push(
+        `<rect x="8" y="${boxTop}" width="${cardW - 16}" height="${boxHeight}" fill="${SURFACE_ACCENT}" stroke="${ACCENT_STRONG}" stroke-width="1.4"/>`,
+      );
+    }
+    card.push(
+      t(16, cy, group.label, {
+        font: MONO,
+        size: 9.5,
+        weight: 700,
+        ls: 0.4,
+        fill: group.accent ? ACCENT_STRONG : INK_MUTE,
+      }),
+    );
+    cy += 22;
+    for (const row of group.rows) {
+      if (row.chip) card.push(chip(26, cy - 4, row.chip));
+      card.push(t(42, cy, row.text, { font: MONO, size: 11, fill: INK }));
+      cy += 22;
+    }
+    cy += 10;
+  }
+  const cardHeight = cy;
+  card.unshift(
+    `<rect width="${cardW}" height="${cardHeight}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+  );
+
+  const validations = [
+    {
+      n: "1",
+      text:
+        `vocabularyVersion: strict equality with this package's ANALYZE_VOCABULARY_VERSION ` +
+        `(${ANALYZE_VOCABULARY_VERSION}); skew throws with the remedy named: re-analyze, or compare ` +
+        "with the package that produced it",
+    },
+    {
+      n: "2",
+      text:
+        "site.id and site.launchAltitudeM: one comparison, one site, one launch; a mismatch " +
+        "throws, null-vs-number included",
+    },
+    { n: "3", text: "timeZone: day keys pair only in one zone" },
+    {
+      n: "4",
+      text:
+        "thresholds: deep equality, naming the first differing path " +
+        "(thermalWindow.wstarMinMps: 0.9 vs 0.8)",
+    },
+    {
+      n: "5",
+      text:
+        "thresholds / deterministic / coveredDays present: the runtime door for parsed JSON an " +
+        "old-enough serialization fails; deterministic is the precomputed p50 fact, never re-derived",
+    },
+    {
+      n: "6",
+      text:
+        "(model, run.referenceTime): member identity since vocabulary 2; the same run twice " +
+        "is a programming error and throws",
+    },
+  ];
+  const rightX = 496;
+  const rightW = 484;
+  const right = [];
+  right.push(
+    t(rightX, 26, "COMPAREANALYSES VALIDATES, NEVER RECONSTRUCTS", {
+      font: DISPLAY,
+      size: 18,
+      weight: 800,
+      ls: 0.36,
+    }),
+  );
+  right.push(
+    `<line x1="${rightX}" y1="40" x2="${rightX + rightW}" y2="40" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+  );
+  const list = legendRows(validations, rightW, 0);
+  right.push(`<g transform="translate(${rightX} 62)">${list.markup}</g>`);
+
+  const bodyHeight = Math.max(cardHeight, 62 + list.height) + 34;
+  const body = `${card.join("\n  ")}
+  ${right.join("\n  ")}
+  ${t(0, bodyHeight - 2, "compareAnalyses options deliberately lack timeZone, launch, and thresholds: they come from the members and are validated, never supplied", { font: MONO, size: 10.5, fill: INK_SOFT })}`;
+
+  return frame({
+    id: "analyze-envelope",
+    title: "The envelope re-enters compare without the profile",
+    lesson:
+      "Everything a downstream comparison validates or states about a member rides the serialized ForecastAnalysis itself: analyze once at the edge, cache the envelope as JSON, and compare later without re-opening any profile.",
+    description: `The envelope analyzeForecast computed for the committed convective-cycle teaching profile, quoted field by field: vocabularyVersion ${envelope.vocabularyVersion}, member identity (model and run referenceTime), the site block with the launch the analysis ran against, the timezone and its source, and the required self-description: the fully resolved thresholds for ${Object.keys(envelope.thresholds).length} kinds, the precomputed deterministic flag, the coveredDays the hours actually touch, and extensions absent rather than empty. Beside it, the six named validations compareAnalyses runs against those same fields: vocabulary-version skew, site and launch mismatch, timezone mismatch, thresholds deep-inequality, missing self-description, and duplicate member identity.`,
+    caption:
+      "The left card is not hand-written: every value is read from the envelope analyzeForecast returns for the committed teaching profile at figure-generation time, and the figure refuses to build if that envelope grows extensions. The right column is the validation list the compare guide documents; each failure is a distinct, named error.",
+    units: "no numeric scale · a document anatomy",
+    bodyWidth: 980,
+    bodyHeight,
+    body,
+  });
+}
+
+async function composeReliefPercentiles(ctx) {
+  /* Both panels read the committed site-context sample document at
+     figure-generation time (the same bytes the site serves at
+     /data-sample/site-context.json), so the figure drifts with the data. */
+  const context = JSON.parse(
+    readFileSync(join(ctx.root, "site/public/data-sample/site-context.json"), "utf8"),
+  );
+  const panels = [
+    {
+      chip: "A",
+      slug: "test-hill",
+      heading: "A RISE, MID-SLOPE IN BIGGER TERRAIN",
+    },
+    {
+      chip: "B",
+      slug: "test-valley",
+      heading: "A VALLEY FLOOR AS THE RADIUS GROWS",
+    },
+  ].map((spec) => {
+    const site = context.sites[spec.slug];
+    if (!site) throw new Error(`[relief-percentiles] ${spec.slug} left the sample document`);
+    return { ...spec, site };
+  });
+
+  const panelW = 452;
+  const plotTop = 96;
+  const plotHeight = 240;
+  const barW = 72;
+  const barXs = [64, 200, 336];
+
+  const panelMarkup = (spec, x0) => {
+    const { terrain } = spec.site;
+    const discs = terrain.relief;
+    const minM = Math.min(...discs.map((disc) => disc.minM));
+    const maxM = Math.max(...discs.map((disc) => disc.maxM));
+    const pad = (maxM - minM) * 0.08;
+    const yFor = (m) =>
+      plotTop + plotHeight - ((m - (minM - pad)) / (maxM - minM + pad * 2)) * plotHeight;
+
+    const parts = [];
+    parts.push(panelChip(x0, 8, spec.chip));
+    parts.push(t(x0 + 34, 26, spec.heading, { font: DISPLAY, size: 17, weight: 800, ls: 0.36 }));
+    parts.push(t(x0 + 16, 52, spec.slug, { font: MONO, size: 11, weight: 700, fill: INK_SOFT }));
+    parts.push(
+      t(
+        x0 + panelW - 16,
+        52,
+        `launch pick ${spec.site.elevation.elevationM} m · ${spec.site.elevation.source}`,
+        { font: MONO, size: 9.5, weight: 700, fill: ACCENT_STRONG, anchor: "end" },
+      ),
+    );
+    parts.push(
+      `<line x1="${x0}" y1="64" x2="${x0 + panelW}" y2="64" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+    );
+
+    discs.forEach((disc, index) => {
+      const bx = x0 + barXs[index];
+      const yMax = yFor(disc.maxM);
+      const yMin = yFor(disc.minM);
+      parts.push(
+        `<rect x="${bx}" y="${round(yMax)}" width="${barW}" height="${round(yMin - yMax)}" fill="${SURFACE_SUNKEN}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+      );
+      parts.push(
+        t(bx + barW / 2, yMax - 8, `${localeRound(disc.maxM)} m`, {
+          font: MONO,
+          size: 9.5,
+          fill: INK_SOFT,
+          anchor: "middle",
+        }),
+      );
+      parts.push(
+        t(bx + barW / 2, yMin + 14, `${localeRound(disc.minM)} m`, {
+          font: MONO,
+          size: 9.5,
+          fill: INK_SOFT,
+          anchor: "middle",
+        }),
+      );
+      parts.push(
+        t(bx + barW / 2, plotTop + plotHeight + 34, `${disc.radiusKm} km`, {
+          font: MONO,
+          size: 11,
+          weight: 700,
+          anchor: "middle",
+        }),
+      );
+      const launchY = yFor(spec.site.elevation.elevationM);
+      parts.push(
+        `<rect x="${bx + 6}" y="${round(launchY - 11)}" width="${barW - 12}" height="17" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.2"/>`,
+      );
+      parts.push(
+        t(bx + barW / 2, launchY + 2, `p${disc.percentile}`, {
+          font: MONO,
+          size: 10.5,
+          weight: 800,
+          fill: ACCENT_INK,
+          anchor: "middle",
+        }),
+      );
+    });
+
+    const launchY = yFor(spec.site.elevation.elevationM);
+    parts.push(
+      `<line x1="${x0 + 28}" y1="${round(launchY)}" x2="${x0 + panelW - 28}" y2="${round(launchY)}" stroke="${ACCENT_STRONG}" stroke-width="1.6" stroke-dasharray="6 4"/>`,
+    );
+    parts.push(
+      `<text x="${x0 + 24}" y="${round(launchY + 3)}" text-anchor="end" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="9" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${escapeXml("launch")}</text>`,
+    );
+    parts.push(
+      t(x0 + 16, plotTop + plotHeight + 34, "disc radius", { font: MONO, size: 9, fill: INK_MUTE }),
+    );
+    return parts.join("\n  ");
+  };
+
+  const rows = [
+    {
+      term: "the bars",
+      text:
+        "each relief disc's minM-to-maxM terrain span, from the committed document: one " +
+        "consistent elevation model (glo30) across every site, so the numbers compare",
+    },
+    {
+      term: "percentile",
+      text:
+        "the launch elevation's rank among the disc's terrain, a topological reading rather than a " +
+        "height fraction: 100 is the local summit, 50 mid-slope; aspectDeg goes low-confidence " +
+        "near 100",
+    },
+    {
+      term: "the line",
+      text:
+        "THE launch elevation: the elevation block's measured pick (lidarbc here), the number " +
+        "consumers render the launch line with and read launch-relative analysis against",
+    },
+    {
+      term: "read together",
+      text:
+        "one radius is not a verdict: high at 1 km and low at 10 km is a foothill in front of " +
+        "bigger terrain; falling with radius, as on the valley floor, is terrain growing above " +
+        "the launch",
+    },
+  ];
+  const ledger = ledgerRows(rows, 980, plotTop + plotHeight + 58);
+
+  const body = `${panelMarkup(panels[0], 0)}
+  <line x1="490" y1="8" x2="490" y2="${plotTop + plotHeight + 44}" stroke="${RULE}" stroke-width="1"/>
+  ${panelMarkup(panels[1], 528)}
+  ${ledger.markup}`;
+
+  return frame({
+    id: "relief-percentiles",
+    title: "Relief discs read together",
+    lesson:
+      "Each relief disc states its terrain span and the launch's percentile rank within it; the radii only mean something side by side: the same launch can be a local high point at 1 km and sit low in its 10 km terrain.",
+    description:
+      "Two panels of three relief discs each, read from the committed site-context sample. Left, test-hill: the launch pick sits at the 73rd percentile of the 1 km disc, the 60th at 3 km, and the 52nd at 10 km, a local rise settling toward mid-slope as bigger terrain enters the disc. Right, test-valley: 60th at 1 km, 43rd at 3 km, and 12th at 10 km, a valley floor once the 10 km disc reaches the surrounding mountains. In every panel the dashed line is the elevation block's measured launch pick crossing all three min-to-max terrain bars.",
+    caption:
+      "Every number is read from the committed sample document (site/public/data-sample/site-context.json) at figure-generation time: bar ends are each disc's minM and maxM, chips are its percentile field, and the dashed line is the elevation pick. The percentile is a rank among the disc's terrain, not a linear position between the bar ends; the chips ride the launch line only because that is the elevation whose rank they state.",
+    units: "elevations m MSL · disc radii km · percentile rank 0-100",
+    bodyWidth: 980,
+    bodyHeight: plotTop + plotHeight + 58 + ledger.height,
+    body,
+  });
+}
+
+async function composeObservationQualityGate() {
+  /* Encodings, ranges, and DQF vocabularies are the observation guide's
+     verified product facts (2026-08-10), restated here as geometry: the
+     same uint16 code 65535 is fill in both products, but only DSR's
+     valid_range contains it. */
+  const panelW = 452;
+  const lineY = 96;
+  const lineW = 388;
+  const lineX = 32;
+
+  const panel = (x0, spec) => {
+    const parts = [];
+    parts.push(panelChip(x0, 8, spec.chip));
+    parts.push(t(x0 + 34, 26, spec.heading, { font: DISPLAY, size: 17, weight: 800, ls: 0.36 }));
+    parts.push(t(x0 + 16, 50, spec.product, { font: MONO, size: 9.5, fill: INK_MUTE }));
+    parts.push(
+      `<line x1="${x0}" y1="62" x2="${x0 + panelW}" y2="62" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+    );
+
+    /* the uint16 number line */
+    const nl = x0 + lineX;
+    parts.push(
+      t(nl, lineY - 18, "THE UINT16 CODES", {
+        font: MONO,
+        size: 9,
+        weight: 700,
+        ls: 0.5,
+        fill: INK_MUTE,
+      }),
+    );
+    parts.push(
+      `<line x1="${nl}" y1="${lineY}" x2="${nl + lineW}" y2="${lineY}" stroke="${INK_SOFT}" stroke-width="1.5"/>`,
+    );
+    parts.push(t(nl, lineY + 18, "0", { font: MONO, size: 9.5, fill: INK_SOFT }));
+    /* valid_range bracket */
+    const bracketEnd = nl + lineW * spec.validFraction;
+    parts.push(
+      `<path d="M${nl} ${lineY - 8} V${lineY - 2} M${nl} ${lineY - 5} H${round(bracketEnd)} M${round(bracketEnd)} ${lineY - 8} V${lineY - 2}" stroke="${ACCENT_STRONG}" stroke-width="1.6" fill="none"/>`,
+    );
+    parts.push(
+      t(nl + (lineW * spec.validFraction) / 2, lineY - 12, `valid_range ${spec.validRange}`, {
+        font: MONO,
+        size: 9.5,
+        weight: 700,
+        fill: ACCENT_STRONG,
+        anchor: "middle",
+      }),
+    );
+    /* the fill code */
+    const fillX = nl + lineW * 0.97;
+    parts.push(
+      `<circle cx="${round(fillX)}" cy="${lineY}" r="5" fill="${CODE_BG}" stroke="${HALO}" stroke-width="1.5"/>`,
+    );
+    parts.push(
+      t(fillX, lineY + 20, "_FillValue 65535", {
+        font: MONO,
+        size: 9.5,
+        weight: 700,
+        anchor: "end",
+      }),
+    );
+    parts.push(
+      t(fillX, lineY + 34, spec.fillVerdict, {
+        font: MONO,
+        size: 9.5,
+        weight: 800,
+        fill: spec.fillInside ? ACCENT_STRONG : INK_SOFT,
+        anchor: "end",
+      }),
+    );
+    parts.push(t(nl, lineY + 34, spec.physical, { font: MONO, size: 9, fill: INK_MUTE }));
+
+    /* DQF states */
+    let py = lineY + 66;
+    parts.push(
+      t(x0 + 16, py, "DQF STATES", { font: MONO, size: 9, weight: 700, ls: 0.5, fill: INK_MUTE }),
+    );
+    py += 20;
+    let px = x0 + 16;
+    for (const state of spec.dqf) {
+      const w = 14 + state.label.length * 6.8;
+      const passed = state.published;
+      parts.push(
+        `<rect x="${round(px)}" y="${py - 14}" width="${round(w)}" height="20" fill="${passed ? ACCENT : SURFACE}" stroke="${passed ? ACCENT_STRONG : RULE_STRONG}" stroke-width="1.2"${state.dashed ? ' stroke-dasharray="4 3"' : ""}/>`,
+      );
+      parts.push(
+        t(px + w / 2, py, state.label, {
+          font: MONO,
+          size: 9.5,
+          weight: 700,
+          fill: passed ? ACCENT_INK : INK_SOFT,
+          anchor: "middle",
+        }),
+      );
+      px += w + 8;
+    }
+    parts.push(
+      t(x0 + panelW - 16, py, spec.gateNote, {
+        font: MONO,
+        size: 9.5,
+        weight: 700,
+        fill: ACCENT_STRONG,
+        anchor: "end",
+      }),
+    );
+
+    /* the night pixel */
+    py += 40;
+    parts.push(
+      t(x0 + 16, py, "A NIGHT PIXEL ARRIVES AS", {
+        font: MONO,
+        size: 9,
+        weight: 700,
+        ls: 0.5,
+        fill: INK_MUTE,
+      }),
+    );
+    py += 20;
+    parts.push(
+      `<rect x="${x0 + 16}" y="${py - 14}" width="${panelW - 32}" height="40" fill="${spec.trap ? SURFACE_ACCENT : SURFACE}" stroke="${spec.trap ? ACCENT_STRONG : RULE_STRONG}" stroke-width="1.4"/>`,
+    );
+    parts.push(t(x0 + 26, py + 2, spec.night, { font: MONO, size: 10.5, weight: 700 }));
+    parts.push(
+      t(x0 + 26, py + 18, spec.nightRead, {
+        font: MONO,
+        size: 9.5,
+        fill: spec.trap ? ACCENT_STRONG : INK_MUTE,
+      }),
+    );
+    return parts.join("\n  ");
+  };
+
+  const dsr = panel(0, {
+    chip: "A",
+    heading: "DSR · DOWNWARD SHORTWAVE",
+    product: "ABI-L2-DSRF · W/m² · scale 0.02289028",
+    validFraction: 1,
+    validRange: "spans 0–65535",
+    fillInside: true,
+    fillVerdict: "INSIDE valid_range",
+    physical: "0–1500 W/m²",
+    dqf: [
+      { label: "0 good", published: true },
+      { label: "1 degraded/invalid", published: false },
+      { label: "255 space", published: false, dashed: true },
+    ],
+    gateNote: "published = 0",
+    night: "fill · DQF 0",
+    nightRead: "the trap: DQF 0 does not imply a retrieval",
+    trap: true,
+  });
+
+  const aod = panel(528, {
+    chip: "B",
+    heading: "AOD · AEROSOL OPTICAL DEPTH",
+    product: "ABI-L2-AODF · at 550 nm · scale 7.706e-5, offset -0.05",
+    validFraction: 0.93,
+    validRange: "[0, 65530]",
+    fillInside: false,
+    fillVerdict: "OUTSIDE valid_range",
+    physical: "-0.05 to +5.0",
+    dqf: [
+      { label: "0 high", published: true },
+      { label: "1 medium", published: true },
+      { label: "2 low", published: false },
+      { label: "3 no retrieval", published: false, dashed: true },
+    ],
+    gateNote: "published <= 1",
+    night: "fill · DQF 3",
+    nightRead: "the explicit no-retrieval flag DSR's night-fill-with-DQF-0 lacks",
+    trap: false,
+  });
+
+  const bandY = 288;
+  const body = `${dsr}
+  <line x1="490" y1="8" x2="490" y2="${bandY - 12}" stroke="${RULE}" stroke-width="1"/>
+  ${aod}
+  <rect x="0" y="${bandY}" width="980" height="76" fill="${STRIP_BG}" stroke="${ACCENT}" stroke-width="1.8"/>
+  ${t(490, bandY + 28, "ONE GATE, BOTH PRODUCTS: UNMASKED AND QUALITY", { font: DISPLAY, size: 19, weight: 800, ls: 0.4, anchor: "middle" })}
+  ${t(490, bandY + 48, "the builder applies the shared gate even where AOD's fill separates cleanly: one code path can only reject more", { size: 11, fill: INK_SOFT, anchor: "middle" })}
+  ${t(490, bandY + 64, "anything that fails publishes as absence: never zero, never a guess", { font: MONO, size: 10, fill: INK_MUTE, anchor: "middle" })}`;
+
+  return frame({
+    id: "observation-quality-gate",
+    title: "Two products, one quality gate",
+    lesson:
+      "DSR and AOD ride the same grid and the same fill code, but their fill and DQF semantics disagree: DSR's fill hides inside valid_range and its binary DQF flags night as good, while AOD's fill separates cleanly under a graded DQF. The builder trusts neither shortcut and gates both on unmasked AND quality.",
+    description:
+      "Two panels comparing the GOES-18 DSR and AOD product semantics. Panel A, DSR: a uint16 number line whose valid_range spans all codes, so the fill value 65535 sits inside it and range checks cannot separate fill from data; DQF has two working states, 0 good and 1 degraded/invalid, plus 255 for space, and only 0 publishes; a night pixel arrives as fill with DQF 0, the trap this panel highlights: DQF 0 does not imply a retrieval. Panel B, AOD: valid_range [0, 65530] excludes the same fill code, so range masking alone separates fill from data; DQF is graded 0 high, 1 medium, 2 low, 3 no retrieval, and values through medium publish; a night pixel arrives as fill with the explicit DQF 3. Beneath both, the shared rule: the builder applies the same unmasked-and-quality gate to both products, and anything that fails publishes as absence.",
+    caption:
+      "Encodings, ranges, and DQF vocabularies are the product facts verified live from the granules on 2026-08-10 and recorded above; the number lines are schematic (codes are not drawn to scale). The gate is goes.ts's one code path for both datasets.",
+    units: "uint16 codes, schematic scale · DSR W/m² · AOD dimensionless at 550 nm",
+    bodyWidth: 980,
+    bodyHeight: 380,
+    body,
+  });
+}
+
+async function composeFreshnessClocks() {
+  /* The instants are schematic, but every printed number obeys the
+     arithmetic it illustrates: 15 s on the wire pair, 30 s on the client
+     pair, and a client wall clock deliberately four minutes fast that the
+     two-clock form cancels out. */
+  const laneX = 210;
+  const laneW = 730;
+  const t0 = Date.parse("2026-08-14T12:00:45Z");
+  const xFor = (iso) => laneX + ((Date.parse(iso) - t0) / 60000) * (laneW / 1.05);
+
+  const lanes = [
+    { y: 34, label: "STATION", sub: "stamps the reading" },
+    { y: 104, label: "SERVER", sub: "stamps the response" },
+    { y: 174, label: "CLIENT", sub: "wall clock 4 min fast" },
+  ];
+  const events = [
+    { lane: 0, at: "2026-08-14T12:00:45Z", label: "observedAt", wall: "12:00:45Z" },
+    { lane: 1, at: "2026-08-14T12:01:00Z", label: "servedAt", wall: "12:01:00Z" },
+    { lane: 2, at: "2026-08-14T12:01:07Z", label: "receivedAtMs", wall: "reads 12:05:07" },
+    { lane: 2, at: "2026-08-14T12:01:37Z", label: "now", wall: "reads 12:05:37" },
+  ];
+
+  const parts = [];
+  for (const lane of lanes) {
+    parts.push(t(0, lane.y + 4, lane.label, { font: DISPLAY, size: 16, weight: 800, ls: 0.4 }));
+    parts.push(t(0, lane.y + 20, lane.sub, { font: MONO, size: 9, fill: INK_MUTE }));
+    parts.push(
+      `<line x1="${laneX}" y1="${lane.y}" x2="${laneX + laneW}" y2="${lane.y}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+    );
+  }
+  for (const event of events) {
+    const x = round(xFor(event.at));
+    const y = lanes[event.lane].y;
+    parts.push(
+      `<circle cx="${x}" cy="${y}" r="6" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.5"/>`,
+    );
+    parts.push(
+      t(x, y - 12, event.label, { font: MONO, size: 10.5, weight: 700, anchor: "middle" }),
+    );
+    parts.push(
+      t(x, y + 22, event.wall, {
+        font: MONO,
+        size: 9.5,
+        fill: event.lane === 2 ? ACCENT_STRONG : INK_SOFT,
+        anchor: "middle",
+      }),
+    );
+  }
+
+  /* the two age segments, each inside one clock domain */
+  const seg = (fromIso, toIso, y, label) => {
+    const x1 = round(xFor(fromIso));
+    const x2 = round(xFor(toIso));
+    return `<path d="M${x1} ${y - 8} V${y} H${x2} V${y - 8}" fill="none" stroke="${ACCENT_STRONG}" stroke-width="1.6"/>
+  ${t((x1 + x2) / 2, y + 16, label, { font: MONO, size: 10.5, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}`;
+  };
+  parts.push(
+    `<line x1="${round(xFor("2026-08-14T12:00:45Z"))}" y1="34" x2="${round(xFor("2026-08-14T12:00:45Z"))}" y2="228" stroke="${RULE}" stroke-width="1" stroke-dasharray="3 4"/>`,
+  );
+  parts.push(
+    `<line x1="${round(xFor("2026-08-14T12:01:00Z"))}" y1="104" x2="${round(xFor("2026-08-14T12:01:00Z"))}" y2="228" stroke="${RULE}" stroke-width="1" stroke-dasharray="3 4"/>`,
+  );
+  parts.push(
+    seg(
+      "2026-08-14T12:00:45Z",
+      "2026-08-14T12:01:00Z",
+      236,
+      "servedAt - observedAt = 15 s · both stamps ride the wire",
+    ),
+  );
+  parts.push(
+    seg(
+      "2026-08-14T12:01:07Z",
+      "2026-08-14T12:01:37Z",
+      274,
+      "now - receivedAtMs = 30 s · both read on the client",
+    ),
+  );
+
+  const verdictY = 312;
+  parts.push(
+    `<rect x="0" y="${verdictY}" width="980" height="88" fill="${STRIP_BG}" stroke="${ACCENT}" stroke-width="1.8"/>`,
+  );
+  parts.push(
+    t(490, verdictY + 30, "AGE = (SERVEDAT - OBSERVEDAT) + (NOW - RECEIVEDATMS) = 45 S", {
+      font: DISPLAY,
+      size: 19,
+      weight: 800,
+      ls: 0.4,
+      anchor: "middle",
+    }),
+  );
+  parts.push(
+    t(
+      490,
+      verdictY + 52,
+      "the naive now - observedAt on this client's wall clock reads 4 min 52 s, a live station misread as stale",
+      {
+        size: 11,
+        fill: INK_SOFT,
+        anchor: "middle",
+      },
+    ),
+  );
+  parts.push(
+    t(
+      490,
+      verdictY + 72,
+      "each difference stays inside one clock domain, so the client's 4-minute error never enters the sum",
+      {
+        font: MONO,
+        size: 10,
+        fill: INK_MUTE,
+        anchor: "middle",
+      },
+    ),
+  );
+
+  const rows = [
+    {
+      term: "the grade",
+      text:
+        'freshness() grades the age into "live" | "aging" | "stale"; between polls every binding ' +
+        "re-judges the same reading every 30 s, so a dead feed ages visibly",
+    },
+    {
+      term: "the cutoffs",
+      text:
+        "stationFreshnessThresholds() scales them to the station's own cadence: ten minutes of " +
+        "silence is routine for a five-minute logger and a dead feed for a three-second one",
+    },
+  ];
+  const ledger = ledgerRows(rows, 980, verdictY + 108);
+
+  return frame({
+    id: "freshness-clocks",
+    title: "Freshness across three clocks",
+    lesson:
+      "Freshness is judged on the client, but against the server's clock: the wire carries observedAt and servedAt, the client records receivedAtMs, and each subtraction stays inside one clock domain, so a wrong client clock cannot declare a live station stale, or a dead one live.",
+    description:
+      "Three timeline lanes (station, server, client) with the four instants the freshness model reads. The station stamps observedAt 12:00:45Z; the server stamps the response servedAt 12:01:00Z; the client records receivedAtMs and later reads now, and its wall clock runs four minutes fast, printing 12:05:07 and 12:05:37. Two braces mark the age's two terms: servedAt minus observedAt is 15 seconds, measured entirely from wire values, and now minus receivedAtMs is 30 seconds, measured entirely on the client. The verdict band sums them: age 45 seconds, while the naive now minus observedAt on the fast client wall clock would read 4 minutes 52 seconds and misread a live station as stale.",
+    caption:
+      "The instants are schematic, but every printed number obeys the arithmetic it illustrates, including the deliberate four-minute client clock error the two-clock form cancels. freshness() and stationFreshnessThresholds() are exported from @azohra/meteo.station; the re-judge cadence is FRESHNESS_REEVALUATE_MS.",
+    units: "wall-clock instants UTC · age seconds · client offset schematic",
+    bodyWidth: 980,
+    bodyHeight: verdictY + 108 + ledger.height,
+    body: `${parts.join("\n  ")}
+  ${ledger.markup}`,
+  });
+}
+
 export const PAGE_FIGURE_TARGETS = [
   {
     id: "docs-platform-boundary",
@@ -2565,6 +3251,26 @@ export const PAGE_FIGURE_TARGETS = [
     id: "docs-token-reference",
     file: "briefing/docs/figures/token-reference.svg",
     compose: composeTokenReference,
+  },
+  {
+    id: "docs-analyze-envelope",
+    file: "briefing/docs/figures/analyze-envelope.svg",
+    compose: composeAnalyzeEnvelope,
+  },
+  {
+    id: "docs-relief-percentiles",
+    file: "briefing/docs/figures/relief-percentiles.svg",
+    compose: composeReliefPercentiles,
+  },
+  {
+    id: "docs-observation-quality-gate",
+    file: "briefing/docs/figures/observation-quality-gate.svg",
+    compose: composeObservationQualityGate,
+  },
+  {
+    id: "docs-freshness-clocks",
+    file: "station/docs/figures/freshness-clocks.svg",
+    compose: composeFreshnessClocks,
   },
   {
     id: "docs-convergence-ladder",
