@@ -143,7 +143,7 @@ export function buildClubScene(profile: SiteForecast) {
 ```
 
 Display windows, overlay choices, CAPE classes, sink rates, and local colour
-overrides belong to the downstream publisher. Pass them directly to
+overrides belong to the operator. Pass them directly to
 `buildMeteogramScene` or the consuming stylesheet.
 
 ## Deterministic SVG output

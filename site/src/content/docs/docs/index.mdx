@@ -3,6 +3,8 @@ title: Project overview
 description: What each layer does, from provider bytes to a published forecast and its chart, and where each capability's documentation begins.
 ---
 
+import QuantityHomes from "../../../components/about/QuantityHomes.astro";
+
 meteo by Azohra is machinery for publishing soaring forecasts to a flying
 community: an engine you point at your launches, and packages that read,
 analyze, and draw what it publishes. The platform splits a published
@@ -11,7 +13,19 @@ versioned JSON documents, and packages validate, analyze, and render what
 it published. A club, pilot, researcher, or application can run any layer
 on infrastructure it controls.
 
-![Two lanes of packages: provider model files decode through grib and j2k into the forecast engine, which publishes versioned JSON documents that the briefing package reads; weather-station hardware feeds the station package directly over its own live wire; both lanes end at the downstream publisher, with the core package's shared vocabulary beneath briefing and station.](figures/platform-boundary.svg)
+## Where to begin
+
+Every capability's section in the sidebar opens with its own first steps
+and carries its install command. The three doors most readers want: the
+operator's path starts at
+[Configure launches](/docs/forecast/configure-launches/), the TypeScript
+reader's at
+[Render a first Meteogram](/docs/briefing/render-first-meteogram/), and the
+station owner's at
+[Station getting started](/docs/station/getting-started/). The rest of
+this page is the map of how those layers fit.
+
+![Two lanes of packages: provider model files decode through grib and j2k into the forecast engine, which publishes versioned JSON documents that the briefing package reads; weather-station hardware feeds the station package directly over its own live wire; both lanes end at the operator, with the core package's shared vocabulary beneath briefing and station.](figures/platform-boundary.svg)
 
 ## The responsibility boundary
 
@@ -22,18 +36,20 @@ on infrastructure it controls.
 | Versioned JSON | Portable model, site, time, semantics, source-field, and derived-value documents | The data boundary between publisher and consumer — [Compatibility](/docs/compatibility/) carries the one rule for reading it |
 | [`@azohra/meteo.briefing`](/docs/briefing/) npm package | Contract validation, pure document derivations, scene construction, hit-testing, and reference SVG | Reusable analysis and presentation primitives |
 | [`@azohra/meteo.station`](/docs/station/) npm package | Live weather-station reading, derivation, and display: client, server, React, and custom-element bindings | The [station capability](/docs/station/) |
-| [`@azohra/meteo.core`](/docs/core/), the shared foundation | Units, angle and wind-vector math with one sign convention platform-wide, zod primitives, and the upstream-failure vocabulary | The [shared physical vocabulary](/docs/core/) every layer imports |
-| Downstream publisher | Location selection, schedule, hosting, retention, presentation, access, verification, and safety language | A complete publication for its audience |
+| [`@azohra/meteo.core`](/docs/core/), the shared foundation | Units, angle and wind-vector math with one sign convention platform-wide, zod primitives, and the upstream-failure vocabulary | The [shared physical vocabulary](/docs/core/) the briefing and station packages build on |
+| The [operator](/docs/glossary/#operator) | Location selection, schedule, hosting, retention, presentation, access, verification, and safety language | A complete publication for their audience |
 
-An operator's pipeline (the cron schedule, the site catalogue, the storage
-credentials) is the downstream publisher's own repository, composing the
-engine; the platform ships the engine, not an instance.
+The operator's pipeline (the cron schedule, the site catalogue, the storage
+credentials) is their own repository, composing the engine; the platform
+ships [the engine, not an instance](/docs/forecast/#engine-not-instance).
 
-## Authority by quantity
+## Who owns each value
 
-The forecast engine owns values that cannot be derived from the published profile alone, including
-its boundary-layer, thermal-velocity, cloud-base, and usable-lift series. The npm
-package owns pure functions of the published document and the reference renderer. Presentation
+The forecast engine owns the **stored derivations** — values that cannot be
+derived from the published profile alone, including
+its boundary-layer, thermal-velocity, cloud-base, and usable-lift series. The briefing
+package owns the **pure derivations** — functions of the published document — and the reference
+renderer. Presentation
 parameters, such as timezone, windows, palette, overlays, and sink-rate choices exposed by the
 renderer, belong to the consumer.
 
@@ -42,30 +58,16 @@ implementation is the package's pure function; the engine imports it and stores 
 evaluation as the authoritative published value, so a consumer projecting another sink rate runs
 the same code that produced the stored series.
 
-The model catalogue is authoritative for capability and provider semantics. The
+<QuantityHomes />
+
+The model catalogue is authoritative for declared capabilities and provider semantics. The
 [model-capabilities guide](/docs/forecast/model-capabilities/) explains how consumers render those
 declarations.
 
-## Where each capability's documentation begins
-
-Every capability's section opens with its own first steps and carries its
-install command:
-
-- [Publish forecasts for your launches](/docs/forecast/configure-launches/) —
-  the forecast engine's operator path, in order, from launch catalogue to
-  downstream access.
-- [Render a first Meteogram](/docs/briefing/render-first-meteogram/) — the
-  read side in TypeScript: contract → scene → SVG, then
-  [analysis](/docs/briefing/analyze/), [comparison](/docs/briefing/compare/),
-  and [history](/docs/briefing/history/).
-- [Show a weather station live](/docs/station/getting-started/) — mount the
-  feed handler, then render components against it, in React or plain HTML.
-- [Decode provider bytes directly](/docs/grib/) — GRIB2 in pure TypeScript,
-  and the [JPEG 2000](/docs/j2k/) inside ECCC messages.
-- [The shared foundation](/docs/core/) — the units, wind math, and failure
-  vocabulary the read side builds on.
-
+The chart at the end of the pipeline is the **Meteogram**: surface forcing
+aligned with the atmosphere above one model grid cell.
 [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) explains every
-mark on the chart, and the [logbook](/logbook/) records how the derivations
+mark on it, the [glossary](/docs/glossary/) carries the platform's other
+terms of art, and the [logbook](/logbook/) records how the derivations
 and visual conventions were established. Where the platform came from, and
 the projects it descends from, is [the about page](/about/).

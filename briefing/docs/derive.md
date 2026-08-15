@@ -9,8 +9,9 @@ index, shear, the B/S ratio, local-day grouping, projection, valid-time
 alignment, units, run freshness, parameterized usable lift, the
 smoke-correction chain, and measured-irradiance interpretation; display
 smoothing belongs to `@azohra/meteo.briefing/meteogram`'s `smooth121`. It does not
-duplicate forecast engine derivations that require raw model inputs; that split is
-defined in the [project overview](/docs/#authority-by-quantity).
+duplicate the engine's **stored derivations** — the values that require raw
+model inputs and are baked into the published document; that split is
+defined in the [project overview](/docs/#who-owns-each-value).
 
 Usable lift shows the boundary at its cleanest:
 `usableLiftTopM(inputs, sinkRateMps)` is the single implementation (the

@@ -36,6 +36,13 @@ to every binding identically. Every hook takes the **mount base** (e.g.
   `initialData`. `useStation` also takes `live?: boolean`: `live: true` replaces its
   current-poll leg with the `/live` stream; the feed poll and the fold are unchanged.
 
+Live is a per-station capability, and today only WindNerd declares it
+([What your hardware shows](/docs/station/what-your-hardware-shows/)). For
+a station without `live`, `/live?station=` answers 404 and the live store
+sits in `backoff` — reach for `useStationLive` and `live: true` only for
+stations that declare it. The custom-elements binding deliberately has no
+live surface; it polls only.
+
 `useFreshness(observedAt, servedAt, receivedAtMs, thresholds?)` grades an
 observation for display; the semantics are the wire contract's
 [freshness model](/docs/station/wire-contract/#freshness-the-servedat-anchor),
@@ -83,6 +90,12 @@ Wind-speed components are display-unit aware (`unit?: "kmh" | "knots" | "mph" | 
 default `"kmh"`) and all take `strings` (word overrides / i18n); components
 that print a timestamp also take `formatTime`.
 Per-station components take `station` (or `stationId`); fleet components take `stations`.
+Components believe the station's declared capabilities:
+`WindHistoryChart`, `TrendChart`, and the sparkline render nothing for a
+station without `history`, `WindSampleStrip` needs `live` samples, and
+`AirMatrix` carries columns only for `conditions`-capable stations —
+[What your hardware shows](/docs/station/what-your-hardware-shows/) is the
+full map.
 
 | Component | Props that matter |
 |---|---|

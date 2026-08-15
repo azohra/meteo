@@ -21,9 +21,9 @@ export function compareSite(
 ): ForecastComparison {
   return compareForecasts(profiles, {
     timeZone,
-    // ONE launch for the whole comparison — typically site-context.json's
-    // elevation pick. Every member's analysis reads against it.
-    launch: { elevationM: 1591 },
+    // ONE launch for the whole comparison — here the sample's Test Hill
+    // pick from site-context.json. Every member's analysis reads against it.
+    launch: { elevationM: 1225.1 },
     thresholds: {
       thermalWindow: { wstarMinMps: 1.0, depthMinM: 350 },
     },
@@ -325,5 +325,5 @@ records each boundary. Readers of serialized comparison envelopes check
 the version at runtime and ignore kinds and fields they do not know;
 the [tolerant-reader convention](/docs/briefing/analyze/#versioning-reads-tolerantly)
 governs readers of the closed set, never the set, which stays
-spike-gated and first-party. Downstream publishers choose weighting,
+spike-gated and first-party. The operator chooses weighting,
 display language, and operational thresholds.

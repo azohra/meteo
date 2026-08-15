@@ -3,6 +3,7 @@ export const sidebar = [
     label: "Start here",
     items: [
       { slug: "docs", label: "Project overview" },
+      { slug: "docs/glossary", label: "Glossary" },
       { slug: "docs/compatibility", label: "Compatibility" },
     ],
   },
@@ -10,9 +11,10 @@ export const sidebar = [
     label: "Briefing",
     items: [
       { slug: "docs/briefing", label: "The read side" },
+      { slug: "docs/briefing/render-first-meteogram", label: "Render a first Meteogram" },
+      { slug: "docs/briefing/reading-a-meteogram", label: "Reading a Meteogram" },
       { slug: "docs/briefing/contract", label: "Contract" },
       { slug: "docs/briefing/transport", label: "Transport" },
-      { slug: "docs/briefing/run-an-ingest", label: "Run an ingest" },
       { slug: "docs/briefing/derive", label: "Pure derivations" },
       { slug: "docs/briefing/analyze", label: "Analyze a profile" },
       { slug: "docs/briefing/compare", label: "Compare profiles" },
@@ -31,15 +33,19 @@ export const sidebar = [
         ],
       },
       {
-        label: "Meteogram",
+        label: "Meteogram internals",
         items: [
-          { slug: "docs/briefing/render-first-meteogram", label: "Render a first Meteogram" },
           { slug: "docs/briefing/scene", label: "Scene graph" },
-          { slug: "docs/briefing/wire-an-inspector", label: "Wire an inspector" },
           { slug: "docs/briefing/svg", label: "SVG renderer and key" },
         ],
       },
-      { slug: "docs/briefing/reading-a-meteogram", label: "Reading a Meteogram" },
+      {
+        label: "Recipes",
+        items: [
+          { slug: "docs/briefing/run-an-ingest", label: "Run an ingest" },
+          { slug: "docs/briefing/wire-an-inspector", label: "Wire an inspector" },
+        ],
+      },
       { slug: "docs/briefing/versioning", label: "Package versioning" },
     ],
   },
@@ -52,8 +58,8 @@ export const sidebar = [
         items: [
           { slug: "docs/forecast/configure-launches", label: "Configure launches" },
           { slug: "docs/forecast/choosing-models", label: "Choose models" },
-          { slug: "docs/forecast/the-mountain-the-model-sees", label: "Model terrain" },
           { slug: "docs/forecast/run-one-model", label: "Run one model" },
+          { slug: "docs/forecast/environment", label: "Environment and credentials" },
           { slug: "docs/forecast/schedule-builds", label: "Schedule builds" },
           { slug: "docs/forecast/tune-the-wire", label: "Tune the wire" },
           { slug: "docs/forecast/static-output", label: "Publish static output" },
@@ -62,10 +68,12 @@ export const sidebar = [
       },
       { slug: "docs/forecast/architecture", label: "Forecast architecture" },
       { slug: "docs/forecast/derivation-science", label: "Meteogram derivations" },
-      { slug: "docs/forecast/builder-contract", label: "Builder contract" },
-      { slug: "docs/forecast/provider-transports", label: "Provider transports" },
+      { slug: "docs/forecast/the-mountain-the-model-sees", label: "The mountain the model sees" },
       { slug: "docs/forecast/model-capabilities", label: "Model capabilities" },
       { slug: "docs/forecast/forecast-model-feeds", label: "Forecast model feeds" },
+      { slug: "docs/forecast/provider-transports", label: "Provider transports" },
+      { slug: "docs/forecast/migrate-v1", label: "Migrate stored v1 documents" },
+      { slug: "docs/forecast/builder-contract", label: "Builder contract" },
     ],
   },
   {
@@ -73,7 +81,6 @@ export const sidebar = [
     items: [
       { slug: "docs/station", label: "Live station display" },
       { slug: "docs/station/getting-started", label: "Getting started" },
-      { slug: "docs/station/wire-contract", label: "Wire contract" },
       {
         label: "Adapters",
         items: [
@@ -84,10 +91,12 @@ export const sidebar = [
           { slug: "docs/station/adapters/ecowitt", label: "Ecowitt" },
         ],
       },
-      { slug: "docs/station/client-data", label: "Client data" },
+      { slug: "docs/station/what-your-hardware-shows", label: "What your hardware shows" },
       { slug: "docs/station/react", label: "React" },
-      { slug: "docs/station/elements", label: "Elements" },
+      { slug: "docs/station/elements", label: "Custom elements" },
       { slug: "docs/station/theming", label: "Theming" },
+      { slug: "docs/station/client-data", label: "Client data" },
+      { slug: "docs/station/wire-contract", label: "Wire contract" },
     ],
   },
   {
@@ -104,8 +113,8 @@ export const sidebar = [
     items: [
       { slug: "docs/j2k", label: "A T.800 decoder in TypeScript" },
       { slug: "docs/j2k/subset", label: "The subset" },
-      { slug: "docs/j2k/correctness", label: "Two-ring correctness" },
-      { slug: "docs/j2k/performance", label: "Performance, honestly" },
+      { slug: "docs/j2k/correctness", label: "Correctness" },
+      { slug: "docs/j2k/performance", label: "Performance" },
     ],
   },
   {

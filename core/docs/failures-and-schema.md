@@ -81,7 +81,9 @@ Each capability that publishes wire documents also publishes JSON Schema
 for them, committed under its own `schema/` directory
 ([briefing](https://github.com/azohra/meteo/tree/main/briefing/schema),
 [station](https://github.com/azohra/meteo/tree/main/station/schema)),
-and this module is the one renderer behind those files.
+and this module is the one renderer behind those files. That convention is
+the fact a consumer needs; the API below exists for the packages' own
+schema emission — a consumer of briefing or station never calls it.
 
 - **`SchemaArtifact`** declares one artifact: `fileName`, `title`, the zod
   `schema` it is generated from, and an optional `description`.

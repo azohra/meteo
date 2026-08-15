@@ -9,7 +9,8 @@ import DerivationFlow from "../../site/src/components/docs/DerivationFlow.astro"
 
 Each weather model publishes atmospheric fields; one shared derivation turns an hourly vertical
 column into cloud base, thermal velocity, boundary-layer top, and usable
-lift, and the renderer classifies stability from the same published column.
+lift — the **stored derivations**, baked into every published profile — and
+the renderer classifies stability from the same published column.
 The constants and fallback rules define the product.
 
 <DerivationFlow />

@@ -3,12 +3,14 @@ title: "Station: live weather-station display"
 description: "The station capability: one wire contract, vendor adapters, a mountable feed handler, and React plus custom-element bindings for rendering live station conditions."
 ---
 
-The **station** capability reads live weather stations and renders them:
-one wire contract, vendor adapters that normalize into it (WindNerd,
-WeatherFlow Tempest, Campbell Scientific loggers, Ecowitt, or your own), a mountable
+The **station** capability reads live weather stations and renders them,
+natively in your page — never a vendor iframe: one wire contract, vendor
+adapters that normalize into it ([four built in, or your
+own](/docs/station/adapters/)), a mountable
 `Request → Response` feed handler, a framework-free client data layer, and
 two peer display bindings (React components and light-DOM custom elements)
-held equivalent by a parity test suite.
+[held byte-identical by a parity suite](/docs/station/elements/) for
+everything both bindings ship.
 
 See the components live: [/station/](/station/) renders the custom-elements
 binding on a synthetic season, on the portal itself.
@@ -41,17 +43,19 @@ import { createStationFeedHandler } from "@azohra/meteo.station/server";
 | Page | Covers |
 |---|---|
 | [Getting started](/docs/station/getting-started/) | Install, mount the handler, render components, the data-level API |
-| [Wire contract](/docs/station/wire-contract/) | The document shape, semantics, evolution rules, HTTP protocol, freshness model |
 | [Adapters](/docs/station/adapters/) | The adapter shape, custom adapters, `defineStationAdapter`, environment injection, caching, polling etiquette, with a reference page per shipped vendor: [WindNerd](/docs/station/adapters/windnerd/), [Tempest](/docs/station/adapters/tempest/), [Campbell](/docs/station/adapters/campbell/), [Ecowitt](/docs/station/adapters/ecowitt/) |
-| [Client data](/docs/station/client-data/) | The framework-free client layer: poller semantics, stores, the merge clock rule |
+| [What your hardware shows](/docs/station/what-your-hardware-shows/) | Each vendor's declared capabilities, and exactly which surfaces appear, degrade, or stay hidden |
 | [React](/docs/station/react/) | Provider, hooks, thresholds, composition, SSR seeding |
-| [Elements](/docs/station/elements/) | The custom-elements binding: registration, attributes vs properties |
+| [Custom elements](/docs/station/elements/) | The custom-elements binding: registration, attributes vs properties |
 | [Theming](/docs/station/theming/) | `.meteo-root` scoping, token tables, dark mode, `@layer` |
+| [Client data](/docs/station/client-data/) | The framework-free layer beneath both bindings: poller semantics, stores, the merge clock rule |
+| [Wire contract](/docs/station/wire-contract/) | The document shape, semantics, evolution rules, HTTP protocol, freshness model |
 
 JSON Schema for the station wire documents lives in
 [`schema/`](https://github.com/azohra/meteo/tree/main/station/schema), with
-committed annotated examples, the same convention the forecast document
-schemas follow in their own package.
+committed annotated examples;
+[the schema-artifact convention](/docs/core/failures-and-schema/#schema-artifacts)
+is core's, shared by every capability that publishes wire documents.
 
 ## Lineage
 

@@ -3,6 +3,10 @@ title: Builder contract
 description: The invariants every deterministic and ensemble model builder must preserve.
 ---
 
+This page is for someone **writing or reviewing a builder module** — an
+operator running the CLI never needs it (the errors a failed build prints
+are quoted in [Run one model](/docs/forecast/run-one-model/#when-a-build-fails)).
+
 A builder translates one verified provider feed into the shared source shape,
 then delegates profile derivation and publication. It does not redefine the
 public JSON shape or renderer behaviour.
@@ -64,12 +68,10 @@ export const SEMANTICS: ForecastSemantics = { gust: "hourMax", precipitation: "i
 
 ## What failure looks like
 
-An invariant violation fails the build, never the document. A missing or
-non-finite required sample throws
-`` `${provider} returned no ${fieldName} for ${site.name}` ``; a NaN that
-survives to publication is refused by the shared writer with
-`` `non-finite value ${value} at ${path} — refusing to publish` ``. Optional
-capability fields are the one sanctioned absence: they stay absent only where
+An invariant violation fails the build, never the document; the exact error
+strings an operator sees are quoted in
+[Run one model](/docs/forecast/run-one-model/#when-a-build-fails). Optional
+declared-capability fields are the one sanctioned absence: they stay absent only where
 catalogue declaration and builder behaviour agree (invariant 5).
 
 ## Source hour versus published hour

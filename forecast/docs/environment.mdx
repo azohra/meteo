@@ -1,0 +1,56 @@
+---
+title: Environment and credentials
+description: "Every environment variable the engine reads: the published-root pointer, the S3 credential set, provider host overrides, and debug switches."
+---
+
+The engine takes its per-invocation choices as CLI flags and its
+deployment's standing configuration as environment variables. This page is
+the complete list — if a variable is not here, the engine does not read it.
+
+## Where the published dataset lives
+
+A real build reads the published dataset to detect what is already there
+and to seed history appends. There is no default root: configure exactly
+one of the two modes, or the build exits with
+`PublisherConfigurationError`.
+
+| Variable | Meaning |
+| --- | --- |
+| `METEO_DATA_BASE` | The published dataset's public HTTPS root (for example `https://forecasts.your.club/data`). On day one, before anything is published there, the URL 404s and the engine correctly reads that as "nothing published yet". |
+| `METEO_R2_BUCKET` | S3 mode: the dataset bucket's name. |
+| `R2_ENDPOINT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | S3 mode: the endpoint and credential pair. |
+
+S3 mode is active only when `METEO_DATA_BASE` is unset **and** all three of
+`R2_ENDPOINT`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` are
+present; the engine then reads the bucket directly so no CDN mediates its
+own reads. Setting `METEO_DATA_BASE` always wins.
+
+## Inputs
+
+| Variable | Meaning |
+| --- | --- |
+| `METEO_SITES` | Default path to the [site catalogue](/docs/forecast/configure-launches/) when `--sites` is not passed. A dispatch with neither fails with a usage error. |
+
+## Provider host overrides
+
+| Variable | Meaning |
+| --- | --- |
+| `METEO_DATAMART_BASE` | Re-points every ECCC Datamart fetch. Default `https://dd.weather.gc.ca`; the research mirror is `https://hpfx.collab.science.gc.ca` — [Tune the wire](/docs/forecast/tune-the-wire/) carries the measured difference. |
+| `METEO_RRFS_BASE` | Re-points the RRFS builder's object-store base without a release. Default `https://noaa-rrfs-pds.s3.amazonaws.com/rrfs_public`. |
+
+## Observation windows
+
+| Variable | Meaning |
+| --- | --- |
+| `METEO_GOES_BACKFILL_HOURS` | How far back a GOES observation build re-reads granules into its rolling window. Default 6; a non-number fails loudly. |
+
+## Debug switches
+
+| Variable | Meaning |
+| --- | --- |
+| `METEO_TRACEBACK` | When set, CLI errors print their full stack trace to stderr instead of the one-line message. |
+
+One variable is deliberately **not** operator surface: `METEO_MAX_STEPS`
+is how the CLI hands `--max-steps` to the builders — a dispatch without
+the flag clears it, so a value you export is ignored. Pass
+`--max-steps` on the command line.

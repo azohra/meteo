@@ -1,4 +1,3 @@
-import QuantityHomes from "./QuantityHomes.astro";
 
 # Why this project exists
 
@@ -59,29 +58,17 @@ and versioning.
 ## Authority across the document boundary
 
 Every published quantity has exactly one authority — the forecast engine or the package, never both.
-[Authority by quantity](/docs/#authority-by-quantity) in the documentation overview is
-that split's home.
-
-<QuantityHomes />
-
-The model
-catalogue states what each model can and cannot publish. Missing capability remains an absence,
+[Who owns each value](/docs/#who-owns-each-value) in the documentation overview is
+that split's home, figure included. The model
+catalogue states what each model can and cannot publish. A missing declared capability remains an absence,
 never a zero invented by a frontend.
 
 ## Publishing
 
 The forecast engine fetches provider data, derives profiles, and publishes static artifacts. The
-forecast package validates those artifacts and turns them into a scene or SVG. Station handles live observations as
+briefing package validates those artifacts and turns them into a scene or SVG. Station handles live observations as
 a separate capability. They belong to the same platform and can meet in the same pilot experience,
-but neither is required to operate the other.
-
-Club sites, personal publishers, and other downstream applications choose their schedule, hosting,
-location catalogue, access, retention, alerts, and presentation.
-
-The [documentation overview](/docs/) maps these responsibilities. Executable authority lives in
-the engine's [derivation module](https://github.com/azohra/meteo/blob/main/forecast/src/derive.ts) for
-stored derivations, the
-[`briefing/`](https://github.com/azohra/meteo/tree/main/briefing) capability for the
-contract and renderer, and
-[`models.json`](https://github.com/azohra/meteo/blob/main/forecast/models.json) for the model
-catalogue.
+but neither is required to operate the other — the
+[documentation overview](/docs/) maps every responsibility, and clubs,
+personal publishers, and other applications choose their own schedule,
+hosting, access, and presentation on top of it.

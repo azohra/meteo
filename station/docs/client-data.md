@@ -5,7 +5,10 @@ description: "The framework-free polling loop and station stores every binding r
 
 `@azohra/meteo.station/client`: the framework-free polling loop and station
 stores every binding rides: the mirror of `@azohra/meteo.station/server`,
-one subpath per side of the wire. The react hooks are thin wrappers over
+one subpath per side of the wire. If you render with the
+[React](/docs/station/react/) or [custom-elements](/docs/station/elements/)
+binding you never call this layer directly — read on only to build your
+own binding or to understand the shared behaviour underneath. The react hooks are thin wrappers over
 this layer; a binding for any other framework (or none) subscribes to the
 same stores, so no binding can drift on cadence, parsing, merging, or
 degradation. Importing the subpath is safe anywhere (SSR passes, node

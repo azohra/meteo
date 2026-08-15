@@ -35,32 +35,25 @@ provider transport ──→ gridpoint sampling ──→ source-shaped hours
 | Provider transport plumbing | `providers/transport.ts` | One User-Agent, one request timeout, and the download telemetry manifests publish |
 | Provider clients | `providers/datamart.ts`, `providers/noaa.ts`, and the workspace's `@azohra/meteo.grib` decoder | Fetch, range-read, decode, sample, and account for transport work |
 | Published-dataset reads | `dataset.ts` | Read what is already published (public HTTPS via `METEO_DATA_BASE`, or the bucket directly when upload credentials are present) to gate rebuilds and seed history |
-| Builder registry | `builders/registry.ts` | Catalogued model slug → options-only build entry, in exact catalogue order; each factory imports its builder module (dynamic `import()`) only when a build runs |
+| Builder registry | `builders/registry.ts` | Catalogued model slug → options-only build entry, in exact model-catalogue order; each factory imports its builder module (dynamic `import()`) only when a build runs |
 | Builder helpers | `builders/common.ts` | The machinery every build composes identically: forecast-slot timestamps, the bounded fetch pool, source-hour and level skeletons |
 | Builders | `builders/*.ts` | Verify run completeness, request declared fields, preserve absence, assemble source hours |
 | Shared field science | `moisture.ts`, `sentinel.ts` | Inverse-Magnus dew-point depression for models that publish only RH; masking of ECCC's "not computed" CAPE/CIN sentinels |
 | Derivation | `derive.ts` | Produce published profile blocks and model-dependent derived values; the usable-lift derivation is imported from `@azohra/meteo.briefing/derive` and stored at the 1 m/s sink |
 | Ensemble aggregation | `ensemble.ts` | Aggregate member profiles, including circular wind and censored counts |
 | Publication | `publish.ts` | Round contract fields, write JSON, append gzip history, build run index |
-| Wire migration | `migrate.ts` | The one executable home of the v1 → v2 vocabulary change, plus the one-time `meteo forecast migrate` cutover that rewrites a model's published v1 documents in place |
+| Document migration | `migrate.ts` | The one executable home of the v1 → v2 vocabulary change, plus the one-time `meteo forecast migrate` cutover that rewrites a model's published v1 documents in place |
 | History mechanics | `history.ts` | Split gzip members, recompute each month's [sidecar byte-offset index](/docs/briefing/history-archives/#the-sidecar-index) after every append |
-| Terrain catalogue | `terrain.ts` | One-shot `site-context.json` enrichment (elevation, slope/aspect, relief, land cover); the geospatial stack loads only when the `terrain` command runs |
-| Teaching scenarios | `scenario/` (`index.ts`, `json.ts`, `rng.ts`, `shadow.ts`) | Generate fixed inputs through the same derivation authority, split along its seams (definition validation and generation, int/float-preserving JSON, the CPython-compatible RNG, the tagged re-derivation walk) |
-| Checkout discovery | The caller's, not the package's | Every scenario entry point takes `repositoryRoot` as an explicit option; the repo's own answer to "where is the checkout root?" lives with the repo tooling (`internal/scenarios.mjs`), never in the package |
+| Site context | `terrain.ts` | One-shot `site-context.json` enrichment (elevation, slope/aspect, relief, land cover); the geospatial stack loads only when the `terrain` command runs |
+| Teaching scenarios | `scenario/` | Generate fixed inputs through the same derivation authority; source-checkout tooling, not engine surface |
 
 ## Authority boundary
 
 Which quantities the forecast engine owns and which belong to `@azohra/meteo.briefing`
 (including the one parameterized exception) is defined once in the
-[project overview](/docs/#authority-by-quantity). The
+[project overview](/docs/#who-owns-each-value). The
 [Meteogram derivations](/docs/forecast/derivation-science/) define the
 engine's equations, constants, fallbacks, and renderer-only transformations.
-
-## Generated scenarios
-
-Scenario generation starts from committed inputs with fixed identity and time,
-then calls the same profile derivation used by builders. Teaching figures
-consume the generated scenario registry.
 
 The [builder contract](/docs/forecast/builder-contract/) defines the required
 inputs, validation, and publication behaviour for model modules.

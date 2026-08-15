@@ -37,6 +37,12 @@ only; the adapter reports what this endpoint carries and fabricates
 nothing, so `history` is null on every document. `samplingWindowSeconds`
 and `recommendedPollSeconds` are both 60.
 
+On your page that means: **no history chart, no trend chart, no
+sparkline** — a Tempest `StationCard` renders the dial and readouts and no
+chart, which is correct behaviour, not a wiring error. `/live?station=`
+answers 404 and the live hooks never apply. The full capability-to-surface
+map is [What your hardware shows](/docs/station/what-your-hardware-shows/).
+
 The wire contract's `conditions` block is
 [WeatherFlow-shaped](/docs/station/wire-contract/#semantics); this adapter
 is the one that fills every field of it.
@@ -91,3 +97,10 @@ const handler = createStationFeedHandler({
 
 export default { fetch: handler };
 ```
+
+## Where next
+
+Render it: [getting started § 2](/docs/station/getting-started/) mounts the
+card against your feed, in [React](/docs/station/react/) or as
+[custom elements](/docs/station/elements/), and
+[theming](/docs/station/theming/) matches it to your site.

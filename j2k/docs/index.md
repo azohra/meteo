@@ -75,9 +75,14 @@ by the same loud errors:
 ```js
 import { decodeJ2kRegion } from "./dist/index.js";
 
-const region = decodeJ2kRegion(codestream, [879425, 1439871]);
+const region = decodeJ2kRegion(codestream, [93000, 186500]);
 console.log(region.values); // === decodeJ2k(codestream).values at those indexes
 console.log(`${region.codeblocksDecoded}/${region.codeblocksTotal} codeblocks decoded`);
+```
+
+```text
+Int32Array(2) [ 56, 54 ]
+24/85 codeblocks decoded
 ```
 
 On the largest ECCC field a 4-point region decode touches 49 of 911

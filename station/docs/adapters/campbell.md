@@ -113,3 +113,13 @@ const handler = createStationFeedHandler({
 
 export default { fetch: handler };
 ```
+
+## Where next
+
+Render it: [getting started § 2](/docs/station/getting-started/) mounts the
+card against your feed — history is declared, so the chart and trend draw;
+`conditions` is not, so the air matrix carries no column for this station
+([What your hardware shows](/docs/station/what-your-hardware-shows/) maps
+the rest). Pick [React](/docs/station/react/) or
+[custom elements](/docs/station/elements/), then
+[theming](/docs/station/theming/).

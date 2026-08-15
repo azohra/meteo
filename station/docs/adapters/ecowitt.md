@@ -105,3 +105,16 @@ const handler = createStationFeedHandler({
 
 export default { fetch: handler };
 ```
+
+On your page: `history: false` means **no history chart, no trend chart,
+no sparkline** — an Ecowitt `StationCard` renders the dial and readouts and
+no chart, which is correct behaviour, not a wiring error. `/live?station=`
+answers 404 and the live hooks never apply. The full capability-to-surface
+map is [What your hardware shows](/docs/station/what-your-hardware-shows/).
+
+## Where next
+
+Render it: [getting started § 2](/docs/station/getting-started/) mounts the
+card against your feed, in [React](/docs/station/react/) or as
+[custom elements](/docs/station/elements/), and
+[theming](/docs/station/theming/) matches it to your site.

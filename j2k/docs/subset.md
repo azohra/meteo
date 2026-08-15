@@ -3,11 +3,13 @@ title: "The subset: measured, guarded, deliberate"
 description: "The exact codestream shape @azohra/meteo.j2k decodes, measured from the feeds; everything outside it fails loudly with a named UnsupportedJ2kError."
 ---
 
-Every JPEG 2000 codestream the feeds ship, the golden corpus' twelve
-OpenJPEG-encoded fields (GDPS, GEPS, HRDPS, RDPS, REPS, RAQDPS) plus the
-JasPer-encoded shape a live RDPS CAPE field surfaced the day this
-decoder went to production, falls inside this shape, and this decoder
-covers exactly it:
+Every JPEG 2000 codestream the feeds ship — the twelve OpenJPEG-encoded
+ECCC fields of the
+[twenty-message golden corpus](/docs/grib/correctness/) (GDPS, GEPS,
+HRDPS, RDPS, REPS, RAQDPS; the corpus's NOAA messages carry no JPEG 2000)
+plus the JasPer-encoded shape a live RDPS CAPE field
+surfaced the day this decoder went to production — falls inside this
+shape, and this decoder covers exactly it:
 
 - J2K Part 1 raw codestream (no JP2 container: GRIB embeds bare
   SOC..EOC)

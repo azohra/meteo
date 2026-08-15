@@ -12,7 +12,7 @@ member axis from "models at one instant" to "runs of one model" and states
 the convergence ladder: what each successive run said about the same local
 day.
 
-This is the forecast capability's one **server-side** subpath: the archive
+This is the briefing capability's one **server-side** subpath: the archive
 reader is built on `node:zlib`, so it runs in Node, Bun, and Deno but not in
 browsers. Every other subpath of the package stays runtime-agnostic
 ([why, below](#why-the-reader-splits-gzip-members-itself)).
@@ -80,8 +80,8 @@ export async function loadRecentRuns(baseUrl: string) {
   const result = await loadForecastHistory({
     fetch, // the global WHATWG fetch satisfies HistoryFetch directly
     baseUrl,
-    modelSlug: "geps",
-    siteSlug: "erie",
+    modelSlug: "hrdps-continental",
+    siteSlug: "test-hill",
     months: ["2026-07", "2026-08"],
     // Inclusive referenceTime lower bound — also the index fast path's key.
     since: "2026-07-25T00:00:00Z",
@@ -163,7 +163,7 @@ export function convergenceLadder(
 ): RunComparison {
   return compareRuns(runs, {
     timeZone: "America/Vancouver",
-    launch: { elevationM: 1591 },
+    launch: { elevationM: 1225.1 },
     // Pass the loader's republication statements through, so a corrected
     // re-publication is stated on identityDrift instead of silenced.
     revisions,

@@ -1,5 +1,5 @@
 ---
-title: "Choosing among nine deterministic forecast models"
+title: "Choose models"
 description: "Model choice by spatial resolution and forecast schedule"
 ---
 
@@ -8,8 +8,28 @@ import CapabilityMatrix from "../../site/src/components/docs/CapabilityMatrix.as
 import ModelHorizonChart from "../../site/src/components/docs/ModelHorizonChart.astro";
 
 Nine deterministic models publish through the same profile contract with different resolutions,
-lead times, pressure levels, optional capabilities, and field semantics. Choose by lead time and
-required detail, then use disagreement to locate sensitivity in the day.
+lead times, pressure levels, optional capabilities, and field semantics (two ensembles publish
+beside them; [Ensemble values](/docs/briefing/ensemble-values/) covers their shape). Choose by
+lead time and required detail, then use disagreement to locate sensitivity in the day.
+
+The slug in the first column is the string `--model` takes:
+
+| Slug | Grid | New run every | Horizon | Note |
+| --- | ---: | ---: | ---: | --- |
+| `hrdps-west` | 1 km | 12 h | 48 h | experimental feed |
+| `hrdps-continental` | 2.5 km | 6 h | 48 h | |
+| `hrrr-conus` | 3 km | 6 h | 48 h | |
+| `nam-conus-nest` | 3 km | 6 h | 60 h | retires 2026-10-06 |
+| `rrfs` | 3 km | 6 h | 84 h | experimental feed; NAM's declared successor |
+| `rdps` | 10 km | 6 h | 84 h | |
+| `nam` | 12 km | 6 h | 84 h | retires 2026-10-06 |
+| `gdps` | 15 km | 12 h | 240 h | |
+| `gfs` | 25 km | 6 h | 384 h | |
+
+The catalogue (`models.json`, shipped in the package and read as the
+[model catalogue document](/docs/briefing/catalogue/)) is the authority
+behind every cell; per-model publication times and transfer costs are in the
+[feed reference](/docs/forecast/forecast-model-feeds/).
 
 <ModelHorizonChart />
 
@@ -25,7 +45,9 @@ required detail, then use disagreement to locate sensitivity in the day.
 Both NAM entries carry a declared `sunset` in the catalogue (they retire 2026-10-06, and the
 declared successor RRFS publishes through the same contract as an experimental feed), so weigh that
 date when building anything durable on them; the
-[feed reference](/docs/forecast/forecast-model-feeds/) records the lifecycle details.
+[feed reference](/docs/forecast/forecast-model-feeds/) records the lifecycle details, and
+[adopting a retiring model](/logbook/adopting-a-retiring-model/) is the
+case study behind the `sunset` declaration.
 
 A global model can identify a ridge or trough many days out. It cannot resolve the launch cycle on a
 particular mountain face. Use long-range guidance to allocate attention, not to choose an hour.

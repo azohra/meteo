@@ -4,8 +4,11 @@ description: Define the launch catalogue the engine builds forecasts for.
 ---
 
 import { Aside, Steps } from "../../site/src/components/docs/starlight";
+import { SITES_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 
-Every builder reads the same site catalogue. Pass its path with `--sites`;
+A **launch** is the place you fly; a **site** is that launch's record in
+the data — this page authors those records. Every builder reads the same
+site catalogue. Pass its path with `--sites`;
 the CLI resolves it to an absolute path for that dispatch, so the file lives
 wherever your project keeps it.
 
@@ -32,12 +35,14 @@ in [`site-context.json`](/docs/briefing/site-context-document/).
 ```
 
 The catalogue must satisfy `sitesCatalogueSchema` from `@azohra/meteo.briefing/contract` or
-the generated `briefing/schema/sites.schema.json` artifact, and is published
-to the dataset root **verbatim**.
+the generated `briefing/schema/sites.schema.json` artifact. You publish it to
+the dataset root **verbatim** — a build never copies it there
+([Publish static output](/docs/forecast/static-output/#publish-the-dataset-root)
+walks the root files).
 
 | Field | Meaning |
 | --- | --- |
-| `schemaVersion` | Site-catalogue contract version; `2` |
+| `schemaVersion` | Site-catalogue contract version; <code>{SITES_SCHEMA_VERSION}</code> |
 | `slug` | Stable lowercase, hyphenated identity used in output paths |
 | `name` | Reader-facing launch name |
 | `latitude`, `longitude` | Decimal degrees |
@@ -76,22 +81,16 @@ to the dataset root **verbatim**.
    the elevation-pick priority, and its sources are in the
    [site context reference](/docs/briefing/site-context-document/).
 
-5. Validate the whole file without fetching provider data:
-
-   ```sh title="Terminal"
-   pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
-   ```
-
-   An invalid catalogue fails here with the offending field named; a valid
-   one prints the one-line `Would build …` summary and writes nothing.
-
-6. Run the chosen model. If any configured site falls outside that model's
-   sampling guard, the build fails with an out-of-grid error rather than
-   publishing a clamped boundary value. Use a site catalogue appropriate to
-   the selected model domain.
-
 </Steps>
+
+The catalogue is done. Next in the path:
+[Choose models](/docs/forecast/choosing-models/) picks the slug, and
+[Run one model](/docs/forecast/run-one-model/) validates this file with a
+dry run before anything fetches — an invalid catalogue fails there with the
+offending field named, and a site outside the chosen model's sampling guard
+fails the build with an out-of-grid error rather than publishing a clamped
+boundary value.
 
 The catalogue chooses sampling locations and their local clocks. It does not
 choose audience, launch suitability, display windows, or access policy. Those
-belong to the downstream publisher.
+belong to the operator.

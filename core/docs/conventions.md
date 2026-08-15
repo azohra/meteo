@@ -1,6 +1,6 @@
 ---
 title: Units, angles, one wind sign
-description: The unit vocabulary, angle helpers, and the single wind sign convention every meteo package computes with.
+description: The unit vocabulary, angle helpers, and the single wind sign convention the platform's wire documents share.
 ---
 
 The station and briefing packages compute with the same physical vocabulary

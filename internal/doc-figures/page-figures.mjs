@@ -1930,7 +1930,7 @@ async function composePlatformBoundary() {
   );
   parts.push(`<path d="M0 ${round(downstreamY + 2)} h${width}" stroke="${INK}" stroke-width="2"/>`);
   parts.push(
-    t(0, downstreamY + 22, "DOWNSTREAM PUBLISHER", {
+    t(0, downstreamY + 22, "THE OPERATOR", {
       font: MONO,
       size: 12,
       weight: 700,
@@ -1953,9 +1953,9 @@ async function composePlatformBoundary() {
     lesson:
       "An engine publishes versioned JSON; packages read what it published. Station reads live hardware over its own wire and never crosses that boundary.",
     description:
-      "Two lanes. Left: provider model files decode through the grib and j2k packages, the forecast engine publishes versioned JSON documents, and the briefing package reads them. Right: weather-station hardware feeds the station package directly. Both lanes end at the downstream publisher. A dashed bar marks the core package's shared vocabulary beneath briefing and station.",
+      "Two lanes. Left: provider model files decode through the grib and j2k packages, the forecast engine publishes versioned JSON documents, and the briefing package reads them. Right: weather-station hardware feeds the station package directly. Both lanes end at the operator, who publishes for their audience. A dashed bar marks the core package's shared vocabulary beneath briefing and station.",
     caption:
-      "Every layer runs on infrastructure its operator controls. The versioned documents are the data boundary between publisher and consumer; the downstream publisher owns everything its readers see around them.",
+      "Every layer runs on infrastructure its operator controls. The versioned documents are the data boundary between publisher and consumer; the operator owns everything their readers see around them.",
     units: "layer diagram; no numeric scale",
     bodyWidth: width,
     bodyHeight: downstreamY + 30,

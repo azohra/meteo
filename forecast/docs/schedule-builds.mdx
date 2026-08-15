@@ -10,7 +10,11 @@ availability to consumers.
 ## Use the declared cadence
 
 `models.json` declares each forecast model's `runIntervalHours`, `stepHours`,
-and `horizonHours`; observation datasets declare `cadenceMinutes` instead. The living [forecast feed reference](/docs/forecast/forecast-model-feeds/)
+and `horizonHours`; observation datasets declare `cadenceMinutes` instead
+and run on their own clock — a GOES observation builder ticks every
+fifteen minutes, every tick, not when a forecast model publishes
+([the wire told on us](/logbook/wire-told-on-us/) records learning that
+the expensive way). The living [forecast feed reference](/docs/forecast/forecast-model-feeds/)
 records provider schedules and verification dates. Use both when choosing a
 polling window; never run a builder more often than its provider publishes.
 
@@ -24,6 +28,26 @@ scheduler tick
                                          ▼
                                   deploy static tree
 ```
+
+## A worked schedule
+
+`hrdps-continental` publishes four runs a day (00/06/12/18Z), each complete
+roughly **T+3:55** after its reference time — the
+[feed reference](/docs/forecast/forecast-model-feeds/#hrdps-continental-25-km--supported)
+carries the verified window. Ticking a few minutes after the window, in
+UTC, catches each run once:
+
+```text title="crontab (UTC)"
+5 4,10,16,22 * * *  cd /srv/forecasts && pnpm exec meteo forecast build --model hrdps-continental --sites ./sites.json --output ./public/data && ./deploy.sh
+```
+
+Idempotency makes the timing forgiving rather than critical: a tick that
+fires before the run completes publishes nothing, and a tick that sees an
+already-published `referenceTime` exits without rewriting — so an extra
+tick per window (say, 30 minutes later) costs one cheap manifest read and
+covers a slow provider day. `deploy.sh` is whatever moves `--output` to
+your hosting ([Publish static output](/docs/forecast/static-output/) shows
+the sync commands); run it only on a zero exit.
 
 ## Operational rules
 
@@ -51,4 +75,4 @@ than copy builder internals.
 
 For a multi-model schedule, prefer separate invocations over `--all` when
 failure isolation matters. `--all` is useful for controlled batch execution
-and follows catalogue order, but one failing model stops that command.
+and follows the model catalogue's order, but one failing model stops that command.

@@ -1,0 +1,180 @@
+---
+title: Glossary
+description: "The platform's terms of art, one line each, linking to the page that owns each concept — including the words that deliberately carry two meanings."
+---
+
+One line per term, linking to the page that owns it. A few words here
+deliberately carry two senses; those entries say so, because guessing the
+wrong sense is worse than learning there are two.
+
+### Document
+
+A versioned JSON file the engine publishes at a stable path, accepted only
+through a [contract guard](/docs/briefing/contract/). Profiles, manifests,
+catalogues, smoke, observation, and site context are the document kinds.
+
+### Profile
+
+The per-site forecast document (`<model>/sites/<site>.json`) — the boundary
+between generation and rendering. Older prose also says *site profile* and
+*site-forecast document*: three names, [one document](/docs/briefing/profile-document/).
+
+### Manifest
+
+The small per-model discovery document beside the profiles: one publication's
+identity, extent, and accounting. [Model manifest](/docs/briefing/manifest/).
+
+### Model catalogue
+
+`models.json`: which models exist and what each one declares — cadence,
+levels, semantics, declared capabilities.
+[Model catalogue](/docs/briefing/catalogue/).
+
+### Site catalogue
+
+`sites.json`: the launches you author — slug, name, coordinates, timezone,
+identity only, nothing physical.
+[Configure launches](/docs/forecast/configure-launches/).
+
+### Site context
+
+`site-context.json`: machine-measured ground truth per site — the elevation
+pick, terrain, land cover. Not a catalogue: you author nothing in it.
+[Site context document](/docs/briefing/site-context-document/).
+
+### Launch and site
+
+A **launch** is the place you fly; a **site** is that launch's record in
+the data. The prose says *launch* about the world and *site* about the
+files (`sites.json`, `site` block, `siteSlug`) — same referent throughout.
+
+### Run
+
+One model execution. A published run is identified by the pair
+`(run.referenceTime, run.generatedAt)` —
+[publication identity](/docs/compatibility/#publication-identity).
+
+### Reference time
+
+`run.referenceTime`: the model's initialization instant, the time every
+forecast hour counts forward from. (The prose usually shows the identifier;
+this is its English name.)
+
+### schemaVersion and family
+
+A document names its **family** with `schemaVersion`, and the package you
+installed is the exact compatibility test.
+[Compatibility](/docs/compatibility/) is the one rule's home.
+
+### Capability
+
+Two senses. Bare, it is a **product area**: the briefing, forecast,
+station, grib, and j2k capabilities, as in `meteo <capability> <command>`.
+Qualified — a **declared capability** — it is a flag in a document's
+`capabilities` block: what a [model](/docs/forecast/model-capabilities/) or
+a [station](/docs/station/what-your-hardware-shows/) states it can publish.
+Absence of a declared capability means *not published*, never zero.
+
+### Operator
+
+The person or club running an engine deployment — one role, two hats: they
+run the pipeline (schedule, storage, credentials) and they own the
+publication their audience sees (hosting, access, presentation, safety
+language). The platform ships the [engine, not an
+instance](/docs/forecast/); everything on the operator's side of that line
+is theirs.
+
+### Engine and instance
+
+The **engine** is the `@azohra/meteo.forecast` package; an **instance** is
+one operator's deployment of it. The platform ships the engine only.
+[Engine and CLI](/docs/forecast/).
+
+### The read side and the write side
+
+The **write side** is the engine: it derives and publishes documents. The
+**read side** is `@azohra/meteo.briefing`: everything that is a pure
+function of what was published. [The read side](/docs/briefing/).
+
+### Meteogram
+
+The chart the platform exists to produce: surface forcing aligned with the
+atmosphere above one model grid cell.
+[Reading a Meteogram](/docs/briefing/reading-a-meteogram/) explains every
+mark.
+
+### Scene
+
+Serializable, renderer-independent geometry built from one validated
+profile; the SVG serializer draws it, the hit-testing queries answer from
+it. [Scene graph](/docs/briefing/scene/).
+
+### Finding
+
+A typed statement about one forecast — a `kind`, its numbers, the hours it
+cites, and the thresholds it was computed with.
+[Analyze a profile](/docs/briefing/analyze/).
+
+### Stored and pure derivations
+
+**Stored derivations** need raw model inputs, so the engine computes them
+and bakes them into the document (boundary-layer top, thermal velocity,
+cloud base, usable lift). **Pure derivations** are functions of the
+published document alone, so the package computes them on demand.
+[Who owns each value](/docs/#who-owns-each-value) is the split's home.
+
+### History archive
+
+The append-only monthly gzip JSONL of everything a dataset published, with
+a sidecar byte-offset index beside each month.
+[History archives](/docs/briefing/history-archives/).
+
+### Ingest
+
+The store-and-serve loop a consumer runs to hold published documents:
+poll `runs.json`, ingest coherent publications, serve through gaps.
+[Run an ingest](/docs/briefing/run-an-ingest/).
+
+### Transport
+
+Two senses. The briefing package's
+[`/transport` subpath](/docs/briefing/transport/) loads published documents
+consistently on the read side; the engine's
+[provider transports](/docs/forecast/provider-transports/) are its
+fetch strategies against ECCC and NOAA on the write side.
+
+### Wire
+
+Two senses, both from code. The station capability's
+[**wire contract**](/docs/station/wire-contract/) is the live-station
+document shape and its HTTP protocol. The engine's **`[wire]` report** is
+the transport summary every build prints —
+[Tune the wire](/docs/forecast/tune-the-wire/) reads it.
+
+### Adapter
+
+Two functions (`meta` and `load`) that turn one station vendor's upstream
+into a wire document. [How adapters work](/docs/station/adapters/).
+
+### Member
+
+Three senses, each local to its page: an **ensemble member** (one of a
+run's perturbations — [Ensemble values](/docs/briefing/ensemble-values/)),
+a **comparison member** (one `(model, referenceTime)` pair —
+[Compare profiles](/docs/briefing/compare/)), and a **gzip member** (one
+independently decodable block of an archive —
+[History](/docs/briefing/history/)).
+
+### Feed
+
+Two senses. A station **feed** is the `/feed` endpoint's document — every
+configured station in one response
+([Getting started](/docs/station/getting-started/)). A model **feed** is a
+provider's published data stream
+([Forecast model feeds](/docs/forecast/forecast-model-feeds/)).
+
+### Absence is never zero
+
+The platform's one data rule, everywhere: an optional field that is absent
+means *not published* or *not measured* — a reader must never render it as
+zero. [Compatibility](/docs/compatibility/) states it normatively.

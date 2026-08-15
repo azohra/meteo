@@ -3,6 +3,7 @@ title: Package versioning
 description: The @azohra/meteo.briefing npm version, the finding vocabularies, and the release-tag snapshot boundary.
 ---
 
+import { SITE_FORECAST_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
 import { ANALYZE_VOCABULARY_VERSION } from '@azohra/meteo.briefing/analyze';
 import { COMPARE_VOCABULARY_VERSION } from '@azohra/meteo.briefing/compare';
 import { RUN_COMPARISON_VOCABULARY_VERSION } from '@azohra/meteo.briefing/history';
@@ -42,7 +43,7 @@ other:
 | `RUN_COMPARISON_VOCABULARY_VERSION` | <code>{RUN_COMPARISON_VOCABULARY_VERSION}</code> | `briefing/src/history/compare-runs.ts` | The [run-comparison kinds](/docs/briefing/history/) |
 
 The current release publishes site-forecast documents at
-`schemaVersion: 2`, and its analysis and comparison envelopes carry the
+<code>schemaVersion: {SITE_FORECAST_SCHEMA_VERSION}</code>, and its analysis and comparison envelopes carry the
 profile contract's `Mps` suffix grammar (`wstarMinMps`,
 `peakThermalVelocityMps`, `meanWindMps`, `directionFloorMps`, and their
 siblings). Envelopes serialized under earlier vocabularies keep their old

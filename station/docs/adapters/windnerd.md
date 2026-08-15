@@ -96,9 +96,10 @@ Beyond the shared `{ historyHours, mode, environment }`,
 | `liveUrl` | Overrides the live endpoint base, for tests and proxies. |
 
 The fleet API (`loadStationFeed`, the mounted handler) forwards none of
-these: a season pull at period 180 calls the adapter directly, as
-[getting started § 3](/docs/station/getting-started/#3--a-season-not-a-window)
-walks through.
+these: a season pull at period 180 calls `loadWindnerdStation` directly.
+The slicing functions that turn a season of points into roses and daily
+patterns are in
+[the client data layer](/docs/station/client-data/#slicing-history).
 
 ### Aggregate buckets follow local standard time
 
@@ -165,3 +166,12 @@ const handler = createStationFeedHandler({
 
 export default { fetch: handler };
 ```
+
+## Where next
+
+Render it: [getting started § 2](/docs/station/getting-started/) mounts the
+card against your feed. WindNerd declares every capability
+([What your hardware shows](/docs/station/what-your-hardware-shows/)), so
+the chart, trend, and the `/live` stream all apply. Pick
+[React](/docs/station/react/) or [custom elements](/docs/station/elements/),
+then [theming](/docs/station/theming/).

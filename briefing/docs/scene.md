@@ -19,9 +19,9 @@ export function sceneAndFirstReading(profile: SiteForecast, olderProfileTimeZone
   if (!timeZone) throw new Error("older profile needs an explicit IANA timezone");
   const scene = buildMeteogramScene(profile, {
     timeZone,
-    // The launch is yours, not the document's — typically site-context.json's
-    // elevation pick. Omit it and no launch marker draws.
-    launch: { name: "Red Mtn", elevationM: 1591 },
+    // The launch is yours, not the document's — here the sample's Test Hill
+    // pick from site-context.json. Omit it and no launch marker draws.
+    launch: { name: "Test Hill", elevationM: 1225.1 },
     hours: profile.hours.slice(0, 8),
     overlays: { thermalIndex: true, windShear: true },
     widthPx: 900,

@@ -1,6 +1,6 @@
 ---
-title: "Forecast: the read side"
-description: "The forecast capability: the published site-forecast contract and its pure functions, plus the Meteogram presentation tier that renders validated documents as point-forecast time-height charts."
+title: "Briefing: the read side"
+description: "The briefing capability: the published site-forecast contract and its pure functions, plus the Meteogram presentation tier that renders validated documents as point-forecast time-height charts."
 ---
 
 The **briefing** capability is the published site-forecast contract and
@@ -15,8 +15,14 @@ values and findings; what it reads is the published-document family
 (profiles, manifests, catalogues, smoke, observation, and site-context
 documents), each with its own reference page below. The **presentation tier** (`/meteogram`) is
 the Meteogram: a validated document becomes a serializable scene graph,
-and the scene becomes deterministic SVG. Every surface is an explicit
-subpath of `@azohra/meteo.briefing`:
+and the scene becomes deterministic SVG. The package installs on its own
+(Node 22 or later; browsers and workers need no Node at all):
+
+```sh
+pnpm add @azohra/meteo.briefing
+```
+
+Every surface is an explicit subpath:
 
 ```ts
 import { parseSiteForecastJson } from "@azohra/meteo.briefing/contract";
@@ -64,7 +70,7 @@ both tiers in one working example.
 
 | Page | Covers |
 |---|---|
-| [Render a first Meteogram](/docs/briefing/render-first-meteogram/) | Validate one profile and serialize a reference chart with its scene-derived key |
+| [Render a first Meteogram](/docs/briefing/render-first-meteogram/) | Fetch a published profile, validate it, and serialize a reference chart with its scene-derived key |
 | [Build a scene graph](/docs/briefing/scene/) | Serializable geometry and hit-testing from one validated profile |
 | [Render SVG and a scene-derived key](/docs/briefing/svg/) | Deterministic SVG from a scene, styled and configured through package defaults and tokens |
 | [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) | What every mark on the rendered chart means, and how to read it |
@@ -81,5 +87,6 @@ recipes over its pure queries and transports:
 
 JSON Schema for the published documents lives in
 [`schema/`](https://github.com/azohra/meteo/tree/main/briefing/schema),
-with committed annotated examples, the same convention the station wire
-schemas follow in their own package.
+with committed annotated examples;
+[the schema-artifact convention](/docs/core/failures-and-schema/#schema-artifacts)
+is core's, shared by every capability that publishes wire documents.

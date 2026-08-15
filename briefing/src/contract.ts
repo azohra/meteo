@@ -383,11 +383,11 @@ export type DsrObservation = z.infer<typeof dsrObservationSchema>;
 
 export const aotObservationSchema = z.object({
   observedAt: observedAtSchema,
-  /** Measured aerosol optical thickness at 550 nm — the same quantity a smoke document forecasts as `aot`; instants without an accepted retrieval are absent — "not measured", never clear air. */
+  /** Measured aerosol optical thickness at 550 nm — the same quantity a profile's `smoke` block forecasts as `aot`; instants without an accepted retrieval are absent — "not measured", never clear air. */
   aot: z
     .number()
     .describe(
-      'Measured aerosol optical thickness at 550 nm (GOES-R ABI L2 AOD, high+medium quality) — the same quantity and wavelength a smoke document forecasts as aot. Daytime product: instants without an accepted retrieval are absent — "not measured", never clear air.',
+      'Measured aerosol optical thickness at 550 nm (GOES-R ABI L2 AOD, high+medium quality) — the same quantity and wavelength a profile\'s smoke block forecasts as aot. Daytime product: instants without an accepted retrieval are absent — "not measured", never clear air.',
     ),
 });
 export type AotObservation = z.infer<typeof aotObservationSchema>;

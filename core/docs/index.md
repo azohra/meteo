@@ -10,18 +10,9 @@ each capability uses to emit its JSON Schema artifacts. The packages that
 carry these quantities on their wires (station and briefing) build on it;
 grib, j2k, and forecast declare no dependency on it.
 
-**Looking for a product, not a foundation?**
-
-- **Forecasts**: the published site-forecast contract, pure derivations,
-  analysis, comparison, history, transport, and the Meteogram presentation
-  tier → [`@azohra/meteo.briefing`](/docs/briefing/)
-- **The forecast engine**: fetch provider bytes, derive, and publish the
-  documents yourself → [`@azohra/meteo.forecast`](/docs/forecast/)
-- **Live stations**: live weather-station reading, derivation, and display
-  → [`@azohra/meteo.station`](/docs/station/)
-- **Provider bytes**: the pure-TypeScript GRIB2 decoder →
-  [`@azohra/meteo.grib`](/docs/grib/), and the JPEG 2000 decoder inside it →
-  [`@azohra/meteo.j2k`](/docs/j2k/)
+Looking for a product, not a foundation? The
+[project overview's responsibility table](/docs/#the-responsibility-boundary)
+maps every layer and links each one's documentation.
 
 The package installs on its own:
 
@@ -62,5 +53,5 @@ Dependencies: [zod](https://zod.dev) only.
 
 | Page | Covers |
 |---|---|
-| [Units, angles, one wind sign](/docs/core/conventions/) | The unit vocabulary, angle helpers, and the wind sign convention every platform package shares |
+| [Units, angles, one wind sign](/docs/core/conventions/) | The unit vocabulary, angle helpers, and the wind sign convention the platform's wire documents share |
 | [Failures and schema artifacts](/docs/core/failures-and-schema/) | The upstream-failure vocabulary, the shared zod schema primitives, and how capabilities render their JSON Schema artifacts |

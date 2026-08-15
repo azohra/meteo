@@ -25,7 +25,7 @@ typed data into a custom UI, or run the engine end to end.
 | --- | --- | --- |
 | **`@azohra/meteo.forecast`** | [`forecast/`](forecast/) | The forecast engine and `meteo` CLI: fetches ECCC and NOAA model fields, samples each catalogued site, derives soaring quantities, and publishes versioned documents plus append-only history. |
 | **`@azohra/meteo.briefing`** | [`briefing/`](briefing/) | Reads a published forecast and tells you what kind of day it is: zod contract and types, pure derivations, typed findings, cross-model and through-time comparison, transport guards, history loaders, and the Meteogram renderer (`/meteogram`). |
-| **`@azohra/meteo.station`** | [`station/`](station/) | Live weather stations: one wire contract, vendor adapters (WindNerd, Tempest, Campbell, Ecowitt), a mountable feed handler, a framework-free client layer, and peer React and custom-element bindings. |
+| **`@azohra/meteo.station`** | [`station/`](station/) | Live weather stations: one wire contract, vendor adapters (four built in, or your own), a mountable feed handler, a framework-free client layer, and peer React and custom-element bindings. |
 | **`@azohra/meteo.core`** | [`core/`](core/) | The shared foundation: units, angle and wind-vector math (one sign convention platform-wide), zod primitives, the transport failure vocabulary, schema-artifact tooling. |
 | **`@azohra/meteo.grib`** | [`grib/`](grib/) | A pure-TypeScript GRIB2 decoder (rotated and Lambert grids, complex packing, multi-field messages, `.idx` helpers), validated bit-for-bit against ecCodes golden fixtures. |
 | **`@azohra/meteo.j2k`** | [`j2k/`](j2k/) | A pure-TypeScript JPEG 2000 decoder scoped to exactly the codestream subset ECCC ships; the production codec behind `@azohra/meteo.grib`. |
@@ -98,8 +98,8 @@ explains every mark on the chart, illustrated by the committed
 </picture>
 
 `@azohra/meteo.station` reads live weather stations through one wire contract:
-vendor adapters normalize WindNerd, WeatherFlow Tempest, and Campbell
-Scientific loggers into it, or your own hardware, through
+vendor adapters normalize WindNerd, WeatherFlow Tempest, Campbell
+Scientific, and Ecowitt hardware into it, or your own, through
 `defineStationAdapter`. A mountable `Request → Response` handler serves the
 whole inventory as a single feed, and hooks and components render it
 natively, in your design system, with no vendor iframe:
@@ -131,30 +131,20 @@ theming.
 ## The decoders
 
 Beneath the engine sit two decoders written for this workspace and
-published on their own:
-
-- [`@azohra/meteo.grib`](grib/) decodes GRIB2 in pure TypeScript (rotated
-  lat-lon and Lambert grids, complex packing, multi-field messages,
-  NOMADS `.idx` byte-range helpers), written because no maintained
-  JavaScript decoder covered the grids ECCC and NOAA actually ship. Its
-  acceptance gate is bit-for-bit: twenty real messages harvested from
-  every live feed the forecast engine reads, each decoded to exact equality
-  against ecCodes: one inexact double is a decoder bug, never a
-  tolerance question.
-- [`@azohra/meteo.j2k`](j2k/) decodes the JPEG 2000 codestreams inside ECCC's
-  GRIB2, scoped to exactly the subset those feeds ship: every marker,
-  MQ context, and lifting step cites its clause of ITU-T T.800, and
-  anything outside the subset fails loudly with a named error. It decodes
-  only the codeblocks your sites touch: sampling a few gridpoints costs
-  ~16× less per core than a full decode and is bit-identical to it. Full
-  decodes parallelize too, fanning one field's independent codeblocks
-  across a worker pool; single-threaded, whole-image OpenJPEG can do
-  neither.
-
-Both cores are browser-safe by construction: no `node:` imports, no
-ambient I/O, no WASM. The measured region-decode and per-core tables
-behind the codec decision are documented in the
-[JPEG 2000 performance notes](https://meteo.azohra.com/docs/j2k/performance/).
+published on their own. [`@azohra/meteo.grib`](grib/) decodes GRIB2 in pure
+TypeScript — rotated lat-lon and Lambert grids, complex packing,
+multi-field messages, NOMADS `.idx` byte-range helpers — written because no
+maintained JavaScript decoder covered the grids ECCC and NOAA actually
+ship; its acceptance gate decodes real provider messages to
+[exact equality against ecCodes](https://meteo.azohra.com/docs/grib/correctness/).
+[`@azohra/meteo.j2k`](j2k/) decodes the JPEG 2000 codestreams inside ECCC's
+GRIB2, scoped to
+[exactly the subset those feeds ship](https://meteo.azohra.com/docs/j2k/subset/),
+and can decode only the codeblocks your gridpoints touch — up to ~16×
+faster per core on the largest field, bit-identical to the full decode
+([measured, losses included](https://meteo.azohra.com/docs/j2k/performance/)).
+Both cores are
+[browser-safe by construction](https://meteo.azohra.com/docs/grib/coverage/#what-the-core-never-does).
 
 ## Run your own
 
@@ -162,9 +152,10 @@ The engine publishes static site forecasts to any storage you control, at
 stable paths:
 
 ```text
-<your root>/models.json
-<your root>/<model>/manifest.json
-<your root>/<model>/sites/<slug>.json
+<your root>/models.json                          # emitted by `meteo forecast catalogue`
+<your root>/<model>/manifest.json                # written by every build
+<your root>/<model>/sites/<slug>.json            # written by every build
+<your root>/<model>/history/<slug>/<YYYY-MM>.jsonl.gz   # appended by default
 ```
 
 ```sh
@@ -182,7 +173,10 @@ and must not run more often than their model publishes.
 
 An operator's pipeline (the cron schedule, the site catalogue, the bucket
 credentials) is your own repository composing the engine; the platform ships
-no production instance. The operator path starts at
+[the engine, not an instance](https://meteo.azohra.com/docs/forecast/#engine-not-instance),
+and the reference operator's pipeline is public at
+[`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts).
+The operator path starts at
 [Configure launches](https://meteo.azohra.com/docs/forecast/configure-launches/)
 and runs in order through model choice, the first build, scheduling,
 static output, and downstream access.
@@ -193,7 +187,8 @@ meteo by Azohra descends from
 [canadarasp](https://github.com/ajberkley/canadarasp) (the first
 derivations here were ports of its constants) and follows
 [soaringmeteo](https://soaringmeteo.org/) in publishing open soaring
-forecasts.
+forecasts. The full story is on
+[the about page](https://meteo.azohra.com/about/).
 
 ## Contributing
 

@@ -61,7 +61,7 @@ with the engine/instance split.*
 | --- | --- | --- |
 | `observedAt` | UTC instant | The product's own timestamp, at its native 10-minute cadence. |
 | `downwardShortwaveWm2` | W/m² | Instantaneous measured downward shortwave flux at the surface: the irradiance the thermal derivation's transmittance claim is about. DSR entries only. |
-| `aot` | dimensionless | Measured aerosol optical thickness at 550 nm: the same quantity, wavelength, and field name a [smoke document](/docs/briefing/smoke-document/) forecasts as `aot`, so forecast and measurement compare with no translation. AOD entries only. |
+| `aot` | dimensionless | Measured aerosol optical thickness at 550 nm: the same quantity, wavelength, and field name a [profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics) forecasts as `aot`, so forecast and measurement compare with no translation. AOD entries only. |
 
 `observations[]` is a **union of two entry shapes**: the DSR dataset's
 `{ observedAt, downwardShortwaveWm2 }` and the AOD dataset's
@@ -207,9 +207,10 @@ algorithm's validation record [verified 2026-08-10]:
   correctly published nothing.
 
 The entry shape is `{ observedAt, aot }`: deliberately the same field
-name and wavelength the smoke document forecasts as `aot`, so a measured
-value sits beside a forecast one with no unit, wavelength, or naming
-translation between them.
+name and wavelength the profile's `smoke` block forecasts as `aot` (the
+[smoke document](/docs/briefing/smoke-document/) itself carries no
+optical-depth field), so a measured value sits beside a forecast one with
+no unit, wavelength, or naming translation between them.
 
 ## Rolling window, history archive
 
@@ -234,7 +235,7 @@ and label the join with the forecast's run and the observation's
 `generatedAt`, exactly as smoke-to-profile joins surface both runs. The
 natural use is the one the kind was built for: measured surface shortwave
 under a plume whose optical depth the
-[smoke document](/docs/briefing/smoke-document/) states, held against
+[profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics) states, held against
 the transmittance the
 [smoke-adjusted derivation](/logbook/smoke-and-thermals/) predicts.
 

@@ -1,5 +1,5 @@
 ---
-title: Forecast model feed reference
+title: Forecast model feeds
 description: Verified paths, schedules, fields, retention, transport, and licensing for supported and evaluated models.
 ---
 
@@ -22,45 +22,6 @@ export const feedFacts = {
   "goes18-aod": { transport: "noaa-goes18, whole NetCDF granules", verified: "2026-08-10" },
 };
 
-export const extraFeeds = [
-  {
-    label: "IFS open data",
-    slug: "—",
-    provider: "ECMWF",
-    kind: "deterministic",
-    grid: "—",
-    cadence: "00/12Z",
-    horizon: "360 h",
-    transport: "ECMWF open data",
-    verified: "—",
-    status: "evaluated, not adopted",
-  },
-  {
-    label: "RAP",
-    slug: "—",
-    provider: "NOAA",
-    kind: "deterministic",
-    grid: "13 km",
-    cadence: "hourly cycles",
-    horizon: "21 h; 51 h at 03/09/15/21Z",
-    transport: "Cloud bucket, byte-ranged GRIB2, two files",
-    verified: "2026-08-08",
-    status: "evaluated, not adopted",
-  },
-  {
-    label: "ICON global",
-    slug: "—",
-    provider: "DWD",
-    kind: "deterministic",
-    grid: "~13 km",
-    cadence: "00/12Z · hourly to 78 h, then 3-hourly",
-    horizon: "180 h (00/12Z), 120 h (06/18Z)",
-    transport: "DWD open data, bz2 GRIB2 per field",
-    verified: "2026-08-08",
-    status: "evaluated, not adopted",
-  },
-];
-
 Every builder supplies the same surface fields, five fields on each pressure
 level (plus vertical velocity and per-level cloud fraction where the
 transport carries them) and model terrain elevation to the shared
@@ -82,7 +43,7 @@ verification dates are this page's own record; an em dash means no dated
 per-feed verification is recorded here and the model's section below holds
 what is known.
 
-<ModelCompareGrid authored={feedFacts} extraRows={extraFeeds} />
+<ModelCompareGrid authored={feedFacts} />
 
 ## Cross-model quirk matrix
 
@@ -715,7 +676,13 @@ Quirks:
   ~11 GB. The current builder downloads each granule whole;
   [Provider transports](/docs/forecast/provider-transports/) records why.
 
-## ECMWF IFS open data — evaluated, not adopted
+## Evaluated, not adopted
+
+The three feeds below are decision records, not options: none has a slug,
+none appears in the catalogue or the grid above, and each section states
+what ruled it out and what would reopen the question.
+
+### ECMWF IFS open data
 
 ECMWF's open-data IFS offers a 15-day horizon (360 h at 00/12Z since cycle
 50r1) under CC-BY-4.0. Two missing inputs ruled it out:
@@ -735,7 +702,7 @@ The 15-day horizon could support a labelled proxy-physics outlook. It cannot
 support the same profile contract as models that publish surface fluxes and
 a deeper pressure column.
 
-## RAP 13 km — evaluated, not adopted
+### RAP 13 km
 
 NOAA's Rapid Refresh survives the 2026-10-06 retirements (RRFSv1 replaces
 NAM, HREF, SREF, and HiresW only) and cycles hourly: to 21 h every hour
@@ -754,7 +721,7 @@ Two findings decided against it:
 The omission is a decision, not a blind spot: a feed-viable model whose
 job here is already done by a finer sibling on the same buckets.
 
-## ICON global — evaluated, not adopted
+### ICON global
 
 DWD's global ICON (~13 km) is the one candidate that would add a
 **non-North-American physics and data-assimilation lineage** to the

@@ -1,9 +1,12 @@
 ---
+import { SITE_FORECAST_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
+
 import Figure from "../figure/Figure.astro";
 
 // The authority boundary as one picture: the forecast engine card owns the stored
 // derived core, the document is the interface, and the package owns pure
-// functions and typed statements over published state.
+// functions and typed statements over published state. The schema version is
+// imported from the contract so this figure can never show a retired number.
 ---
 
 <Figure
@@ -19,7 +22,7 @@ import Figure from "../figure/Figure.astro";
       <title id="quantity-homes-svg-title">Authority across the document boundary</title>
       <desc id="quantity-homes-svg-desc">
         The forecast engine's derivation module derives boundary-layer top, thermal velocity, cloud
-        base, and the default usable-lift top, and writes the published schema-version-1 document once per run.
+        base, and the default usable-lift top, and writes the published schema-version-{SITE_FORECAST_SCHEMA_VERSION} document once per run.
         The @azohra/meteo.briefing package reads only that document and owns humidity conversions, lapse and
         stability, thermal index and shear, day windowing with the timezone as a parameter, typed
         single-profile analysis, a sink-rate projection from the published inputs, the 1-2-1 smoothing
@@ -57,7 +60,7 @@ import Figure from "../figure/Figure.astro";
       <!-- ================= centre: the document ================= -->
       <path d="M380 74 h176 l24 24 v236 h-200 Z" class="qh-doc"/>
       <path d="M556 74 v24 h24 Z" class="qh-doc-fold"/>
-      <text x="398" y="104" class="qh-list-head qh-mono">SCHEMAVERSION: 1</text>
+      <text x="398" y="104" class="qh-list-head qh-mono">SCHEMAVERSION: {SITE_FORECAST_SCHEMA_VERSION}</text>
       <text x="398" y="126" class="qh-item" font-size="14">The published document</text>
       <text x="398" y="142" class="qh-block-note qh-mono">data/&lt;model&gt;/sites/&lt;slug&gt;.json</text>
 

@@ -38,15 +38,17 @@ const handler = createStationFeedHandler({
   cors: true,
 });
 
-// Mount anywhere that speaks web-standard Request/Response — Node 20+,
-// workers, Deno, or a framework route. Routing is by pathname suffix.
+// Mount anywhere that speaks web-standard Request/Response — Node 22+,
+// workers, Deno, or a framework route. Routing is by pathname suffix, so
+// this page mounts everything under /api/wind — the same MOUNT BASE every
+// render example below passes.
 export default { fetch: handler }; // e.g. a Cloudflare worker
 ```
 
 ```sh
-curl 'https://your.host/wind/feed'                   # every station + history
-curl 'https://your.host/wind/feed?hours=2'           # narrower window (≤ the ceiling)
-curl 'https://your.host/wind/current?station=summit' # one station, reading only
+curl 'https://your.host/api/wind/feed'               # every station + history
+curl 'https://your.host/api/wind/feed?hours=2'       # narrower window (≤ the ceiling)
+curl 'https://your.host/api/wind/current?station=summit' # one station, reading only
 ```
 
 `/feed` answers with a `StationFeed`, every configured station on one
@@ -158,9 +160,9 @@ import {
 
 function LiveWind() {
   // The argument is the MOUNT BASE — where the handler is mounted. The hook
-  // polls `${base}/feed` AND `${base}/current?station=bluff`, folds the
+  // polls `${base}/feed` AND `${base}/current?station=summit`, folds the
   // fast reading into the full feed, and applies the freshness clock rule.
-  const { feed, receivedAtMs } = useStation("/api/wind", "bluff", {
+  const { feed, receivedAtMs } = useStation("/api/wind", "summit", {
     fetchInit: { cache: "no-store" },
   });
   if (!feed) return null;
@@ -182,6 +184,13 @@ function LiveWind() {
 
 ![The station card rendered from a synthetic station, Launch Ridge: the wind dial with lull and gust flanks beside a six-hour graded history chart.](figures/hero-light.svg)
 
+The chart in that card draws only for a station that declares `history`
+(WindNerd and Campbell do; Tempest and Ecowitt serve the latest reading
+only, so their cards render the dial and readouts and no chart — correct
+behaviour, not a wiring error).
+[What your hardware shows](/docs/station/what-your-hardware-shows/) maps
+every capability to its surfaces.
+
 No react? The same page is one module script and plain markup with the
 [custom-elements binding](/docs/station/elements/):
 `<meteo-station-feed src="/api/wind">` polls the same endpoints through the
@@ -200,49 +209,19 @@ same shared stores and its children render the same DOM:
 composition, and SSR seeding are covered in [React](/docs/station/react/);
 the tokens the components wear are in [Theming](/docs/station/theming/).
 
-## 3 · A season, not a window
-
-[`loadWindnerdStation`](/docs/station/adapters/windnerd/) accepts a record
-resolution alongside the window. This is a
-[direct-adapter option](/docs/station/adapters/windnerd/#direct-adapter-options):
-`loadStationFeed` and `loadStationCurrent` forward only
-`{ historyHours, mode, environment }` to any vendor, windnerd included,
-so a season pull calls `loadWindnerdStation` itself rather than going
-through the fleet-feed API.
-
-A live card wants `historyHours: 6` at the default one-minute resolution. A
-season's rose wants months of history at a coarse resolution instead:
-`{ historyHours: 24 * 120, recordPeriodMinutes: 180 }` pulls four months as
-under a thousand three-hour aggregates, not two hundred thousand raw
-minutes. `history.periodMinutes` on the returned document always reflects
-the resolution actually served, so `historyGaps` and every duration-aware
-reader keep judging dropouts correctly regardless of which one you asked for.
-
-One trap: the 180-minute aggregates bucket by the station's own
-[local standard time, not UTC](/docs/station/adapters/windnerd/#aggregate-buckets-follow-local-standard-time).
-`dailyPattern` and the month and time-of-day filters default to
-`utcOffsetMinutes: 0` (plain UTC), which will look entirely plausible
-right up until you compare it to the station's actual afternoon: pass your
-station's own standard-time offset (you configured it, or you own the
-hardware and already know it) to bucket in local time instead.
-
-The slicing itself is six pure functions on `@azohra/meteo.station`:
-`filterByMonth`, `filterByTimeOfDay`, and `dailyPattern` narrow or bucket
-the points; `windowPoints`, `compareWindow`, and `compareTracePoints` back
-the chart's `windowHours` and `compareOffsetDays` props. Signatures and
-rules are in
-[the client data layer](/docs/station/client-data/#slicing-history). Feed
-the filtered points straight into `<WindRose points={...} />`; feed a whole
-history's points into `<DailyPattern points={...} />` (or `station={...}`,
-which also turns the caption into a true coverage fraction via the
-station's own `periodMinutes` instead of a bare sample count) and it
-buckets internally.
+That is the whole journey: a mounted feed and a rendered fleet. Two deeper
+paths when you want them — season-scale WindNerd pulls at coarse record
+resolution are a
+[direct-adapter option on the WindNerd page](/docs/station/adapters/windnerd/#direct-adapter-options),
+and the pure history-slicing functions behind the charts are in
+[the client data layer](/docs/station/client-data/#slicing-history).
 
 ## Where next
 
 | Topic | Page |
 |---|---|
-| The document shape, semantics, and HTTP protocol | [Wire contract](/docs/station/wire-contract/) |
 | Built-in vendors, custom adapters, environment injection | [Adapters](/docs/station/adapters/) |
-| Hooks, provider, components, SSR | [React](/docs/station/react/) |
+| What your station's declared capabilities turn on | [What your hardware shows](/docs/station/what-your-hardware-shows/) |
+| Hooks, provider, components, SSR | [React](/docs/station/react/) — or [custom elements](/docs/station/elements/) with no framework |
 | Tokens, dark mode, `@layer` | [Theming](/docs/station/theming/) |
+| The document shape, semantics, and HTTP protocol | [Wire contract](/docs/station/wire-contract/) |

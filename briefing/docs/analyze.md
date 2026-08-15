@@ -35,9 +35,9 @@ export function analyzeProfileJson(text: string): ForecastAnalysis {
   if (!profile) throw new Error("invalid profile");
 
   return analyzeForecast(profile, {
-    // The launch is yours, not the document's — typically site-context.json's
-    // elevation pick. It anchors every launch-relative statement.
-    launch: { elevationM: 1591 },
+    // The launch is yours, not the document's — here the sample's Test Hill
+    // pick from site-context.json. It anchors every launch-relative statement.
+    launch: { elevationM: 1225.1 },
     thresholds: {
       thermalWindow: { wstarMinMps: 1.0, depthMinM: 350 },
     },
@@ -111,7 +111,7 @@ export function analyzeWithInputs(profileText: string, smokeText: string) {
   if (!profile) throw new Error("invalid profile");
 
   return analyzeForecast(profile, {
-    launch: { elevationM: 1591 },
+    launch: { elevationM: 1225.1 },
     // Same-site RAQDPS document; ignored when the profile has its own smoke.
     smoke: parseSmokeDocumentJson(smokeText),
     // YOUR conventions for one pilot at one site — not recommendations, and

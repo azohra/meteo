@@ -15,16 +15,22 @@ declare. Whatever the hardware, the client sees one document.
 Four vendors are built in; each has its own reference page: config
 fields, capabilities, endpoint, and the quirks the adapter guards:
 
-| Vendor | Hardware | History | Conditions |
-|---|---|---|---|
-| [WindNerd](/docs/station/adapters/windnerd/) | windnerd.net wind stations | yes | pressure, when configured |
-| [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest | no; the REST endpoint serves one observation | the full conditions block |
-| [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers | yes | none |
-| [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) | no; the cloud endpoint serves one report | humidity, dew point, pressure, rain, solar, UV |
+| Vendor | Hardware | History | Live | Conditions |
+|---|---|---|---|---|
+| [WindNerd](/docs/station/adapters/windnerd/) | windnerd.net wind stations | yes | **yes** | pressure, when configured |
+| [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest | no; the REST endpoint serves one observation | no | the full conditions block |
+| [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers | yes | no | none |
+| [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) | no; the cloud endpoint serves one report | no | humidity, dew point, pressure, rain, solar, UV |
 
+What each declaration turns on — chart, stream, matrix column — is mapped
+surface by surface in
+[What your hardware shows](/docs/station/what-your-hardware-shows/).
 Anything else plugs in as a custom adapter, below.
 
 ## The custom arm
+
+Everything from here down is for **writing an adapter of your own** — if
+your vendor is in the table above, pick its page and you are done here.
 
 The derivations the built-in vendors fill the wire with are public, so a
 custom adapter produces the same physics: `pressureTendency` (the trend

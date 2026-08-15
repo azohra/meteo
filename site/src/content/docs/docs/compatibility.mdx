@@ -4,7 +4,7 @@ description: The one rule for reading published documents, the current document 
 ---
 
 import { Aside } from '../../../components/docs/starlight';
-import { SCHEMA_VERSION, SITE_FORECAST_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
+import { SCHEMA_VERSION, SITE_FORECAST_SCHEMA_VERSION, SITES_SCHEMA_VERSION, SITE_CONTEXT_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
 import { BRIEFING_PACKAGE_VERSION } from '../../../components/docs/package-info';
 
 Published documents and npm packages version independently. One rule
@@ -22,8 +22,8 @@ document with the package you chose, and let the parser answer.
 | Documents | Current `schemaVersion` | Owner |
 | --- | ---: | --- |
 | Site-forecast and history | <code>{SITE_FORECAST_SCHEMA_VERSION}</code> | the zod contract in `briefing/src/contract.ts` |
-| Manifests, smoke, observation, run index | <code>{SCHEMA_VERSION}</code> | the same contract |
-| Site catalogue and site context | 2 | `SITES_SCHEMA_VERSION`, `SITE_CONTEXT_SCHEMA_VERSION` |
+| Manifests, model catalogue, smoke, observation, run index | <code>{SCHEMA_VERSION}</code> | the same contract |
+| Site catalogue and site context | <code>{SITES_SCHEMA_VERSION}</code>, <code>{SITE_CONTEXT_SCHEMA_VERSION}</code> | `SITES_SCHEMA_VERSION`, `SITE_CONTEXT_SCHEMA_VERSION` in the same contract |
 
 Stored v1 forecast documents migrate mechanically:
 `meteo forecast migrate` (`forecast/src/migrate.ts`) is the executable
@@ -35,7 +35,7 @@ These rules hold across every family:
 
 - adding an optional field, enum-independent metadata, or a new model
   catalogue entry is not a schema break;
-- absence of an optional capability field means **not published**, never
+- absence of an optional declared-capability field means **not published**, never
   zero;
 - changing a stored field's unit or meaning, removing or renaming one, or
   making an optional field required changes the `schemaVersion` and ships

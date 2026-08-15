@@ -58,7 +58,7 @@ facts, not global transport assumptions.
 The shared manifest core records downloads, bytes, retries, and duration.
 Transport-specific numeric counters may be added, but consumers cannot build
 logic on those unstable extension keys. Missing required records fail a build;
-optional capability records may remain absent only when catalogue and builder
+optional declared-capability records may remain absent only when catalogue and builder
 behaviour agree.
 
 Live-provider evidence belongs in the dated

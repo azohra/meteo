@@ -20,6 +20,12 @@ suite holds them byte-identical, so neither is "the reference".
 </script>
 ```
 
+The binding removes the framework, not the packaging: it ships as npm ESM,
+so the bare specifier above still needs a bundler, an import map, or a
+module-serving CDN to resolve in a browser. A site with no build step
+serves the resolved module and `styles.css` from its own assets however it
+serves any other file.
+
 Apps that need control over timing import the side-effect-free index
 instead: `import { defineMeteoElements } from "@azohra/meteo.station/elements"`.
 It is idempotent, defines providers before consumers, and accepts a
@@ -78,7 +84,11 @@ Invalid JSON warns and reads as absent.
 
 ## Elements
 
-Every react component has its tag twin, rendering the identical DOM:
+Every react display component has its tag twin, rendering the identical DOM,
+with two react-only exceptions: `Readout` (the charts' internal inspection
+line, composed by the chart tags themselves) and `WindSampleStrip` (it renders
+live samples, which reach this binding only through
+[`createStationLiveStore`](/docs/station/client-data/#the-live-store)):
 
 | Tag | React twin | Notes |
 |---|---|---|

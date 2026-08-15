@@ -3,6 +3,8 @@ title: Site context document
 description: "The static per-site ground truth: the measured elevation pick, terrain, and land cover, with sources, licences, generation, coverage lessons, and how it joins a profile."
 ---
 
+import { SITE_CONTEXT_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
+
 `site-context.json` is the third catalogue-root file, beside the
 hand-maintained [`models.json`](/docs/briefing/catalogue/) and
 [`sites.json`](/docs/forecast/configure-launches/): static per-site ground
@@ -22,7 +24,7 @@ this model think the atmosphere above it does?". The teaching companion
 | --- | --- |
 | **Published at** | `site-context.json` at the dataset root, beside `sites.json` and `models.json` |
 | **Parse** | `parseSiteContextJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
-| **Zod authority** | `siteContextSchema`, pinning `SITE_CONTEXT_SCHEMA_VERSION` (2) |
+| **Zod authority** | `siteContextSchema`, pinning `SITE_CONTEXT_SCHEMA_VERSION` (<code>{SITE_CONTEXT_SCHEMA_VERSION}</code>) |
 | **JSON Schema** | [`site-context.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/site-context.schema.json), the generated artifact for other languages |
 | **Cadence** | none: no runs; regenerated when the site catalogue changes, never on a schedule |
 

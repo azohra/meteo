@@ -117,7 +117,9 @@ document or null; they never throw.
 
 ## Evolution rules
 
-Normative, not advisory:
+Normative, not advisory — the same additive/breaking pattern
+[Compatibility](/docs/compatibility/) states for the forecast document
+families, applied to `STATION_SCHEMA_VERSION`:
 
 - An **additive change** (a new field) never bumps `STATION_SCHEMA_VERSION`. New
   fields arrive nullable, with null meaning what absence meant before.

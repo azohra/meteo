@@ -45,10 +45,24 @@ archive it describes. Forecast models archive one whole document per run per
 line; observation datasets archive one observation object per line instead,
 each instant written once the first time it enters the rolling window.
 
-`runs.json` at the published dataset's root is a cross-model index
-regenerated wholesale from the published manifests by
-`meteo forecast runs-index`; a build does not write it as a side effect, so
-an upload flow that wants it runs that command as its own step. Treat the manifest and each profile as one publication
+## Publish the dataset root
+
+A build writes only the per-model directories above. The read side also
+expects four files at the dataset root, and none of them is a build side
+effect — an upload flow publishes each as its own step:
+
+| Root file | Produced by |
+| --- | --- |
+| `models.json` | `meteo forecast catalogue --output` emits the packaged [model catalogue](/docs/briefing/catalogue/) |
+| `sites.json` | you author it ([Configure launches](/docs/forecast/configure-launches/)); upload it verbatim |
+| `site-context.json` | `meteo forecast terrain --sites ./sites.json --output` measures it |
+| `runs.json` | `meteo forecast runs-index --output` regenerates it wholesale from the published manifests |
+
+A dataset root without `models.json` and `site-context.json` fails the read
+side's discovery and rendering paths, so publish all four before pointing a
+consumer at the root.
+
+Treat the manifest and each profile as one publication
 pair. Their `referenceTime` values must agree before rendering; the
 [`@azohra/meteo.briefing/transport` loader](/docs/briefing/transport/) performs that
 check for TypeScript consumers.
@@ -59,6 +73,29 @@ Copy or sync the output directory only after a successful builder exit. Keep
 paths stable, preserve JSON content types and gzip encoding, and let caches
 expire independently without assuming an atomic multi-file deployment. That
 last condition is why consumers validate the manifest/profile pair.
+
+Any sync tool that preserves those properties works. To a host you reach
+over SSH:
+
+```sh title="Terminal"
+rsync -rt --exclude '.*' public/data/ your.host:/var/www/forecasts/data/
+```
+
+To an S3-compatible bucket (R2 included), with the archive encoding
+declared so gzip bytes are served as stored:
+
+```sh title="Terminal"
+aws s3 sync public/data "s3://$METEO_R2_BUCKET/data" \
+  --endpoint-url "$R2_ENDPOINT" \
+  --exclude "*.jsonl.gz" --content-type application/json
+aws s3 sync public/data "s3://$METEO_R2_BUCKET/data" \
+  --endpoint-url "$R2_ENDPOINT" \
+  --include "*.jsonl.gz" --exclude "*" --content-type application/gzip
+```
+
+Sync the per-model directories on every build; the
+[dataset-root files](#publish-the-dataset-root) change only when you change
+them.
 
 Possible destinations include a club's existing static site, object storage,
 or a private member-gated application. They are deployment choices, not

@@ -123,7 +123,7 @@ The document roots are `siteForecastSchema`/`SiteForecast`,
 union of the two manifest roots for callers that read
 `<model>/manifest.json` without knowing the dataset kind. Manifest, models,
 runs, smoke, and observation pin `SCHEMA_VERSION` (1); the profile pins
-its own exported `SITE_FORECAST_SCHEMA_VERSION` (2, wire v2), and sites
+its own exported `SITE_FORECAST_SCHEMA_VERSION` (2), and sites
 and site context pin `SITES_SCHEMA_VERSION` and
 `SITE_CONTEXT_SCHEMA_VERSION` (both 2). Their pieces:
 
@@ -132,7 +132,7 @@ and site context pin `SITES_SCHEMA_VERSION` and
 | `scalarSchema` (`Scalar`) | Any numeric position: a number or an ensemble percentile object | every value field below |
 | `ensembleValueSchema` (`EnsembleValue`) | The percentile-object arm of `Scalar`, including full dropout | every value field below |
 | `forecastHourSchema` (`ForecastHour`) | One forecast hour: `validAt` plus the surface, levels, derived, and optional smoke blocks below | `parseSiteForecast(Json)` |
-| `forecastSurfaceSchema` (`ForecastSurface`) | An hour's surface block, optional capability fields absent-not-zero | `parseSiteForecast(Json)` |
+| `forecastSurfaceSchema` (`ForecastSurface`) | An hour's surface block, optional declared-capability fields absent-not-zero | `parseSiteForecast(Json)` |
 | `forecastLevelSchema` (`ForecastLevel`) | One pressure-level entry in an hour's ascending `levels` array | `parseSiteForecast(Json)` |
 | `forecastDerivedSchema` (`ForecastDerived`) | The forecast engine's `derived` block of an hour | `parseSiteForecast(Json)` |
 | `forecastSiteSchema` (`ForecastSite`) | Sample provenance: identity, coordinates, the model's own terrain (`modelElevationM`), and the optional timezone echo; no launch elevation | `parseSiteForecast(Json)` |
@@ -162,11 +162,11 @@ and site context pin `SITES_SCHEMA_VERSION` and
   with the document; absence of that optional echo does not imply UTC.
 - The zod contract is behavioural authority. For other languages, the
   generated JSON Schema files ship in the `@azohra/meteo.briefing` tarball's
-  `schema/` directory and in the repository at `forecast/schema/`;
+  `schema/` directory and in the repository at `briefing/schema/`;
   the package exports them as `@azohra/meteo.briefing/schema/*.json`
   (`profile.schema.json` and its siblings), so a resolver can reach them
   by specifier as well as by path.
 
 See [Compatibility](/docs/compatibility/) for the document families, the
-wire-v2 boundary, and the migration path for stored v1 documents;
+schemaVersion 2 boundary, and the migration path for stored v1 documents;
 [Package versioning](/docs/briefing/versioning/) covers the npm axis.

@@ -107,7 +107,7 @@
               },
               "aot": {
                 "type": "number",
-                "description": "Measured aerosol optical thickness at 550 nm (GOES-R ABI L2 AOD, high+medium quality) — the same quantity and wavelength a smoke document forecasts as aot. Daytime product: instants without an accepted retrieval are absent — \"not measured\", never clear air."
+                "description": "Measured aerosol optical thickness at 550 nm (GOES-R ABI L2 AOD, high+medium quality) — the same quantity and wavelength a profile's smoke block forecasts as aot. Daytime product: instants without an accepted retrieval are absent — \"not measured\", never clear air."
               }
             },
             "required": [

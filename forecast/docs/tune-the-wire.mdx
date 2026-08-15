@@ -58,7 +58,9 @@ sanctioned high-bandwidth mirror `hpfx.collab.science.gc.ca`
 practice: two days of reports from one operator's GitHub-hosted runners
 measured dd at 10–16 MiB/s per fresh build (with one ensemble build
 failing a tenth of its requests) while hpfx delivered 73 MiB/s with zero
-failures at the same five-connection gate.
+failures at the same five-connection gate — the raw report blocks are in
+the logbook entry
+[the wire told on us](/logbook/wire-told-on-us/).
 
 The doctrine that follows: **balance lanes by measured transfer time, not
 by bytes.** A byte-balanced split can still leave one lane running seven
@@ -66,11 +68,14 @@ times longer than the other. Put the heavy streams on the mirror, keep
 dd's lane light, and re-read the reports after any move: these are one
 operator's numbers from one vantage; measure your own before copying them.
 
-The connection budgets themselves are engine constants, sized against
-MSC's documented per-day request budget (five per Datamart host) and NOAA's
-S3 buckets (ten per bucket; fourteen for NAM, where ~1 s per ranged GET
-makes round trips the constraint). The report tells you when a gate is
-saturated; the provider's budget tells you whether it may widen.
+The connection budgets themselves are engine constants — five per Datamart
+host, chosen conservatively under MSC's
+[usage policy](https://eccc-msc.github.io/open-data/usage-policy/readme_en/)
+(which caps daily requests and documents no HTTP connection ceiling; the
+[feed reference](/docs/forecast/forecast-model-feeds/) carries the verified
+policy facts), and ten per NOAA S3 bucket (fourteen for NAM, where ~1 s per
+ranged GET makes round trips the constraint). The report tells you when a
+gate is saturated; the provider's policy tells you whether it may widen.
 
 ## The reference operator
 
