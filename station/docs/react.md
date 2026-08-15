@@ -48,11 +48,12 @@ observation for display; the semantics are the wire contract's
 [freshness model](/docs/station/wire-contract/#freshness-the-servedat-anchor),
 re-judged on the shared 30 s cadence.
 
-`useMeasuredChartWidth(ref)` measures a chart container the way the
-built-in charts do: a ResizeObserver behind the measure-or-fallback rule
-(`measuredChartWidth` on the root), null until a width exists. Frame a
-custom SVG at this measured pixel width; a fixed viewBox stretched by CSS
-magnifies every label and stroke.
+`useMeasuredChartWidth(ref)` measures a chart container before first
+paint and re-measures on resize: null until a real width exists — a
+hidden container measures zero and the hook stays held until it is shown
+— and the fallback width (`CHART_FALLBACK_WIDTH` on the root) only where
+ResizeObserver is missing. Frame a custom SVG at this measured pixel
+width; a fixed viewBox stretched by CSS magnifies every label and stroke.
 
 ## The provider
 

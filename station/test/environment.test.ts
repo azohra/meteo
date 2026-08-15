@@ -5,6 +5,7 @@ import {
   fetchUpstreamText,
   memoryCache,
   resolveEnvironment,
+  workersCache,
   unavailableReasonForError,
   UpstreamError,
 } from "../src/server/index.js";
@@ -322,5 +323,70 @@ describe("memoryCache", () => {
     await cache.put("overflow", "value", 60);
     expect(await cache.get("key-0")).toBe("refreshed");
     expect(await cache.get("key-1")).toBeNull();
+  });
+});
+
+describe("workersCache", () => {
+  function fakeAmbientCache() {
+    const entries = new Map<string, Response>();
+    return {
+      entries,
+      cache: {
+        async match(request: Request) {
+          return entries.get(request.url)?.clone();
+        },
+        async put(request: Request, response: Response) {
+          entries.set(request.url, response);
+        },
+      },
+    };
+  }
+
+  function withAmbientCache<T>(stub: unknown, run: () => Promise<T>): Promise<T> {
+    const globals = globalThis as { caches?: unknown };
+    const original = globals.caches;
+    globals.caches = stub;
+    return run().finally(() => {
+      if (original === undefined) {
+        delete globals.caches;
+      } else {
+        globals.caches = original;
+      }
+    });
+  }
+
+  it("is undefined where no ambient cache exists, so resolution keeps the memory default", () => {
+    expect(workersCache()).toBeUndefined();
+    expect(resolveEnvironment({ cache: workersCache() }).cache).toBeDefined();
+  });
+
+  it("round-trips through the ambient cache under synthetic-host keys", async () => {
+    const ambient = fakeAmbientCache();
+    await withAmbientCache({ default: ambient.cache }, async () => {
+      const cache = workersCache();
+      expect(cache).toBeDefined();
+      if (!cache) return;
+      expect(await cache.get("tempest/12345")).toBeNull();
+      await cache.put("tempest/12345", "payload", 90);
+      expect(await cache.get("tempest/12345")).toBe("payload");
+
+      const stored = ambient.entries.get("https://meteo-cache.internal/tempest%2F12345");
+      expect(stored?.headers.get("Cache-Control")).toBe("max-age=90");
+    });
+  });
+
+  it("keys needing encoding round-trip without colliding", async () => {
+    const ambient = fakeAmbientCache();
+    await withAmbientCache({ default: ambient.cache }, async () => {
+      const cache = workersCache();
+      if (!cache) throw new Error("expected an ambient cache");
+      await cache.put("windnerd/summit ridge?rev=2", "spaced", 60);
+      await cache.put("windnerd/summit ridge?rev=3", "other", 60);
+      expect(await cache.get("windnerd/summit ridge?rev=2")).toBe("spaced");
+      expect(await cache.get("windnerd/summit ridge?rev=3")).toBe("other");
+      expect(
+        ambient.entries.has("https://meteo-cache.internal/windnerd%2Fsummit%20ridge%3Frev%3D2"),
+      ).toBe(true);
+    });
   });
 });

@@ -9,6 +9,7 @@ import {
   dailyPattern,
   filterByMonth,
   filterByTimeOfDay,
+  historyMeanDirectionDeg,
   thinVanes,
   windowPoints,
 } from "../src/index.js";
@@ -71,6 +72,24 @@ describe("vectorMeanWind", () => {
     ];
     const result = vectorMeanWind(points);
     expect(result.windDirectionDeg).toBeCloseTo(0, 3);
+  });
+});
+
+describe("historyMeanDirectionDeg", () => {
+  it("averages only the blowing points that carry a direction", () => {
+    const points = [
+      point({ windDirectionDeg: 10 }),
+      point({ windDirectionDeg: 30 }),
+      point({ windAvgMps: 0, windDirectionDeg: 180 }),
+      point({ windDirectionDeg: null }),
+    ];
+    expect(historyMeanDirectionDeg(points)).toBeCloseTo(20, 5);
+  });
+
+  it("stays null when every point is calm or directionless", () => {
+    const points = [point({ windAvgMps: 0 }), point({ windDirectionDeg: null })];
+    expect(historyMeanDirectionDeg(points)).toBeNull();
+    expect(historyMeanDirectionDeg([])).toBeNull();
   });
 });
 

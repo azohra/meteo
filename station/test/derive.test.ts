@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { pressureTendency, seaLevelPressureHpa } from "../src/index.js";
+import { COMPASS_POINTS, pressureTendency, seaLevelPressureHpa } from "../src/index.js";
 import { BASE_MS, MINUTE_MS, iso } from "./fixtures.js";
+
+describe("COMPASS_POINTS", () => {
+  it("walks the sixteen points clockwise from north", () => {
+    expect(COMPASS_POINTS).toHaveLength(16);
+    expect(COMPASS_POINTS[0]).toBe("N");
+    expect(COMPASS_POINTS[15]).toBe("NNW");
+  });
+});
 
 describe("seaLevelPressureHpa", () => {
   it("reduces a known station pressure to sea level", () => {

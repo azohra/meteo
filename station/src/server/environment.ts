@@ -74,6 +74,35 @@ export function memoryCache(): FeedCache {
   };
 }
 
+/**
+ * A FeedCache over the ambient Cloudflare Workers cache (`caches.default`),
+ * shared across the isolates of a deployment. Returns undefined where no
+ * ambient cache exists (node, vitest), so `cache: workersCache()` falls
+ * through to the memory-cache default.
+ */
+export function workersCache(): FeedCache | undefined {
+  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  if (!cache) return undefined;
+  return {
+    async get(key) {
+      const hit = await cache.match(workersCacheRequest(key));
+      return hit ? hit.text() : null;
+    },
+    async put(key, value, ttlSeconds) {
+      await cache.put(
+        workersCacheRequest(key),
+        new Response(value, { headers: { "Cache-Control": `max-age=${ttlSeconds}` } }),
+      );
+    },
+  };
+}
+
+/* The Workers cache API keys by URL and refuses URLs with non-standard
+ * ports, so keys are re-encoded under a synthetic host. */
+function workersCacheRequest(key: string): Request {
+  return new Request(`https://meteo-cache.internal/${encodeURIComponent(key)}`);
+}
+
 const sharedDefaultCache = memoryCache();
 
 function consoleLogger(event: LogEvent): void {

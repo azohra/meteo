@@ -143,7 +143,10 @@ document, and every caller owns its own.
 
 - **`cache`**: provide a `FeedCache` backed by KV/Redis when your platform
   runs multiple isolates, so they share one upstream poll instead of each
-  keeping a private memory cache.
+  keeping a private memory cache. On Cloudflare Workers, `workersCache()`
+  ships that shared cache over the ambient `caches.default`, and returns
+  `undefined` off-platform so `cache: workersCache()` falls back to the
+  memory default.
 - **`logger`**: the default writes degradations to the console
   (`warn`/`error`); inject your own to route them, or a no-op to silence
   them. Every `LogEvent` carries a stable `code` (`"upstream_failure"`,

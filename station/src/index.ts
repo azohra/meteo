@@ -42,6 +42,7 @@ export type {
 
 export {
   CALM_THRESHOLD_MPS,
+  COMPASS_POINTS,
   compassDirection,
   freshness,
   isCalm,
@@ -95,6 +96,7 @@ export {
   filterByMonth,
   filterByTimeOfDay,
   historyGaps,
+  meanDirectionDeg as historyMeanDirectionDeg,
   measuredChartWidth,
   nearestIndex,
   speedBand,

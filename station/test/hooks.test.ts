@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useStation, useStationFeed, useStationLive } from "../src/react/index.js";
+import {
+  useMeasuredChartWidth,
+  useStation,
+  useStationFeed,
+  useStationLive,
+} from "../src/react/index.js";
+import { CHART_FALLBACK_WIDTH } from "../src/index.js";
 import { BASE_MS, downStation, feedFixture, iso, okStation } from "./fixtures.js";
 
 const jsonResponse = (body: string, ok = true) => ({
@@ -293,6 +299,98 @@ describe("useStation", () => {
     const callsBefore = fetchMock.mock.calls.length;
     act(() => result.current.refresh());
     await waitFor(() => expect(fetchMock.mock.calls.length).toBe(callsBefore + 2));
+    unmount();
+  });
+});
+
+describe("useMeasuredChartWidth", () => {
+  class MockResizeObserver {
+    static instances: MockResizeObserver[] = [];
+    observed: Element[] = [];
+    disconnected = false;
+    readonly #callback: ResizeObserverCallback;
+    constructor(callback: ResizeObserverCallback) {
+      this.#callback = callback;
+      MockResizeObserver.instances.push(this);
+    }
+    observe(element: Element) {
+      this.observed.push(element);
+    }
+    unobserve() {}
+    disconnect() {
+      this.disconnected = true;
+    }
+    report(width: number) {
+      act(() =>
+        this.#callback(
+          [{ contentRect: { width } }] as unknown as ResizeObserverEntry[],
+          this as unknown as ResizeObserver,
+        ),
+      );
+    }
+  }
+
+  const container = (clientWidth = 0) => {
+    const element = document.createElement("div");
+    Object.defineProperty(element, "clientWidth", { value: clientWidth, configurable: true });
+    return element;
+  };
+
+  afterEach(() => {
+    MockResizeObserver.instances = [];
+  });
+
+  it("holds null until measured, then frames at the observed width", () => {
+    vi.stubGlobal("ResizeObserver", MockResizeObserver);
+    const { result, unmount } = renderHook(() => useMeasuredChartWidth({ current: container() }));
+    expect(result.current).toBeNull();
+
+    const observer = MockResizeObserver.instances[0];
+    observer?.report(480.4);
+    expect(result.current).toBe(480);
+    unmount();
+    expect(observer?.disconnected).toBe(true);
+  });
+
+  it("reads the container synchronously on mount, before any observation arrives", () => {
+    vi.stubGlobal("ResizeObserver", MockResizeObserver);
+    const { result, unmount } = renderHook(() =>
+      useMeasuredChartWidth({ current: container(420) }),
+    );
+    expect(result.current).toBe(420);
+    unmount();
+  });
+
+  it("ignores zero-width observations: stays held, then keeps the last real width", () => {
+    vi.stubGlobal("ResizeObserver", MockResizeObserver);
+    const { result, unmount } = renderHook(() => useMeasuredChartWidth({ current: container() }));
+
+    const observer = MockResizeObserver.instances[0];
+    observer?.report(0);
+    expect(result.current).toBeNull();
+    observer?.report(320);
+    expect(result.current).toBe(320);
+    observer?.report(0);
+    expect(result.current).toBe(320);
+    unmount();
+  });
+
+  it("applies the fallback width when ResizeObserver is unavailable", () => {
+    expect(typeof ResizeObserver).toBe("undefined");
+    const { result, unmount } = renderHook(() =>
+      useMeasuredChartWidth({ current: container(420) }),
+    );
+    expect(result.current).toBe(CHART_FALLBACK_WIDTH);
+    unmount();
+  });
+
+  it("enabled: false skips observing entirely", () => {
+    vi.stubGlobal("ResizeObserver", MockResizeObserver);
+    const { result, unmount } = renderHook(() =>
+      useMeasuredChartWidth({ current: container(420) }, { enabled: false }),
+    );
+    expect(result.current).toBeNull();
+    expect(MockResizeObserver.instances).toHaveLength(0);
     unmount();
   });
 });

@@ -1,6 +1,7 @@
 // @vitest-environment node
+import { useRef } from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   AirMatrix,
   StationTable,
@@ -8,6 +9,7 @@ import {
   StationStrip,
   TrendChart,
   StationCard,
+  useMeasuredChartWidth,
 } from "../src/react/index.js";
 import { defaultStrings } from "../src/index.js";
 import { BASE_MS, conditionsStation, downStation, feedFixture, okStation } from "./fixtures.js";
@@ -98,5 +100,18 @@ describe("server rendering", () => {
     );
     expect(html).toContain(defaultStrings.freshness.live);
     expect(html).not.toContain(defaultStrings.freshness.stale);
+  });
+
+  it("useMeasuredChartWidth holds (null) on the server without a layout-effect warning", () => {
+    function MeasuredProbe() {
+      const ref = useRef<HTMLDivElement | null>(null);
+      const width = useMeasuredChartWidth(ref);
+      return <div ref={ref}>{width === null ? "held" : String(width)}</div>;
+    }
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const html = renderToString(<MeasuredProbe />);
+    expect(html).toContain("held");
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });
