@@ -9,6 +9,7 @@ import {
   type StationMeta,
 } from "../contract.js";
 import { loadCampbellStation } from "./adapters/campbell.js";
+import { loadEcowittStation } from "./adapters/ecowitt.js";
 import { loadTempestStation } from "./adapters/tempest.js";
 import { loadWindnerdStation } from "./adapters/windnerd.js";
 import { openWindnerdLive } from "./adapters/windnerd-live.js";
@@ -271,6 +272,8 @@ async function loadStation(
       return loadTempestStation(config, { historyHours, mode, environment });
     case "campbell":
       return loadCampbellStation(config, { historyHours, mode, environment });
+    case "ecowitt":
+      return loadEcowittStation(config, { historyHours, mode, environment });
     case "custom":
       return loadCustomStation(config, environment, historyHours, mode);
   }

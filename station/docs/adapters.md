@@ -12,7 +12,7 @@ declare. Whatever the hardware, the client sees one document.
 
 ## The shipped adapters
 
-Three vendors are built in; each has its own reference page: config
+Four vendors are built in; each has its own reference page: config
 fields, capabilities, endpoint, and the quirks the adapter guards:
 
 | Vendor | Hardware | History | Conditions |
@@ -20,6 +20,7 @@ fields, capabilities, endpoint, and the quirks the adapter guards:
 | [WindNerd](/docs/station/adapters/windnerd/) | windnerd.net wind stations | yes | pressure, when configured |
 | [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest | no; the REST endpoint serves one observation | the full conditions block |
 | [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers | yes | none |
+| [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) | no; the cloud endpoint serves one report | humidity, dew point, pressure, rain, solar, UV |
 
 Anything else plugs in as a custom adapter, below.
 

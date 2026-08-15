@@ -148,6 +148,59 @@ export function tempestPayload(
   });
 }
 
+function ecowittLeaf(unit: string, value: string): Record<string, unknown> {
+  return { time: "1754431980", unit, value };
+}
+
+export function ecowittPayload(
+  sections: Record<string, unknown> = {},
+  envelope: Record<string, unknown> = {},
+): string {
+  return JSON.stringify({
+    code: 0,
+    msg: "success",
+    time: "1754431985",
+    data: {
+      outdoor: {
+        temperature: ecowittLeaf("℃", "21.5"),
+        feels_like: ecowittLeaf("℃", "20.9"),
+        app_temp: ecowittLeaf("℃", "20.7"),
+        dew_point: ecowittLeaf("℃", "7.5"),
+        vpd: ecowittLeaf("inHg", "0.442"),
+        humidity: ecowittLeaf("%", "40"),
+      },
+      wind: {
+        wind_speed: ecowittLeaf("m/s", "2.5"),
+        wind_gust: ecowittLeaf("m/s", "4.2"),
+        wind_direction: ecowittLeaf("º", "273"),
+        "10_minute_average_wind_direction": ecowittLeaf("º", "268"),
+      },
+      pressure: {
+        relative: ecowittLeaf("hPa", "1014.2"),
+        absolute: ecowittLeaf("hPa", "903.1"),
+      },
+      rainfall_piezo: {
+        rain_rate: ecowittLeaf("mm/hr", "1.2"),
+        daily: ecowittLeaf("mm", "3.4"),
+        state: ecowittLeaf("", "0"),
+        event: ecowittLeaf("mm", "3.4"),
+        "1_hour": ecowittLeaf("mm", "0.8"),
+        "24_hours": ecowittLeaf("mm", "3.4"),
+      },
+      solar_and_uvi: {
+        solar: ecowittLeaf("W/m²", "645"),
+        uvi: ecowittLeaf("", "5.8"),
+      },
+      battery: {
+        haptic_array_battery: ecowittLeaf("V", "2.78"),
+        haptic_array_capacitor: ecowittLeaf("V", "5.2"),
+      },
+      ...sections,
+    },
+    ...envelope,
+  });
+}
+
 export function campbellCurrentPayload(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
     head: {

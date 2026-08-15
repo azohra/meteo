@@ -29,6 +29,10 @@ const handler = createStationFeedHandler({
     { vendor: "campbell", id: "summit", name: "Summit Logger",
       baseUrl: "http://logger.example:30001/.", source: "LOGGER01:Wind Station",
       timeZone: "America/Vancouver", latitude: 49.5, longitude: -118.5 },
+    { vendor: "ecowitt", id: "yard", name: "Home Yard",
+      applicationKey: process.env.ECOWITT_APPLICATION_KEY!,
+      apiKey: process.env.ECOWITT_API_KEY!,
+      mac: "FF:FF:FF:FF:FF:FF", elevationM: 1000 },
   ],
   primaryStationId: "summit",
   cors: true,
@@ -92,7 +96,8 @@ Every field each vendor entry takes, and the quirks its adapter guards,
 is on that vendor's reference page:
 [WindNerd](/docs/station/adapters/windnerd/),
 [Tempest](/docs/station/adapters/tempest/),
-[Campbell](/docs/station/adapters/campbell/).
+[Campbell](/docs/station/adapters/campbell/),
+[Ecowitt](/docs/station/adapters/ecowitt/).
 
 `maxHistoryHours` (default 6) is both the default window and the ceiling for
 `?hours=`; the range and rejection rules are in

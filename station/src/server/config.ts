@@ -47,6 +47,31 @@ export const tempestStationConfigSchema = z.strictObject({
 });
 export type TempestStationConfig = z.output<typeof tempestStationConfigSchema>;
 
+const ecowittMac = z
+  .string()
+  .regex(/^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$/, {
+    message: "not a colon-separated MAC address (FF:FF:FF:FF:FF:FF)",
+  })
+  .transform((value) => value.toUpperCase());
+
+export const ecowittStationConfigSchema = z
+  .strictObject({
+    vendor: z.literal("ecowitt"),
+    ...stationIdentity,
+    applicationKey: z.string().min(1),
+    apiKey: z.string().min(1),
+    mac: ecowittMac,
+    hasBattery: z.boolean().default(true),
+  })
+  .refine((config) => config.elevationM != null, {
+    message:
+      "pressure needs the barometer's elevation to reduce to sea level — " +
+      "set elevationM to the gateway's elevation (the barometer lives in " +
+      "the gateway, not the outdoor array)",
+    path: ["elevationM"],
+  });
+export type EcowittStationConfig = z.output<typeof ecowittStationConfigSchema>;
+
 export const campbellStationConfigSchema = z.strictObject({
   vendor: z.literal("campbell"),
   ...stationIdentity,
@@ -93,6 +118,7 @@ export const stationConfigSchema = z.discriminatedUnion("vendor", [
   windnerdStationConfigSchema,
   tempestStationConfigSchema,
   campbellStationConfigSchema,
+  ecowittStationConfigSchema,
   customStationConfigSchema,
 ]);
 export type StationConfig = z.output<typeof stationConfigSchema>;

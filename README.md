@@ -25,7 +25,7 @@ typed data into a custom UI, or run the engine end to end.
 | --- | --- | --- |
 | **`@azohra/meteo.forecast`** | [`forecast/`](forecast/) | The forecast engine and `meteo` CLI: fetches ECCC and NOAA model fields, samples each catalogued site, derives soaring quantities, and publishes versioned documents plus append-only history. |
 | **`@azohra/meteo.briefing`** | [`briefing/`](briefing/) | Reads a published forecast and tells you what kind of day it is: zod contract and types, pure derivations, typed findings, cross-model and through-time comparison, transport guards, history loaders, and the Meteogram renderer (`/meteogram`). |
-| **`@azohra/meteo.station`** | [`station/`](station/) | Live weather stations: one wire contract, vendor adapters (WindNerd, Tempest, Campbell), a mountable feed handler, a framework-free client layer, and peer React and custom-element bindings. |
+| **`@azohra/meteo.station`** | [`station/`](station/) | Live weather stations: one wire contract, vendor adapters (WindNerd, Tempest, Campbell, Ecowitt), a mountable feed handler, a framework-free client layer, and peer React and custom-element bindings. |
 | **`@azohra/meteo.core`** | [`core/`](core/) | The shared foundation: units, angle and wind-vector math (one sign convention platform-wide), zod primitives, the transport failure vocabulary, schema-artifact tooling. |
 | **`@azohra/meteo.grib`** | [`grib/`](grib/) | A pure-TypeScript GRIB2 decoder (rotated and Lambert grids, complex packing, multi-field messages, `.idx` helpers), validated bit-for-bit against ecCodes golden fixtures. |
 | **`@azohra/meteo.j2k`** | [`j2k/`](j2k/) | A pure-TypeScript JPEG 2000 decoder scoped to exactly the codestream subset ECCC ships; the production codec behind `@azohra/meteo.grib`. |

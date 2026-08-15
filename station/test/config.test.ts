@@ -128,6 +128,40 @@ describe("parseStationConfig", () => {
     ).toThrow();
   });
 
+  it("normalizes an ecowitt MAC to uppercase and requires the gateway's elevation", () => {
+    const base = {
+      vendor: "ecowitt",
+      id: "yard",
+      name: "Home Yard",
+      applicationKey: "app-key",
+      apiKey: "api-key",
+      mac: "34:94:54:aa:bb:cc",
+    };
+    const config = parseStationConfig({ ...base, elevationM: 1000 });
+    if (config.vendor !== "ecowitt") throw new Error("wrong vendor");
+    expect(config.mac).toBe("34:94:54:AA:BB:CC");
+    expect(config.hasBattery).toBe(true);
+
+    expect(() => parseStationConfig(base)).toThrow(/barometer's elevation/);
+    expect(() => parseStationConfig({ ...base, elevationM: null })).toThrow(
+      /barometer's elevation/,
+    );
+  });
+
+  it("rejects an ecowitt MAC that is not colon-separated hex", () => {
+    const base = {
+      vendor: "ecowitt",
+      id: "yard",
+      name: "Home Yard",
+      applicationKey: "app-key",
+      apiKey: "api-key",
+      elevationM: 1000,
+    };
+    expect(() => parseStationConfig({ ...base, mac: "34945_AABBCC" })).toThrow();
+    expect(() => parseStationConfig({ ...base, mac: "34-94-54-AA-BB-CC" })).toThrow();
+    expect(() => parseStationConfig({ ...base, mac: "34:94:54:AA:BB" })).toThrow();
+  });
+
   it("fills campbell table and cadence defaults", () => {
     const config = parseStationConfig({
       vendor: "campbell",

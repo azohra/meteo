@@ -81,6 +81,7 @@ export const sidebar = [
           { slug: "docs/station/adapters/windnerd", label: "WindNerd" },
           { slug: "docs/station/adapters/tempest", label: "Tempest" },
           { slug: "docs/station/adapters/campbell", label: "Campbell" },
+          { slug: "docs/station/adapters/ecowitt", label: "Ecowitt" },
         ],
       },
       { slug: "docs/station/client-data", label: "Client data" },

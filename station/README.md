@@ -2,7 +2,7 @@
 
 The **station** capability of meteo by Azohra: one wire contract, vendor
 adapters that normalize into it (WindNerd, WeatherFlow Tempest, Campbell
-Scientific loggers, or your own), a mountable `Request → Response` handler
+Scientific loggers, Ecowitt, or your own), a mountable `Request → Response` handler
 that serves the whole inventory as a single feed, and hooks and components
 that render it natively, in your design system, with no vendor iframe.
 

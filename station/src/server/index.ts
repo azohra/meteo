@@ -29,6 +29,12 @@ export {
   type TempestObservation,
 } from "./adapters/tempest.js";
 export {
+  loadEcowittStation,
+  parseEcowittRealTime,
+  type EcowittAdapterOptions,
+  type EcowittObservation,
+} from "./adapters/ecowitt.js";
+export {
   CAMPBELL_FIELD_CONTRACTS,
   loadCampbellCurrent,
   loadCampbellStation,
