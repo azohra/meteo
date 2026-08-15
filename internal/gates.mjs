@@ -28,6 +28,7 @@ const lanes = {
   // Both content gates read sources only — no dist/, no network.
   content: [
     ["doc-links:check", ["node", "internal/check-doc-links.mjs"]],
+    ["docs-structure:check", ["node", "internal/check-docs-structure.mjs"]],
     ["prose:check", ["node", "internal/check-prose-rules.mjs"]],
   ],
   typecheck: [

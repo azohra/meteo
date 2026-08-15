@@ -28,6 +28,7 @@ holds real provider messages. This decodes a committed HRDPS 2 m
 temperature field (a rotated-grid, JPEG 2000-packed message, the
 combination that motivated the package) and samples one launch:
 
+<!-- meteo-doc-fence: run -->
 ```js
 // decode-fixture.mjs — run inside grib/ after `pnpm build`
 import { readFileSync } from "node:fs";

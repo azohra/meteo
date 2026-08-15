@@ -32,6 +32,7 @@
     "scenarios:check": "pnpm build && node internal/scenarios.mjs check",
     "doc-fences:check": "pnpm build && node internal/check-doc-fences.mjs",
     "doc-links:check": "node internal/check-doc-links.mjs",
+    "docs-structure:check": "node internal/check-docs-structure.mjs",
     "prose:check": "node internal/check-prose-rules.mjs"
   },
   "devDependencies": {

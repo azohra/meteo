@@ -3,6 +3,8 @@ title: Contract validation
 description: Accept profile, manifest, model, site, and run-index documents at an explicit trust boundary.
 ---
 
+import { SCHEMA_VERSION, SITE_FORECAST_SCHEMA_VERSION, SITES_SCHEMA_VERSION, SITE_CONTEXT_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
+
 The `@azohra/meteo.briefing/contract` export is the executable authority for published JSON.
 Its zod schemas, inferred TypeScript types, nullable parse guards, and generated
 JSON Schemas describe the same nine document families.
@@ -122,10 +124,10 @@ The document roots are `siteForecastSchema`/`SiteForecast`,
 `manifestSchema`/`Manifest`, parsed by `parseManifest(Json)`, is the
 union of the two manifest roots for callers that read
 `<model>/manifest.json` without knowing the dataset kind. Manifest, models,
-runs, smoke, and observation pin `SCHEMA_VERSION` (1); the profile pins
-its own exported `SITE_FORECAST_SCHEMA_VERSION` (2), and sites
-and site context pin `SITES_SCHEMA_VERSION` and
-`SITE_CONTEXT_SCHEMA_VERSION` (both 2). Their pieces:
+runs, smoke, and observation pin `SCHEMA_VERSION` (<code>{SCHEMA_VERSION}</code>); the profile pins
+its own exported `SITE_FORECAST_SCHEMA_VERSION` (<code>{SITE_FORECAST_SCHEMA_VERSION}</code>), and sites
+and site context pin `SITES_SCHEMA_VERSION` (<code>{SITES_SCHEMA_VERSION}</code>) and
+`SITE_CONTEXT_SCHEMA_VERSION` (<code>{SITE_CONTEXT_SCHEMA_VERSION}</code>). Their pieces:
 
 | Schema (type) | One-line role | Feeds |
 | --- | --- | --- |

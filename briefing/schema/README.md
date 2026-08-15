@@ -14,4 +14,4 @@ published dataset's documents — can validate against them
 without a TypeScript build. Every schema carries a `$id` under
 `https://meteo.azohra.com/schema/`, and the site build publishes this
 directory at those URLs. The wire's versioning terms are in
-[`../docs/contract.md`](../docs/contract.md).
+[`../docs/contract.mdx`](../docs/contract.mdx).

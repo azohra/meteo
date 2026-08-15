@@ -42,6 +42,7 @@ The workspace's golden corpus carries real ECCC messages; the codestream
 is the GRIB section 7 payload (DRT 5.40). This decodes one and reads a
 sample:
 
+<!-- meteo-doc-fence: run -->
 ```js
 // decode-fixture.mjs — run inside j2k/ after `pnpm build` (and a grib build)
 import { readFileSync } from "node:fs";
@@ -72,6 +73,7 @@ lifts. The values are **bit-identical** to `decodeJ2k`'s at those indexes
 approximation), and the envelope is the package's usual subset, guarded
 by the same loud errors:
 
+<!-- meteo-doc-fence: run -->
 ```js
 import { decodeJ2kRegion } from "./dist/index.js";
 

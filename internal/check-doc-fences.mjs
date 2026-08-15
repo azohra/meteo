@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -75,9 +76,12 @@ function docFilesFromArgs(args) {
   return files;
 }
 
+const RUN_MARKER = "meteo-doc-fence: run";
+
 function extractFences(text) {
   const lines = text.split("\n");
   const fences = [];
+  const runs = [];
   let ignored = 0;
   for (let i = 0; i < lines.length; i += 1) {
     const open = lines[i].match(/^(\s*)```(\w+)/);
@@ -86,6 +90,23 @@ function extractFences(text) {
     const language = open[2].toLowerCase();
     let close = i + 1;
     while (close < lines.length && !/^\s*```\s*$/.test(lines[close])) close += 1;
+    if (language === "js" || language === "javascript") {
+      let previous = i - 1;
+      while (previous >= 0 && lines[previous].trim() === "") previous -= 1;
+      if (previous >= 0 && lines[previous].includes(RUN_MARKER)) {
+        const body = lines.slice(i + 1, close).join("\n");
+        /* The fence's expected output is the next ```text block, verbatim. */
+        let next = close + 1;
+        while (next < lines.length && lines[next].trim() === "") next += 1;
+        let expected = null;
+        if (next < lines.length && /^\s*```text\s*$/.test(lines[next])) {
+          let textClose = next + 1;
+          while (textClose < lines.length && !/^\s*```\s*$/.test(lines[textClose])) textClose += 1;
+          expected = lines.slice(next + 1, textClose).join("\n");
+        }
+        runs.push({ openLine: i + 1, body, expected });
+      }
+    }
     if (language === "ts" || language === "typescript") {
       let previous = i - 1;
       while (previous >= 0 && lines[previous].trim() === "") previous -= 1;
@@ -101,7 +122,7 @@ function extractFences(text) {
     }
     i = close;
   }
-  return { fences, ignored };
+  return { fences, ignored, runs };
 }
 
 const homes = await packageHomes();
@@ -123,9 +144,11 @@ mkdirSync(tempDir, { recursive: true });
 const sources = new Map();
 const perFile = new Map();
 
+const runsByDoc = new Map();
 for (const docFile of docFiles) {
-  const { fences, ignored } = extractFences(readFileSync(docFile, "utf-8"));
-  perFile.set(docFile, { fences: fences.length, ignored, errors: [] });
+  const { fences, ignored, runs } = extractFences(readFileSync(docFile, "utf-8"));
+  perFile.set(docFile, { fences: fences.length, ignored, errors: [], runs: runs.length });
+  if (runs.length > 0) runsByDoc.set(docFile, runs);
   for (const fence of fences) {
     const slug = relative(repoRoot, docFile)
       .replace(/[^A-Za-z0-9-]+/g, "__")
@@ -200,14 +223,61 @@ for (const line of `${result.stdout}\n${result.stderr}`.split("\n")) {
     );
 }
 
+/* Marked fences RUN, not just compile: concatenated per page, executed
+   with the owning package as cwd, stdout compared verbatim to each
+   fence's ```text block. This is the gate the audit's throwing landing
+   example proved necessary — a fence that types but crashes, or prints
+   something other than its documented output, fails here. Local only:
+   runnable fences read committed fixtures, never the network. */
+let ranFences = 0;
+for (const [docFile, runs] of runsByDoc) {
+  /* Package docs arrive through the site's content symlinks; the runnable
+     fence's cwd is the real package root. */
+  const docHome = relative(repoRoot, realpathSync(docFile)).split("/")[0];
+  const packageRoot = join(repoRoot, docHome);
+  const report = perFile.get(docFile);
+  {
+    /* --eval keeps the battery's invariant: no lane writes where another
+       reads. An ESM eval resolves ./dist imports against cwd. */
+    const execution = spawnSync(
+      process.execPath,
+      ["--input-type=module", "-e", runs.map((run) => run.body).join("\n")],
+      {
+        cwd: packageRoot,
+        encoding: "utf-8",
+        timeout: 60_000,
+      },
+    );
+    if (execution.status !== 0) {
+      report.errors.push(
+        `${relative(repoRoot, docFile)}: runnable fences exited ${execution.status}: ${(execution.stderr ?? "").trim().split("\n").slice(-3).join(" | ")}`,
+      );
+    } else {
+      const expected = runs
+        .map((run) => run.expected)
+        .filter((block) => block !== null)
+        .join("\n");
+      const actual = (execution.stdout ?? "").trimEnd();
+      if (expected !== "" && actual !== expected.trimEnd()) {
+        report.errors.push(
+          `${relative(repoRoot, docFile)}: runnable fences printed output that differs from the documented \u0060\u0060\u0060text blocks\n--- documented ---\n${expected}\n--- actual ---\n${actual}`,
+        );
+      } else {
+        ranFences += runs.length;
+      }
+    }
+  }
+}
+
 let failed = 0;
 let checked = 0;
 for (const [docFile, report] of perFile) {
-  if (report.fences === 0 && report.ignored === 0) continue;
+  if (report.fences === 0 && report.ignored === 0 && report.runs === 0) continue;
   checked += report.fences;
   const label = relative(repoRoot, docFile);
   const counts =
     `${report.fences} fence${report.fences === 1 ? "" : "s"}` +
+    (report.runs > 0 ? `, ${report.runs} run` : "") +
     (report.ignored > 0 ? `, ${report.ignored} ignored` : "");
   if (report.errors.length === 0) {
     console.log(`ok   ${label} (${counts})`);
@@ -225,4 +295,6 @@ if (failed > 0 || unattributed > 0) {
   );
   process.exit(1);
 }
-console.log(`\ncheck-doc-fences: ${checked} fences compile against the built package`);
+console.log(
+  `\ncheck-doc-fences: ${checked} fences compile against the built package; ${ranFences} ran with verified output`,
+);
