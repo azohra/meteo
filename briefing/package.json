@@ -1,6 +1,6 @@
 {
   "name": "@azohra/meteo.briefing",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "The briefing capability of meteo by Azohra: the published site-forecast contract, pure derivations, analysis, comparison, history (read and write sides of the month archives), transport, and the Meteogram presentation tier - a renderer-independent scene graph and an SVG serializer.",
   "keywords": [
     "weather",

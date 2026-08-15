@@ -1,5 +1,28 @@
 # @azohra/meteo.forecast
 
+## 0.2.0
+
+### Minor Changes
+
+- 0f02bcb: Remove the v1 migration machinery. schemaVersion 1 never existed
+  publicly (it was one pre-release deployment, migrated once), so the
+  `meteo forecast migrate` command, `forecast/src/migrate.ts`, and the
+  briefing contract's migration exports (`migrateDocument`, `migrateHour`,
+  `migrateSurface`, `migrateLevel`, `WIRE_V1_HOUR_RENAMES`,
+  `WIRE_V1_DERIVED_RENAMES`, `WireDocument`, `MigrateDocumentOptions`)
+  served no reader and are removed. Published documents start, and have
+  always started, at `schemaVersion: 2`.
+
+### Patch Changes
+
+- Updated dependencies [b39a15d]
+- Updated dependencies [0a089ca]
+- Updated dependencies [6e9651d]
+- Updated dependencies [4d34d0b]
+- Updated dependencies [0f02bcb]
+  - @azohra/meteo.briefing@0.2.0
+  - @azohra/meteo.grib@0.1.3
+
 ## 0.1.3
 
 ### Patch Changes

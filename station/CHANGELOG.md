@@ -1,5 +1,56 @@
 # @azohra/meteo.station
 
+## 0.3.0
+
+### Minor Changes
+
+- d64846c: Add four exports first proven in a downstream consumer.
+  
+  - `historyMeanDirectionDeg` joins the root exports: the circular mean
+    over a history window's blowing points — calm points and dead-vane
+    nulls contribute nothing, an all-calm window stays null. It always
+    existed in the geometry; only the root name was missing (core's
+    `meanDirectionDeg` holds the unqualified name).
+  - `COMPASS_POINTS` — the ordered 16-point compass list — ships from the
+    root beside its `CompassPoint` type; no more deep import for the value.
+  - `useMeasuredChartWidth` measures before first paint: a synchronous
+    read in a layout effect (`useEffect` on the server) replaces the
+    after-paint read that landed a frame late and visibly rescaled the
+    chart, and zero-width measurements are ignored — a hidden container
+    used to clamp to the guessed fallback width and rescale when shown;
+    the hook now stays held (null) until the container is visible. The
+    rule is unchanged: null until measured, the fallback width only where
+    `ResizeObserver` is missing.
+  - `workersCache()` on `@azohra/meteo.station/server`: a `FeedCache` over
+    the ambient Cloudflare Workers `caches.default`, undefined off-platform
+    so callers fall back to `memoryCache()`. Keys ride a synthetic host
+    because the Workers cache refuses URLs with non-standard ports.
+
+### Patch Changes
+
+- b0e1d15: A fourth built-in vendor: Ecowitt. `vendor: "ecowitt"` reads the Ecowitt
+  cloud's `real_time` endpoint for arrays behind a GW2000/GW3000-class
+  gateway — the WS90 Wittboy and its siblings — and normalizes the latest
+  report onto the wire.
+  
+  - The request pins SI unit ids (°C, hPa, m/s, mm, W/m²), so the adapter
+    never converts vendor units; every payload value is validated as a
+    finite number in those units.
+  - Rain reads the piezo group a WS90 fills and falls back to a tipping
+    bucket's; sea-level pressure is the adapter's own reduction of the
+    gateway's absolute pressure through the configured elevation, never the
+    user-calibrated `relative` value.
+  - WS90 supply volts travel as battery telemetry, gated by the `hasBattery`
+    config flag; lull and wind chill are not measured and stay null.
+  - Cloud refusals arrive as HTTP 200 envelopes: non-zero codes degrade the
+    station with Ecowitt's own code and message, the busy and over-limit
+    codes as `rate_limited`.
+  
+  Exports: `ecowittStationConfigSchema`, `loadEcowittStation`,
+  `parseEcowittRealTime`, and the `EcowittStationConfig`,
+  `EcowittAdapterOptions`, `EcowittObservation` types on
+  `@azohra/meteo.station/server`.
+
 ## 0.2.0
 
 ### Minor Changes
