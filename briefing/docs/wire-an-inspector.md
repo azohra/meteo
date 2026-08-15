@@ -159,4 +159,7 @@ ticks), `xForTime(scene, instant)` interpolates between hour centres and
 is null outside the rendered window; `xForTime(scene, instant, { clamp:
 true })` pins it to the frame edge instead, which is what a shading band
 that starts before the window wants. `xForHour` stays the right call for
-anything that names a whole column.
+anything that names a whole column. The sunrise and sunset instants
+themselves come from
+[`solarEventsForDate`](/docs/briefing/derive/#sunrise-and-sunset), fed the
+day's date key and the site's coordinates.

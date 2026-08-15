@@ -48,3 +48,4 @@ export {
   smokeHoursByValidAt,
   smokeTransmittance,
 } from "./smoke.js";
+export { solarEventsForDate, type SolarEvents } from "./solar.js";

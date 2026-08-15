@@ -7,7 +7,8 @@ description: Use published state for pure quantities, local-day projection, and 
 documents: moisture conversions, vector wind, lapse and stability, thermal
 index, shear, the B/S ratio, local-day grouping, projection, valid-time
 alignment, units, run freshness, parameterized usable lift, the
-smoke-correction chain, and measured-irradiance interpretation; display
+smoke-correction chain, measured-irradiance interpretation, and sunrise
+and sunset instants; display
 smoothing belongs to `@azohra/meteo.briefing/meteogram`'s `smooth121`. It does not
 duplicate the engine's **stored derivations** — the values that require raw
 model inputs and are baked into the published document; that split is
@@ -90,6 +91,19 @@ export function displayDays(profile: SiteForecast, olderProfileTimeZone?: string
 `groupByLocalDay` and `meteogramDisplayHours` are tested across timezones,
 custom bounds, short days, and empty input. Pass a returned day's `hours`
 directly to `buildMeteogramScene`.
+
+## Sunrise and sunset
+
+`solarEventsForDate(dateKey, latitude, longitude)` returns a day's sunrise
+and sunset as UTC instants — the NOAA formulation at the official zenith of
+90.833° — or null for polar day and night, an invalid key, or out-of-range
+coordinates. It takes the `YYYY-MM-DD` keys `localDateKey` produces and
+anchors them on longitude rather than civil time, so the result is correct
+wherever the civil date matches the longitudinal solar date, and a full day
+off only where date-line politics divorce the two (UTC+13/+14 zones at
+western longitudes). The package ships the instants, never marks; drawing
+them on a Meteogram is the
+[inspector recipe's time-cursor step](/docs/briefing/wire-an-inspector/#time-cursors).
 
 ## Subtract fields with `projectForecast`
 
