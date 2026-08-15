@@ -65,7 +65,6 @@ export const sidebar = [
       { slug: "docs/forecast/architecture", label: "Forecast architecture" },
       { slug: "docs/forecast/derivation-science", label: "Meteogram derivations" },
       { slug: "docs/forecast/builder-contract", label: "Builder contract" },
-      { slug: "docs/forecast/adding-a-model", label: "Add a model" },
       { slug: "docs/forecast/provider-transports", label: "Provider transports" },
       { slug: "docs/forecast/model-capabilities", label: "Model capabilities" },
       { slug: "docs/forecast/forecast-model-feeds", label: "Forecast model feeds" },

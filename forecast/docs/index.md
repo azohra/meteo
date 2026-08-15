@@ -47,4 +47,3 @@ Each page is the single authority for its topic:
 | [Provider transports](/docs/forecast/provider-transports/) | Whole-file ECCC sampling, indexed NOAA byte ranges, whole-file GOES granules |
 | [Model capabilities](/docs/forecast/model-capabilities/) | What each model's fields mean, and which absences are stated facts |
 | [Forecast model feed reference](/docs/forecast/forecast-model-feeds/) | Dated provider facts: verified paths, schedules, fields, retention, transport, and licensing |
-| [Add a forecast model](/docs/forecast/adding-a-model/) | The verify-before-code workflow from live feed to registered builder |

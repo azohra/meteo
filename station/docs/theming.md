@@ -149,6 +149,5 @@ declare more thresholds) to speak your own colour language.
 - If your page also styles `color-scheme` globally, the root's own
   declaration wins inside `.meteo-root`; the components stay coherent even
   when the page around them disagrees.
-- README imagery is generated from these very tokens
-  (`pnpm station-assets` reads `styles.css`), so the
-  docs never drift from the palette.
+- README imagery is generated from these same tokens, so the docs never
+  drift from the palette.

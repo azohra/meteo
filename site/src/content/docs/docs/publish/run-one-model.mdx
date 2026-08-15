@@ -74,8 +74,8 @@ documents, with its runbook [below](#runbook-the-wire-v2-archive-cutover);
 `runs-index` regenerates `runs.json` wholesale from the published
 manifests; `freshness` prints exactly `fresh` or `stale` so an upload flow
 can refuse to publish backwards; `catalogue` emits the packaged
-`models.json`. Teaching-scenario generation is source-checkout tooling
-(`pnpm scenarios:generate`), not engine surface.
+`models.json`. Teaching-scenario generation is source-checkout tooling,
+not engine surface.
 
 <Aside type="caution" title="A full build is a data job">
   Builders fetch real provider files. Whole-domain ECCC deterministic runs can

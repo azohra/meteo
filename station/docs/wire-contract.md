@@ -4,10 +4,9 @@ description: The document shapes, semantics, evolution rules, HTTP protocol, and
 ---
 
 The contract between a station feed handler and its clients. JSON Schema and
-annotated examples live in
-[`schema/`](https://github.com/azohra/meteo/tree/main/station/schema).
-Regenerate with `pnpm schemas`; a drift test keeps the committed files
-in sync. The zod source of truth is
+annotated examples ship in the package under
+[`schema/`](https://github.com/azohra/meteo/tree/main/station/schema),
+generated from the zod source of truth,
 [`station/src/contract.ts`](https://github.com/azohra/meteo/blob/main/station/src/contract.ts),
 exported from `@azohra/meteo.station`.
 

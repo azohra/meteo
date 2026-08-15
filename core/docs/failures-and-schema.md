@@ -102,7 +102,6 @@ published schema never carries `additionalProperties: false`. Wire readers
 ignore unknown keys (that is how the contracts evolve), and a schema that
 rejected unknown keys would contradict the wire's own semantics.
 
-Regenerate every committed artifact with `pnpm schemas` from the repository
-root; never edit a generated schema by hand. Each capability's contract test
-deep-compares the committed files with their zod authority, so a hand edit
-fails the suite it belongs to.
+Every committed schema is generated from its zod authority and ships with
+its package; the zod schemas and their parse guards remain the behavioural
+truth.
