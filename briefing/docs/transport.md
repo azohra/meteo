@@ -149,5 +149,5 @@ happens next is yours. `TransportResponse`, `TransportFetch`, `RetryOptions`,
 `LoadRunsOptions` type those seams.
 
 Where these files come from and how they are deployed is the publisher's
-side of the story: [Publish static output](/docs/publish/static-output/) and
-[Downstream access](/docs/publish/downstream-access/).
+side of the story: [Publish static output](/docs/forecast/static-output/) and
+[Downstream access](/docs/forecast/downstream-access/).

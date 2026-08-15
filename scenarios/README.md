@@ -67,7 +67,7 @@ file's directory or the process working directory.
 `test-valley`) whose `sites.json` and `site-context.json` the documentation's
 examples and the committed sample dataset build from. They are the same
 documents the logbook entry
-[The mountain the model sees](https://meteo.azohra.com/docs/models/the-mountain-the-model-sees/)
+[The mountain the model sees](https://meteo.azohra.com/docs/forecast/the-mountain-the-model-sees/)
 reads its relief and land-cover figures from.
 
 `index.json` is a generated registry. Generation populates each entry with the

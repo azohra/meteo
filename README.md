@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://meteo.azohra.com">Project site</a> ·
-  <a href="https://meteo.azohra.com/docs/overview/">Documentation</a> ·
+  <a href="https://meteo.azohra.com/docs/">Documentation</a> ·
   <a href="https://meteo.azohra.com/logbook/">Logbook</a> ·
   <a href="https://meteo.azohra.com/docs/forecast/forecast-model-feeds/">Feed reference</a> ·
   <a href="#contributing">Contributing</a>
@@ -171,7 +171,7 @@ stable paths:
 pnpm exec meteo forecast build --model hrdps-continental --sites ./sites.json --output ./public/data --dry-run
 ```
 
-The [publisher documentation](https://meteo.azohra.com/docs/publish/run-one-model/)
+The [publisher documentation](https://meteo.azohra.com/docs/forecast/run-one-model/)
 covers launch catalogues, output paths, smoke caps, full builds, and the
 history flag (`--history`, on by default), which appends month archives
 beside the current documents.
@@ -182,10 +182,10 @@ and must not run more often than their model publishes.
 
 An operator's pipeline (the cron schedule, the site catalogue, the bucket
 credentials) is your own repository composing the engine; the platform ships
-no production instance. Adding a launch is a catalogue entry (slug, name,
-coordinates, timezone: identity only) plus one command:
-`pnpm exec meteo forecast terrain --sites ./sites.json`, which measures
-elevation, terrain, and land cover into a committed `site-context.json`.
+no production instance. The operator path starts at
+[Configure launches](https://meteo.azohra.com/docs/forecast/configure-launches/)
+and runs in order through model choice, the first build, scheduling,
+static output, and downstream access.
 
 ## Lineage
 

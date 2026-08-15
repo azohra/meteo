@@ -128,7 +128,7 @@ test.describe("/forecast/ exhibits the engine's committed output", () => {
 
     // The boundary paragraph hands off to the operator path and the index.
     const boundary = page.locator("#boundary");
-    await expect(boundary.locator('a[href="/docs/publish/run-one-model/"]')).toBeVisible();
+    await expect(boundary.locator('a[href="/docs/forecast/run-one-model/"]')).toBeVisible();
     await expect(boundary.locator('a[href="/docs/forecast/"]')).toBeVisible();
   });
 });

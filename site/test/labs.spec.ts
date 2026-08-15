@@ -129,7 +129,7 @@ test("the ensemble-spread lab redraws for each ensemble construction", async ({ 
 test("the timing lab's hour lens walks the readouts across both profiles", async ({ page }) => {
   // Its two charts are deliberately static (whole profiles stay visible);
   // the control's contract is the readout pair, so that is what must move.
-  await page.goto("/docs/models/choosing/", { waitUntil: "networkidle" });
+  await page.goto("/docs/forecast/choosing-models/", { waitUntil: "networkidle" });
   const figure = page.locator("#model-disagreement-lab");
   const slider = figure.locator("[data-timing-hour]");
   const earlier = figure.locator("[data-timing-earlier-thermal]");

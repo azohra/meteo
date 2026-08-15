@@ -52,7 +52,7 @@ provider transport ──→ gridpoint sampling ──→ source-shaped hours
 
 Which quantities the forecast engine owns and which belong to `@azohra/meteo.briefing`
 (including the one parameterized exception) is defined once in the
-[project overview](/docs/overview/#authority-by-quantity). The
+[project overview](/docs/#authority-by-quantity). The
 [Meteogram derivations](/docs/forecast/derivation-science/) define the
 engine's equations, constants, fallbacks, and renderer-only transformations.
 

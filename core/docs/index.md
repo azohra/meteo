@@ -23,6 +23,12 @@ grib, j2k, and forecast declare no dependency on it.
   [`@azohra/meteo.grib`](/docs/grib/), and the JPEG 2000 decoder inside it →
   [`@azohra/meteo.j2k`](/docs/j2k/)
 
+The package installs on its own:
+
+```sh
+pnpm add @azohra/meteo.core
+```
+
 ## What lives here
 
 Curated exports only. `core` is deliberate API, not a junk drawer; nothing

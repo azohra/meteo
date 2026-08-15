@@ -3,7 +3,7 @@ title: Run one model
 description: "Build your first forecast: one model, your launches, one CLI command."
 ---
 
-import { Aside, Steps } from '@astrojs/starlight/components';
+import { Aside, Steps } from "../../site/src/components/docs/starlight";
 
 The supported publisher interface is `meteo forecast build`, the CLI
 `@azohra/meteo.forecast` installs (`pnpm exec meteo forecast build`).
@@ -13,7 +13,7 @@ the CLI so external site and output paths are scoped consistently.
 
 <Steps>
 
-1. **Confirm the model declaration.** Read [Choose models](/docs/models/choosing/)
+1. **Confirm the model declaration.** Read [Choose models](/docs/forecast/choosing-models/)
    and [Model capabilities](/docs/forecast/model-capabilities/). The slug in
    `models.json` is its identity.
 2. **Preflight paths and selection.** This performs no network access or
@@ -68,7 +68,7 @@ the [append-only month archives](/docs/briefing/history-archives/) and their sid
 indexes. `--no-history` publishes current documents only.
 
 `terrain` regenerates the
-[site context catalogue](/docs/publish/configure-launches/); `migrate` is the
+[site context catalogue](/docs/forecast/configure-launches/); `migrate` is the
 one-time [wire v2](/docs/compatibility/) cutover of a model's published
 documents, with its runbook [below](#runbook-the-wire-v2-archive-cutover);
 `runs-index` regenerates `runs.json` wholesale from the published
@@ -97,7 +97,7 @@ There is no default root: where your instance publishes is your decision,
 and the engine refuses to guess. The same source seeds
 the month archives that history appends continue. A successful
 new run writes current profiles, appends history, and writes the model
-manifest. [Schedule builds](/docs/publish/schedule-builds/) applies the
+manifest. [Schedule builds](/docs/forecast/schedule-builds/) applies the
 catalogued publication cadence to recurring jobs.
 
 ## Runbook: the wire v2 archive cutover

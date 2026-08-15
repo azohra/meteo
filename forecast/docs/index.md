@@ -11,8 +11,8 @@ byte ranges, NOAA object-store NetCDF), samples gridpoints through
 versioned JSON documents, gzip history archives, and sidecar indexes that
 `@azohra/meteo.briefing`'s transport and history subpaths load.
 
-The package ships the `meteo` binary in the platform grammar
-(`meteo <capability> <command>`):
+The package requires Node 22 or later and ships the `meteo` binary in the
+platform grammar (`meteo <capability> <command>`):
 
 ```sh
 pnpm add @azohra/meteo.forecast
@@ -37,7 +37,21 @@ them.
 
 ## The documentation
 
-Each page is the single authority for its topic:
+Each page is the single authority for its topic. The publisher's path
+runs in order:
+
+| Page | Covers |
+|---|---|
+| [Configure launches](/docs/forecast/configure-launches/) | The launch catalogue the engine builds forecasts for |
+| [Choose models](/docs/forecast/choosing-models/) | Model choice by spatial resolution and forecast schedule |
+| [Model terrain](/docs/forecast/the-mountain-the-model-sees/) | Why model terrain sits far from the real launch, and what relief and land cover add |
+| [Run one model](/docs/forecast/run-one-model/) | The first build: one model, your launches, one CLI command |
+| [Schedule builds](/docs/forecast/schedule-builds/) | Scheduling the build command so each model rebuilds when its provider publishes a new run |
+| [Tune the wire](/docs/forecast/tune-the-wire/) | The transport report every build prints, and what it decides: connections, hosts, or nothing |
+| [Publish static output](/docs/forecast/static-output/) | Moving a build's manifests and forecast documents to storage you control |
+| [Downstream access](/docs/forecast/downstream-access/) | Serving published forecasts publicly, privately, or behind your own membership gate |
+
+The engine's own reference:
 
 | Page | Covers |
 |---|---|

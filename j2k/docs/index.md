@@ -30,6 +30,12 @@ build stays selectable for whole-image decodes; OpenJPEG.js is retired
 outright), that package's sampled decode is this decoder's region decode,
 and its worker pool fans full decodes' codeblock tasks across threads.
 
+The package installs on its own:
+
+```sh
+pnpm add @azohra/meteo.j2k
+```
+
 ## Decode a real field
 
 The workspace's golden corpus carries real ECCC messages; the codestream

@@ -19,6 +19,7 @@ unproven=""
 # at all has never released and passes.
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$local_sha" in *[!0]*) ;; *) continue ;; esac # ref deletion
+  case "$remote_ref" in refs/heads/*) ;; *) continue ;; esac # only branches deploy
   tree="$(git rev-parse "$local_sha^{tree}")"
   [ -f "$ledger/$tree" ] || unproven="$unproven $tree"
   [ "$remote_ref" = "refs/heads/main" ] || continue

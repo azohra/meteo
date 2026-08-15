@@ -14,6 +14,13 @@ The core is browser-safe by construction
 Node callers get JPEG 2000 from the separate `@azohra/meteo.grib/j2k-node`
 subpath; see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
+The package installs on its own, with no engine or forecast documents
+required:
+
+```sh
+pnpm add @azohra/meteo.grib
+```
+
 ## Decode a real field
 
 [`test/fixtures/`](https://github.com/azohra/meteo/tree/main/grib/test/fixtures)

@@ -2,23 +2,8 @@ export const sidebar = [
   {
     label: "Start here",
     items: [
-      { slug: "docs", label: "Choose your path" },
-      { slug: "docs/overview", label: "Project overview" },
-      { slug: "docs/getting-started", label: "Getting started" },
+      { slug: "docs", label: "Project overview" },
       { slug: "docs/compatibility", label: "Compatibility" },
-    ],
-  },
-  {
-    label: "Publish",
-    items: [
-      { slug: "docs/publish/configure-launches", label: "Configure launches" },
-      { slug: "docs/models/choosing", label: "Choose models" },
-      { slug: "docs/models/the-mountain-the-model-sees", label: "Model terrain" },
-      { slug: "docs/publish/run-one-model", label: "Run one model" },
-      { slug: "docs/publish/schedule-builds", label: "Schedule builds" },
-      { slug: "docs/publish/tune-the-wire", label: "Tune the wire" },
-      { slug: "docs/publish/static-output", label: "Publish static output" },
-      { slug: "docs/publish/downstream-access", label: "Downstream access" },
     ],
   },
   {
@@ -43,7 +28,6 @@ export const sidebar = [
           { slug: "docs/briefing/catalogue", label: "Model catalogue" },
           { slug: "docs/briefing/ensemble-values", label: "Ensemble values" },
           { slug: "docs/briefing/history-archives", label: "History archives" },
-          { slug: "docs/briefing/versioning", label: "Package versioning" },
         ],
       },
       {
@@ -56,12 +40,26 @@ export const sidebar = [
         ],
       },
       { slug: "docs/briefing/reading-a-meteogram", label: "Reading a Meteogram" },
+      { slug: "docs/briefing/versioning", label: "Package versioning" },
     ],
   },
   {
     label: "Forecast",
     items: [
       { slug: "docs/forecast", label: "Engine and CLI" },
+      {
+        label: "Publish forecasts",
+        items: [
+          { slug: "docs/forecast/configure-launches", label: "Configure launches" },
+          { slug: "docs/forecast/choosing-models", label: "Choose models" },
+          { slug: "docs/forecast/the-mountain-the-model-sees", label: "Model terrain" },
+          { slug: "docs/forecast/run-one-model", label: "Run one model" },
+          { slug: "docs/forecast/schedule-builds", label: "Schedule builds" },
+          { slug: "docs/forecast/tune-the-wire", label: "Tune the wire" },
+          { slug: "docs/forecast/static-output", label: "Publish static output" },
+          { slug: "docs/forecast/downstream-access", label: "Downstream access" },
+        ],
+      },
       { slug: "docs/forecast/architecture", label: "Forecast architecture" },
       { slug: "docs/forecast/derivation-science", label: "Meteogram derivations" },
       { slug: "docs/forecast/builder-contract", label: "Builder contract" },
