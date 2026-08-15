@@ -52,7 +52,9 @@ rotated 2540x1290 = 3276600 points
 ```
 
 Every decode path is accepted bit-for-bit against ecCodes over the
-frozen twenty-message corpus in [`test/fixtures/`](test/fixtures/README.md).
+frozen twenty-message corpus in [`test/fixtures/`](test/fixtures/README.md);
+the gate's full story is at
+<https://meteo.azohra.com/docs/grib/correctness/>.
 
 ## Documentation
 

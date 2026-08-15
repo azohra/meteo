@@ -14,8 +14,10 @@ The core is browser-safe by construction
 Node callers get JPEG 2000 from the separate `@azohra/meteo.grib/j2k-node`
 subpath; see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
-The package installs on its own, with no engine or forecast documents
-required:
+The package installs on its own, with no
+[forecast engine](/docs/forecast/) or forecast documents required —
+Node 22+, ESM-only, and `@cornerstonejs/codec-openjpeg` (the selectable
+WASM codec) installs with it:
 
 ```sh
 pnpm add @azohra/meteo.grib
@@ -65,6 +67,55 @@ rotated 2540x1290 = 3276600 points
 
 Consumers inside the workspace (the forecast engine) import the same surface
 as `@azohra/meteo.grib` and `@azohra/meteo.grib/j2k-node`.
+
+## Decode your own file
+
+Installed from npm, the same walk works on any GRIB2 file. Discover what
+a file contains before decoding: one message can carry several fields
+(NCEP pairs U/V wind as submessages), and the template numbers say which
+grid geometry each field uses and whether it needs a JPEG 2000 decoder
+(packing 5.40 — every ECCC field):
+
+```js
+import { readFileSync } from "node:fs";
+import {
+  decodeFieldValues,
+  parseFields,
+  parseProduct,
+  splitMessages,
+} from "@azohra/meteo.grib";
+import { createNodeJ2kDecoder } from "@azohra/meteo.grib/j2k-node";
+
+const bytes = readFileSync("./your-file.grib2");
+
+// Enumerate the fields: template numbers read straight from the raw
+// section bytes, before committing to a decode.
+const messages = splitMessages(bytes);
+for (const [m, message] of messages.entries()) {
+  for (const field of parseFields(message)) {
+    const product = parseProduct(field.section4);
+    const gdt = (field.section3[12] << 8) | field.section3[13]; // grid definition template 3.N
+    const drt = (field.section5[9] << 8) | field.section5[10]; // data representation template 5.N
+    console.log(
+      `message ${m}: parameter ${field.discipline}.${product.parameterCategory}.${product.parameterNumber}, ` +
+        `grid 3.${gdt}, packing 5.${drt}`,
+    );
+  }
+}
+
+// Decode the first field. The decoder is consulted only for JPEG 2000
+// (packing 5.40) fields; simple and complex packing need no codec.
+const decodeJ2k = await createNodeJ2kDecoder();
+const [field] = parseFields(messages[0]);
+const { values } = decodeFieldValues(field, { decodeJ2k });
+console.log(`${values.length} values, first: ${values[0]}`);
+```
+
+`parseGrid` accepts grid templates 3.0, 3.1, and 3.30 and
+`decodeFieldValues` packings 5.0, 5.2, 5.3, and 5.40; anything outside
+that envelope throws, naming the template, rather than decoding
+approximately. [What it decodes](/docs/grib/coverage/) is the full
+envelope.
 
 ## The documentation
 

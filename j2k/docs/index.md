@@ -30,11 +30,17 @@ build stays selectable for whole-image decodes; OpenJPEG.js is retired
 outright), that package's sampled decode is this decoder's region decode,
 and its worker pool fans full decodes' codeblock tasks across threads.
 
-The package installs on its own:
+The package installs on its own, with no
+[forecast engine](/docs/forecast/) or GRIB packages required — Node 22+,
+ESM-only, and nothing installs with it:
 
 ```sh
 pnpm add @azohra/meteo.j2k
 ```
+
+Installed, the import is `import { decodeJ2k } from "@azohra/meteo.j2k"`;
+the examples below run inside the repository, so they import the built
+output by path instead.
 
 ## Decode a real field
 

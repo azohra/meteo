@@ -9,8 +9,8 @@ internals pays twice: `decodeJ2kRegion` decodes *only* the codeblocks a
 few requested gridpoints touch (bit-identical to the full decode at
 those points, ~16× faster per core on the largest ECCC field), and the
 worker pool fans one field's independent EBCOT codeblocks across threads
-for full decodes. The receipts are in
-[docs/performance.md](docs/performance.md).
+for full decodes. The receipts are at
+<https://meteo.azohra.com/docs/j2k/performance/>.
 Zero runtime dependencies, no Node APIs in `src/`.
 
 ```sh
@@ -45,15 +45,12 @@ first samples: 1166, 1166, 1166, 1166
 
 When only a few gridpoints matter, `decodeJ2kRegion(codestream, indices)`
 returns the same integers `decodeJ2k` would put at those raster indexes
-(bit for bit, by contract) while entropy-decoding a sliver of the
-codeblocks (49 of 911 for 4 scattered points on the largest field).
+while entropy-decoding only the codeblocks the points touch.
 
 The decoder covers the measured subset the feeds ship and nothing more
-(everything outside it fails loudly with a named `UnsupportedJ2kError`),
-and is accepted through two rings: bit-exact against the WASM OpenJPEG
-oracle, and end-to-end through `@azohra/meteo.grib` against ecCodes' recorded
-answers. Region decode is held to the same standard: bit-identical to the
-full decode over the whole corpus, so the oracle tie carries through.
+(everything outside it fails loudly with a named `UnsupportedJ2kError`);
+how every configuration is accepted — including region decode's exactness
+contract — is at <https://meteo.azohra.com/docs/j2k/correctness/>.
 
 ## Documentation
 
