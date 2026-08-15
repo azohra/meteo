@@ -152,6 +152,7 @@ The same scene and options produce identical bytes, supporting static builds,
 caching, reviewable golden diffs, and reproducible teaching figures. Ensemble
 profile values remain percentile bands in the scene.
 
-If an intentional renderer change alters a golden, follow the review sequence
-in [Data and package versioning](/docs/briefing/versioning/). A new snapshot is not
+If an intentional renderer change alters a golden, the release tag is the
+[snapshot boundary](/docs/briefing/versioning/#release-tags-are-snapshot-boundaries).
+A new snapshot is not
 evidence that labels, units, IDs, or accessibility stayed correct.

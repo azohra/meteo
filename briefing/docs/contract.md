@@ -167,6 +167,6 @@ and site context pin `SITES_SCHEMA_VERSION` and
   (`profile.schema.json` and its siblings), so a resolver can reach them
   by specifier as well as by path.
 
-See [Data and package versioning](/docs/briefing/versioning/) for the independent
-dataset and npm version axes, the wire-v2 boundary, and the migration path
-for stored v1 documents.
+See [Compatibility](/docs/compatibility/) for the document families, the
+wire-v2 boundary, and the migration path for stored v1 documents;
+[Package versioning](/docs/briefing/versioning/) covers the npm axis.

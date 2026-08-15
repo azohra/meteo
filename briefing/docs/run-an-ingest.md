@@ -35,7 +35,7 @@ one small document.
 
 A publication is identified by the pair `(run.referenceTime,
 run.generatedAt)`; the fact and its consequences are defined in
-[Data and package versioning](/docs/briefing/versioning/#publication-identity).
+[Compatibility](/docs/compatibility/#publication-identity).
 For the loop that means: remember the last pair you ingested per model, and
 treat any change as work. A new `referenceTime` is a new run; a later
 `generatedAt` for the same `referenceTime` is a corrected re-publication,

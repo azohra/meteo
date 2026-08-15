@@ -69,7 +69,7 @@ indexes. `--no-history` publishes current documents only.
 
 `terrain` regenerates the
 [site context catalogue](/docs/publish/configure-launches/); `migrate` is the
-one-time [wire v2](/docs/briefing/versioning/) cutover of a model's published
+one-time [wire v2](/docs/compatibility/) cutover of a model's published
 documents, with its runbook [below](#runbook-the-wire-v2-archive-cutover);
 `runs-index` regenerates `runs.json` wholesale from the published
 manifests; `freshness` prints exactly `fresh` or `stale` so an upload flow
@@ -103,7 +103,7 @@ catalogued publication cadence to recurring jobs.
 ## Runbook: the wire v2 archive cutover
 
 `meteo forecast migrate` rewrites one profile model's published
-[wire v1 documents as wire v2](/docs/briefing/versioning/) in place: the
+[wire v1 documents as wire v2](/docs/compatibility/) in place: the
 current `sites/<site>.json` documents and every line of every month history
 archive. Manifests and `runs.json` are untouched: their shapes did not
 change. Run it by hand, once per model, with the upload credentials, never

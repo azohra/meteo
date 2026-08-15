@@ -58,7 +58,7 @@ both tiers in one working example.
 | [Model catalogue](/docs/briefing/catalogue/) | `models.json`: model discovery and declared capabilities |
 | [Ensemble values](/docs/briefing/ensemble-values/) | Percentile blocks, contributor counts, censoring, circular wind |
 | [History archives](/docs/briefing/history-archives/) | The append-only monthly gzip archives and their sidecar indexes |
-| [Data and package versioning](/docs/briefing/versioning/) | The dataset and npm version axes and their compatibility rules |
+| [Package versioning](/docs/briefing/versioning/) | The npm axis and the finding vocabularies; document families live in [Compatibility](/docs/compatibility/) |
 
 ### The presentation tier
 

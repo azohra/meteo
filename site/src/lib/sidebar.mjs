@@ -5,6 +5,7 @@ export const sidebar = [
       { slug: "docs", label: "Choose your path" },
       { slug: "docs/overview", label: "Project overview" },
       { slug: "docs/getting-started", label: "Getting started" },
+      { slug: "docs/compatibility", label: "Compatibility" },
     ],
   },
   {
@@ -42,7 +43,7 @@ export const sidebar = [
           { slug: "docs/briefing/catalogue", label: "Model catalogue" },
           { slug: "docs/briefing/ensemble-values", label: "Ensemble values" },
           { slug: "docs/briefing/history-archives", label: "History archives" },
-          { slug: "docs/briefing/versioning", label: "Versioning" },
+          { slug: "docs/briefing/versioning", label: "Package versioning" },
         ],
       },
       {
