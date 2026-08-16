@@ -434,6 +434,28 @@ describe("models.json schema", () => {
     expect(hrdps.capabilities.cin).toBe(false);
   });
 
+  it("types the observation entry's quantity as the enum, tolerating its absence", () => {
+    const entry = {
+      slug: "goes18-dsr",
+      label: "GOES-18 downward shortwave",
+      provider: "NOAA",
+      gridKm: 3,
+      cadenceMinutes: 10,
+      quantity: "downwardShortwave",
+      experimental: false,
+    };
+    const tagged = { ...catalogue(), observationModels: [entry] };
+    expect(parseModelCatalogue(tagged)!.observationModels![0].quantity).toBe("downwardShortwave");
+    const aot = { ...catalogue(), observationModels: [{ ...entry, quantity: "aot" }] };
+    expect(parseModelCatalogue(aot)!.observationModels![0].quantity).toBe("aot");
+    const misnamed = { ...catalogue(), observationModels: [{ ...entry, quantity: "dsr" }] };
+    expect(parseModelCatalogue(misnamed)).toBeNull();
+    // A pre-quantity catalogue stays valid, the field absent — never defaulted.
+    const { quantity: _dropped, ...untagged } = entry;
+    const legacy = { ...catalogue(), observationModels: [untagged] };
+    expect(parseModelCatalogue(legacy)!.observationModels![0]).not.toHaveProperty("quantity");
+  });
+
   it("accepts the repository's actual models.json", () => {
     const raw = readFileSync(join(__dirname, "..", "..", "forecast", "models.json"), "utf-8");
     const parsed = parseModelCatalogueJson(raw);
@@ -474,6 +496,10 @@ describe("models.json schema", () => {
     for (const entry of rawCatalogue.observationModels ?? []) {
       expect(entry, String(entry["slug"])).not.toHaveProperty("typicalPublicationLagHours");
     }
+    const quantities = Object.fromEntries(
+      (parsed!.observationModels ?? []).map((entry) => [entry.slug, entry.quantity]),
+    );
+    expect(quantities).toEqual({ "goes18-dsr": "downwardShortwave", "goes18-aod": "aot" });
     expect(hrrr.typicalPublicationLagHours).toBe(2.5);
     expect(hrdps.typicalPublicationLagHours).toBe(4.5);
   });

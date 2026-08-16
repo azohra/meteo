@@ -127,6 +127,17 @@ The pure pair check is exported too: `runsConsistent(manifest, profile)` is
 true exactly when both documents name the same model and run; useful when
 documents arrive through your own storage rather than these loaders.
 
+## The tree's layout is exported
+
+`documentPaths` is the published tree's path layout, exported once:
+`manifest(model)`, `siteDocument(model, site)`, `history(model, site,
+month)` and `historyIndex(model, site, month)`, plus the dataset-root
+files `models()`, `sites()`, `siteContext()`, and `runs()`, each
+returning the document's root-relative path. Every URL these loaders
+fetch is `${baseUrl}/${documentPaths...}` — and the same keys address
+the tree where there is no URL at all, which is the object-store case
+[Downstream access](/docs/forecast/downstream-access/) describes.
+
 ## The caller owns fetch and storage
 
 `fetch` is a parameter, not an import. Pass the runtime's own WHATWG-shaped

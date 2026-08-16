@@ -20,6 +20,16 @@ The JSON contract does not contain users, roles, sessions, launch permissions,
 or API keys. Adding them would couple portable forecast documents to one
 publisher's policy.
 
+Hosts that address the tree by key rather than by URL — object storage
+behind an application, a Cloudflare Worker reading an R2 bucket binding —
+should build those keys with
+[`documentPaths`](/docs/briefing/transport/#the-trees-layout-is-exported)
+from `@azohra/meteo.briefing/transport`, the published tree's exported path
+layout. It returns each document's root-relative path (the loaders fetch
+`${baseUrl}/${documentPaths...}`), so a gate or edge function keys its
+reads from the same home the TypeScript loaders use instead of
+hand-writing the layout a second time.
+
 Whatever the host, serve the bytes as published. Documents keep
 `application/json`; `.jsonl.gz` history archives keep `application/gzip` — or
 go out as raw gzip bytes with no `Content-Encoding` header — so a reader

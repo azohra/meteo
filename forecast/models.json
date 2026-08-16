@@ -501,6 +501,7 @@
       "provider": "NOAA",
       "gridKm": 3,
       "cadenceMinutes": 10,
+      "quantity": "downwardShortwave",
       "experimental": false
     },
     {
@@ -509,6 +510,7 @@
       "provider": "NOAA",
       "gridKm": 3,
       "cadenceMinutes": 10,
+      "quantity": "aot",
       "experimental": false
     }
   ]

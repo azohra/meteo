@@ -141,11 +141,14 @@ describe("the product table", () => {
       expect(entry["gridKm"]).toBe(3);
       // Operational NOAA products (OR_ prefix).
       expect(entry["experimental"]).toBe(false);
+      // The catalogue entry and the builder name the same measured quantity.
+      expect(entry["quantity"]).toBe(product.quantity);
     }
 
     expect(PRODUCTS["goes18-dsr"].prefix).toBe("ABI-L2-DSRF");
     expect(PRODUCTS["goes18-dsr"].variable).toBe("DSR");
     expect(PRODUCTS["goes18-dsr"].valueKey).toBe("downwardShortwaveWm2");
+    expect(PRODUCTS["goes18-dsr"].quantity).toBe("downwardShortwave");
     // DSR: DQF <= 1 admits the binary flag's degraded/invalid state,
     // published labelled (quality: 1); night stays out through the
     // unmasked half of the gate (fill pixels carry DQF 0).
@@ -153,6 +156,7 @@ describe("the product table", () => {
     expect(PRODUCTS["goes18-aod"].prefix).toBe("ABI-L2-AODF");
     expect(PRODUCTS["goes18-aod"].variable).toBe("AOD");
     expect(PRODUCTS["goes18-aod"].valueKey).toBe("aot");
+    expect(PRODUCTS["goes18-aod"].quantity).toBe("aot");
     // AOD: high + medium quality (Zhang, Kondragunta et al. 2020).
     expect(PRODUCTS["goes18-aod"].maxQuality).toBe(1);
   });
@@ -519,6 +523,7 @@ describe("the document contract", () => {
 
     const parsed = parseObservationDocument(document);
     expect(parsed).not.toBeNull();
+    expect(parsed!.quantity).toBe("aot");
     expect(parsed!.site.timeZone).toBe("America/Vancouver");
     // The contract's rounding table: aot publishes at 3 decimals.
     expect(parsed!.observations.map((entry) => (entry as { aot: number }).aot)).toEqual([
@@ -551,6 +556,7 @@ describe("the document contract", () => {
 
     const parsed = parseObservationDocument(document);
     expect(parsed).not.toBeNull();
+    expect(parsed!.quantity).toBe("downwardShortwave");
     expect(parsed!.site.timeZone).toBeUndefined();
     expect((parsed!.observations[0] as { downwardShortwaveWm2: number }).downwardShortwaveWm2).toBe(
       611.1,
@@ -714,6 +720,7 @@ describe("buildGoesProduct", () => {
       { observedAt: "2026-08-10T05:50:21Z", aot: 1.934 },
       { observedAt: "2026-08-10T06:00:21Z", aot: 2.906 },
     ]);
+    expect(dundee!.quantity).toBe("aot");
     expect(dundee!.observed.firstObservedAt).toBe("2026-08-10T05:50:21Z");
     expect(dundee!.observed.lastObservedAt).toBe("2026-08-10T06:00:21Z");
     expect(dundee!.site.timeZone).toBe("America/Vancouver");

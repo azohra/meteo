@@ -63,6 +63,49 @@ export interface DocumentMiss {
   url: string;
 }
 
+/**
+ * The published tree's path layout — the one home for where every published
+ * document lives, root-relative with no leading slash. The loaders here and
+ * in `history/` build every URL as `${baseUrl}/${documentPaths...}`; the
+ * same keys address the tree where there is no URL at all, e.g. as object
+ * keys against a store binding (a Cloudflare R2 bucket) holding the
+ * published dataset.
+ */
+export const documentPaths = {
+  /** `<model>/manifest.json` — the model's per-build manifest. */
+  manifest(modelSlug: string): string {
+    return `${modelSlug}/manifest.json`;
+  },
+  /** `<model>/sites/<site>.json` — one site's current document (profile, smoke, or observation). */
+  siteDocument(modelSlug: string, siteSlug: string): string {
+    return `${modelSlug}/sites/${siteSlug}.json`;
+  },
+  /** `<model>/history/<site>/<YYYY-MM>.jsonl.gz` — one site's append-only month archive. */
+  history(modelSlug: string, siteSlug: string, monthKey: string): string {
+    return `${modelSlug}/history/${siteSlug}/${monthKey}.jsonl.gz`;
+  },
+  /** `<model>/history/<site>/<YYYY-MM>.index.json` — the month archive's advisory byte-offset sidecar index. */
+  historyIndex(modelSlug: string, siteSlug: string, monthKey: string): string {
+    return `${modelSlug}/history/${siteSlug}/${monthKey}.index.json`;
+  },
+  /** `models.json` — the hand-maintained model catalogue at the dataset root. */
+  models(): string {
+    return "models.json";
+  },
+  /** `sites.json` — the hand-maintained site catalogue at the dataset root. */
+  sites(): string {
+    return "sites.json";
+  },
+  /** `site-context.json` — the measured per-site ground truth at the dataset root. */
+  siteContext(): string {
+    return "site-context.json";
+  },
+  /** `runs.json` — the machine-written cross-model run index at the dataset root. */
+  runs(): string {
+    return "runs.json";
+  },
+};
+
 /** The run-identity stamp shared by every forecast document kind; observation documents deliberately do not satisfy it. */
 export interface RunStampedDocument {
   model: string;
@@ -114,8 +157,8 @@ export async function loadDocument<T extends RunStampedDocument>(
 ): Promise<LoadedDocument<T> | DocumentMiss> {
   const { fetch, modelSlug, siteSlug, guard } = options;
   const base = trimTrailingSlash(options.baseUrl);
-  const manifestUrl = `${base}/${modelSlug}/manifest.json`;
-  const documentUrl = `${base}/${modelSlug}/sites/${siteSlug}.json`;
+  const manifestUrl = `${base}/${documentPaths.manifest(modelSlug)}`;
+  const documentUrl = `${base}/${documentPaths.siteDocument(modelSlug, siteSlug)}`;
   const delayMs = options.retry?.delayMs ?? 1500;
   const sleep = options.retry?.sleep ?? defaultSleep;
 
@@ -199,7 +242,7 @@ export async function loadObservation(
   options: LoadObservationOptions,
 ): Promise<ObservationDocument | DocumentMiss> {
   const base = trimTrailingSlash(options.baseUrl);
-  const documentUrl = `${base}/${options.modelSlug}/sites/${options.siteSlug}.json`;
+  const documentUrl = `${base}/${documentPaths.siteDocument(options.modelSlug, options.siteSlug)}`;
   return fetchDocument(options.fetch, documentUrl, parseObservationDocumentJson);
 }
 
@@ -247,8 +290,9 @@ export async function loadSiteSet<T extends RunStampedDocument>(
 ): Promise<LoadedSiteSet<T> | DocumentMiss> {
   const { fetch, modelSlug, siteSlugs, guard } = options;
   const base = trimTrailingSlash(options.baseUrl);
-  const manifestUrl = `${base}/${modelSlug}/manifest.json`;
-  const documentUrl = (siteSlug: string) => `${base}/${modelSlug}/sites/${siteSlug}.json`;
+  const manifestUrl = `${base}/${documentPaths.manifest(modelSlug)}`;
+  const documentUrl = (siteSlug: string) =>
+    `${base}/${documentPaths.siteDocument(modelSlug, siteSlug)}`;
   const delayMs = options.retry?.delayMs ?? 1500;
   const sleep = options.retry?.sleep ?? defaultSleep;
 
@@ -306,7 +350,7 @@ export interface LoadRunsOptions {
 /** Fetches data/runs.json — the cross-model run index — with the same miss semantics as `loadForecast`. */
 export async function loadRuns(options: LoadRunsOptions): Promise<RunsIndex | DocumentMiss> {
   const base = trimTrailingSlash(options.baseUrl);
-  return fetchDocument(options.fetch, `${base}/runs.json`, parseRunsIndexJson);
+  return fetchDocument(options.fetch, `${base}/${documentPaths.runs()}`, parseRunsIndexJson);
 }
 
 function isMiss<T extends object>(value: T | DocumentMiss): value is DocumentMiss {

@@ -13,6 +13,14 @@
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "description": "Lowercase hyphenated slug — the identity of models and sites everywhere."
     },
+    "quantity": {
+      "description": "The measured quantity this document's series carries: \"downwardShortwave\" = surface downward shortwave flux (downwardShortwaveWm2 entries); \"aot\" = aerosol optical thickness at 550 nm (aot entries). Mirrors the catalogue entry's quantity. Absence means the document predates the tag — the entry shape still names the quantity, never that it is unknown.",
+      "type": "string",
+      "enum": [
+        "downwardShortwave",
+        "aot"
+      ]
+    },
     "observed": {
       "type": "object",
       "properties": {

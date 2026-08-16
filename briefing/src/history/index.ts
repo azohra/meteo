@@ -5,7 +5,7 @@ import {
   type SmokeDocument,
   type SiteForecast,
 } from "../contract.js";
-import { TransportHttpError, type DocumentMiss } from "../transport.js";
+import { documentPaths, TransportHttpError, type DocumentMiss } from "../transport.js";
 
 /** The run stamp every archived forecast document carries; observation history lines deliberately do not satisfy it. */
 export interface HistoryDocument {
@@ -221,9 +221,9 @@ export async function loadHistory<T extends HistoryDocument>(
   const base = trimTrailingSlash(options.baseUrl);
   const months = [...options.months].sort();
   const archiveUrl = (month: string) =>
-    `${base}/${modelSlug}/history/${siteSlug}/${month}.jsonl.gz`;
+    `${base}/${documentPaths.history(modelSlug, siteSlug, month)}`;
   const indexUrl = (month: string) =>
-    `${base}/${modelSlug}/history/${siteSlug}/${month}.index.json`;
+    `${base}/${documentPaths.historyIndex(modelSlug, siteSlug, month)}`;
 
   const misses: Record<string, DocumentMiss> = {};
   const invalidLines: HistoryInvalidLine[] = [];

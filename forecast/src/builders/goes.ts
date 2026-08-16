@@ -28,6 +28,8 @@ export interface Product {
   prefix: string;
   variable: string;
   valueKey: string;
+  /** The measured quantity the product publishes — the document's and the catalogue entry's `quantity`. */
+  quantity: "downwardShortwave" | "aot";
   maxQuality: number;
   label: string;
 }
@@ -44,6 +46,7 @@ export const PRODUCTS: Record<"goes18-dsr" | "goes18-aod", Product> = {
     prefix: "ABI-L2-DSRF",
     variable: "DSR",
     valueKey: "downwardShortwaveWm2",
+    quantity: "downwardShortwave",
     maxQuality: 1,
     label: "GOES-18 DSR",
   },
@@ -53,6 +56,7 @@ export const PRODUCTS: Record<"goes18-dsr" | "goes18-aod", Product> = {
     prefix: "ABI-L2-AODF",
     variable: "AOD",
     valueKey: "aot",
+    quantity: "aot",
     maxQuality: 1,
     label: "GOES-18 AOD",
   },
@@ -478,6 +482,7 @@ export function siteDocument(
   return roundDocument({
     schemaVersion: SCHEMA_VERSION,
     model: product.slug,
+    quantity: product.quantity,
     observed: {
       firstObservedAt: observations[0].observedAt,
       lastObservedAt: observations[observations.length - 1].observedAt,

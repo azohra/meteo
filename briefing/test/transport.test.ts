@@ -7,6 +7,7 @@ import type {
 } from "../src/contract.js";
 import { parseSmokeDocumentJson, parseSiteForecastJson } from "../src/contract.js";
 import {
+  documentPaths,
   loadObservation,
   loadForecast,
   loadRuns,
@@ -58,6 +59,30 @@ function pair(referenceTime: string): { manifest: ForecastManifest; profile: Sit
 }
 
 const noWait = { delayMs: 0, sleep: async () => {} };
+
+describe("documentPaths", () => {
+  it("matches the URLs the loaders built from literals before it existed, byte for byte", () => {
+    // Per-model tree — the shapes loadDocument/loadObservation/loadSiteSet
+    // fetched as `${base}/${modelSlug}/…` literals.
+    expect(`${BASE}/${documentPaths.manifest("hrdps-continental")}`).toBe(MANIFEST_URL);
+    expect(`${BASE}/${documentPaths.siteDocument("hrdps-continental", "dundee")}`).toBe(
+      PROFILE_URL,
+    );
+    // History tree — the shapes history/'s loadHistory fetched.
+    expect(documentPaths.history("raqdps", "erie", "2026-08")).toBe(
+      "raqdps/history/erie/2026-08.jsonl.gz",
+    );
+    expect(documentPaths.historyIndex("raqdps", "erie", "2026-08")).toBe(
+      "raqdps/history/erie/2026-08.index.json",
+    );
+    // Dataset root — runs.json as loadRuns fetched it, plus the three
+    // root catalogues the read side expects beside it.
+    expect(`${BASE}/${documentPaths.runs()}`).toBe(`${BASE}/runs.json`);
+    expect(documentPaths.models()).toBe("models.json");
+    expect(documentPaths.sites()).toBe("sites.json");
+    expect(documentPaths.siteContext()).toBe("site-context.json");
+  });
+});
 
 describe("runsConsistent", () => {
   it("is true exactly when model and referenceTime agree", () => {

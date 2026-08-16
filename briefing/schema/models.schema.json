@@ -316,6 +316,14 @@
             "exclusiveMinimum": 0,
             "description": "Native observation cadence, minutes — the freshness yardstick."
           },
+          "quantity": {
+            "description": "The measured quantity this dataset publishes: \"downwardShortwave\" = surface downward shortwave flux; \"aot\" = aerosol optical thickness at 550 nm. Echoed per-document as the observation document's quantity. Absence means the catalogue predates the tag, never that a default applies.",
+            "type": "string",
+            "enum": [
+              "downwardShortwave",
+              "aot"
+            ]
+          },
           "experimental": {
             "type": "boolean"
           }

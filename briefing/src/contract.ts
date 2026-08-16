@@ -431,6 +431,13 @@ export const observationDocumentSchema = z
   .object({
     schemaVersion: z.literal(SCHEMA_VERSION),
     model: slugSchema,
+    /** The measured quantity this document's series carries; mirrors the catalogue entry's `quantity`. Absence means the document predates the tag — the entry shape still names the quantity, never that it is unknown. */
+    quantity: z
+      .enum(["downwardShortwave", "aot"])
+      .optional()
+      .describe(
+        'The measured quantity this document\'s series carries: "downwardShortwave" = surface downward shortwave flux (downwardShortwaveWm2 entries); "aot" = aerosol optical thickness at 550 nm (aot entries). Mirrors the catalogue entry\'s quantity. Absence means the document predates the tag — the entry shape still names the quantity, never that it is unknown.',
+      ),
     /** The observation window and generation instant — the observation kind's replacement for a run block. */
     observed: z
       .object({
@@ -681,6 +688,13 @@ export const observationModelEntrySchema = z.object({
     .number()
     .positive()
     .describe("Native observation cadence, minutes — the freshness yardstick."),
+  /** The measured quantity this dataset publishes; echoed per-document as the observation document's `quantity`. Absence means the catalogue predates the tag, never that a default applies. */
+  quantity: z
+    .enum(["downwardShortwave", "aot"])
+    .optional()
+    .describe(
+      'The measured quantity this dataset publishes: "downwardShortwave" = surface downward shortwave flux; "aot" = aerosol optical thickness at 550 nm. Echoed per-document as the observation document\'s quantity. Absence means the catalogue predates the tag, never that a default applies.',
+    ),
   experimental: z.boolean(),
 });
 export type ObservationModelEntry = z.infer<typeof observationModelEntrySchema>;

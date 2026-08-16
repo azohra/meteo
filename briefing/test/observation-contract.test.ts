@@ -70,6 +70,28 @@ describe("observation document contract", () => {
     expect(parseObservationDocument(aot)?.observations[0]).toMatchObject({ quality: 1 });
   });
 
+  it("carries the measured quantity when tagged, and an untagged document still parses", () => {
+    const tagged = { ...DOCUMENT, quantity: "downwardShortwave" };
+    expect(parseObservationDocument(tagged)?.quantity).toBe("downwardShortwave");
+    const aotTagged = {
+      ...DOCUMENT,
+      model: "goes18-aod",
+      quantity: "aot",
+      observations: [{ observedAt: "2026-08-09T21:00:00Z", aot: 1.56 }],
+    };
+    expect(parseObservationDocument(aotTagged)?.quantity).toBe("aot");
+    // A document published before the tag existed stays valid, its
+    // quantity absent — never defaulted.
+    const untagged = parseObservationDocument(DOCUMENT);
+    expect(untagged).not.toBeNull();
+    expect(untagged).not.toHaveProperty("quantity");
+  });
+
+  it("rejects a quantity outside the enum — the tag names a known quantity or stays absent", () => {
+    expect(parseObservationDocument({ ...DOCUMENT, quantity: "irradiance" })).toBeNull();
+    expect(parseObservationDocument({ ...DOCUMENT, quantity: null })).toBeNull();
+  });
+
   it("rejects a zero or fractional quality — the best grade is absence, not 0", () => {
     for (const quality of [0, 0.5, -1]) {
       const document = {
