@@ -12,6 +12,7 @@ export default defineConfig({
       "src/history/index.ts",
       "src/meteogram.ts",
       "src/compare-board/index.ts",
+      "src/sounding.ts",
       /* Not exported: the schema-emit table internal/emit-schemas.ts loads
          from dist/internal/ at generation time (excluded from the publish
          via the manifest's "!dist/internal"). */

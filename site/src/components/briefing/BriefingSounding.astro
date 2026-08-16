@@ -1,0 +1,158 @@
+---
+/* The sounding tier: the convective-cycle day drawn twice — the Meteogram
+   for the whole day, and beside it the highlighted hour's column opened
+   vertically by the sounding subpath. The Meteogram's own selected hour
+   (peak w*) picks the instant, passed by validAt: the same selection
+   contract any consumer uses to drive a sounding from a Meteogram. */
+import {
+  buildSoundingKeySpec,
+  buildSoundingScene,
+  renderSoundingKeySvg,
+  renderSoundingSvg,
+} from "@azohra/meteo.briefing/sounding";
+import Figure from "../figure/Figure.astro";
+import { onlyOverlays, renderSyntheticMeteogram } from "../../lib/example-meteogram";
+import { scenarioById } from "../../lib/scenarios";
+import { fail } from "./exhibit";
+
+const scenario = scenarioById("convective-cycle");
+const overlays = onlyOverlays(
+  "temperature",
+  "wind",
+  "clouds",
+  "thermalStrength",
+  "precipitation",
+  "boundaryLayerTop",
+  "usableLiftTop",
+  "cloudBase",
+  "launch",
+  "selectedHour",
+  "surfaceTemperature",
+);
+const meteogramIdPrefix = "briefing-sounding-gram";
+const { scene: meteogramScene, svg: meteogramSvg } = renderSyntheticMeteogram(
+  scenario,
+  { overlays, columnWidthPx: 56, plotHeightPx: 430 },
+  meteogramIdPrefix,
+);
+
+const validAt =
+  meteogramScene.hourValidAts[meteogramScene.selectedHourIndex] ??
+  fail("the convective-cycle Meteogram lost its selected hour");
+const soundingScene =
+  buildSoundingScene(scenario.profile, {
+    validAt,
+    launch: scenario.launch,
+    floorM: meteogramScene.scales.floorM,
+    topM: meteogramScene.scales.topM,
+    heightPx: 520,
+  }) ?? fail("the convective-cycle profile no longer publishes its selected hour");
+const soundingSvg = renderSoundingSvg(soundingScene, { idPrefix: "briefing-sounding" });
+const keySvg = renderSoundingKeySvg(buildSoundingKeySpec(soundingScene), {
+  idPrefix: "briefing-sounding-key",
+});
+
+const hourLabel = `${validAt.slice(11, 16)} UTC`;
+const cloudBase =
+  soundingScene.marks.find((mark) => mark.key === "cloudBase") ??
+  fail("the sounding lost its cloud-base mark");
+const lcl = soundingScene.lcl ?? fail("the sounding lost its LCL marker");
+const caption =
+  `The tinted Meteogram column is ${hourLabel}, the day's strongest lift; the sounding opens that ` +
+  `column vertically. ${soundingScene.levelCount} dots per trace are the model's published levels — ` +
+  `straight dashed segments between them are interpolation, never data — and the parcel's LCL at ` +
+  `${Math.round(lcl.altitudeM)} m sits close under the ${Math.round(cloudBase.altitudeM)} m cloud base.`;
+---
+
+<section class="bf-sounding" aria-labelledby="briefing-sounding-title">
+  <div class="bf-sounding-inner section-inner">
+    <h2 id="briefing-sounding-title">One hour, read vertically</h2>
+    <p class="bf-section-lede">
+      A Meteogram answers the day; a sounding answers one hour.
+      The <code>/sounding</code> subpath takes the same profile document
+      and a <code>validAt</code>, and draws that column as a flyable-band
+      vertical profile: temperature and dew point with one dot per
+      published model level, a lifted parcel with its LCL, the derived
+      heights, and a wind-barb ladder. <a href="/docs/briefing/sounding/">The sounding</a> is
+      the reference for the subpath.
+    </p>
+
+    <div class="bf-sounding-frame">
+      <Figure
+        id="briefing-sounding-figure"
+        title={`${scenario.label}, and its ${hourLabel} sounding`}
+        lesson={scenario.lesson}
+        description={`${scenario.accessibilityDescription} Beside the Meteogram, a sounding of the ${hourLabel} hour: temperature, dew point, and a lifted parcel against altitude, with wind barbs at each published level.`}
+        caption={caption}
+        units="altitude m · temperature °C · wind km/h · w* m/s"
+        {scenario}
+        headingLevel="h3"
+        size="content"
+      >
+        <div class="bf-sounding-pair">
+          <div
+            class="meteo-gram-scroll bf-sounding-meteogram"
+            role="region"
+            tabindex="0"
+            aria-label="Scrollable Meteogram for the convective-cycle day"
+          >
+            <div
+              class="bf-sounding-mount"
+              style={`--bf-sounding-gram-width: ${meteogramScene.width}px`}
+              set:html={meteogramSvg}
+            />
+          </div>
+          <div class="bf-sounding-profile" set:html={soundingSvg} />
+        </div>
+        <div slot="legend" class="bf-sounding-key" set:html={keySvg} />
+      </Figure>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bf-sounding {
+    padding-block-start: clamp(2rem, 4vw, 3rem);
+  }
+
+  .bf-sounding h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-sounding-frame {
+    margin-block-start: 1.4rem;
+  }
+
+  .bf-sounding-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .bf-sounding-mount :global(svg) {
+    display: block;
+    width: var(--bf-sounding-gram-width);
+    max-width: none;
+  }
+
+  .bf-sounding-profile :global(svg) {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  .bf-sounding-key :global(svg) {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+
+  @media (max-width: 900px) {
+    .bf-sounding-pair {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

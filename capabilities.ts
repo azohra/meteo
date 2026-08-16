@@ -31,9 +31,10 @@ export const CAPABILITIES: CapabilityDeclaration[] = [
       "history",
       "meteogram",
       "compare-board",
+      "sounding",
     ],
     edges: [],
-    views: ["scene", "svg", "meteogram", "compare-board"],
+    views: ["scene", "svg", "meteogram", "sounding", "compare-board"],
     external: { server: "@azohra/meteo.forecast" },
   },
   {

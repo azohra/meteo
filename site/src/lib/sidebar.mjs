@@ -40,6 +40,7 @@ export const sidebar = [
           { slug: "docs/briefing/svg", label: "SVG renderer and key" },
         ],
       },
+      { slug: "docs/briefing/sounding", label: "The sounding" },
       {
         label: "Recipes",
         items: [

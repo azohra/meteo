@@ -393,6 +393,15 @@ describe("capability profiles", () => {
     }
   });
 
+  it("briefing/sounding/scene stays renderer-independent under the same law as the Meteogram's scene tier", () => {
+    for (const file of sourceFiles("briefing/src/sounding/scene")) {
+      for (const specifier of importSpecifiers(file)) {
+        expect(specifier, `${file} imports ${specifier}`).not.toMatch(/(^|\/)svg\//);
+        expect(specifier, `${file} imports ${specifier}`).not.toMatch(/^node:/);
+      }
+    }
+  });
+
   it("station's root and client never pull in server code, React, element registration, or stylesheets — those stay behind their subpaths", () => {
     const rootAndClient = [
       ...sourceFiles("station").filter(
