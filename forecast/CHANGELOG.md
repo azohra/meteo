@@ -1,5 +1,12 @@
 # @azohra/meteo.forecast
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [6ef2985]
+  - @azohra/meteo.briefing@0.4.1
+
 ## 0.3.1
 
 ### Patch Changes
