@@ -1,5 +1,24 @@
 # @azohra/meteo.forecast
 
+## 0.3.0
+
+### Minor Changes
+
+- 7db8b23: GOES observation entries carry the provider's nonzero DQF as `quality`,
+  and the DSR gate widens from DQF = 0 to DQF ≤ 1. A degraded but
+  unmasked DSR retrieval (the sunrise and sunset shoulders that the
+  exact-zero gate silently dropped from the archive) now publishes
+  labelled `quality: 1` instead of not existing, and AOD's accepted
+  medium-quality retrievals, previously indistinguishable from high,
+  carry the same label. Absence still means the best grade, night still
+  publishes as absence through the unmasked half of the gate, and
+  rejected qualities are still published as absences rather than zeros.
+
+### Patch Changes
+
+- Updated dependencies [7db8b23]
+  - @azohra/meteo.briefing@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
