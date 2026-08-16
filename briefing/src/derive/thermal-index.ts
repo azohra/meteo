@@ -1,40 +1,89 @@
 import type { TemperatureSample } from "./lapse.js";
+import { parcelAscent } from "./parcel.js";
+
+export { DRY_ADIABATIC_LAPSE_C_PER_M } from "./parcel.js";
 
 /**
- * Dry adiabatic lapse in degC per metre — the same constant the pipeline
- * uses to lift the surface parcel for boundary-layer top.
+ * The thermal index now rides `parcelAscent`, the platform's one parcel
+ * implementation: dry adiabatic to the LCL, moist pseudo-adiabatic above
+ * it, and — the physical change — compared in VIRTUAL temperature, so
+ * the vapour the parcel carries up and the vapour the environment holds
+ * both count toward density. The previous implementation compared plain
+ * temperatures along a dry adiabat only; in a moist boundary layer that
+ * understates parcel buoyancy by a few tenths of a degree and cannot see
+ * the moist branch above cloud base at all. Two parcels that disagree is
+ * the platform's plausible-but-wrong failure mode, so this module keeps
+ * none of its own physics: it negates `buoyancyC` from the ascent.
+ *
+ * Dew points are additive-optional inputs; a caller that supplies none
+ * gets a bone-dry column (vapour pressure below 1e-6 hPa), which
+ * reproduces the old plain-temperature arithmetic to well under 0.001
+ * degC.
  */
-export const DRY_ADIABATIC_LAPSE_C_PER_M = 0.0098;
+
+/** A dew point cold enough that Magnus vapour pressure is < 1e-6 hPa — the "no moisture information" stand-in the optional dew-point inputs fall back to. */
+const DRY_DEW_POINT_C = -120;
 
 /**
- * Thermal index (TI) at one level: the environment temperature minus a
- * surface parcel lifted dry-adiabatically from model elevation,
+ * Thermal index (TI) at one level: the environment minus the lifted
+ * surface parcel, both in virtual temperature,
  *
- *   TI = T_level − (T_surface − 0.0098 × (z_level − z_surface))
+ *   TI = Tv_level − Tv_parcel(z_level)
  *
- * RASP sign convention: negative TI means the parcel is still warmer than
- * the environment at that height (thermals reach it); TI crossing zero is
- * where dry thermals stop.
+ * with the parcel from `parcelAscent` (dry adiabatic to the LCL, moist
+ * pseudo-adiabatic above). RASP sign convention, unchanged: negative TI
+ * means the parcel is still buoyant at that height (thermals reach it);
+ * TI crossing zero is where thermals stop.
  */
 export function thermalIndexC(args: {
   surfaceTemperatureC: number;
   surfaceElevationM: number;
-  level: TemperatureSample;
+  /** 2 m dew point; omitted, the surface air is treated as fully dry. */
+  surfaceDewPointC?: number;
+  level: TemperatureSample & { dewPointC?: number };
 }): number {
-  const parcelC =
-    args.surfaceTemperatureC -
-    DRY_ADIABATIC_LAPSE_C_PER_M * (args.level.heightM - args.surfaceElevationM);
-  return args.level.temperatureC - parcelC;
+  const ascent = parcelAscent(
+    {
+      temperatureC: args.surfaceTemperatureC,
+      dewPointC: args.surfaceDewPointC ?? DRY_DEW_POINT_C,
+      elevationM: args.surfaceElevationM,
+    },
+    [
+      {
+        heightM: args.level.heightM,
+        temperatureC: args.level.temperatureC,
+        dewPointC: args.level.dewPointC ?? DRY_DEW_POINT_C,
+      },
+    ],
+  );
+  return -ascent.levels[0].buoyancyC;
 }
 
-/** TI per level for a whole profile hour, in the levels' published order. */
+/**
+ * TI per level for a whole profile hour, in the levels' published order —
+ * one ascent for the column, so the moist branch above the LCL carries
+ * through every level it crosses.
+ */
 export function thermalIndexProfile(
   surfaceTemperatureC: number,
   surfaceElevationM: number,
-  levels: readonly TemperatureSample[],
+  levels: readonly (TemperatureSample & { dewPointC?: number })[],
+  surfaceDewPointC?: number,
 ): Array<{ heightM: number; thermalIndexC: number }> {
-  return levels.map((level) => ({
-    heightM: level.heightM,
-    thermalIndexC: thermalIndexC({ surfaceTemperatureC, surfaceElevationM, level }),
+  const ascent = parcelAscent(
+    {
+      temperatureC: surfaceTemperatureC,
+      dewPointC: surfaceDewPointC ?? DRY_DEW_POINT_C,
+      elevationM: surfaceElevationM,
+    },
+    levels.map((level) => ({
+      heightM: level.heightM,
+      temperatureC: level.temperatureC,
+      dewPointC: level.dewPointC ?? DRY_DEW_POINT_C,
+    })),
+  );
+  return ascent.levels.map((sample) => ({
+    heightM: sample.heightM,
+    thermalIndexC: -sample.buoyancyC,
   }));
 }

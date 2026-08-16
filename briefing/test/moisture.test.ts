@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { dewPointC, dewPointDepressionC, relativeHumidityPercent } from "../src/derive/moisture.js";
+import {
+  dewPointC,
+  dewPointDepressionC,
+  mixingRatioKgKg,
+  relativeHumidityPercent,
+  saturationMixingRatioKgKg,
+  saturationVaporPressureHpa,
+  virtualTemperatureC,
+} from "../src/derive/moisture.js";
 
 describe("relativeHumidityPercent", () => {
   it("matches the published Magnus value for 20C / dew point 10C", () => {
@@ -68,5 +76,46 @@ describe("dewPointDepressionC", () => {
   it("is temperature minus dew point", () => {
     expect(dewPointDepressionC(28.28, 4.72)).toBeCloseTo(23.56, 10);
     expect(dewPointDepressionC(5, 5)).toBe(0);
+  });
+});
+
+describe("saturationVaporPressureHpa", () => {
+  it("matches the Alduchov & Eskridge Magnus values", () => {
+    expect(saturationVaporPressureHpa(0)).toBeCloseTo(6.1094, 4);
+    expect(saturationVaporPressureHpa(20)).toBeCloseTo(23.334, 2);
+  });
+
+  it("is consistent with relativeHumidityPercent's Magnus curve", () => {
+    const ratio = saturationVaporPressureHpa(10) / saturationVaporPressureHpa(20);
+    expect(100 * ratio).toBeCloseTo(relativeHumidityPercent(20, 10), 8);
+  });
+});
+
+describe("mixingRatioKgKg", () => {
+  it("matches w = eps*e/(p - e) for dew point 15C at sea-level pressure", () => {
+    expect(mixingRatioKgKg(15, 1013.25)).toBeCloseTo(0.010626, 5);
+  });
+
+  it("grows as pressure falls at fixed dew point", () => {
+    expect(mixingRatioKgKg(10, 800)).toBeGreaterThan(mixingRatioKgKg(10, 1000));
+  });
+
+  it("saturationMixingRatioKgKg is the saturated case of the same curve", () => {
+    expect(saturationMixingRatioKgKg(15, 1013.25)).toBe(mixingRatioKgKg(15, 1013.25));
+  });
+});
+
+describe("virtualTemperatureC", () => {
+  it("equals the temperature for perfectly dry air", () => {
+    expect(virtualTemperatureC(25, 0)).toBe(25);
+  });
+
+  it("matches the Wallace & Hobbs form for 10 g/kg at 25C", () => {
+    // Tv = 298.15 * (1 + 0.010/0.622) / 1.010 - 273.15
+    expect(virtualTemperatureC(25, 0.01)).toBeCloseTo(26.794, 3);
+  });
+
+  it("always reads warmer than the plain temperature for moist air", () => {
+    expect(virtualTemperatureC(-5, 0.002)).toBeGreaterThan(-5);
   });
 });

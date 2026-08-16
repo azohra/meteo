@@ -1,5 +1,13 @@
 export { p50 } from "./ensemble.js";
-export { dewPointC, dewPointDepressionC, relativeHumidityPercent } from "./moisture.js";
+export {
+  dewPointC,
+  dewPointDepressionC,
+  mixingRatioKgKg,
+  relativeHumidityPercent,
+  saturationMixingRatioKgKg,
+  saturationVaporPressureHpa,
+  virtualTemperatureC,
+} from "./moisture.js";
 export {
   componentsToWind,
   msToKmh,
@@ -20,6 +28,13 @@ export {
   thermalIndexC,
   thermalIndexProfile,
 } from "./thermal-index.js";
+export {
+  DEFAULT_ENTRAINMENT_PER_M,
+  parcelAscent,
+  type ParcelAscent,
+  type ParcelLevelSample,
+  type ParcelOptions,
+} from "./parcel.js";
 export {
   buoyancyShearRatio,
   surfaceToBoundaryLayerShearMps,

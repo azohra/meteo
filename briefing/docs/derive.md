@@ -4,8 +4,9 @@ description: Use published state for pure quantities, local-day projection, and 
 ---
 
 `@azohra/meteo.briefing/derive` owns calculations that are pure functions of published
-documents: moisture conversions, vector wind, lapse and stability, thermal
-index, shear, the B/S ratio, local-day grouping, projection, valid-time
+documents: moisture conversions, vector wind, lapse and stability, the
+parcel ascent and its thermal index, shear, the B/S ratio, local-day
+grouping, projection, valid-time
 alignment, units, run freshness, parameterized usable lift, the
 smoke-correction chain, measured-irradiance interpretation, and sunrise
 and sunset instants; display
@@ -55,6 +56,58 @@ export function firstStability(profile: SiteForecast): string | null {
 
 `p50` returns `null` for a full ensemble dropout, so numeric derivations guard
 the selected percentile before use.
+
+## Lift one parcel for buoyancy
+
+`parcelAscent(surface, levels)` lifts the hour's surface parcel through the
+published levels: dry adiabatic below the lifting condensation level, moist
+pseudo-adiabatic above it, buoyancy read in virtual temperature so the
+vapour the parcel carries — and the vapour the environment holds — both
+count toward density. Each sample pairs the parcel and environment
+temperatures with their virtual counterparts and states `buoyancyC`
+(parcel minus environment, positive while the parcel is buoyant); `lclM`
+is the ascent's own condensation height, null when the column never
+saturates below its top published level. Samples come out at exactly the
+published levels, in published order — no resampling. The optional
+`entrainmentPerM` is a TRIAL craft parameter, caller-movable: a bulk
+fractional entrainment rate that mixes the rising parcel toward the
+environment, default `0` (an undiluted parcel).
+
+The thermal index is this same ascent read in the RASP sign convention:
+`thermalIndexC` and `thermalIndexProfile` return the negated `buoyancyC`,
+negative while thermals still reach the level and crossing zero where
+they stop. There is no second buoyancy quantity — the Meteogram's
+`thermalIndex` field is the parcel-buoyancy layer. Dew points are
+optional on the thermal-index entry points; omitted, the column is
+treated as fully dry, which reproduces the plain dry-adiabatic
+comparison.
+
+```ts title="parcel-buoyancy.ts"
+import type { SiteForecast } from "@azohra/meteo.briefing/contract";
+import { p50, parcelAscent } from "@azohra/meteo.briefing/derive";
+
+export function firstHourAscent(profile: SiteForecast) {
+  const hour = profile.hours[0];
+  if (!hour) return null;
+  const temperatureC = p50(hour.surface.temperatureC);
+  const dewPointC = p50(hour.surface.dewPointC);
+  if (temperatureC === null || dewPointC === null) return null;
+
+  const levels: Array<{ heightM: number; temperatureC: number; dewPointC: number }> = [];
+  for (const level of hour.levels) {
+    const heightM = p50(level.heightM);
+    const levelTemperatureC = p50(level.temperatureC);
+    const levelDewPointC = p50(level.dewPointC);
+    if (heightM === null || levelTemperatureC === null || levelDewPointC === null) continue;
+    levels.push({ heightM, temperatureC: levelTemperatureC, dewPointC: levelDewPointC });
+  }
+
+  return parcelAscent(
+    { temperatureC, dewPointC, elevationM: profile.site.modelElevationM },
+    levels,
+  );
+}
+```
 
 ## Choose shear for the terrain
 

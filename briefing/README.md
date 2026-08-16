@@ -12,7 +12,7 @@ the visual tier of the same science.
 |---|---|
 | `@azohra/meteo.briefing` | The capability root: re-exports the contract: document types, zod schemas, and never-throw parse guards for every published document kind. |
 | `@azohra/meteo.briefing/contract` | The contract itself: `SiteForecast`, the smoke/observation documents, manifests, catalogues, the runs index, and their parsers. |
-| `@azohra/meteo.briefing/derive` | Pure meteorological derivations of published values: lapse rates, thermal index, shear, usable-lift top at a chosen sink rate, moisture, smoke transmittance, projection, alignment, local-day helpers. |
+| `@azohra/meteo.briefing/derive` | Pure meteorological derivations of published values: lapse rates, the virtual-temperature parcel ascent and its thermal index, shear, usable-lift top at a chosen sink rate, moisture, smoke transmittance, projection, alignment, local-day helpers. |
 | `@azohra/meteo.briefing/analyze` | `analyzeForecast`: typed findings over one forecast (thermal window, cap timing, wind exceedance, smoke impact, and the rest of the closed vocabulary), plus the public `AnalysisFrame` for caller extensions. |
 | `@azohra/meteo.briefing/compare` | `compareForecasts` / `compareAnalyses`: cross-model agreement, spread, and divergence findings for one site. |
 | `@azohra/meteo.briefing/transport` | Consistent loading of the published documents: run-stamp guards, retries, misses discriminated from failures. |

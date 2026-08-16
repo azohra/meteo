@@ -213,6 +213,7 @@ function thermalIndexNodes(hour: ResolvedHour, floorM: number): FieldNode[] {
       altitudeM: level.heightM,
       value: thermalIndexC({
         surfaceTemperatureC: hour.surface.temperatureC,
+        surfaceDewPointC: hour.surface.dewPointC,
         surfaceElevationM: floorM,
         level,
       }),
