@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import BriefingBoard from "../components/briefing/BriefingBoard.astro";
 import BriefingCompare from "../components/briefing/BriefingCompare.astro";
 import BriefingFindings from "../components/briefing/BriefingFindings.astro";
 import BriefingHero from "../components/briefing/BriefingHero.astro";
@@ -14,7 +15,7 @@ import BriefingSurfaces from "../components/briefing/BriefingSurfaces.astro";
    archive's bytes (src/components/briefing/exhibit.ts). Nothing is fetched
    at runtime; nothing is typed in by hand. The homepage owns the
    interactive layer-toggle exhibit; here the Meteogram appears as one tier
-   among seven, drawn once. */
+   among the others, drawn once. */
 ---
 
 <Base
@@ -26,6 +27,7 @@ import BriefingSurfaces from "../components/briefing/BriefingSurfaces.astro";
     <BriefingHero />
     <BriefingFindings />
     <BriefingCompare />
+    <BriefingBoard />
     <BriefingHistory />
     <BriefingPlate />
     <BriefingSurfaces />

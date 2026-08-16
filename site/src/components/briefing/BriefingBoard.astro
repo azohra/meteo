@@ -1,0 +1,94 @@
+---
+/* The compare-board tier: the same timing pair the comparison exhibit
+   states, drawn as two lanes on one 07–21 clock so the two-hour shift
+   reads by position instead of by prose. The SVG is the package's own
+   reference rendering of buildCompareBoardScene over the pair's
+   analyses. */
+import Figure from "../figure/Figure.astro";
+import { clock, timingBoard } from "./exhibit";
+
+const { earlier, scene, svg } = timingBoard();
+
+const windowWords = scene.rows.map((row) => {
+  const window = row.windows[0];
+  return `${row.model} ${clock(window.start)}–${clock(window.end)}`;
+});
+---
+
+<section class="bf-board" aria-labelledby="briefing-board-title">
+  <div class="bf-board-inner section-inner">
+    <h2 id="briefing-board-title">The whole field on one clock</h2>
+    <p class="bf-section-lede">
+      The compare board lays every model's day on one shared axis: the
+      thermal window as a bar, hours past your wind ceilings barred
+      beneath it, cap break and rain onset at their hours, and the
+      launch, aloft, top, and storm numbers beside the lane. Timing
+      differences read straight down the column, and a model that can't
+      state something shows a dash — never a reassuring blank.
+      <a href="/docs/briefing/compare-board/">Compare board</a> documents
+      the scene and its SVG serializer.
+    </p>
+
+    <Figure
+      id="briefing-board-figure"
+      title="Two development timings, one axis"
+      lesson={earlier.lesson}
+      description={`Compare board with two model rows on a shared ${String(scene.axis.dayStartHour).padStart(2, "0")}:00–${scene.axis.dayEndHour}:00 local axis; each row draws its thermal window as a bar with launch, gust, aloft, top, and storms cells beside it.`}
+      caption={`One glance down the column: ${windowWords.join(" against ")} — the same development, two hours apart.`}
+      units="time local · winds m/s · altitude m MSL"
+      scenario={earlier}
+      headingLevel="h3"
+      size="content"
+      class="bf-board-figure"
+    >
+      <div
+        class="bf-board-scroll"
+        tabindex="0"
+        role="group"
+        aria-label="Scrollable compare board rendered from the timing pair's documents"
+      >
+        <Fragment set:html={svg} />
+      </div>
+    </Figure>
+  </div>
+</section>
+
+<style>
+  .bf-board {
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .bf-board-inner {
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .bf-board h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+  }
+
+  .bf-section-lede {
+    max-width: 46rem;
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+
+  .bf-board-figure {
+    width: min(100%, 66rem);
+    margin-inline: auto;
+  }
+
+  /* The board is wider than a phone: it scrolls inside its own frame,
+     keyboard-reachable, and the SVG keeps its intrinsic size so the
+     numbers stay legible instead of shrinking to fit. */
+  .bf-board-scroll {
+    overflow-x: auto;
+  }
+
+  .bf-board-scroll :global(svg) {
+    display: block;
+    max-width: none;
+  }
+</style>

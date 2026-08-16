@@ -376,6 +376,23 @@ describe("capability profiles", () => {
     }
   });
 
+  it("briefing/compare-board's data shapes stay renderer-independent: only the subpath's own serializer files touch svg or theme code, and nothing pulls node builtins (the board ships in browser bundles)", () => {
+    const serializerFiles = new Set([
+      "briefing/src/compare-board/svg.ts",
+      "briefing/src/compare-board/theme.ts",
+      "briefing/src/compare-board/index.ts",
+    ]);
+    for (const file of sourceFiles("briefing/src/compare-board")) {
+      for (const specifier of importSpecifiers(file)) {
+        expect(specifier, `${file} imports ${specifier}`).not.toMatch(/^node:/);
+        if (serializerFiles.has(file)) continue;
+        expect(specifier, `${file} imports ${specifier}`).not.toMatch(
+          /(^|\/)(svg|theme)(\/|\.js$)/,
+        );
+      }
+    }
+  });
+
   it("station's root and client never pull in server code, React, element registration, or stylesheets — those stay behind their subpaths", () => {
     const rootAndClient = [
       ...sourceFiles("station").filter(

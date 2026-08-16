@@ -30,9 +30,10 @@ export const CAPABILITIES: CapabilityDeclaration[] = [
       "transport",
       "history",
       "meteogram",
+      "compare-board",
     ],
     edges: [],
-    views: ["scene", "svg", "meteogram"],
+    views: ["scene", "svg", "meteogram", "compare-board"],
     external: { server: "@azohra/meteo.forecast" },
   },
   {

@@ -13,9 +13,11 @@ The package has two tiers. The **data tier** (contract, derivations,
 analysis, comparison, transport, history) needs no DOM and produces typed
 values and findings; what it reads is the published-document family
 (profiles, manifests, catalogues, smoke, observation, and site-context
-documents), each with its own reference page below. The **presentation tier** (`/meteogram`) is
-the Meteogram: a validated document becomes a serializable scene graph,
-and the scene becomes deterministic SVG. The package installs on its own
+documents), each with its own reference page below. The **presentation
+tier** (`/meteogram`, `/compare-board`) turns validated documents into
+serializable scene graphs and deterministic SVG: the Meteogram draws one
+document as a time-height chart, and the compare board draws one local
+day across a comparison's members. The package installs on its own
 (Node 22 or later; browsers and workers need no Node at all):
 
 ```sh
@@ -74,6 +76,7 @@ both tiers in one working example.
 | [Build a scene graph](/docs/briefing/scene/) | Serializable geometry and hit-testing from one validated profile |
 | [Render SVG and a scene-derived key](/docs/briefing/svg/) | Deterministic SVG from a scene, styled and configured through package defaults and tokens |
 | [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) | What every mark on the rendered chart means, and how to read it |
+| [Compare board](/docs/briefing/compare-board/) | One local day across a comparison's members as marks on one shared clock, with a minimal SVG serializer |
 
 ### Recipes
 

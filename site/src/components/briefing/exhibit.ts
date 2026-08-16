@@ -15,11 +15,17 @@ import {
   type WindCeilings,
 } from "@azohra/meteo.briefing/analyze";
 import {
+  compareAnalyses,
   compareForecasts,
   type HeightSpreadFinding,
   type WindDirectionSpreadFinding,
   type WindowAgreementFinding,
 } from "@azohra/meteo.briefing/compare";
+import {
+  buildCompareBoardScene,
+  renderCompareBoardSvg,
+  type CompareBoardScene,
+} from "@azohra/meteo.briefing/compare-board";
 import { parseSiteForecastJson, siteForecastSchema } from "@azohra/meteo.briefing/contract";
 import { parseHistoryIndexJson, splitHistoryArchive } from "@azohra/meteo.briefing/history";
 import { scenarioById, type TeachingScenario } from "../../lib/scenarios";
@@ -270,6 +276,54 @@ export function timingComparison(): TimingComparison {
     directions,
     statedStart: { model: start.model, at: clock(start.at) },
     votes,
+  };
+}
+
+/* ---- the compare board: the timing pair on one shared clock ---- */
+
+export interface TimingBoard {
+  earlier: TeachingScenario;
+  later: TeachingScenario;
+  scene: CompareBoardScene;
+  svg: string;
+}
+
+export function timingBoard(): TimingBoard {
+  const earlier = scenarioById("model-timing-disagreement", "earlier");
+  const later = scenarioById("model-timing-disagreement", "later");
+  if (earlier.timeZone !== later.timeZone) fail("the timing pair no longer shares a timezone");
+  const relabel = (scenario: TeachingScenario, model: string) =>
+    siteForecastSchema.parse({ ...scenario.profile, model });
+  const analyses = [
+    analyzeForecast(relabel(earlier, "earlier"), {
+      timeZone: earlier.timeZone,
+      launch: earlier.launch,
+      windCeilings: DAY_WIND_CEILINGS,
+    }),
+    analyzeForecast(relabel(later, "later"), {
+      timeZone: earlier.timeZone,
+      launch: earlier.launch,
+      windCeilings: DAY_WIND_CEILINGS,
+    }),
+  ];
+  const comparison = compareAnalyses(analyses);
+  const agreement =
+    comparison.findings.find(
+      (finding): finding is WindowAgreementFinding =>
+        finding.kind === "windowAgreement" && finding.voters === 2,
+    ) ?? fail("the timing pair emits no two-voter day for the board");
+  const scene = buildCompareBoardScene(analyses, comparison, {
+    dateKey: agreement.day,
+    timeZone: earlier.timeZone,
+  });
+  if (scene.rows.length !== 2 || scene.rows.some((row) => row.windows.length === 0)) {
+    fail("the board no longer draws a window bar per member — re-choose the exhibit day");
+  }
+  return {
+    earlier,
+    later,
+    scene,
+    svg: renderCompareBoardSvg(scene, { idPrefix: "briefing-board-svg" }),
   };
 }
 

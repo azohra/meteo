@@ -18,6 +18,7 @@ export const sidebar = [
       { slug: "docs/briefing/derive", label: "Pure derivations" },
       { slug: "docs/briefing/analyze", label: "Analyze a profile" },
       { slug: "docs/briefing/compare", label: "Compare profiles" },
+      { slug: "docs/briefing/compare-board", label: "Compare board" },
       { slug: "docs/briefing/history", label: "History and convergence" },
       {
         label: "Documents",

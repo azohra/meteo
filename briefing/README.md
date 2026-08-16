@@ -18,6 +18,7 @@ the visual tier of the same science.
 | `@azohra/meteo.briefing/transport` | Consistent loading of the published documents: run-stamp guards, retries, misses discriminated from failures. |
 | `@azohra/meteo.briefing/history` | The append-only archive reader and `compareRuns` convergence: the one Node-only subpath (`node:zlib`). |
 | `@azohra/meteo.briefing/meteogram` | The Meteogram tier: a renderer-independent scene graph (layout, hit-testing, key spec) and the deterministic SVG serializer with its token defaults. |
+| `@azohra/meteo.briefing/compare-board` | The compare-board tier: one local day across a comparison's members as marks on one shared clock — a renderer-agnostic scene plus a minimal SVG serializer. |
 
 The producing side (the engine that samples providers and publishes
 the documents this capability consumes) is

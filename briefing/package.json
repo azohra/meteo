@@ -1,7 +1,7 @@
 {
   "name": "@azohra/meteo.briefing",
   "version": "0.3.0",
-  "description": "The briefing capability of meteo by Azohra: the published site-forecast contract, pure derivations, analysis, comparison, history (read and write sides of the month archives), transport, and the Meteogram presentation tier - a renderer-independent scene graph and an SVG serializer.",
+  "description": "The briefing capability of meteo by Azohra: the published site-forecast contract, pure derivations, analysis, comparison, history (read and write sides of the month archives), transport, and two presentation tiers - the Meteogram (a renderer-independent scene graph and an SVG serializer) and the compare board (one day across a comparison's members on one shared clock).",
   "keywords": [
     "weather",
     "meteorology",
@@ -58,6 +58,10 @@
     "./meteogram": {
       "types": "./dist/meteogram.d.ts",
       "default": "./dist/meteogram.js"
+    },
+    "./compare-board": {
+      "types": "./dist/compare-board/index.d.ts",
+      "default": "./dist/compare-board/index.js"
     },
     "./schema/*.json": "./schema/*.json",
     "./package.json": "./package.json"
