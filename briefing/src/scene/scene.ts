@@ -99,18 +99,28 @@ function columnOffsetAt(hourTimesMs: readonly number[], tMs: number): number | n
 /**
  * An observation document at its native cadence, as plot-ready column
  * offsets: entries carrying a finite `valueKey` inside the rendered
- * window, in time order, with an explicit null wherever consecutive
- * samples sit further apart than the gap tolerance — a retrieval outage
- * must break the line, never be interpolated across.
+ * window, in time order. Entries within `lineMaxQuality` form the line —
+ * with an explicit null wherever consecutive line samples sit further
+ * apart than the gap tolerance, because a retrieval outage must break
+ * the line, never be interpolated across — and entries beyond it land in
+ * `degraded`: published-but-qualified measurements a renderer marks
+ * instead of joining.
  */
 function measurementSamples(
   document: ObservationDocument | null | undefined,
   valueKey: string,
   hourTimesMs: readonly number[],
   gapMinutes: number,
-): Array<{ columnOffset: number; value: number } | null> | undefined {
+  lineMaxQuality: number,
+):
+  | {
+      line: Array<{ columnOffset: number; value: number } | null>;
+      degraded: Array<{ columnOffset: number; value: number }>;
+    }
+  | undefined {
   if (!document) return undefined;
-  const samples: Array<{ columnOffset: number; value: number } | null> = [];
+  const line: Array<{ columnOffset: number; value: number } | null> = [];
+  const degraded: Array<{ columnOffset: number; value: number }> = [];
   let previousMs: number | null = null;
   for (const observation of document.observations) {
     const value = (observation as Record<string, unknown>)[valueKey];
@@ -118,11 +128,22 @@ function measurementSamples(
     const tMs = Date.parse(observation.observedAt);
     const columnOffset = columnOffsetAt(hourTimesMs, tMs);
     if (columnOffset === null) continue;
-    if (previousMs !== null && tMs - previousMs > gapMinutes * 60_000) samples.push(null);
-    samples.push({ columnOffset, value });
+    if (observationQuality(observation) > lineMaxQuality) {
+      degraded.push({ columnOffset, value });
+      continue;
+    }
+    if (previousMs !== null && tMs - previousMs > gapMinutes * 60_000) line.push(null);
+    line.push({ columnOffset, value });
     previousMs = tMs;
   }
-  return samples.some((entry) => entry !== null) ? samples : undefined;
+  return line.some((entry) => entry !== null) || degraded.length > 0
+    ? { line, degraded }
+    : undefined;
+}
+
+/** The entry's published DQF; absent means the product's best grade. */
+function observationQuality(observation: { quality?: number }): number {
+  return observation.quality ?? 0;
 }
 
 function pitchBarbScale(columnWidth: number): number {
@@ -399,30 +420,43 @@ export function buildMeteogramScene(
   const measurementGapMinutes = options.measurementGapMinutes ?? DEFAULT_MEASUREMENT_GAP_MINUTES;
   // The measured lines draw every sample at the product's own cadence; the
   // hourly nearest-instant joins below feed only the per-hour consumers —
-  // dimming cells, pointer packets, and the sampling row.
+  // dimming cells, pointer packets, and the sampling row. DSR's binary DQF
+  // keeps degraded retrievals off the line (dimmed dots instead:
+  // indicative, not quantitative); AOD's graded DQF ≤ 1 is the accepted
+  // smoke-literature set, so every published sample joins its line.
   const observationSamples = measurementSamples(
     options.observations,
     "downwardShortwaveWm2",
     hourTimesMs,
     measurementGapMinutes,
+    0,
   );
   const aotObservationSamples = measurementSamples(
     options.aotObservations,
     "aot",
     hourTimesMs,
     measurementGapMinutes,
+    Number.POSITIVE_INFINITY,
   );
   const observationSeries = hours.map((hour) => {
     if (!options.observations) return null;
     const nearest = nearestObservation(options.observations, hour.validAt, 30);
     if (!nearest || !("downwardShortwaveWm2" in nearest.observation)) return null;
     const wm2 = nearest.observation.downwardShortwaveWm2;
+    const quality = observationQuality(nearest.observation);
     return {
       wm2,
-      transmittance: observedTransmittance(
-        wm2,
-        cosSolarZenith(hour.validAt, profile.site.latitude, profile.site.longitude),
-      ),
+      // A degraded retrieval never shades the dimming cell: the ratio of a
+      // provider-refused measurement to the clear-sky expectation would be
+      // a plausible-but-wrong shadow.
+      transmittance:
+        quality > 0
+          ? null
+          : observedTransmittance(
+              wm2,
+              cosSolarZenith(hour.validAt, profile.site.latitude, profile.site.longitude),
+            ),
+      ...(quality > 0 ? { quality } : {}),
     };
   });
   const observationSource =
@@ -441,7 +475,8 @@ export function buildMeteogramScene(
     if (!options.aotObservations) return null;
     const nearest = nearestObservation(options.aotObservations, hour.validAt, 30);
     if (!nearest || !("aot" in nearest.observation)) return null;
-    return { aot: nearest.observation.aot };
+    const quality = observationQuality(nearest.observation);
+    return { aot: nearest.observation.aot, ...(quality > 0 ? { quality } : {}) };
   });
   const aotObservationSource =
     options.aotObservations &&
@@ -482,10 +517,11 @@ export function buildMeteogramScene(
     floorM,
     smokeSeries,
     observationSeries,
-    observationSamples,
+    observationSamples: observationSamples?.line,
+    observationDegradedSamples: observationSamples?.degraded,
     observationMeasuredTo,
     aotObservationSeries,
-    aotObservationSamples,
+    aotObservationSamples: aotObservationSamples?.line,
     aotObservationMeasuredTo,
     smokeStripSource,
     observationSourceLabel,

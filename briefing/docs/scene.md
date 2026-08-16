@@ -115,15 +115,22 @@ interpolating across a retrieval outage, and a lone surviving sample
 draws as a dot (`MetricStrip.dots`) instead of vanishing. The window's
 remainder past the newest measured instant is not a gap, and the strip
 says so: a pending tint fills from `MetricStrip.measuredToX` to the
-right edge. `scene.observationSource` names the dataset and its newest
+right edge. Entries labelled with a nonzero `quality` — DSR's binary
+DQF-1 "degraded/invalid" state, the sunrise and sunset shoulders —
+never join the line: they draw as dimmed dots
+(`MetricStrip.degradedDots`), indicative rather than quantitative, and
+they never shade the dimming cells, because a ratio built on a
+provider-refused measurement would be a plausible-but-wrong shadow.
+`scene.observationSource` names the dataset and its newest
 measured instant: the strip is another source with its own cadence, and
 renderers must be able to label it; the reference key explains the
 shadow via `KeySpec.measuredDimming`. The shadow cells, pointer
 packets, and the sampling row remain hourly joins by nearest instant —
 per-hour consumers read the hour's nearest measurement, the line reads
-them all. Pointer packets carry `observedIrradianceWm2` and
-`observedTransmittance`, so an inspector reads the measurement where
-the pixels drew it.
+them all. Pointer packets carry `observedIrradianceWm2`,
+`observedIrradianceQuality`, and `observedTransmittance`, so an
+inspector reads the measurement — and its grade — where the pixels
+drew it.
 
 Pass an AOD observation document as `options.aotObservations` and the
 **AOT strip** draws beside it: satellite-measured aerosol optical
@@ -136,9 +143,13 @@ the dataset and its newest measured instant. The haze behind the line
 is deliberately the forecast smoke strip's own cell encoding, same
 class and same scale (full tint at AOT 3), and one key chip,
 `KeySpec.smokeHaze`,
-explains both tints. The `observedAot` overlay defaults on, a document
-whose entries are not AOT-shaped contributes nothing, and pointer
-packets carry `observedAot`.
+explains both tints. Unlike the Sun strip, a `quality: 1` AOT entry
+joins the line: AOD's graded DQF ≤ 1 is the smoke literature's
+validated top-two set, so medium is accepted data, and the grade rides
+the pointer packet (`observedAotQuality`) for consumers that want the
+strict high-only view. The `observedAot` overlay defaults on, a
+document whose entries are not AOT-shaped contributes nothing, and
+pointer packets carry `observedAot`.
 
 **Provenance is structural.** Every strip declares whose data it draws
 (`provenance: "model" | "crossModel" | "measurement"`), and the stack

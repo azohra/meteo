@@ -14,6 +14,10 @@ import { tinySceneProfile } from "../test/scene-fixtures.js";
 
 const OPTIONS = { columnWidthPx: 20, timeZone: "America/Vancouver" };
 
+function instantAt(baseMs: number, minutes: number): string {
+  return new Date(baseMs + minutes * 60_000).toISOString().replace(".000Z", "Z");
+}
+
 function observationsFor(validAts: string[], wm2: number, offsetMinutes = 10): ObservationDocument {
   const observations = validAts.map((validAt) => ({
     observedAt: new Date(Date.parse(validAt) + offsetMinutes * 60_000)
@@ -158,6 +162,43 @@ describe("the measured Sun strip", () => {
     const svg = renderMeteogramSvg(scene, { idPrefix: "sun-dot" });
     expect(svg).toContain('class="meteo-gram-strip-observedIrradiance-dot"');
     expect(svg).toContain('class="meteo-gram-strip-pending"');
+  });
+
+  it("keeps degraded retrievals off the line as dimmed dots and out of the dimming shadow", () => {
+    const profile = tinySceneProfile();
+    const firstHourMs = Date.parse(profile.hours[0].validAt);
+    const observations = observationsFor([profile.hours[0].validAt], 500);
+    // A dawn shoulder: two degraded retrievals, then the good train.
+    observations.observations = [
+      { observedAt: instantAt(firstHourMs, 0), downwardShortwaveWm2: 20.5, quality: 1 },
+      { observedAt: instantAt(firstHourMs, 10), downwardShortwaveWm2: 60.2, quality: 1 },
+      { observedAt: instantAt(firstHourMs, 20), downwardShortwaveWm2: 180.4 },
+      { observedAt: instantAt(firstHourMs, 30), downwardShortwaveWm2: 240.9 },
+    ];
+    observations.observed.lastObservedAt = observations.observations[3].observedAt;
+    const scene = buildMeteogramScene(profile, { ...OPTIONS, observations });
+
+    const strip = scene.strips.find((entry) => entry.key === "observedIrradiance");
+    // The good train draws as one segment; the degraded shoulder rides
+    // beside it as dimmed dots, never joined into the line.
+    expect(strip?.linePath.match(/M/g)).toHaveLength(1);
+    expect(strip?.degradedDots).toHaveLength(2);
+
+    // The hour's nearest sample is degraded (offset 0 beats offset 20),
+    // so the readout carries the qualifier and the dimming shadow —
+    // a ratio built on a provider-refused measurement — stays off.
+    expect(scene.sampling[0]?.observation).toMatchObject({ wm2: 20.5, quality: 1 });
+    expect(scene.sampling[0]?.observation?.transmittance).toBeNull();
+    expect(strip?.cells?.[0]).toBeNull();
+
+    const { plotLeft, plotTop, plotHeight, columnWidth } = scene.scales;
+    const reading = cursorReading(scene, plotLeft + columnWidth / 2, plotTop + plotHeight / 2);
+    expect(reading?.observedIrradianceWm2).toBe(20.5);
+    expect(reading?.observedIrradianceQuality).toBe(1);
+    expect(reading?.observedTransmittance).toBeNull();
+
+    const svg = renderMeteogramSvg(scene, { idPrefix: "sun-degraded" });
+    expect(svg).toContain('class="meteo-gram-strip-observedIrradiance-degraded-dot"');
   });
 
   it("bridges its cadence at the caller's gap tolerance", () => {

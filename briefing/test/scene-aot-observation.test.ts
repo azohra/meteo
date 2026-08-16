@@ -128,6 +128,47 @@ describe("the measured AOT strip", () => {
     expect(svg).toContain('class="meteo-gram-strip-observedAot"');
   });
 
+  it("keeps medium-quality retrievals in the line — the accepted set — while the readout carries the grade", () => {
+    const profile = tinySceneProfile();
+    const firstHourMs = Date.parse(profile.hours[0].validAt);
+    const aotObservations: ObservationDocument = {
+      ...aotObservationsFor(
+        profile.hours.map((hour) => hour.validAt),
+        [0.9, 2.4],
+        0,
+      ),
+      // Ten-minute cadence with mixed grades: AOD's DQF <= 1 is the
+      // validated top-two set, so medium joins the line like high.
+      observations: [
+        {
+          observedAt: new Date(firstHourMs).toISOString().replace(".000Z", "Z"),
+          aot: 0.9,
+          quality: 1,
+        },
+        {
+          observedAt: new Date(firstHourMs + 600_000).toISOString().replace(".000Z", "Z"),
+          aot: 1.2,
+        },
+        {
+          observedAt: new Date(firstHourMs + 1_200_000).toISOString().replace(".000Z", "Z"),
+          aot: 1.5,
+          quality: 1,
+        },
+      ],
+    };
+    const scene = buildMeteogramScene(profile, { ...OPTIONS, aotObservations });
+
+    const strip = scene.strips.find((entry) => entry.key === "observedAot");
+    expect(strip?.linePath.match(/M/g)).toHaveLength(1);
+    expect(strip?.degradedDots).toBeUndefined();
+    expect(scene.sampling[0]?.aotObservation).toMatchObject({ aot: 0.9, quality: 1 });
+
+    const { plotLeft, plotTop, plotHeight, columnWidth } = scene.scales;
+    const reading = cursorReading(scene, plotLeft + columnWidth / 2, plotTop + plotHeight / 2);
+    expect(reading?.observedAot).toBe(0.9);
+    expect(reading?.observedAotQuality).toBe(1);
+  });
+
   it("keys the haze chip from the measured strip alone", () => {
     const profile = tinySceneProfile();
     const aotObservations = aotObservationsFor(

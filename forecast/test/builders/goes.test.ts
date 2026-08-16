@@ -146,8 +146,10 @@ describe("the product table", () => {
     expect(PRODUCTS["goes18-dsr"].prefix).toBe("ABI-L2-DSRF");
     expect(PRODUCTS["goes18-dsr"].variable).toBe("DSR");
     expect(PRODUCTS["goes18-dsr"].valueKey).toBe("downwardShortwaveWm2");
-    // DSR: DQF must be exactly 0 (fill pixels carry DQF 0, so unmasked AND).
-    expect(PRODUCTS["goes18-dsr"].maxQuality).toBe(0);
+    // DSR: DQF <= 1 admits the binary flag's degraded/invalid state,
+    // published labelled (quality: 1); night stays out through the
+    // unmasked half of the gate (fill pixels carry DQF 0).
+    expect(PRODUCTS["goes18-dsr"].maxQuality).toBe(1);
     expect(PRODUCTS["goes18-aod"].prefix).toBe("ABI-L2-AODF");
     expect(PRODUCTS["goes18-aod"].variable).toBe("AOD");
     expect(PRODUCTS["goes18-aod"].valueKey).toBe("aot");
@@ -363,7 +365,12 @@ describe("sampleSites over a scripted granule", () => {
       sites,
       indices,
     );
-    expect(samples).toEqual({ day: 621.5 });
+    // Night's DQF 0 proves nothing (masked wins); the degraded retrieval
+    // passes carrying its DQF so publish can label it.
+    expect(samples).toEqual({
+      day: { value: 621.5, quality: 0 },
+      flagged: { value: 400.0, quality: 1 },
+    });
   });
 
   it("a masked DQF is an absence even under a valid value", () => {
@@ -583,15 +590,21 @@ const SITES: GoesSite[] = [
   { slug: "erie", name: "Erie", latitude: 49.204789, longitude: -117.406951 },
 ];
 
-/** A sampler that records URLs and answers from a script, per granule. */
+/** A sampler that records URLs and answers from a script, per granule; a bare number is a best-quality (DQF 0) retrieval. */
 function scriptedSampler(
   sampled: string[],
-  answers: Record<string, Record<string, number>> = {},
+  answers: Record<string, Record<string, number | { value: number; quality: number }>> = {},
 ): GranuleSampler {
   return async (url, _product, _sites, indices) => {
     sampled.push(url);
     const stamp = /_s(\d{14})/.exec(url)![1];
-    return { indices, samples: answers[stamp] ?? {} };
+    const samples = Object.fromEntries(
+      Object.entries(answers[stamp] ?? {}).map(([slug, sample]) => [
+        slug,
+        typeof sample === "number" ? { value: sample, quality: 0 } : sample,
+      ]),
+    );
+    return { indices, samples };
   };
 }
 
@@ -667,8 +680,9 @@ describe("buildGoesProduct", () => {
     const sampled: string[] = [];
     const sampler = scriptedSampler(sampled, {
       // Raw float64 retrievals: the rounding table is applied at publish.
-      "20262220550213": { dundee: 1.9336401224136353, erie: 0.2224 },
-      "20262220600213": { dundee: 2.9061758518218994 }, // erie flagged: absence
+      // Erie's 05:50 retrieval is medium quality — the label must survive.
+      "20262220550213": { dundee: 1.9336401224136353, erie: { value: 0.2224, quality: 1 } },
+      "20262220600213": { dundee: 2.9061758518218994 }, // erie rejected: absence
     });
     const outputRoot = mkdtempSync(join(tmpdir(), "goes-out-"));
     const lines: string[] = [];
@@ -708,8 +722,11 @@ describe("buildGoesProduct", () => {
       JSON.parse(readFileSync(join(outputRoot, "goes18-aod", "sites", "erie.json"), "utf-8")),
     );
     expect(erie).not.toBeNull();
-    // The flagged 06:00 retrieval is an absence, never zero.
-    expect(erie!.observations).toEqual([{ observedAt: "2026-08-10T05:50:21Z", aot: 0.222 }]);
+    // The rejected 06:00 retrieval is an absence, never zero; the accepted
+    // medium-quality one carries its label through the contract guard.
+    expect(erie!.observations).toEqual([
+      { observedAt: "2026-08-10T05:50:21Z", aot: 0.222, quality: 1 },
+    ]);
     expect(erie!.site.timeZone).toBeUndefined();
 
     // The manifest parses under the union guard and counts the window.

@@ -217,6 +217,8 @@ export interface MetricStrip {
   bandPath: string | null;
   /** Lone measured samples a stroked path cannot show; renderers draw each as a small filled circle classed `${className}-dot`. */
   dots?: ReadonlyArray<{ x: number; y: number }>;
+  /** Published-but-qualified measurements the strip's policy keeps off the line (a nonzero provider DQF); renderers draw each as a dimmed circle classed `${className}-degraded-dot` — indicative, never joined. */
+  degradedDots?: ReadonlyArray<{ x: number; y: number }>;
   /** Measurement strips: the x of the newest measured instant. The region from here to the plot's right edge is not-yet-measured and renders as a pending tint, distinct from a data gap. Absent when measurement covers the window. */
   measuredToX?: number;
   /** Full-height classed cells drawn behind the line (CAPE risk classes). */
@@ -342,10 +344,10 @@ export interface HourSampling {
   verticalVelocityPaS: ReadonlyArray<FieldNode>;
   /** The hour's smoke as the strip drew it (whole-column, not altitude-interpolated); null where none was drawn. */
   smoke: { surfaceUgm3: number; aot: number | null } | null;
-  /** The hour's measured irradiance as the "Sun" strip drew it; transmittance is null near the horizon. */
-  observation: { wm2: number; transmittance: number | null } | null;
-  /** The hour's measured aerosol optical thickness as the "AOT" strip drew it; null where none was drawn. */
-  aotObservation: { aot: number } | null;
+  /** The hour's measured irradiance as the "Sun" strip drew it; transmittance is null near the horizon or when the retrieval is degraded, and `quality` is the provider's nonzero DQF (absent means best grade). */
+  observation: { wm2: number; transmittance: number | null; quality?: number } | null;
+  /** The hour's measured aerosol optical thickness as the "AOT" strip drew it; null where none was drawn; `quality` is the provider's nonzero DQF (absent means best grade). */
+  aotObservation: { aot: number; quality?: number } | null;
 }
 
 export interface MeteogramScene {
@@ -409,8 +411,12 @@ export interface CursorReading {
   smokeAot: number | null;
   /** Measured downward shortwave for the hour, W/m² (nearest instant, whole-column); null where none was drawn. */
   observedIrradianceWm2: number | null;
-  /** Measured/clear-sky transmittance for that observation; null near the horizon or without one. */
+  /** The provider's DQF behind that irradiance (0 is the best grade); null where none was drawn. A nonzero grade is indicative, not quantitative — inspectors should say so. */
+  observedIrradianceQuality: number | null;
+  /** Measured/clear-sky transmittance for that observation; null near the horizon, for a degraded retrieval, or without one. */
   observedTransmittance: number | null;
   /** Measured aerosol optical thickness for the hour (nearest instant, whole-column); null where none was drawn. */
   observedAot: number | null;
+  /** The provider's DQF behind that AOT (0 high, 1 medium); null where none was drawn. */
+  observedAotQuality: number | null;
 }

@@ -247,6 +247,16 @@ export function renderMeteogramSvg(
         }),
       );
     }
+    for (const dot of strip.degradedDots ?? []) {
+      body.push(
+        el("circle", {
+          cx: short(dot.x),
+          cy: short(dot.y),
+          r: 1.8,
+          class: `${strip.className}-degraded-dot`,
+        }),
+      );
+    }
     body.push(
       text(
         {

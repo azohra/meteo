@@ -75,6 +75,7 @@ serves it today.*
 | `observedAt` | UTC instant | The product's own timestamp, at its native 10-minute cadence. |
 | `downwardShortwaveWm2` | W/m² | Instantaneous measured downward shortwave flux at the surface: the irradiance the thermal derivation's transmittance claim is about. DSR entries only. |
 | `aot` | dimensionless | Measured aerosol optical thickness at 550 nm: the same quantity, wavelength, and field name a [profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics) forecasts as `aot`, so forecast and measurement compare with no translation. AOD entries only. |
+| `quality` | provider DQF | The provider's **nonzero** DQF for an accepted retrieval; **absent means the best grade** (DQF 0), so the common case costs nothing. The meaning is per product: DSR's DQF is binary, so `quality: 1` is its lumped "degraded/invalid" state — indicative, not quantitative; AOD's is graded, so `quality: 1` is medium — part of the validated top-two set below. Strict quantitative consumers filter to entries without the field. |
 
 `observations[]` is a **union of two entry shapes**: the DSR dataset's
 `{ observedAt, downwardShortwaveWm2 }` and the AOD dataset's
@@ -83,7 +84,7 @@ but the schema and the parser accept both, so consumers narrow with a
 key check before reading the value, as the fence below does.
 
 Observations are chronological, and **gaps are real**: an absent instant
-had no good-quality retrieval (night, quality-flagged pixels, scan
+had no accepted retrieval (night, rejected quality flags, scan
 gaps) and means "not measured", never zero. Both are daytime products;
 a series that goes silent overnight is behaving, not broken.
 
@@ -123,10 +124,20 @@ Facts measured live from the granules themselves:
 Quirks:
 
 - **DQF = 0 does not imply a retrieval**: night pixels are fill with DQF 0.
-  A value is valid only when the DSR pixel is unmasked **and** DQF is 0; the
-  builder
+  A value publishes only when the DSR pixel is unmasked **and** DQF ≤ 1 —
+  the unmasked half of the gate, not the DQF half, is what keeps night
+  out. The builder
   ([`goes.ts`](https://github.com/azohra/meteo/blob/main/forecast/src/builders/goes.ts))
-  publishes anything else as absence.
+  publishes an unmasked DQF-1 retrieval labelled `quality: 1` and
+  everything else as absence.
+- **DSR's DQF 1 is a lumped "degraded/invalid" state**, not a graded
+  medium: in practice the sun beyond the 70° good-quality zenith bound —
+  the sunrise and sunset shoulders. Live shoulder values track the
+  clear-sky expectation plausibly, but the provider refuses them a
+  grade, so a labelled entry is indicative ("the sun is on, roughly this
+  strongly"), never quantitative. The reference scene draws them as
+  dimmed dots off the measured line and never lets them shade the
+  dimming cells.
 - **The forward equations' visibility inequality is not optional**: without
   it, a point on the far side of the earth maps to plausible scan angles.
 - **The oft-quoted 2 km is nadir-nominal**: the measured ground cell above
@@ -187,7 +198,7 @@ Quirks:
 - **Night pixels are fill with DQF 3**: the explicit no-retrieval flag
   that DSR's night-fill-with-DQF-0 lacks.
 
-![Two panels comparing the DSR and AOD product semantics. DSR: a uint16 number line whose valid_range spans all codes, so the fill value 65535 sits inside it; a binary DQF (0 good, 1 degraded/invalid, 255 space) of which only 0 publishes; a night pixel arrives as fill with DQF 0, the trap. AOD: valid_range [0, 65530] excludes the same fill code; a graded DQF (0 high, 1 medium, 2 low, 3 no retrieval) publishing through medium; a night pixel arrives as fill with the explicit DQF 3. Beneath both, the shared rule: one gate, unmasked and quality, and anything that fails publishes as absence.](figures/observation-quality-gate.svg)
+![Two panels comparing the DSR and AOD product semantics. DSR: a uint16 number line whose valid_range spans all codes, so the fill value 65535 sits inside it; a binary DQF (0 good, 1 degraded/invalid, 255 space) publishing through 1, degraded labelled quality: 1; a night pixel arrives as fill with DQF 0, the trap. AOD: valid_range [0, 65530] excludes the same fill code; a graded DQF (0 high, 1 medium, 2 low, 3 no retrieval) publishing through medium, medium labelled quality: 1; a night pixel arrives as fill with the explicit DQF 3. Beneath both, the shared rule: one gate, unmasked and quality, a nonzero accepted DQF publishing as the entry's quality label, and anything that fails publishing as absence.](figures/observation-quality-gate.svg)
 
 ## What a published AOT claims
 
@@ -201,7 +212,8 @@ algorithm's validation record [verified 2026-08-10]:
   RMSE 0.09 against AERONET (Zhang, Kondragunta et al. 2020,
   [AMT 13:5955](https://doi.org/10.5194/amt-13-5955-2020)), and it is
   the smoke-event choice, and smoke events are what this dataset
-  exists for.
+  exists for. A medium-quality entry carries `quality: 1`, so the
+  strict high-only view is one filter away.
 - **The Enterprise algorithm is why the dataset exists at all.**
   Operational since 2024-02-06, it raised the quantitative view-zenith
   limit from the Baseline algorithm's 60° to 78.5°. The catalogued

@@ -88,7 +88,13 @@
               },
               "downwardShortwaveWm2": {
                 "type": "number",
-                "description": "Measured downward shortwave flux at the surface, W/m² (GOES-R ABI L2 DSR). Daytime product: instants without a good-quality retrieval are absent from the series — \"not measured\", never zero."
+                "description": "Measured downward shortwave flux at the surface, W/m² (GOES-R ABI L2 DSR). Daytime product: instants without an accepted retrieval are absent from the series — \"not measured\", never zero."
+              },
+              "quality": {
+                "description": "The provider's nonzero DQF for this retrieval; absent means DQF 0 (good). DSR's DQF is binary, so 1 is its lumped \"degraded/invalid\" state — typically the sun beyond the 70° good-quality zenith bound (the sunrise and sunset shoulders): indicative, not quantitative.",
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               }
             },
             "required": [
@@ -108,6 +114,12 @@
               "aot": {
                 "type": "number",
                 "description": "Measured aerosol optical thickness at 550 nm (GOES-R ABI L2 AOD, high+medium quality) — the same quantity and wavelength a profile's smoke block forecasts as aot. Daytime product: instants without an accepted retrieval are absent — \"not measured\", never clear air."
+              },
+              "quality": {
+                "description": "The provider's nonzero DQF for this retrieval; absent means DQF 0 (high). AOD's DQF is graded, so 1 is medium quality — the top-two set the smoke literature validated (Zhang, Kondragunta et al. 2020); strict quantitative use may filter to absent-only.",
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               }
             },
             "required": [

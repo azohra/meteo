@@ -49,6 +49,39 @@ describe("observation document contract", () => {
     expect(first && "aot" in first ? first.aot : null).toBe(1.56);
   });
 
+  it("carries the provider's nonzero DQF as quality, absent meaning the best grade", () => {
+    const labelled = {
+      ...DOCUMENT,
+      observations: [
+        { observedAt: "2026-08-09T15:00:00Z", downwardShortwaveWm2: 112.4, quality: 1 },
+        { observedAt: "2026-08-09T16:00:00Z", downwardShortwaveWm2: 287.9 },
+      ],
+    };
+    const parsed = parseObservationDocument(labelled);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.observations[0]).toMatchObject({ quality: 1 });
+    expect(parsed?.observations[1]).not.toHaveProperty("quality");
+
+    const aot = {
+      ...DOCUMENT,
+      model: "goes18-aod",
+      observations: [{ observedAt: "2026-08-09T21:00:00Z", aot: 1.56, quality: 1 }],
+    };
+    expect(parseObservationDocument(aot)?.observations[0]).toMatchObject({ quality: 1 });
+  });
+
+  it("rejects a zero or fractional quality — the best grade is absence, not 0", () => {
+    for (const quality of [0, 0.5, -1]) {
+      const document = {
+        ...DOCUMENT,
+        observations: [
+          { observedAt: "2026-08-09T15:00:00Z", downwardShortwaveWm2: 112.4, quality },
+        ],
+      };
+      expect(parseObservationDocument(document)).toBeNull();
+    }
+  });
+
   it("rejects an entry with no measurement field — an empty instant is absence, not an entry", () => {
     const empty = {
       ...DOCUMENT,

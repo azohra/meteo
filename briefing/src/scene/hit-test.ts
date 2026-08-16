@@ -186,8 +186,12 @@ export function cursorReading(scene: MeteogramScene, x: number, y: number): Curs
     smokeSurfaceUgm3: sampling.smoke === null ? null : sampling.smoke.surfaceUgm3,
     smokeAot: sampling.smoke === null ? null : sampling.smoke.aot,
     observedIrradianceWm2: sampling.observation === null ? null : sampling.observation.wm2,
+    observedIrradianceQuality:
+      sampling.observation === null ? null : (sampling.observation.quality ?? 0),
     observedTransmittance:
       sampling.observation === null ? null : sampling.observation.transmittance,
     observedAot: sampling.aotObservation === null ? null : sampling.aotObservation.aot,
+    observedAotQuality:
+      sampling.aotObservation === null ? null : (sampling.aotObservation.quality ?? 0),
   };
 }

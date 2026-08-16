@@ -62,11 +62,11 @@ async function withGranule<T>(work: (granule: Granule) => T | Promise<T>): Promi
 
 /* The gate applied to netCDF4's own per-pixel reading — the independently
    derived answer the h5wasm path must reproduce. */
-function expectedSamples(maxQuality: number): Record<string, number> {
+function expectedSamples(maxQuality: number): Record<string, { value: number; quality: number }> {
   return Object.fromEntries(
     Object.entries(REFERENCE.pixels)
       .filter(([, pixel]) => !pixel.masked && !pixel.dqfMasked && pixel.dqf <= maxQuality)
-      .map(([slug, pixel]) => [slug, pixel.value!]),
+      .map(([slug, pixel]) => [slug, { value: pixel.value!, quality: pixel.dqf }]),
   );
 }
 
@@ -102,9 +102,11 @@ describe("bit identity with netCDF4", () => {
     // 1 pass, DQF 2-3 and both masked pixels are absences.
     expect(Object.keys(expected).sort()).toEqual(["good", "medium"]);
     expect(Object.keys(samples).sort()).toEqual(Object.keys(expected).sort());
-    for (const [slug, value] of Object.entries(expected)) {
+    for (const [slug, sample] of Object.entries(expected)) {
       // toBe is Object.is — bit identity for every non-NaN double.
-      expect(samples[slug]).toBe(value);
+      expect(samples[slug].value).toBe(sample.value);
+      // The pixel's own DQF rides along, so publish can label degraded.
+      expect(samples[slug].quality).toBe(sample.quality);
     }
   });
 
@@ -116,10 +118,12 @@ describe("bit identity with netCDF4", () => {
     }
   });
 
-  it("the DSR quality gate stays exact zero", async () => {
-    // The DSR product's gate (unmasked AND DQF == 0) over the same
-    // granule variable: only the DQF-0 pixel passes, and the
-    // fill-with-DQF-0 night pixel stays an absence.
+  it("the DSR gate admits the degraded state labelled, and night stays an absence", async () => {
+    // The DSR product's gate (unmasked AND DQF <= 1) over the same
+    // granule variable: the DQF-0 pixel passes bare and the DQF-1 pixel
+    // passes carrying its quality, while the fill-with-DQF-0 night pixel
+    // stays an absence — the unmasked half of the gate, not the DQF half,
+    // is what keeps night out.
     const product: Product = {
       ...PRODUCTS["goes18-dsr"],
       variable: "AOD",
@@ -131,8 +135,11 @@ describe("bit identity with netCDF4", () => {
       sampleSites(granule, product, SITES, INDICES),
     );
 
-    expect(Object.keys(expected)).toEqual(["good"]);
+    expect(Object.keys(expected).sort()).toEqual(["good", "medium"]);
     expect(samples).toEqual(expected);
+    expect(samples["good"].quality).toBe(0);
+    expect(samples["medium"].quality).toBe(1);
+    expect(samples["night"]).toBeUndefined();
   });
 });
 

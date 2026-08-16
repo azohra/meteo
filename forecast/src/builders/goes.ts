@@ -32,13 +32,19 @@ export interface Product {
   label: string;
 }
 
+// A nonzero DQF publishes on the entry as `quality`, so display policy
+// stays with consumers instead of being baked into collection.
 export const PRODUCTS: Record<"goes18-dsr" | "goes18-aod", Product> = {
+  // DSR's DQF is binary (0 good, 1 degraded/invalid — beyond the 70°
+  // good-quality zenith bound or otherwise refused a grade). maxQuality 1
+  // admits the unmasked degraded retrievals — the sunrise and sunset
+  // shoulders — labelled `quality: 1`: indicative, not quantitative.
   "goes18-dsr": {
     slug: "goes18-dsr",
     prefix: "ABI-L2-DSRF",
     variable: "DSR",
     valueKey: "downwardShortwaveWm2",
-    maxQuality: 0,
+    maxQuality: 1,
     label: "GOES-18 DSR",
   },
   // maxQuality 1 admits high + medium quality (Zhang, Kondragunta et al. 2020).
@@ -74,6 +80,12 @@ export interface GoesWire {
   sleep: (ms: number) => Promise<void>;
 }
 
+export interface GranuleSample {
+  value: number;
+  /** The pixel's DQF as sampled; 0 is the product's best grade. */
+  quality: number;
+}
+
 export type GranuleSampler = (
   url: string,
   product: Product,
@@ -81,7 +93,7 @@ export type GranuleSampler = (
   indices: SiteIndices | null,
   stats: DownloadCounters,
   wire: GoesWire,
-) => Promise<{ indices: SiteIndices | null; samples: Record<string, number> }>;
+) => Promise<{ indices: SiteIndices | null; samples: Record<string, GranuleSample> }>;
 
 export type GoesSiteSource = { sites: readonly GoesSite[] } | { sitesPath: string };
 
@@ -161,7 +173,7 @@ export async function buildGoesProduct(product: Product, options: GoesBuildOptio
   // them and fetch concurrently. Samples land keyed by position so the
   // observation entries stay in granule order regardless of completion.
   let indices: SiteIndices | null = null;
-  const samplesByKey = Array.from<Record<string, number>>({ length: keys.length });
+  const samplesByKey = Array.from<Record<string, GranuleSample>>({ length: keys.length });
   const sampleAt = async (index: number): Promise<void> => {
     const [key] = keys[index]!;
     const { indices: located, samples } = await sampler(
@@ -182,8 +194,13 @@ export async function buildGoesProduct(product: Product, options: GoesBuildOptio
     FETCH_CONCURRENCY,
   );
   for (const [index, [, observedAt]] of keys.entries()) {
-    for (const [siteSlug, value] of Object.entries(samplesByKey[index] ?? {})) {
-      newObservations.get(siteSlug)?.push({ observedAt, [product.valueKey]: value });
+    for (const [siteSlug, sample] of Object.entries(samplesByKey[index] ?? {})) {
+      newObservations.get(siteSlug)?.push({
+        observedAt,
+        [product.valueKey]: sample.value,
+        // The best grade publishes bare; a nonzero DQF travels with the value.
+        ...(sample.quality > 0 ? { quality: sample.quality } : {}),
+      });
     }
   }
 
@@ -336,12 +353,12 @@ export function sampleSites(
   product: Product,
   sites: readonly GoesSite[],
   indices: SiteIndices | null,
-): { indices: SiteIndices; samples: Record<string, number> } {
+): { indices: SiteIndices; samples: Record<string, GranuleSample> } {
   const located =
     indices ?? Object.fromEntries(sites.map((site) => [site.slug, siteIndex(granule, site)]));
   const values = granule.variable(product.variable);
   const dqf = granule.variable("DQF");
-  const samples: Record<string, number> = {};
+  const samples: Record<string, GranuleSample> = {};
   for (const site of sites) {
     const [yIndex, xIndex] = located[site.slug];
     const value = values.pixel(yIndex, xIndex);
@@ -352,7 +369,7 @@ export function sampleSites(
     if (quality === null || quality > product.maxQuality) {
       continue;
     }
-    samples[site.slug] = value;
+    samples[site.slug] = { value, quality };
   }
   return { indices: located, samples };
 }

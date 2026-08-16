@@ -25,6 +25,8 @@ export interface StripSpec {
   cells?: Array<StripCell | null>;
   /** Native-cadence measurements as fractional column offsets, gaps as nulls; present, the line draws from these instead of the hourly `values`, and lone samples surface as dots. */
   samples?: ReadonlyArray<{ columnOffset: number; value: number } | null>;
+  /** Published-but-qualified measurements (nonzero provider DQF where the strip's policy keeps them off the line); each renders as a dimmed dot, never joined. */
+  degradedSamples?: ReadonlyArray<{ columnOffset: number; value: number }>;
   /** Fractional column offset of the newest measured instant; the region beyond it is not-yet-measured and renders as pending. Null when measurement covers the window. */
   measuredTo?: number | null;
   /** Row cells without geometry; tops are assigned once the strip has one. */
@@ -80,6 +82,8 @@ export function buildStripSpecs(args: {
   observationSeries?: ReadonlyArray<{ wm2: number; transmittance: number | null } | null>;
   /** Native-cadence measured irradiance (StripSpec.samples shape); present, the Sun line draws from these. */
   observationSamples?: ReadonlyArray<{ columnOffset: number; value: number } | null>;
+  /** Degraded measured irradiance (StripSpec.degradedSamples shape): DSR's binary DQF-1 retrievals, drawn as dimmed dots off the line. */
+  observationDegradedSamples?: ReadonlyArray<{ columnOffset: number; value: number }>;
   /** The Sun strip's newest measured instant as a column offset (StripSpec.measuredTo). */
   observationMeasuredTo?: number | null;
   /** The AOT strip's inline provenance statement. */
@@ -100,6 +104,7 @@ export function buildStripSpecs(args: {
     smokeSeries,
     observationSeries,
     observationSamples,
+    observationDegradedSamples,
     observationMeasuredTo,
     aotObservationSeries,
     aotObservationSamples,
@@ -221,10 +226,18 @@ export function buildStripSpecs(args: {
       unit: "W/m²",
       values: measured,
       ...(observationSamples ? { samples: observationSamples } : {}),
+      ...(observationDegradedSamples && observationDegradedSamples.length > 0
+        ? { degradedSamples: observationDegradedSamples }
+        : {}),
       measuredTo: observationMeasuredTo ?? null,
       bands: observationSeries.map(() => null),
       minimum: 0,
-      maximum: Math.max(800, ...finite(measured), ...sampleValues(observationSamples)),
+      maximum: Math.max(
+        800,
+        ...finite(measured),
+        ...sampleValues(observationSamples),
+        ...(observationDegradedSamples ?? []).map((sample) => sample.value),
+      ),
       cells: observationSeries.map((entry, index) =>
         entry === null || entry.transmittance === null || entry.transmittance >= 1
           ? null
@@ -450,6 +463,12 @@ export function layoutStrips(
     };
     if (sampled && sampled.dots.length > 0) {
       strip.dots = sampled.dots.map((dot) => ({ x: short(dot.x), y: short(dot.y) }));
+    }
+    if (spec.degradedSamples && spec.degradedSamples.length > 0) {
+      strip.degradedDots = spec.degradedSamples.map((sample) => ({
+        x: short(xCenter(sample.columnOffset)),
+        y: short(yOf(sample.value)),
+      }));
     }
     if (measuredToX !== null && plotRight - measuredToX > 0.5) {
       strip.measuredToX = short(measuredToX);

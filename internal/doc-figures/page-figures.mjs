@@ -2989,10 +2989,10 @@ async function composeObservationQualityGate() {
     physical: "0–1500 W/m²",
     dqf: [
       { label: "0 good", published: true },
-      { label: "1 degraded/invalid", published: false },
+      { label: "1 degraded/invalid · quality: 1", published: true },
       { label: "255 space", published: false, dashed: true },
     ],
-    gateNote: "published = 0",
+    gateNote: "published <= 1 · degraded labelled",
     night: "fill · DQF 0",
     nightRead: "the trap: DQF 0 does not imply a retrieval",
     trap: true,
@@ -3009,11 +3009,11 @@ async function composeObservationQualityGate() {
     physical: "-0.05 to +5.0",
     dqf: [
       { label: "0 high", published: true },
-      { label: "1 medium", published: true },
+      { label: "1 medium · quality: 1", published: true },
       { label: "2 low", published: false },
       { label: "3 no retrieval", published: false, dashed: true },
     ],
-    gateNote: "published <= 1",
+    gateNote: "published <= 1 · medium labelled",
     night: "fill · DQF 3",
     nightRead: "the explicit no-retrieval flag DSR's night-fill-with-DQF-0 lacks",
     trap: false,
@@ -3026,15 +3026,15 @@ async function composeObservationQualityGate() {
   <rect x="0" y="${bandY}" width="980" height="76" fill="${STRIP_BG}" stroke="${ACCENT}" stroke-width="1.8"/>
   ${t(490, bandY + 28, "ONE GATE, BOTH PRODUCTS: UNMASKED AND QUALITY", { font: DISPLAY, size: 19, weight: 800, ls: 0.4, anchor: "middle" })}
   ${t(490, bandY + 48, "the builder applies the shared gate even where AOD's fill separates cleanly: one code path can only reject more", { size: 11, fill: INK_SOFT, anchor: "middle" })}
-  ${t(490, bandY + 64, "anything that fails publishes as absence: never zero, never a guess", { font: MONO, size: 10, fill: INK_MUTE, anchor: "middle" })}`;
+  ${t(490, bandY + 64, "a nonzero accepted DQF publishes as the entry's quality label; anything that fails publishes as absence: never zero, never a guess", { font: MONO, size: 10, fill: INK_MUTE, anchor: "middle" })}`;
 
   return frame({
     id: "observation-quality-gate",
     title: "Two products, one quality gate",
     lesson:
-      "DSR and AOD ride the same grid and the same fill code, but their fill and DQF semantics disagree: DSR's fill hides inside valid_range and its binary DQF flags night as good, while AOD's fill separates cleanly under a graded DQF. The builder trusts neither shortcut and gates both on unmasked AND quality.",
+      "DSR and AOD ride the same grid and the same fill code, but their fill and DQF semantics disagree: DSR's fill hides inside valid_range and its binary DQF flags night as good, while AOD's fill separates cleanly under a graded DQF. The builder trusts neither shortcut and gates both on unmasked AND quality, publishing a nonzero accepted DQF as the entry's quality label.",
     description:
-      "Two panels comparing the GOES-18 DSR and AOD product semantics. Panel A, DSR: a uint16 number line whose valid_range spans all codes, so the fill value 65535 sits inside it and range checks cannot separate fill from data; DQF has two working states, 0 good and 1 degraded/invalid, plus 255 for space, and only 0 publishes; a night pixel arrives as fill with DQF 0, the trap this panel highlights: DQF 0 does not imply a retrieval. Panel B, AOD: valid_range [0, 65530] excludes the same fill code, so range masking alone separates fill from data; DQF is graded 0 high, 1 medium, 2 low, 3 no retrieval, and values through medium publish; a night pixel arrives as fill with the explicit DQF 3. Beneath both, the shared rule: the builder applies the same unmasked-and-quality gate to both products, and anything that fails publishes as absence.",
+      "Two panels comparing the GOES-18 DSR and AOD product semantics. Panel A, DSR: a uint16 number line whose valid_range spans all codes, so the fill value 65535 sits inside it and range checks cannot separate fill from data; DQF has two working states, 0 good and 1 degraded/invalid, plus 255 for space; both working states publish, degraded labelled quality: 1; a night pixel arrives as fill with DQF 0, the trap this panel highlights: DQF 0 does not imply a retrieval, and the unmasked half of the gate is what keeps night out. Panel B, AOD: valid_range [0, 65530] excludes the same fill code, so range masking alone separates fill from data; DQF is graded 0 high, 1 medium, 2 low, 3 no retrieval, and values through medium publish, medium labelled quality: 1; a night pixel arrives as fill with the explicit DQF 3. Beneath both, the shared rule: the builder applies the same unmasked-and-quality gate to both products, a nonzero accepted DQF publishes as the entry's quality label, and anything that fails publishes as absence.",
     caption:
       "Encodings, ranges, and DQF vocabularies are the product facts verified live from the granules on 2026-08-10 and recorded above; the number lines are schematic (codes are not drawn to scale). The gate is goes.ts's one code path for both datasets.",
     units: "uint16 codes, schematic scale · DSR W/m² · AOD dimensionless at 550 nm",
