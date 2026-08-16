@@ -165,6 +165,45 @@ export function resolveHour(hour: ForecastHour): ResolvedHour | null {
   };
 }
 
+/**
+ * Slack for the cloud-capped comparison: the derive returns exactly
+ * cloudBaseM when the cap binds, but published documents round both
+ * heights to 0.1 m and ensemble percentiles resolve per series, so a
+ * bound cap can land a fraction of a metre under the cloud-base value.
+ */
+const CLOUD_CAP_TOLERANCE_M = 1;
+
+/**
+ * Whether the hour's climb ends in cloud: the published usable-lift top
+ * reaches the published cloud base — the same relation `usableLiftTopM`
+ * caps with. Null when the hour has no usable-lift top (too weak to beat
+ * the sink rate, or no boundary layer): the question has no answer, and
+ * null must never collapse to false. One computation; `HourSampling.cloudCapped`
+ * is its consumer.
+ */
+export function cloudCappedHour(derived: {
+  usableLiftTopM: number | null;
+  cloudBaseM: number;
+}): boolean | null {
+  if (derived.usableLiftTopM === null) return null;
+  return derived.usableLiftTopM >= derived.cloudBaseM - CLOUD_CAP_TOLERANCE_M;
+}
+
+/**
+ * The CAPE strip's CIN-cap fact: CIN at or below `cappedCinJkg`
+ * (`capeClasses.cappedCinJkg`). Null when the model publishes no CAPE or
+ * no CIN for the hour — the HRDPS family carries CAPE with no CIN, and
+ * that absence must never read as "no cap". One computation; the strip's
+ * dimmed cell and `HourSampling.capeCapped` both consume it.
+ */
+export function capeCappedHour(
+  surface: { capeJkg: number | null; cinJkg: number | null },
+  cappedCinJkg: number,
+): boolean | null {
+  if (surface.capeJkg === null || surface.cinJkg === null) return null;
+  return surface.cinJkg <= cappedCinJkg;
+}
+
 export function resolveHourIndices(
   profile: SiteForecast,
   options: MeteogramOptions,

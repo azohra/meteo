@@ -91,6 +91,28 @@ function renderBarb(barb: BarbPlacement): string {
   );
 }
 
+/**
+ * One wind-window mark: colour is never the only encoding, so the two
+ * states also differ in shape — in-window hours draw a filled triangle,
+ * out-of-window hours an open circle.
+ */
+function renderWindWindowMark(x: number, y: number, inWindow: boolean): string {
+  if (inWindow) {
+    return el("path", {
+      d: `M${short(x)} ${short(y - 3.2)} L${short(x + 3)} ${short(y + 2.4)} L${short(x - 3)} ${short(y + 2.4)} Z`,
+      class: "meteo-gram-wind-window-in",
+    });
+  }
+  return el("circle", {
+    cx: short(x),
+    cy: short(y),
+    r: 2.4,
+    class: "meteo-gram-wind-window-out",
+    fill: "none",
+    "stroke-width": 1.2,
+  });
+}
+
 /** Serializes a scene graph to a self-contained SVG document string. */
 export function renderMeteogramSvg(
   scene: MeteogramScene,
@@ -410,13 +432,18 @@ export function renderMeteogramSvg(
       text(
         {
           x: short(tick.x),
-          y: plotBottom + 18,
+          y: short(scene.scales.hourLabelY),
           "text-anchor": "middle",
           class: "meteo-gram-hour-tick meteo-gram-mono",
         },
         tick.label,
       ),
     );
+  }
+  if (scene.windWindow) {
+    for (const mark of scene.windWindow.marks) {
+      body.push(renderWindWindowMark(mark.x, scene.windWindow.y, mark.inWindow));
+    }
   }
   for (const mark of scene.surfaceTemperatures) {
     body.push(
@@ -588,6 +615,7 @@ export function renderKeySvg(spec: KeySpec, options: RenderMeteogramSvgOptions =
     | { kind: "band"; label: string }
     | { kind: "smokeHaze"; label: string }
     | { kind: "measuredDimming"; label: string }
+    | { kind: "windWindow"; label: string }
     | { kind: "note"; label: string }
     | { kind: "ramp"; label: string; classes: ReadonlyArray<string> };
   const items: RowItem[] = [
@@ -603,6 +631,7 @@ export function renderKeySvg(spec: KeySpec, options: RenderMeteogramSvgOptions =
     ...(spec.measuredDimming
       ? [{ kind: "measuredDimming" as const, label: spec.measuredDimming.label }]
       : []),
+    ...(spec.windWindow ? [{ kind: "windWindow" as const, label: spec.windWindow.label }] : []),
     ...spec.ramps.map((entry) => ({
       kind: "ramp" as const,
       label: entry.label,
@@ -703,6 +732,12 @@ export function renderKeySvg(spec: KeySpec, options: RenderMeteogramSvgOptions =
         }),
       );
       x += item.classes.length * KEY_RAMP_CELL_W;
+    } else if (item.kind === "windWindow") {
+      body.push(
+        renderWindWindowMark(x + KEY_CHIP_W / 4, swatchY, true),
+        renderWindWindowMark(x + (3 * KEY_CHIP_W) / 4, swatchY, false),
+      );
+      x += KEY_CHIP_W;
     } else if (item.kind === "note") {
       // Text-only: no swatch.
     } else {

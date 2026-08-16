@@ -327,6 +327,112 @@ describe("widthPx container fit", () => {
   });
 });
 
+describe("svgHeightPx container fit", () => {
+  it("round-trips exactly across strip-stack permutations — the scene solves the panel from its own geometry", () => {
+    const builds: Array<[string, () => number]> = [
+      [
+        "deterministic",
+        () => buildMeteogramScene(deterministicSceneProfile(), { ...TZ, svgHeightPx: 620 }).height,
+      ],
+      [
+        "science strips (cape + cloud layers)",
+        () => buildMeteogramScene(scienceSceneProfile(), { ...TZ, svgHeightPx: 620 }).height,
+      ],
+      [
+        "buoyancyShear strip added",
+        () =>
+          buildMeteogramScene(deterministicSceneProfile(), {
+            ...TZ,
+            overlays: { buoyancyShear: true },
+            svgHeightPx: 620,
+          }).height,
+      ],
+      [
+        "surfaceTemperature row off",
+        () =>
+          buildMeteogramScene(scienceSceneProfile(), {
+            ...TZ,
+            overlays: { surfaceTemperature: false },
+            svgHeightPx: 620,
+          }).height,
+      ],
+      [
+        "ensemble",
+        () => buildMeteogramScene(ensembleSceneProfile(), { ...TZ, svgHeightPx: 620 }).height,
+      ],
+      [
+        "wind-window marker row added",
+        () =>
+          buildMeteogramScene(deterministicSceneProfile(), {
+            ...TZ,
+            launchWindows: [{ fromDeg: 180, toDeg: 270 }],
+            svgHeightPx: 620,
+          }).height,
+      ],
+      [
+        "smoke strip added",
+        () => {
+          const profile = deterministicSceneProfile();
+          for (const hour of profile.hours) {
+            hour.smoke = { surfaceUgm3: 40, columnMgm2: 120, aot: 0.6 };
+          }
+          return buildMeteogramScene(profile, { ...TZ, svgHeightPx: 620 }).height;
+        },
+      ],
+      [
+        "measurement strip and provenance divider added",
+        () => {
+          const profile = deterministicSceneProfile();
+          const observations = profile.hours.map((hour) => ({
+            observedAt: hour.validAt,
+            downwardShortwaveWm2: 500,
+          }));
+          return buildMeteogramScene(profile, {
+            ...TZ,
+            svgHeightPx: 620,
+            observations: {
+              schemaVersion: 1,
+              model: "goes18-dsr",
+              observed: {
+                firstObservedAt: observations[0].observedAt,
+                lastObservedAt: observations[observations.length - 1].observedAt,
+                generatedAt: "2026-08-10T06:00:00Z",
+              },
+              site: { id: "dundee", name: "Dundee", latitude: 49.29, longitude: -117.18 },
+              observations,
+            },
+          }).height;
+        },
+      ],
+    ];
+    for (const [label, height] of builds) expect(height(), label).toBe(620);
+  });
+
+  it("solves the same scene an explicit plotHeightPx would have produced", () => {
+    const solved = buildMeteogramScene(deterministicSceneProfile(), { ...TZ, svgHeightPx: 620 });
+    const explicit = buildMeteogramScene(deterministicSceneProfile(), {
+      ...TZ,
+      plotHeightPx: solved.scales.plotHeight,
+    });
+    expect(JSON.stringify(solved)).toBe(JSON.stringify(explicit));
+  });
+
+  it("wins over plotHeightPx — the total is the statement of intent", () => {
+    const scene = buildMeteogramScene(deterministicSceneProfile(), {
+      ...TZ,
+      svgHeightPx: 620,
+      plotHeightPx: 900,
+    });
+    expect(scene.height).toBe(620);
+  });
+
+  it("never solves the panel below 1px — an impossible target overflows instead of inverting", () => {
+    const scene = buildMeteogramScene(scienceSceneProfile(), { ...TZ, svgHeightPx: 40 });
+    expect(scene.scales.plotHeight).toBe(1);
+    expect(scene.height).toBeGreaterThan(40);
+  });
+});
+
 describe("stripLabels", () => {
   it("overrides display voice while the key stays the identity", () => {
     const scene = buildMeteogramScene(deterministicSceneProfile(), {

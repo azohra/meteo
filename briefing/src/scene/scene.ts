@@ -24,7 +24,14 @@ import { BARB_GLYPH_HEIGHT, BARB_GLYPH_RADIUS, windBarbParts, windBarbPaths } fr
 import { resolveSelection } from "./hit-test.js";
 import { sampledFieldPaths, type FieldBanding, type FieldNode } from "./field.js";
 import { bandPath, pointPath } from "./path.js";
-import { resolveHour, resolveHourIndices, type Band, type ResolvedHour } from "./resolve.js";
+import {
+  capeCappedHour,
+  cloudCappedHour,
+  resolveHour,
+  resolveHourIndices,
+  type Band,
+  type ResolvedHour,
+} from "./resolve.js";
 import {
   METRIC_TOP,
   STRIP_DIVIDER_LABEL,
@@ -50,6 +57,8 @@ import {
   type MeteogramOptions,
   type SeriesElement,
   type SurfaceTemperatureMark,
+  type SuppressedLayer,
+  type WindWindowMark,
 } from "./types.js";
 
 const PROFILE_GAP = 8;
@@ -60,6 +69,9 @@ const DEFAULT_PLOT_HEIGHT = 340;
 const HOUR_LABEL_DY = 18;
 const BOTTOM_PADDING = 14;
 const SURFACE_TEMP_ROW_PX = 14;
+const WIND_WINDOW_ROW_PX = 10;
+/** The omega honesty gate: fewer declared omega levels than this inside the altitude window and the field is suppressed — two levels cannot outline a band, only imply one. */
+const OMEGA_MIN_DECLARED_LEVELS = 3;
 const BARB_SCALE_MIN = 0.85;
 const BARB_SCALE_MIN_COLUMN = DEFAULT_COLUMN_WIDTH;
 const BARB_SCALE_MAX_COLUMN = 66;
@@ -251,6 +263,23 @@ function omegaNodes(hour: ResolvedHour): FieldNode[] {
     .map((level) => ({ altitudeM: level.heightM, value: level.verticalVelocityPaS as number }));
 }
 
+function normalizeDeg(value: number): number {
+  return ((value % 360) + 360) % 360;
+}
+
+/** Whether a meteorological FROM bearing falls inside any arc; an arc whose fromDeg exceeds its toDeg wraps through north. */
+function inLaunchWindow(
+  directionDeg: number,
+  arcs: ReadonlyArray<{ fromDeg: number; toDeg: number }>,
+): boolean {
+  const direction = normalizeDeg(directionDeg);
+  return arcs.some((arc) => {
+    const from = normalizeDeg(arc.fromDeg);
+    const to = normalizeDeg(arc.toDeg);
+    return from <= to ? direction >= from && direction <= to : direction >= from || direction <= to;
+  });
+}
+
 function verticalCrossing(
   points: Array<{ heightM: number; value: number }>,
   target: number,
@@ -362,7 +391,6 @@ export function buildMeteogramScene(
   if (options.minColumnWidthPx !== undefined) {
     columnWidth = Math.max(columnWidth, options.minColumnWidthPx);
   }
-  const plotHeight = options.plotHeightPx ?? DEFAULT_PLOT_HEIGHT;
   const floorM = profile.site.modelElevationM;
   const launchElevationM = options.launch?.elevationM ?? null;
 
@@ -531,11 +559,26 @@ export function buildMeteogramScene(
   const stackGeometry = stripStackGeometry(stripSpecs);
 
   const plotTop = stackGeometry.height + PROFILE_GAP;
-  const plotBottom = plotTop + plotHeight;
   const width = MARGIN_LEFT + plotWidth + MARGIN_RIGHT;
   const surfaceTemperatureRow = overlays.surfaceTemperature && hours.length > 0;
-  const height =
-    plotBottom + HOUR_LABEL_DY + (surfaceTemperatureRow ? SURFACE_TEMP_ROW_PX : 0) + BOTTOM_PADDING;
+  const launchWindows = options.launchWindows ?? [];
+  const windWindowRow = launchWindows.length > 0;
+  // Everything stacked under the plot panel; the svgHeightPx solve and the
+  // final height must read this same sum or the round trip breaks.
+  const chromeBelowPlot =
+    (windWindowRow ? WIND_WINDOW_ROW_PX : 0) +
+    HOUR_LABEL_DY +
+    (surfaceTemperatureRow ? SURFACE_TEMP_ROW_PX : 0) +
+    BOTTOM_PADDING;
+  // svgHeightPx wins over plotHeightPx: the total is the statement of
+  // intent, exactly as widthPx wins over columnWidthPx.
+  const plotHeight =
+    options.svgHeightPx !== undefined
+      ? Math.max(1, options.svgHeightPx - plotTop - chromeBelowPlot)
+      : (options.plotHeightPx ?? DEFAULT_PLOT_HEIGHT);
+  const plotBottom = plotTop + plotHeight;
+  const height = plotBottom + chromeBelowPlot;
+  const hourLabelY = plotBottom + (windWindowRow ? WIND_WINDOW_ROW_PX : 0) + HOUR_LABEL_DY;
 
   const y = (altitudeM: number) =>
     plotTop + plotHeight * (1 - (altitudeM - floorM) / (topM - floorM));
@@ -645,17 +688,51 @@ export function buildMeteogramScene(
       },
     );
   }
+  const suppressed: SuppressedLayer[] = [];
   if (overlays.verticalVelocity) {
-    pushField("verticalVelocity", hours.map(omegaNodes), {
-      breakpoints: [-0.5, -0.1, 0.1, 0.5],
-      classNames: [
-        "meteo-gram-omega-lift-strong",
-        "meteo-gram-omega-lift",
-        null,
-        "meteo-gram-omega-sink",
-        "meteo-gram-omega-sink-strong",
-      ],
-    });
+    // The omega honesty gate: a model may declare omega on only a level or
+    // two, and at a high-floor site even fewer survive the terrain. Two
+    // levels cannot outline a band — the interpolation would paint a
+    // column-wide claim from almost no data — so the field draws only when
+    // at least OMEGA_MIN_DECLARED_LEVELS declared levels sit inside the
+    // altitude window. Without a capabilities declaration the scene cannot
+    // know what the model publishes, and no gate applies.
+    const declared = options.capabilities?.verticalVelocityLevels;
+    let omegaSuppressed = false;
+    if (declared) {
+      const declaredSet = new Set(declared);
+      const inWindow = new Set<number>();
+      for (const hour of hours) {
+        for (const level of hour.levels) {
+          if (
+            declaredSet.has(level.pressureHpa) &&
+            level.heightM >= floorM &&
+            level.heightM <= topM
+          ) {
+            inWindow.add(level.pressureHpa);
+          }
+        }
+      }
+      if (inWindow.size < OMEGA_MIN_DECLARED_LEVELS) {
+        omegaSuppressed = true;
+        suppressed.push({
+          key: "verticalVelocity",
+          reason: `${inWindow.size} of ${declared.length} declared omega levels inside the altitude window; fewer than ${OMEGA_MIN_DECLARED_LEVELS} cannot outline an honest band`,
+        });
+      }
+    }
+    if (!omegaSuppressed) {
+      pushField("verticalVelocity", hours.map(omegaNodes), {
+        breakpoints: [-0.5, -0.1, 0.1, 0.5],
+        classNames: [
+          "meteo-gram-omega-lift-strong",
+          "meteo-gram-omega-lift",
+          null,
+          "meteo-gram-omega-sink",
+          "meteo-gram-omega-sink-strong",
+        ],
+      });
+    }
   }
 
   const series: SeriesElement[] = [];
@@ -941,11 +1018,24 @@ export function buildMeteogramScene(
   const surfaceTemperatures: SurfaceTemperatureMark[] = surfaceTemperatureRow
     ? hours.map((hour, index) => ({
         x: xCenter(index),
-        y: plotBottom + HOUR_LABEL_DY + SURFACE_TEMP_ROW_PX,
+        y: hourLabelY + SURFACE_TEMP_ROW_PX,
         temperatureC: hour.surface.temperatureC,
         label: `${Math.round(hour.surface.temperatureC)}°`,
       }))
     : [];
+
+  const windWindow = windWindowRow
+    ? {
+        y: plotBottom + WIND_WINDOW_ROW_PX / 2 + 1,
+        marks: hours.map(
+          (hour, index): WindWindowMark => ({
+            hourIndex: index,
+            x: xCenter(index),
+            inWindow: inLaunchWindow(hour.surface.windDirectionDeg, launchWindows),
+          }),
+        ),
+      }
+    : null;
 
   const selectedHourIndex = hours.reduce(
     (best, hour, index) =>
@@ -1037,6 +1127,8 @@ export function buildMeteogramScene(
       smoke: overlays.smoke ? smokeSeries[index] : null,
       observation: overlays.observedIrradiance ? observationSeries[index] : null,
       aotObservation: overlays.observedAot ? aotObservationSeries[index] : null,
+      cloudCapped: cloudCappedHour(hour.derived),
+      capeCapped: capeCappedHour(hour.surface, capeClasses.cappedCinJkg),
     };
   });
 
@@ -1060,6 +1152,7 @@ export function buildMeteogramScene(
       topM,
       hourCount: hours.length,
       surfaceWindY,
+      hourLabelY,
     },
     axes: { altitude: altitudeTicks, pressureAltitude, hours: hourTicks },
     strips,
@@ -1082,6 +1175,8 @@ export function buildMeteogramScene(
         ? null
         : { y: stackGeometry.dividerY, label: STRIP_DIVIDER_LABEL },
     highlightSelectedHour: overlays.selectedHour,
+    windWindow,
+    suppressed,
     hourValidAts: hours.map((hour) => hour.validAt),
     sampling,
   };

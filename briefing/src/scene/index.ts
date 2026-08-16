@@ -44,6 +44,7 @@ export {
   type GustMark,
   type HourSampling,
   type HourTick,
+  type LaunchWindowArc,
   type MetricStrip,
   type OverlayName,
   type PressureAltitudeTick,
@@ -57,5 +58,7 @@ export {
   type MarkerTrainStride,
   type StripCell,
   type StripRow,
+  type SuppressedLayer,
   type SurfaceTemperatureMark,
+  type WindWindowMark,
 } from "./types.js";

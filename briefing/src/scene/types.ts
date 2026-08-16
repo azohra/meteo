@@ -1,4 +1,4 @@
-import type { ObservationDocument, SmokeDocument } from "../contract.js";
+import type { ModelCapabilities, ObservationDocument, SmokeDocument } from "../contract.js";
 import type { FieldNode } from "./field.js";
 
 /** Overlay toggles; each overlay contributes scene elements, and the default set reproduces the reference Meteogram. */
@@ -117,6 +117,12 @@ export interface MeteogramOptions {
   fitMinColumns?: number;
   /** Height of the time-height profile panel in px. Default 340. */
   plotHeightPx?: number;
+  /** Target total scene height in px; the plot-panel height is solved from the scene's own strip-stack and label geometry so `scene.height` equals the target exactly, and it wins over `plotHeightPx` — the total is the statement of intent, exactly as `widthPx` wins over `columnWidthPx`. The panel never solves below 1 px, so a target smaller than the fixed chrome overflows rather than inverting. */
+  svgHeightPx?: number;
+  /** The model's declared capabilities (the `models.json` catalogue entry's `capabilities`); today this feeds only the omega honesty gate — the verticalVelocity field is suppressed when fewer than 3 declared omega levels sit inside the altitude window. Absent, no gate applies: the scene cannot know what was declared. */
+  capabilities?: ModelCapabilities;
+  /** Acceptable launch-wind arcs as meteorological FROM bearings, degrees; an arc may wrap 360 (`{ fromDeg: 315, toDeg: 45 }`). A judgment parameter with no default: omit (or pass no arcs) and no wind-window marks draw. */
+  launchWindows?: ReadonlyArray<LaunchWindowArc>;
   /** Hour-tick label convention: `"24h"` (default), `"12h"`, or a function of (`validAt`, display `timeZone`). */
   hourLabel?: "24h" | "12h" | ((validAt: string, timeZone: string) => string);
   /** Wind-barb hour stride; `"auto"` (default) widens only when the column pitch cannot cover the glyph footprint. */
@@ -136,6 +142,29 @@ export interface MeteogramOptions {
   selection?: { hourIndex: number; altitudeM?: number | null } | null;
 }
 
+/** One acceptable launch-wind arc, meteorological FROM bearings in degrees; `fromDeg > toDeg` wraps through north ({ fromDeg: 315, toDeg: 45 } spans NW through NE). */
+export interface LaunchWindowArc {
+  fromDeg: number;
+  toDeg: number;
+}
+
+/** One hour's surface-wind verdict against the consumer's launch windows, drawn in the marker row above the hour labels. */
+export interface WindWindowMark {
+  /** Rendered hour index (into `hourValidAts`). */
+  hourIndex: number;
+  /** Column-centre x, matching the hour tick. */
+  x: number;
+  /** Whether the hour's surface p50 wind direction falls inside any supplied arc. */
+  inWindow: boolean;
+}
+
+/** A field layer the scene declined to draw, and why — absence over a plausible-but-wrong picture. */
+export interface SuppressedLayer {
+  key: FieldLayer["key"];
+  /** Plain words a consumer can surface verbatim. */
+  reason: string;
+}
+
 export interface SceneScales {
   plotLeft: number;
   plotTop: number;
@@ -150,6 +179,8 @@ export interface SceneScales {
   hourCount: number;
   /** The y the surface wind barbs are placed at — half a glyph height above the plot floor, not y(floorM). */
   surfaceWindY: number;
+  /** Baseline y of the hour-tick labels; sits lower when the wind-window marker row is drawn between the plot floor and the labels. */
+  hourLabelY: number;
 }
 
 export interface AltitudeTick {
@@ -348,6 +379,10 @@ export interface HourSampling {
   observation: { wm2: number; transmittance: number | null; quality?: number } | null;
   /** The hour's measured aerosol optical thickness as the "AOT" strip drew it; null where none was drawn; `quality` is the provider's nonzero DQF (absent means best grade). */
   aotObservation: { aot: number; quality?: number } | null;
+  /** Whether the hour's climb ends in cloud — the published usable-lift top reaches the published cloud base, the same relation the derive caps with; null when the hour has no usable-lift top (too weak to beat the sink rate, or no boundary layer), never false-by-default. */
+  cloudCapped: boolean | null;
+  /** The CAPE strip's CIN-cap fact — CIN at or below `capeClasses.cappedCinJkg`, exactly the dimmed-cell computation; null when the model publishes no CAPE or no CIN for the hour (absence is not "no cap"). */
+  capeCapped: boolean | null;
 }
 
 export interface MeteogramScene {
@@ -386,6 +421,10 @@ export interface MeteogramScene {
   stripDivider: { y: number; label: string } | null;
   /** Whether the serializer draws the selected-hour column highlight; `selectedHourIndex` stays computed either way. */
   highlightSelectedHour: boolean;
+  /** The wind-window marker row: one mark per hour at the row's y, drawn above the hour labels; null when the build supplied no `launchWindows` arcs. */
+  windWindow: { y: number; marks: ReadonlyArray<WindWindowMark> } | null;
+  /** Field layers the scene declined to draw, and why (the omega honesty gate); the key never advertises a suppressed layer because `buildKeySpec` reads only `fields`. Empty when nothing was suppressed. */
+  suppressed: ReadonlyArray<SuppressedLayer>;
   hourValidAts: ReadonlyArray<string>;
   sampling: ReadonlyArray<HourSampling>;
 }

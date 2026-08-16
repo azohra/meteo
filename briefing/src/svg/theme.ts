@@ -89,6 +89,8 @@ export const TOKEN_DEFAULTS = {
   "omega-lift-strong": "#56a377",
   "omega-sink": "#d3a68f",
   "omega-sink-strong": "#bd7d5c",
+  "wind-window-in": "#2f7d52",
+  "wind-window-out": "#a04b3c",
   boundary: "#a46b10",
   "cloud-base": "#355963",
   "cloud-marker": "#f8f3d8",
@@ -214,6 +216,8 @@ export const DEFAULT_STYLESHEET = `
 .meteo-gram-cloud-cell { fill: ${v("cloud")}; }
 .meteo-gram-strip-row-label { fill: ${v("ink-mute")}; font-size: ${v("text-row-tag")}; }
 .meteo-gram-gust { fill: ${v("gust")}; font-size: ${v("text-gust")}; font-weight: 700; }
+.meteo-gram-wind-window-in { fill: ${v("wind-window-in")}; }
+.meteo-gram-wind-window-out { stroke: ${v("wind-window-out")}; }
 .meteo-gram-series-pbl { stroke: ${seriesStroke("meteo-gram-series-pbl")}; }
 .meteo-gram-series-pbl-band { fill: ${v("pbl")}; opacity: 0.16; }
 ${STABILITY_RULES}

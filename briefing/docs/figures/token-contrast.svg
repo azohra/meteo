@@ -85,6 +85,8 @@
 .meteo-gram-cloud-cell { fill: #5b6969; }
 .meteo-gram-strip-row-label { fill: #40565a; font-size: 7.5px; }
 .meteo-gram-gust { fill: #355963; font-size: 9.5px; font-weight: 700; }
+.meteo-gram-wind-window-in { fill: #2f7d52; }
+.meteo-gram-wind-window-out { stroke: #a04b3c; }
 .meteo-gram-series-pbl { stroke: #56609b; }
 .meteo-gram-series-pbl-band { fill: #56609b; opacity: 0.16; }
 .meteo-gram-stab-very-unstable { fill: #d95f52; }
@@ -289,6 +291,8 @@
 .meteo-club-cloud-cell { fill: #5b6969; }
 .meteo-club-strip-row-label { fill: #a29a89; font-size: 7.5px; }
 .meteo-club-gust { fill: #355963; font-size: 9.5px; font-weight: 700; }
+.meteo-club-wind-window-in { fill: #2f7d52; }
+.meteo-club-wind-window-out { stroke: #a04b3c; }
 .meteo-club-series-pbl { stroke: #56609b; }
 .meteo-club-series-pbl-band { fill: #56609b; opacity: 0.16; }
 .meteo-club-stab-very-unstable { fill: #d95f52; }

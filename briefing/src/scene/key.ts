@@ -62,6 +62,8 @@ export interface KeySpec {
   smokeAdjusted: { id: string; label: string } | null;
   /** The measured-dimming chip; null when no dimming cells were drawn. */
   measuredDimming: { id: string; label: string } | null;
+  /** The wind-window marker pair — filled triangle in, open circle out; null when the scene drew no wind-window row. */
+  windWindow: { id: string; label: string } | null;
 }
 
 export interface KeySpecOptions {
@@ -250,5 +252,13 @@ export function buildKeySpec(scene: MeteogramScene, options: KeySpecOptions = {}
             "Measured dimming — shadow deepens as the sky under-delivers",
         }
       : null,
+    windWindow:
+      scene.windWindow && scene.windWindow.marks.length > 0
+        ? {
+            id: "meteo-gram-wind-window",
+            label:
+              labels["meteo-gram-wind-window"] ?? "Surface wind in (filled) / out of launch window",
+          }
+        : null,
   };
 }

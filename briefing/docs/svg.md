@@ -27,8 +27,9 @@ carries each keyed series' real class, dash, and stroke width; describes each
 shaded field overlay as a `ramps` entry whose classes are the drawn patches'
 own, in weak-to-strong reading order; includes the condensation hatch only
 when dense cloud is visible; includes the stability ramp only when that field
-is visible; and adds the p25–p75 note only when a drawn series has an
-ensemble band. Lines that label themselves on the plot (the 10°/20°
+is visible; adds the p25–p75 note only when a drawn series has an
+ensemble band; and keys the wind-window marker pair (filled triangle in,
+open circle out) only when the scene drew that row. Lines that label themselves on the plot (the 10°/20°
 isotherms, the Td isolines) stay out of the key by default; a consumer whose
 look keys them anyway opts them in with
 `selfLabeled: ["dewPointIsoline"]` and receives the real style facts instead

@@ -234,6 +234,47 @@ time for the arrival of valley circulation, strengthening synoptic flow, or a re
 
 <WindShearLab />
 
+## Two overlays that fail in mountain terrain
+
+The optional `buoyancyShear` strip and `verticalVelocity` field ship off
+by default, and at mountain sites the defaults are the honest choice.
+Both inherit flatland assumptions that terrain breaks in specific,
+describable ways.
+
+**The B/S ratio reads broken on genuinely good days.** The
+buoyancy/shear ratio divides thermal velocity w\* by the vector wind
+difference between the surface and the boundary-layer top, and its
+surface end is the model's 10 m wind. On flat ground that wind is the
+bottom of the boundary layer's own profile, so a large difference across
+the layer is a real gradient a thermal must climb through. In a mountain
+valley the 10 m wind is thermally driven valley circulation — anabatic
+flow that rotates with the sun and decouples from the flow aloft — so
+the subtraction measures the angle between two different wind systems,
+not a gradient any parcel experiences. That angle is large by
+construction on the best days, because the valley wind follows the
+heating while the flow aloft follows the synoptics: the ratio pins low
+exactly when conditions are best.
+[B/S does not transfer to the valley](/logbook/bs-ratio-valley/) traces
+a production day condemned three times over. The height-resolved
+`windShear` field asks the same question layer by layer *within* the
+column and never straddles that decoupling, so it survives terrain.
+
+**A sparse omega column misreads ridge lift as a sink signature.**
+Models declare vertical velocity (omega) on a subset of their pressure
+levels — RDPS on 850 and 700 hPa only — and at a high site the model's
+own terrain sits above some of them, so a single level can be all that
+survives. A band interpolated from one level paints a column-wide claim
+from almost no data, and the value at that level inverts in meaning near
+ridges: air forced up a windward face descends past it, so the strong
+sink a mid-column level samples over the grid cell is often the
+signature of exactly the mechanical lift a pilot flies. For this reason
+the scene refuses to draw the field when fewer than 3 declared omega
+levels sit inside the altitude window, and it records the refusal in
+`scene.suppressed`; the gate and its inputs live in
+[Build a scene graph](/docs/briefing/scene/). Which levels a model
+declares is in
+[What each model can, and cannot, tell you](/docs/forecast/model-capabilities/).
+
 ## Add local evidence
 
 A Meteogram samples one model grid cell. Resolve rotor behind a spur, a launch cycle inside that cell,

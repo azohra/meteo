@@ -95,6 +95,8 @@
 .meteo-gram-cloud-cell { fill: var(--meteo-gram-cloud, #5b6969); }
 .meteo-gram-strip-row-label { fill: var(--meteo-gram-ink-mute, #40565a); font-size: var(--meteo-gram-text-row-tag, 7.5px); }
 .meteo-gram-gust { fill: var(--meteo-gram-gust, #355963); font-size: var(--meteo-gram-text-gust, 9.5px); font-weight: 700; }
+.meteo-gram-wind-window-in { fill: var(--meteo-gram-wind-window-in, #2f7d52); }
+.meteo-gram-wind-window-out { stroke: var(--meteo-gram-wind-window-out, #a04b3c); }
 .meteo-gram-series-pbl { stroke: var(--meteo-gram-pbl, #56609b); }
 .meteo-gram-series-pbl-band { fill: var(--meteo-gram-pbl, #56609b); opacity: 0.16; }
 .meteo-gram-stab-very-unstable { fill: var(--meteo-gram-stab-very-unstable, #d95f52); }

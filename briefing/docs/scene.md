@@ -187,6 +187,18 @@ The optional `buoyancyShear` strip draws zero-shear, nonzero-buoyancy hours as
 `meteo-gram-bs-unopposed`. A blank cell remains reserved for a ratio that cannot be
 computed.
 
+Pass the model's declared capabilities (`options.capabilities`, the
+`models.json` catalogue entry's own object) and the `verticalVelocity`
+field earns an honesty gate: when fewer than 3 declared omega levels sit
+inside the altitude window — RDPS declares omega at 850 and 700 hPa
+only, and a high site's floor prunes the lower one — the scene draws no
+field and records why in `scene.suppressed`
+(`{ key: "verticalVelocity", reason }`). `buildKeySpec` reads only what
+was drawn, so a suppressed field never reaches the key. Two levels
+cannot outline a band, only imply one; absence wins over a plausible
+picture. Without a capabilities declaration no gate applies, because the
+scene cannot know what the model publishes.
+
 ## Fit and label the consuming surface
 
 | Option | Use it when | Behaviour |
@@ -198,6 +210,7 @@ computed.
 | `hourLabel` | A surface needs 24-hour, 12-hour, or custom labels | Changes ticks and the scene aria label together |
 | `stripLabels` | A publisher has its own display voice | Changes visible labels only; strip keys and CSS classes remain stable |
 | `plotHeightPx` | The time-height panel needs a different vertical scale | Changes the panel height; strips retain fixed heights |
+| `svgHeightPx` | The whole chart must fill a known panel height | Solves the panel height from the scene's own strip-stack and label geometry so `scene.height` equals the target exactly, and wins over `plotHeightPx`; the panel never solves below 1 px, so an impossible target overflows instead of inverting |
 
 Use `widthPx` instead of probe-building to discover package gutters. The
 package owns those gutters and derives `scene.scales.columnWidth`. A pitch
@@ -220,6 +233,22 @@ for hit-testing instead of assuming the plot floor.
 usable lift reaches cloud base the coincident cloud and wing render as one
 stacked symbol; trains never need phasing apart. With no stride, each line
 keeps one marker at the selected hour.
+
+## Mark the launch wind window
+
+`launchWindows` takes the consumer's acceptable launch-wind arcs as
+meteorological FROM bearings in degrees; an arc may wrap 360
+(`{ fromDeg: 315, toDeg: 45 }` spans NW through NE), and any number of
+arcs union. It is a judgment parameter with no default: omit it and no
+marks draw. Given arcs, the scene tests each hour's surface p50 wind
+direction against the union and emits `scene.windWindow` — one
+`WindWindowMark { hourIndex, x, inWindow }` per hour, on a thin row the
+reference renderer draws between the plot floor and the hour labels.
+In-window hours draw as filled triangles and out-of-window hours as open
+circles (`meteo-gram-wind-window-in` / `-out`, themed by the matching
+`--meteo-gram-wind-window-*` tokens), so shape separates the states
+before colour does, and the key gains a `windWindow` entry. Direction is
+the only input: speed and gusts keep their own marks.
 
 The scene reads the forecast engine's `derived.*` values by default. `sinkRateMps`
 can recompute only the usable-lift series from published inputs for a
@@ -255,6 +284,14 @@ them:
   instant, comparing timestamps rather than strings. Key stored selections
   by `validAt` and re-ask after every rebuild: hour windows renumber, and
   an index-keyed pin silently moves.
+
+Each `scene.sampling` hour also carries two per-hour facts inspectors
+keep re-deriving: `cloudCapped` (the published usable-lift top reaches
+the published cloud base — null while the hour has no lift top, never
+false-by-default) and `capeCapped` (the CAPE strip's CIN-cap dimming —
+null when the model publishes no CAPE or no CIN, because absence is not
+"no cap"). Both are the same computations the strip cells consume, so an
+inspector's words and the drawn cells cannot disagree.
 
 ## Express a selection
 

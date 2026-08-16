@@ -1,6 +1,6 @@
 import { buoyancyShearRatio, surfaceToBoundaryLayerShearMps } from "../derive/index.js";
 import { bandPath, pointPath, sampledPath, short, type PlotPoint } from "./path.js";
-import type { Band, ResolvedHour } from "./resolve.js";
+import { capeCappedHour, type Band, type ResolvedHour } from "./resolve.js";
 import type { CapeClassThresholds, MetricStrip, OverlayName, StripCell } from "./types.js";
 
 export const METRIC_TOP = 20;
@@ -314,8 +314,7 @@ export function buildStripSpecs(args: {
                 : cape < capeClasses.severeJkg
                   ? "meteo-gram-cape-risk"
                   : "meteo-gram-cape-severe";
-          const capped =
-            hour.surface.cinJkg != null && hour.surface.cinJkg <= capeClasses.cappedCinJkg;
+          const capped = capeCappedHour(hour.surface, capeClasses.cappedCinJkg) === true;
           return {
             x: marginLeft + index * columnWidth,
             width: columnWidth,
