@@ -1,5 +1,22 @@
 # @azohra/meteo.forecast
 
+## 0.3.1
+
+### Patch Changes
+
+- 651d8a6: GOES observation documents name their measured quantity: the builder
+  publishes `quantity: "downwardShortwave"` on goes18-dsr documents and
+  `"aot"` on goes18-aod, and the packaged catalogue's observation entries
+  declare the same enum. The field is additive and optional on the
+  contract, so documents published before the tag still parse, with
+  `quantity` absent.
+- Updated dependencies [bc6dfff]
+- Updated dependencies [651d8a6]
+- Updated dependencies [b78200b]
+- Updated dependencies [a08b8fb]
+- Updated dependencies [73968f4]
+  - @azohra/meteo.briefing@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes

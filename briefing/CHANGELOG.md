@@ -1,5 +1,62 @@
 # @azohra/meteo.briefing
 
+## 0.4.0
+
+### Minor Changes
+
+- bc6dfff: New `./compare-board` subpath: one local day across a comparison's members as marks on one shared clock. `buildCompareBoardScene` places each member's thermal windows (clip flags carried), wind-ceiling exceedance spans, cap-timing span and break instant, and rain onset on an Intl-resolved local day axis as fractions plus the cited instants (bars widen by each finding's own step; the cited hours remain the authoritative values) beside launch, gust (reporting class carried), aloft, top, and storms cells, with each non-vote carrying its reason (quiet, abstained, or benched). All winds stay SI m/s. `renderCompareBoardSvg` is the minimal reference serializer, themed by the new `--meteo-board-*` token family.
+- 651d8a6: The transport exports `documentPaths`, the published tree's path
+  layout in one place: `manifest(model)`, `siteDocument(model, site)`,
+  `history(model, site, month)`, `historyIndex(model, site, month)`, and
+  the dataset-root `models()`, `sites()`, `siteContext()`, and `runs()`,
+  each returning the document's root-relative path. The transport and
+  history loaders now build every URL as `${baseUrl}/${documentPaths...}`
+  (byte-identical to the literals they replace), and consumers
+  addressing the tree where there is no URL at all (object-store keying,
+  e.g. a Cloudflare R2 bucket binding) key from the same functions. The
+  observation document and the catalogue's observation entries gain an
+  optional `quantity` (`"downwardShortwave" | "aot"`) naming the measured
+  quantity; absence means the document predates the tag, never that a
+  default applies. Schema artifacts regenerated to match.
+- b78200b: Add four meteogram scene options.
+  
+  `svgHeightPx` fits the whole chart to a known panel height: the scene
+  solves the plot-panel height from its own strip-stack and label geometry
+  so `scene.height` equals the target exactly, across every strip
+  permutation. It takes precedence over `plotHeightPx`, as `widthPx` does
+  over `columnWidthPx`, and the panel never solves below 1 px, so an
+  impossible target overflows instead of inverting.
+  
+  `HourSampling` gains two per-hour facts consumers kept re-deriving:
+  `cloudCapped` (the published usable-lift top reaches the published cloud
+  base; null while the hour has no lift top, never false-by-default) and
+  `capeCapped` (the CAPE strip's CIN-cap dimming; null when the model
+  publishes no CAPE or no CIN — the HRDPS family carries CAPE with no CIN,
+  and that absence must not read as "no cap"). Each is one computation the
+  strip cells and the sampling row both consume.
+  
+  `verticalVelocity` gains a suppression gate. Pass the model's
+  declared capabilities (`options.capabilities`, the `models.json`
+  catalogue entry's object) and the field is suppressed when fewer than 3
+  declared omega levels sit inside the altitude window; RDPS declares
+  omega at 850 and 700 hPa only, and a high site's floor prunes the lower
+  one. The scene records the suppression in `scene.suppressed`
+  (`{ key, reason }`), and `buildKeySpec` never advertises a suppressed
+  field because it reads only what was drawn.
+  
+  `launchWindows` marks each hour's surface wind against the consumer's
+  launch-wind arcs (meteorological FROM bearings; arcs may wrap 360, e.g.
+  `{ fromDeg: 315, toDeg: 45 }`). A judgment parameter with no default:
+  omit it and nothing draws. Given arcs, `scene.windWindow` carries one
+  `WindWindowMark { hourIndex, x, inWindow }` per hour, the reference
+  renderer draws a thin marker row above the hour labels (filled triangle
+  in, open circle out, so the states differ by shape as well as colour;
+  `meteo-gram-wind-window-in`/`-out`, themed by the new
+  `--meteo-gram-wind-window-*` tokens), and the key gains a `windWindow`
+  entry.
+- a08b8fb: New `derive` export `parcelAscent`: one virtual-temperature surface-parcel ascent — dry adiabatic to the LCL, moist pseudo-adiabatic above it — sampling buoyancy at exactly the published levels, with a TRIAL `entrainmentPerM` craft parameter (default 0, an undiluted parcel). `thermalIndexC` and `thermalIndexProfile` now ride this parcel: the sign convention is unchanged, but thermal-index values shift slightly in moist boundary layers because vapour now counts toward buoyancy, and levels above the LCL follow the moist branch instead of the dry adiabat. Dew points are additive-optional on the thermal-index entry points; omitted, the previous dry-adiabatic comparison is reproduced. New moisture helpers: `saturationVaporPressureHpa`, `mixingRatioKgKg`, `saturationMixingRatioKgKg`, `virtualTemperatureC`.
+- 73968f4: Add the sounding, a second chart family behind the `./sounding` subpath: one forecast hour drawn as a flyable-band vertical profile. `buildSoundingScene(profile, { validAt })` builds a renderer-independent scene — temperature and dew-point traces with one dot per published model level and straight, visibly-interpolated segments between them; a lifted-parcel trace with its LCL; p25–p75 ensemble envelopes; horizontal marks for boundary layer top, cloud base, usable lift top, and the launch; a wind-barb ladder; and pressure secondary ticks — returning null for an instant the profile does not publish and echoing `validAt` so a Meteogram selection can drive it. `renderSoundingSvg` serializes it deterministically under the `--meteo-sounding-*` token family, `buildSoundingKeySpec`/`renderSoundingKeySvg` derive the key from what the scene drew, and `readingAtAltitude` interpolates T/Td/wind/parcel at a pointer position.
+
 ## 0.3.0
 
 ### Minor Changes
