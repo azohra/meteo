@@ -4,6 +4,7 @@ import {
   buildSoundingScene,
   readingAtAltitude,
   renderSoundingSvg,
+  SOUNDING_SELF_LABELED,
   yForAltitude,
   type SoundingScene,
 } from "../src/sounding.js";
@@ -71,19 +72,33 @@ describe("sounding scene geometry", () => {
     expect(dewPoint!.samples).toHaveLength(6);
   });
 
-  it("carries the honesty statement: level count and the published column top", () => {
+  it("carries the honesty statement in plain words: level count and the published column top", () => {
     const scene = deterministicSounding();
-    expect(scene.capNote).toContain("5 published levels");
-    expect(scene.capNote).toContain("flyable-band");
+    expect(scene.capNote).toBe("5 published levels · top of column 2538 m");
+    // The doctrine words survive only in the accessible name and the docs.
+    expect(scene.capNote).not.toContain("flyable-band");
+    expect(scene.ariaLabel).toContain("flyable band");
     expect(scene.ariaLabel).toContain("not a full skew-T");
   });
 
-  it("places a wind barb at the surface and every published level, unthinned", () => {
+  it("separates environment from derivation: solid measured traces, only the parcel dashes", () => {
+    const scene = deterministicSounding();
+    const byKey = new Map(scene.traces.map((trace) => [trace.key, trace]));
+    expect(byKey.get("temperature")?.dash).toBeNull();
+    expect(byKey.get("dewPoint")?.dash).toBeNull();
+    expect(byKey.get("parcel")?.dash).not.toBeNull();
+    for (const trace of scene.traces) expect(trace.strokeWidth).toBe(2);
+  });
+
+  it("places a wind barb at the surface and every published level, anchored at the level's height", () => {
     const scene = deterministicSounding();
     expect(scene.barbs).toHaveLength(6);
     expect(scene.barbs[0].surface).toBe(true);
     const ys = scene.barbs.map((barb) => barb.y);
     expect([...ys].sort((a, b) => b - a)).toEqual(ys);
+    for (const barb of scene.barbs) {
+      expect(barb.y).toBeCloseTo(yForAltitude(scene, barb.altitudeM), 6);
+    }
   });
 
   it("marks the derived heights and the launch with labelled altitudes", () => {
@@ -215,17 +230,26 @@ describe("readingAtAltitude", () => {
 });
 
 describe("buildSoundingKeySpec", () => {
-  it("keys exactly what the scene drew, with the scene's own style facts", () => {
+  it("defaults every in-place-labeled family to self-labeled: the key holds the level dot alone here", () => {
     const scene = deterministicSounding();
     const spec = buildSoundingKeySpec(scene);
+    expect(spec.series).toEqual([]);
+    expect(spec.marks).toEqual([]);
+    expect(spec.lcl).toBeNull();
+    expect(spec.levelDot).toEqual({ id: "level-dot", label: "Model's published levels" });
+    expect(spec.band).toBeNull(); // deterministic profile: no envelopes drawn
+    expect(spec.calm).toBeNull(); // no calm level this hour
+  });
+
+  it("selfLabeled restores the full listing, with the scene's own style facts", () => {
+    const scene = deterministicSounding();
+    const spec = buildSoundingKeySpec(scene, { selfLabeled: SOUNDING_SELF_LABELED });
     expect(spec.series.map((entry) => entry.key)).toEqual(["temperature", "dewPoint", "parcel"]);
     for (const [index, entry] of spec.series.entries()) {
       expect(entry.className).toBe(scene.traces[index].className);
       expect(entry.dash).toBe(scene.traces[index].dash);
       expect(entry.strokeWidth).toBe(scene.traces[index].strokeWidth);
     }
-    expect(spec.levelDot).not.toBeNull();
-    expect(spec.band).toBeNull(); // deterministic profile: no envelopes drawn
     expect(spec.marks.map((entry) => entry.key)).toEqual([
       "boundaryLayerTop",
       "cloudBase",
@@ -238,7 +262,7 @@ describe("buildSoundingKeySpec", () => {
       validAt: HOUR,
       overlays: { parcel: false, dewPoint: false, cloudBase: false },
     });
-    const hiddenSpec = buildSoundingKeySpec(hidden!);
+    const hiddenSpec = buildSoundingKeySpec(hidden!, { selfLabeled: SOUNDING_SELF_LABELED });
     expect(hiddenSpec.series.map((entry) => entry.key)).toEqual(["temperature"]);
     expect(hiddenSpec.marks.some((entry) => entry.key === "cloudBase")).toBe(false);
     expect(hiddenSpec.lcl).toBeNull();
@@ -249,6 +273,20 @@ describe("buildSoundingKeySpec", () => {
       validAt: "2026-08-09T20:00:00Z",
     });
     expect(buildSoundingKeySpec(scene!).band).not.toBeNull();
+  });
+
+  it("adds the calm entry exactly when the ladder drew a calm level", () => {
+    const profile = ensembleLevelsProfile();
+    const calmHour = {
+      ...profile.hours[0],
+      surface: { ...profile.hours[0].surface, windSpeedMps: 0.3 },
+    };
+    const scene = buildSoundingScene(
+      { ...profile, hours: [calmHour] },
+      { validAt: "2026-08-09T20:00:00Z" },
+    );
+    expect(scene!.barbs[0].calm).toBe(true);
+    expect(buildSoundingKeySpec(scene!).calm).toEqual({ id: "calm", label: "Calm" });
   });
 });
 

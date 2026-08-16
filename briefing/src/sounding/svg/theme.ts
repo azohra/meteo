@@ -12,7 +12,7 @@ export const SOUNDING_TOKEN_DEFAULTS = {
   "text-tick": "10.5px",
   "text-trace-label": "10.5px",
   "text-mark-label": "10px",
-  "text-note": "9px",
+  "text-note": "9.5px",
   "text-unit": "9.5px",
   "text-key-label": "10.5px",
   surface: "#fffdf8",
@@ -22,7 +22,7 @@ export const SOUNDING_TOKEN_DEFAULTS = {
   "ink-mute": "#40565a",
   halo: "#fffdf8",
   temp: "#913b0c",
-  dewpoint: "#3a7d4f",
+  dewpoint: "#2e8b50",
   parcel: "#7b5ea7",
   lcl: "#7b5ea7",
   boundary: "#a46b10",
@@ -52,13 +52,14 @@ export const SOUNDING_MARK_TOKENS = {
   "meteo-sounding-mark-launch": "launch",
 } as const satisfies Readonly<Record<string, keyof typeof SOUNDING_TOKEN_DEFAULTS>>;
 
+/* Labels carry no per-series colour rule: text wears ink, and the trace's
+   line-chip or the mark's own line carries the hue beside it. */
 function traceRules(className: keyof typeof SOUNDING_TRACE_TOKENS): string {
   const token = SOUNDING_TRACE_TOKENS[className];
   return [
     `.${className} { stroke: ${v(token)}; }`,
     `.${className}-dot { fill: ${v(token)}; stroke: ${v("halo")}; }`,
     `.${className}-band { fill: ${v(token)}; opacity: 0.14; }`,
-    `.${className}-label { fill: ${v(token)}; }`,
   ].join("\n");
 }
 
@@ -67,7 +68,6 @@ function markRules(className: keyof typeof SOUNDING_MARK_TOKENS): string {
   return [
     `.${className} { stroke: ${v(token)}; }`,
     `.${className}-band { fill: ${v(token)}; opacity: 0.14; }`,
-    `.${className}-label { fill: ${v(token)}; }`,
   ].join("\n");
 }
 
@@ -78,8 +78,8 @@ export const DEFAULT_SOUNDING_STYLESHEET = `
 .meteo-sounding-gridline { stroke: ${v("rule")}; }
 .meteo-sounding-tick { fill: ${v("ink-mute")}; font-size: ${v("text-tick")}; }
 .meteo-sounding-unit { fill: ${v("ink-mute")}; font-size: ${v("text-unit")}; }
-.meteo-sounding-trace-label { font-size: ${v("text-trace-label")}; font-weight: 700; }
-.meteo-sounding-mark-label { font-size: ${v("text-mark-label")}; font-weight: 600; }
+.meteo-sounding-trace-label { fill: ${v("ink-soft")}; font-size: ${v("text-trace-label")}; font-weight: 600; }
+.meteo-sounding-mark-label { fill: ${v("ink-soft")}; font-size: ${v("text-mark-label")}; font-weight: 600; }
 .meteo-sounding-note { fill: ${v("ink-mute")}; font-size: ${v("text-note")}; font-style: italic; }
 .meteo-sounding-haloed-text { stroke: ${v("halo")}; paint-order: stroke; }
 ${traceRules("meteo-sounding-temp")}
@@ -90,7 +90,7 @@ ${markRules("meteo-sounding-mark-cloud-base")}
 ${markRules("meteo-sounding-mark-usable")}
 ${markRules("meteo-sounding-mark-launch")}
 .meteo-sounding-lcl { fill: ${v("lcl")}; stroke: ${v("halo")}; }
-.meteo-sounding-lcl-label { fill: ${v("lcl")}; font-size: ${v("text-mark-label")}; font-weight: 600; }
+.meteo-sounding-lcl-line { stroke: ${v("lcl")}; }
 .meteo-sounding-barb { stroke: ${v("wind")}; }
 .meteo-sounding-barb-fill { fill: ${v("wind")}; stroke: ${v("wind")}; }
 .meteo-sounding-key-label { fill: ${v("ink-mute")}; font-size: ${v("text-key-label")}; }

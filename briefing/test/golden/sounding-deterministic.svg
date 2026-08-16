@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 560" role="img" aria-label="Sounding for Dundee, model hrdps-continental, 2026-08-09 17:00 UTC: temperature, dew point, and a lifted parcel over the flyable band, with a wind-barb ladder and derived-height marks. Dots are the model's published levels; the profile ends at the published column top — this is not a full skew-T." class="meteo-sounding">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 560" role="img" aria-label="Sounding for Dundee, model hrdps-continental, 2026-08-09 17:00 UTC: temperature, dew point, and a lifted parcel over the flyable band, with a wind-barb ladder and derived-height marks. Dots are the model's published levels; the profile ends at the published column top — this is not a full skew-T." class="meteo-sounding">
 <style>
 .meteo-sounding text { font-family: var(--meteo-sounding-font, "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif); }
 .meteo-sounding .meteo-sounding-mono { font-family: var(--meteo-sounding-font-mono, "IBM Plex Mono", ui-monospace, monospace); }
@@ -6,113 +6,103 @@
 .meteo-sounding-gridline { stroke: var(--meteo-sounding-rule, #776956); }
 .meteo-sounding-tick { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-tick, 10.5px); }
 .meteo-sounding-unit { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-unit, 9.5px); }
-.meteo-sounding-trace-label { font-size: var(--meteo-sounding-text-trace-label, 10.5px); font-weight: 700; }
-.meteo-sounding-mark-label { font-size: var(--meteo-sounding-text-mark-label, 10px); font-weight: 600; }
-.meteo-sounding-note { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-note, 9px); font-style: italic; }
+.meteo-sounding-trace-label { fill: var(--meteo-sounding-ink-soft, #2f454a); font-size: var(--meteo-sounding-text-trace-label, 10.5px); font-weight: 600; }
+.meteo-sounding-mark-label { fill: var(--meteo-sounding-ink-soft, #2f454a); font-size: var(--meteo-sounding-text-mark-label, 10px); font-weight: 600; }
+.meteo-sounding-note { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-note, 9.5px); font-style: italic; }
 .meteo-sounding-haloed-text { stroke: var(--meteo-sounding-halo, #fffdf8); paint-order: stroke; }
 .meteo-sounding-temp { stroke: var(--meteo-sounding-temp, #913b0c); }
 .meteo-sounding-temp-dot { fill: var(--meteo-sounding-temp, #913b0c); stroke: var(--meteo-sounding-halo, #fffdf8); }
 .meteo-sounding-temp-band { fill: var(--meteo-sounding-temp, #913b0c); opacity: 0.14; }
-.meteo-sounding-temp-label { fill: var(--meteo-sounding-temp, #913b0c); }
-.meteo-sounding-dewpoint { stroke: var(--meteo-sounding-dewpoint, #3a7d4f); }
-.meteo-sounding-dewpoint-dot { fill: var(--meteo-sounding-dewpoint, #3a7d4f); stroke: var(--meteo-sounding-halo, #fffdf8); }
-.meteo-sounding-dewpoint-band { fill: var(--meteo-sounding-dewpoint, #3a7d4f); opacity: 0.14; }
-.meteo-sounding-dewpoint-label { fill: var(--meteo-sounding-dewpoint, #3a7d4f); }
+.meteo-sounding-dewpoint { stroke: var(--meteo-sounding-dewpoint, #2e8b50); }
+.meteo-sounding-dewpoint-dot { fill: var(--meteo-sounding-dewpoint, #2e8b50); stroke: var(--meteo-sounding-halo, #fffdf8); }
+.meteo-sounding-dewpoint-band { fill: var(--meteo-sounding-dewpoint, #2e8b50); opacity: 0.14; }
 .meteo-sounding-parcel { stroke: var(--meteo-sounding-parcel, #7b5ea7); }
 .meteo-sounding-parcel-dot { fill: var(--meteo-sounding-parcel, #7b5ea7); stroke: var(--meteo-sounding-halo, #fffdf8); }
 .meteo-sounding-parcel-band { fill: var(--meteo-sounding-parcel, #7b5ea7); opacity: 0.14; }
-.meteo-sounding-parcel-label { fill: var(--meteo-sounding-parcel, #7b5ea7); }
 .meteo-sounding-mark-boundary { stroke: var(--meteo-sounding-boundary, #a46b10); }
 .meteo-sounding-mark-boundary-band { fill: var(--meteo-sounding-boundary, #a46b10); opacity: 0.14; }
-.meteo-sounding-mark-boundary-label { fill: var(--meteo-sounding-boundary, #a46b10); }
 .meteo-sounding-mark-cloud-base { stroke: var(--meteo-sounding-cloud-base, #355963); }
 .meteo-sounding-mark-cloud-base-band { fill: var(--meteo-sounding-cloud-base, #355963); opacity: 0.14; }
-.meteo-sounding-mark-cloud-base-label { fill: var(--meteo-sounding-cloud-base, #355963); }
 .meteo-sounding-mark-usable { stroke: var(--meteo-sounding-usable, #2179ad); }
 .meteo-sounding-mark-usable-band { fill: var(--meteo-sounding-usable, #2179ad); opacity: 0.14; }
-.meteo-sounding-mark-usable-label { fill: var(--meteo-sounding-usable, #2179ad); }
 .meteo-sounding-mark-launch { stroke: var(--meteo-sounding-launch, #152529); }
 .meteo-sounding-mark-launch-band { fill: var(--meteo-sounding-launch, #152529); opacity: 0.14; }
-.meteo-sounding-mark-launch-label { fill: var(--meteo-sounding-launch, #152529); }
 .meteo-sounding-lcl { fill: var(--meteo-sounding-lcl, #7b5ea7); stroke: var(--meteo-sounding-halo, #fffdf8); }
-.meteo-sounding-lcl-label { fill: var(--meteo-sounding-lcl, #7b5ea7); font-size: var(--meteo-sounding-text-mark-label, 10px); font-weight: 600; }
+.meteo-sounding-lcl-line { stroke: var(--meteo-sounding-lcl, #7b5ea7); }
 .meteo-sounding-barb { stroke: var(--meteo-sounding-wind, #355963); }
 .meteo-sounding-barb-fill { fill: var(--meteo-sounding-wind, #355963); stroke: var(--meteo-sounding-wind, #355963); }
 .meteo-sounding-key-label { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-key-label, 10.5px); }
 .meteo-sounding-key-band { fill: var(--meteo-sounding-ink-mute, #40565a); opacity: 0.16; }
 .meteo-sounding-key-frame { fill: none; stroke: var(--meteo-sounding-rule, #776956); }
 </style>
-<rect x="62" y="20" width="318" height="490" class="meteo-sounding-frame"/>
-<line x1="62" y1="510" x2="380" y2="510" class="meteo-sounding-gridline" stroke-width="1" opacity="0.35"/>
-<text x="54" y="513" text-anchor="end" class="meteo-sounding-tick">1073m</text>
-<line x1="62" y1="412" x2="380" y2="412" class="meteo-sounding-gridline" stroke-width="1" opacity="0.35"/>
-<text x="54" y="415" text-anchor="end" class="meteo-sounding-tick">1617m</text>
-<line x1="62" y1="314" x2="380" y2="314" class="meteo-sounding-gridline" stroke-width="1" opacity="0.35"/>
-<text x="54" y="317" text-anchor="end" class="meteo-sounding-tick">2162m</text>
-<line x1="62" y1="216" x2="380" y2="216" class="meteo-sounding-gridline" stroke-width="1" opacity="0.35"/>
-<text x="54" y="219" text-anchor="end" class="meteo-sounding-tick">2707m</text>
-<line x1="62" y1="118" x2="380" y2="118" class="meteo-sounding-gridline" stroke-width="1" opacity="0.35"/>
-<text x="54" y="121" text-anchor="end" class="meteo-sounding-tick">3251m</text>
-<line x1="62" y1="20" x2="380" y2="20" class="meteo-sounding-gridline" stroke-width="1" opacity="0.35"/>
-<text x="54" y="23" text-anchor="end" class="meteo-sounding-tick">3796m</text>
-<text x="388" y="14" class="meteo-sounding-unit meteo-sounding-mono">hPa</text>
-<line x1="380" y1="476.45" x2="384" y2="476.45" class="meteo-sounding-gridline" stroke-width="1"/>
-<text x="388" y="479.45" class="meteo-sounding-tick meteo-sounding-mono">925</text>
-<line x1="380" y1="432.91" x2="384" y2="432.91" class="meteo-sounding-gridline" stroke-width="1"/>
-<text x="388" y="435.91" class="meteo-sounding-tick meteo-sounding-mono">900</text>
-<line x1="380" y1="388.29" x2="384" y2="388.29" class="meteo-sounding-gridline" stroke-width="1"/>
-<text x="388" y="391.29" class="meteo-sounding-tick meteo-sounding-mono">875</text>
-<line x1="380" y1="342.59" x2="384" y2="342.59" class="meteo-sounding-gridline" stroke-width="1"/>
-<text x="388" y="345.59" class="meteo-sounding-tick meteo-sounding-mono">850</text>
-<line x1="380" y1="246.15" x2="384" y2="246.15" class="meteo-sounding-gridline" stroke-width="1"/>
-<text x="388" y="249.15" class="meteo-sounding-tick meteo-sounding-mono">800</text>
-<line x1="62" x2="62" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.18"/>
-<text x="62" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">-5°</text>
-<line x1="125.6" x2="125.6" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.18"/>
-<text x="125.6" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">0°</text>
-<line x1="189.2" x2="189.2" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.18"/>
-<text x="189.2" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">5°</text>
-<line x1="252.8" x2="252.8" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.18"/>
-<text x="252.8" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">10°</text>
-<line x1="316.4" x2="316.4" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.18"/>
-<text x="316.4" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">15°</text>
-<line x1="380" x2="380" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.18"/>
-<text x="380" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">20°</text>
-<text x="221" y="540" text-anchor="middle" class="meteo-sounding-unit">°C</text>
-<text x="450" y="14" text-anchor="middle" class="meteo-sounding-unit meteo-sounding-mono">km/h</text>
-<line x1="62" x2="380" y1="310.74" y2="310.74" class="meteo-sounding-mark-boundary" stroke-width="1.3" stroke-dasharray="10 5"/>
-<line x1="62" x2="380" y1="154.22" y2="154.22" class="meteo-sounding-mark-cloud-base" stroke-width="1.3" stroke-dasharray="1 5"/>
-<line x1="62" x2="380" y1="283.76" y2="283.76" class="meteo-sounding-mark-usable" stroke-width="1.3"/>
-<line x1="62" x2="380" y1="435.78" y2="435.78" class="meteo-sounding-mark-launch" stroke-width="1.3" stroke-dasharray="2 4"/>
-<path d="M303.68 510L277.67 476.55L243.85 433.07L218.66 388.54L199.23 342.73L165.18 246.39" class="meteo-sounding-temp" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3"/>
-<circle cx="303.68" cy="510" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<circle cx="277.67" cy="476.55" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<circle cx="243.85" cy="433.07" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<circle cx="218.66" cy="388.54" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<circle cx="199.23" cy="342.73" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<circle cx="165.18" cy="246.39" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<text x="172.18" y="249.89" text-anchor="start" class="meteo-sounding-temp-label meteo-sounding-trace-label meteo-sounding-haloed-text" stroke-width="2.5">T</text>
-<path d="M195.56 510L187.36 476.55L178.98 433.07L179.23 388.54L185.24 342.73L162.63 246.39" class="meteo-sounding-dewpoint" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3"/>
-<circle cx="195.56" cy="510" r="2.6" class="meteo-sounding-dewpoint-dot" stroke-width="1"/>
-<circle cx="187.36" cy="476.55" r="2.6" class="meteo-sounding-dewpoint-dot" stroke-width="1"/>
-<circle cx="178.98" cy="433.07" r="2.6" class="meteo-sounding-dewpoint-dot" stroke-width="1"/>
-<circle cx="179.23" cy="388.54" r="2.6" class="meteo-sounding-dewpoint-dot" stroke-width="1"/>
-<circle cx="185.24" cy="342.73" r="2.6" class="meteo-sounding-dewpoint-dot" stroke-width="1"/>
-<circle cx="162.63" cy="246.39" r="2.6" class="meteo-sounding-dewpoint-dot" stroke-width="1"/>
-<text x="155.63" y="249.89" text-anchor="end" class="meteo-sounding-dewpoint-label meteo-sounding-trace-label meteo-sounding-haloed-text" stroke-width="2.5">Td</text>
-<path d="M303.68 510L280.51 476.55L250.38 433.07L219.52 388.54L187.79 342.73L142.69 246.39" class="meteo-sounding-parcel" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 3"/>
-<text x="142.69" y="238.39" text-anchor="middle" class="meteo-sounding-parcel-label meteo-sounding-trace-label meteo-sounding-haloed-text" stroke-width="2.5">parcel</text>
-<circle cx="177.04" cy="319.78" r="3.2" class="meteo-sounding-lcl" stroke-width="1.2"/>
-<text x="184.04" y="313.78" class="meteo-sounding-lcl-label meteo-sounding-haloed-text" stroke-width="2.5">LCL 2130 m</text>
-<text x="68" y="306.74" class="meteo-sounding-mark-boundary-label meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">BL top 2180 m</text>
-<text x="68" y="150.22" class="meteo-sounding-mark-cloud-base-label meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">cloud base 3050 m</text>
-<text x="68" y="279.76" class="meteo-sounding-mark-usable-label meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">usable lift 2330 m</text>
-<text x="68" y="431.78" class="meteo-sounding-mark-launch-label meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">launch 1485 m</text>
-<g transform="translate(450 510) rotate(223)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
-<g transform="translate(450 476.55) rotate(203)"><path d="M0 5 L0 -20 M0 -17.8 L4.5 -15.4" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
-<g transform="translate(450 433.07) rotate(218)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
-<g transform="translate(450 388.54) rotate(233)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6 M0 -15.2 L4.5 -12.8" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
-<g transform="translate(450 342.73) rotate(248)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6 M0 -15.2 L8 -10.8 M0 -10.4 L4.5 -8" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
-<g transform="translate(450 246.39) rotate(263)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6 M0 -15.2 L8 -10.8 M0 -10.4 L8 -6" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
-<text x="221" y="555" text-anchor="middle" class="meteo-sounding-note">flyable-band profile · 5 published levels · column ends at 2538 m</text>
+<rect x="48" y="20" width="292" height="490" class="meteo-sounding-frame"/>
+<line x1="48" y1="510" x2="340" y2="510" class="meteo-sounding-gridline" stroke-width="1" opacity="0.28"/>
+<text x="40" y="513" text-anchor="end" class="meteo-sounding-tick">1073m</text>
+<line x1="48" y1="412" x2="340" y2="412" class="meteo-sounding-gridline" stroke-width="1" opacity="0.28"/>
+<text x="40" y="415" text-anchor="end" class="meteo-sounding-tick">1617m</text>
+<line x1="48" y1="314" x2="340" y2="314" class="meteo-sounding-gridline" stroke-width="1" opacity="0.28"/>
+<text x="40" y="317" text-anchor="end" class="meteo-sounding-tick">2162m</text>
+<line x1="48" y1="216" x2="340" y2="216" class="meteo-sounding-gridline" stroke-width="1" opacity="0.28"/>
+<text x="40" y="219" text-anchor="end" class="meteo-sounding-tick">2707m</text>
+<line x1="48" y1="118" x2="340" y2="118" class="meteo-sounding-gridline" stroke-width="1" opacity="0.28"/>
+<text x="40" y="121" text-anchor="end" class="meteo-sounding-tick">3251m</text>
+<line x1="48" y1="20" x2="340" y2="20" class="meteo-sounding-gridline" stroke-width="1" opacity="0.28"/>
+<text x="40" y="23" text-anchor="end" class="meteo-sounding-tick">3796m</text>
+<text x="348" y="14" class="meteo-sounding-unit meteo-sounding-mono">hPa</text>
+<line x1="340" y1="476.45" x2="344" y2="476.45" class="meteo-sounding-gridline" stroke-width="1" opacity="0.6"/>
+<text x="348" y="479.45" class="meteo-sounding-tick meteo-sounding-mono" opacity="0.7">925</text>
+<line x1="340" y1="432.91" x2="344" y2="432.91" class="meteo-sounding-gridline" stroke-width="1" opacity="0.6"/>
+<text x="348" y="435.91" class="meteo-sounding-tick meteo-sounding-mono" opacity="0.7">900</text>
+<line x1="340" y1="388.29" x2="344" y2="388.29" class="meteo-sounding-gridline" stroke-width="1" opacity="0.6"/>
+<text x="348" y="391.29" class="meteo-sounding-tick meteo-sounding-mono" opacity="0.7">875</text>
+<line x1="340" y1="342.59" x2="344" y2="342.59" class="meteo-sounding-gridline" stroke-width="1" opacity="0.6"/>
+<text x="348" y="345.59" class="meteo-sounding-tick meteo-sounding-mono" opacity="0.7">850</text>
+<line x1="340" y1="246.15" x2="344" y2="246.15" class="meteo-sounding-gridline" stroke-width="1" opacity="0.6"/>
+<text x="348" y="249.15" class="meteo-sounding-tick meteo-sounding-mono" opacity="0.7">800</text>
+<line x1="106.4" x2="106.4" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.12"/>
+<text x="106.4" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">0°</text>
+<line x1="223.2" x2="223.2" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.12"/>
+<text x="223.2" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">10°</text>
+<line x1="340" x2="340" y1="20" y2="510" class="meteo-sounding-gridline" stroke-width="0.6" opacity="0.12"/>
+<text x="340" y="526" text-anchor="middle" class="meteo-sounding-tick meteo-sounding-mono">20°</text>
+<text x="194" y="540" text-anchor="middle" class="meteo-sounding-unit">°C</text>
+<text x="397" y="14" text-anchor="middle" class="meteo-sounding-unit meteo-sounding-mono">km/h</text>
+<line x1="48" x2="340" y1="310.74" y2="310.74" class="meteo-sounding-mark-boundary" stroke-width="1.3" stroke-dasharray="10 5"/>
+<line x1="48" x2="340" y1="154.22" y2="154.22" class="meteo-sounding-mark-cloud-base" stroke-width="1.3" stroke-dasharray="1 5"/>
+<line x1="48" x2="340" y1="283.76" y2="283.76" class="meteo-sounding-mark-usable" stroke-width="1.3"/>
+<line x1="48" x2="340" y1="435.78" y2="435.78" class="meteo-sounding-mark-launch" stroke-width="1.3" stroke-dasharray="2 4"/>
+<path d="M269.92 510L248.64 476.55L220.98 433.07L192.65 388.54L163.5 342.73L122.09 246.39" class="meteo-sounding-parcel" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4"/>
+<path d="M269.92 510L246.04 476.55L214.98 433.07L191.86 388.54L174.01 342.73L142.74 246.39" class="meteo-sounding-temp" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M170.64 510L163.11 476.55L155.41 433.07L155.65 388.54L161.17 342.73L140.4 246.39" class="meteo-sounding-dewpoint" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="269.92" cy="510" r="2.75" class="meteo-sounding-temp-dot" stroke-width="2"/>
+<circle cx="246.04" cy="476.55" r="2.75" class="meteo-sounding-temp-dot" stroke-width="2"/>
+<circle cx="214.98" cy="433.07" r="2.75" class="meteo-sounding-temp-dot" stroke-width="2"/>
+<circle cx="191.86" cy="388.54" r="2.75" class="meteo-sounding-temp-dot" stroke-width="2"/>
+<circle cx="174.01" cy="342.73" r="2.75" class="meteo-sounding-temp-dot" stroke-width="2"/>
+<circle cx="142.74" cy="246.39" r="2.75" class="meteo-sounding-temp-dot" stroke-width="2"/>
+<circle cx="170.64" cy="510" r="2.75" class="meteo-sounding-dewpoint-dot" stroke-width="2"/>
+<circle cx="163.11" cy="476.55" r="2.75" class="meteo-sounding-dewpoint-dot" stroke-width="2"/>
+<circle cx="155.41" cy="433.07" r="2.75" class="meteo-sounding-dewpoint-dot" stroke-width="2"/>
+<circle cx="155.65" cy="388.54" r="2.75" class="meteo-sounding-dewpoint-dot" stroke-width="2"/>
+<circle cx="161.17" cy="342.73" r="2.75" class="meteo-sounding-dewpoint-dot" stroke-width="2"/>
+<circle cx="140.4" cy="246.39" r="2.75" class="meteo-sounding-dewpoint-dot" stroke-width="2"/>
+<circle cx="153.63" cy="319.78" r="3.2" class="meteo-sounding-lcl" stroke-width="1.2"/>
+<text x="54" y="150.22" text-anchor="start" class="meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">cloud base 3050 m</text>
+<text x="334" y="279.76" text-anchor="end" class="meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">usable lift 2330 m</text>
+<text x="334" y="306.74" text-anchor="end" class="meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">BL top 2180 m</text>
+<text x="334" y="318.74" text-anchor="end" class="meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">LCL 2130 m</text>
+<text x="334" y="431.78" text-anchor="end" class="meteo-sounding-mark-label meteo-sounding-haloed-text" stroke-width="2.5">launch 1485 m</text>
+<line x1="252" x2="264" y1="485.5" y2="485.5" class="meteo-sounding-temp" stroke-width="2" stroke-linecap="round"/>
+<text x="268" y="489" text-anchor="start" class="meteo-sounding-trace-label meteo-sounding-haloed-text" stroke-width="2.5">Temperature</text>
+<line x1="176.05" x2="188.05" y1="498.5" y2="498.5" class="meteo-sounding-dewpoint" stroke-width="2" stroke-linecap="round"/>
+<text x="192.05" y="502" text-anchor="start" class="meteo-sounding-trace-label meteo-sounding-haloed-text" stroke-width="2.5">Dew point</text>
+<line x1="270.6" x2="282.6" y1="498.5" y2="498.5" class="meteo-sounding-parcel" stroke-width="2" stroke-linecap="round" stroke-dasharray="6 4"/>
+<text x="286.6" y="502" text-anchor="start" class="meteo-sounding-trace-label meteo-sounding-haloed-text" stroke-width="2.5">Parcel</text>
+<g transform="translate(397 510) rotate(223)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+<g transform="translate(397 476.55) rotate(203)"><path d="M0 5 L0 -20 M0 -17.8 L4.5 -15.4" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+<g transform="translate(397 433.07) rotate(218)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+<g transform="translate(397 388.54) rotate(233)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6 M0 -15.2 L4.5 -12.8" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+<g transform="translate(397 342.73) rotate(248)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6 M0 -15.2 L8 -10.8 M0 -10.4 L4.5 -8" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+<g transform="translate(397 246.39) rotate(263)"><path d="M0 5 L0 -20 M0 -20 L8 -15.6 M0 -15.2 L8 -10.8 M0 -10.4 L8 -6" class="meteo-sounding-barb" stroke-width="1.3" fill="none" stroke-linecap="round"/></g>
+<text x="194" y="555" text-anchor="middle" class="meteo-sounding-note">5 published levels · top of column 2538 m</text>
 </svg>

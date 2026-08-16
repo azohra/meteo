@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 603.2 64" role="img" aria-label="Sounding key: Temperature, Dew point, Lifted parcel, Published model level — count the dots, Boundary layer top, Cloud base, Usable lift top, Launch, LCL." class="meteo-sounding meteo-sounding-key">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 179.5 38" role="img" aria-label="Sounding key: Model's published levels." class="meteo-sounding meteo-sounding-key">
 <style>
 .meteo-sounding text { font-family: var(--meteo-sounding-font, "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif); }
 .meteo-sounding .meteo-sounding-mono { font-family: var(--meteo-sounding-font-mono, "IBM Plex Mono", ui-monospace, monospace); }
@@ -6,58 +6,35 @@
 .meteo-sounding-gridline { stroke: var(--meteo-sounding-rule, #776956); }
 .meteo-sounding-tick { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-tick, 10.5px); }
 .meteo-sounding-unit { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-unit, 9.5px); }
-.meteo-sounding-trace-label { font-size: var(--meteo-sounding-text-trace-label, 10.5px); font-weight: 700; }
-.meteo-sounding-mark-label { font-size: var(--meteo-sounding-text-mark-label, 10px); font-weight: 600; }
-.meteo-sounding-note { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-note, 9px); font-style: italic; }
+.meteo-sounding-trace-label { fill: var(--meteo-sounding-ink-soft, #2f454a); font-size: var(--meteo-sounding-text-trace-label, 10.5px); font-weight: 600; }
+.meteo-sounding-mark-label { fill: var(--meteo-sounding-ink-soft, #2f454a); font-size: var(--meteo-sounding-text-mark-label, 10px); font-weight: 600; }
+.meteo-sounding-note { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-note, 9.5px); font-style: italic; }
 .meteo-sounding-haloed-text { stroke: var(--meteo-sounding-halo, #fffdf8); paint-order: stroke; }
 .meteo-sounding-temp { stroke: var(--meteo-sounding-temp, #913b0c); }
 .meteo-sounding-temp-dot { fill: var(--meteo-sounding-temp, #913b0c); stroke: var(--meteo-sounding-halo, #fffdf8); }
 .meteo-sounding-temp-band { fill: var(--meteo-sounding-temp, #913b0c); opacity: 0.14; }
-.meteo-sounding-temp-label { fill: var(--meteo-sounding-temp, #913b0c); }
-.meteo-sounding-dewpoint { stroke: var(--meteo-sounding-dewpoint, #3a7d4f); }
-.meteo-sounding-dewpoint-dot { fill: var(--meteo-sounding-dewpoint, #3a7d4f); stroke: var(--meteo-sounding-halo, #fffdf8); }
-.meteo-sounding-dewpoint-band { fill: var(--meteo-sounding-dewpoint, #3a7d4f); opacity: 0.14; }
-.meteo-sounding-dewpoint-label { fill: var(--meteo-sounding-dewpoint, #3a7d4f); }
+.meteo-sounding-dewpoint { stroke: var(--meteo-sounding-dewpoint, #2e8b50); }
+.meteo-sounding-dewpoint-dot { fill: var(--meteo-sounding-dewpoint, #2e8b50); stroke: var(--meteo-sounding-halo, #fffdf8); }
+.meteo-sounding-dewpoint-band { fill: var(--meteo-sounding-dewpoint, #2e8b50); opacity: 0.14; }
 .meteo-sounding-parcel { stroke: var(--meteo-sounding-parcel, #7b5ea7); }
 .meteo-sounding-parcel-dot { fill: var(--meteo-sounding-parcel, #7b5ea7); stroke: var(--meteo-sounding-halo, #fffdf8); }
 .meteo-sounding-parcel-band { fill: var(--meteo-sounding-parcel, #7b5ea7); opacity: 0.14; }
-.meteo-sounding-parcel-label { fill: var(--meteo-sounding-parcel, #7b5ea7); }
 .meteo-sounding-mark-boundary { stroke: var(--meteo-sounding-boundary, #a46b10); }
 .meteo-sounding-mark-boundary-band { fill: var(--meteo-sounding-boundary, #a46b10); opacity: 0.14; }
-.meteo-sounding-mark-boundary-label { fill: var(--meteo-sounding-boundary, #a46b10); }
 .meteo-sounding-mark-cloud-base { stroke: var(--meteo-sounding-cloud-base, #355963); }
 .meteo-sounding-mark-cloud-base-band { fill: var(--meteo-sounding-cloud-base, #355963); opacity: 0.14; }
-.meteo-sounding-mark-cloud-base-label { fill: var(--meteo-sounding-cloud-base, #355963); }
 .meteo-sounding-mark-usable { stroke: var(--meteo-sounding-usable, #2179ad); }
 .meteo-sounding-mark-usable-band { fill: var(--meteo-sounding-usable, #2179ad); opacity: 0.14; }
-.meteo-sounding-mark-usable-label { fill: var(--meteo-sounding-usable, #2179ad); }
 .meteo-sounding-mark-launch { stroke: var(--meteo-sounding-launch, #152529); }
 .meteo-sounding-mark-launch-band { fill: var(--meteo-sounding-launch, #152529); opacity: 0.14; }
-.meteo-sounding-mark-launch-label { fill: var(--meteo-sounding-launch, #152529); }
 .meteo-sounding-lcl { fill: var(--meteo-sounding-lcl, #7b5ea7); stroke: var(--meteo-sounding-halo, #fffdf8); }
-.meteo-sounding-lcl-label { fill: var(--meteo-sounding-lcl, #7b5ea7); font-size: var(--meteo-sounding-text-mark-label, 10px); font-weight: 600; }
+.meteo-sounding-lcl-line { stroke: var(--meteo-sounding-lcl, #7b5ea7); }
 .meteo-sounding-barb { stroke: var(--meteo-sounding-wind, #355963); }
 .meteo-sounding-barb-fill { fill: var(--meteo-sounding-wind, #355963); stroke: var(--meteo-sounding-wind, #355963); }
 .meteo-sounding-key-label { fill: var(--meteo-sounding-ink-mute, #40565a); font-size: var(--meteo-sounding-text-key-label, 10.5px); }
 .meteo-sounding-key-band { fill: var(--meteo-sounding-ink-mute, #40565a); opacity: 0.16; }
 .meteo-sounding-key-frame { fill: none; stroke: var(--meteo-sounding-rule, #776956); }
 </style>
-<path d="M12 19 H38" class="meteo-sounding-temp" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 3"/>
-<text x="44" y="22.5" class="meteo-sounding-key-label">Temperature</text>
-<path d="M126 19 H152" class="meteo-sounding-dewpoint" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 3"/>
-<text x="158" y="22.5" class="meteo-sounding-key-label">Dew point</text>
-<path d="M229 19 H255" class="meteo-sounding-parcel" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="7 3"/>
-<text x="261" y="22.5" class="meteo-sounding-key-label">Lifted parcel</text>
-<circle cx="359.6" cy="19" r="2.6" class="meteo-sounding-temp-dot" stroke-width="1"/>
-<text x="370.2" y="22.5" class="meteo-sounding-key-label">Published model level — count the dots</text>
-<path d="M12 45 H38" class="meteo-sounding-mark-boundary" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="10 5"/>
-<text x="44" y="48.5" class="meteo-sounding-key-label">Boundary layer top</text>
-<path d="M167 45 H193" class="meteo-sounding-mark-cloud-base" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="1 5"/>
-<text x="199" y="48.5" class="meteo-sounding-key-label">Cloud base</text>
-<path d="M275 45 H301" class="meteo-sounding-mark-usable" fill="none" stroke-width="1.3" stroke-linecap="round"/>
-<text x="307" y="48.5" class="meteo-sounding-key-label">Usable lift top</text>
-<path d="M412 45 H438" class="meteo-sounding-mark-launch" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="2 4"/>
-<text x="444" y="48.5" class="meteo-sounding-key-label">Launch</text>
-<circle cx="501.6" cy="45" r="2.6" class="meteo-sounding-lcl" stroke-width="1"/>
-<text x="512.2" y="48.5" class="meteo-sounding-key-label">LCL</text>
+<circle cx="16.75" cy="19" r="2.75" class="meteo-sounding-temp-dot" stroke-width="1"/>
+<text x="27.5" y="22.5" class="meteo-sounding-key-label">Model's published levels</text>
 </svg>

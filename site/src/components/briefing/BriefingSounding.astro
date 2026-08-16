@@ -51,6 +51,11 @@ const soundingSvg = renderSoundingSvg(soundingScene, { idPrefix: "briefing-sound
 const keySvg = renderSoundingKeySvg(buildSoundingKeySpec(soundingScene), {
   idPrefix: "briefing-sounding-key",
 });
+// The key draws at its own compact width: the redesigned default key holds
+// only what the chart cannot label in place, so stretching it to the
+// figure would balloon a one-entry row.
+const keyWidth = Number(keySvg.match(/viewBox="0 0 ([\d.]+)/)?.[1]);
+if (!Number.isFinite(keyWidth)) throw new Error("Unable to read the sounding key width");
 
 const hourLabel = `${validAt.slice(11, 16)} UTC`;
 const cloudBase =
@@ -60,8 +65,9 @@ const lcl = soundingScene.lcl ?? fail("the sounding lost its LCL marker");
 const caption =
   `The tinted Meteogram column is ${hourLabel}, the day's strongest lift; the sounding opens that ` +
   `column vertically. ${soundingScene.levelCount} dots per trace are the model's published levels — ` +
-  `straight dashed segments between them are interpolation, never data — and the parcel's LCL at ` +
-  `${Math.round(lcl.altitudeM)} m sits close under the ${Math.round(cloudBase.altitudeM)} m cloud base.`;
+  `the straight segments between them are interpolation, never data — and the dashed parcel is the ` +
+  `one derived trace, its LCL at ${Math.round(lcl.altitudeM)} m sitting close under the ` +
+  `${Math.round(cloudBase.altitudeM)} m cloud base.`;
 ---
 
 <section class="bf-sounding" aria-labelledby="briefing-sounding-title">
@@ -70,10 +76,10 @@ const caption =
     <p class="bf-section-lede">
       A Meteogram answers the day; a sounding answers one hour.
       The <code>/sounding</code> subpath takes the same profile document
-      and a <code>validAt</code>, and draws that column as a flyable-band
-      vertical profile: temperature and dew point with one dot per
-      published model level, a lifted parcel with its LCL, the derived
-      heights, and a wind-barb ladder. <a href="/docs/briefing/sounding/">The sounding</a> is
+      and a <code>validAt</code>, and draws that column as a vertical
+      profile, capped where the model's published levels end: temperature
+      and dew point with one dot per published level, a lifted parcel with
+      its LCL, the derived heights, and a wind-barb ladder. <a href="/docs/briefing/sounding/">The sounding</a> is
       the reference for the subpath.
     </p>
 
@@ -104,7 +110,12 @@ const caption =
           </div>
           <div class="bf-sounding-profile" set:html={soundingSvg} />
         </div>
-        <div slot="legend" class="bf-sounding-key" set:html={keySvg} />
+        <div
+          slot="legend"
+          class="bf-sounding-key"
+          style={`--bf-sounding-key-width: ${keyWidth}px`}
+          set:html={keySvg}
+        />
       </Figure>
     </div>
   </div>
@@ -146,7 +157,7 @@ const caption =
 
   .bf-sounding-key :global(svg) {
     display: block;
-    max-inline-size: 100%;
+    inline-size: min(100%, var(--bf-sounding-key-width, 100%));
     block-size: auto;
   }
 

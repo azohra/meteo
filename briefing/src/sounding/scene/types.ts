@@ -88,14 +88,26 @@ export interface SoundingTrace {
    * the parcel trace, whose points are a derivation, not published levels.
    */
   samples: ReadonlyArray<SoundingTraceSample>;
-  /** Straight segments joining the samples: visible interpolation, token-distinct from the dots. Never a curve — nothing here smooths. */
+  /** Straight segments joining the samples: visible interpolation — never a curve, nothing here smooths. Environment traces draw solid; only the parcel (a derivation) dashes. */
   segmentPath: string;
   /** p25-p75 envelope polygon where the level values are ensemble; null otherwise. */
   bandPath: string | null;
   dash: string | null;
   strokeWidth: number;
-  /** Short trace label beside the topmost sample; anchors differ per trace so converging traces keep separated labels. */
-  label: { x: number; y: number; text: string; anchor: "start" | "middle" | "end" };
+  /**
+   * The trace's identity label — a plain word set in ink with a short
+   * line-chip in the trace's colour before it, placed at the surface end
+   * where the traces separate widest and collision-solved onto rows so
+   * coincident surface points stack instead of overprinting.
+   */
+  label: {
+    x: number;
+    y: number;
+    text: string;
+    anchor: "start" | "middle" | "end";
+    /** The colored line-chip before the word — the chip wears the trace hue; the text wears ink. */
+    chip: { x1: number; x2: number; y: number };
+  };
 }
 
 /** A horizontal altitude mark: a derived height or the launch. */
@@ -131,6 +143,26 @@ export interface SoundingLclMark {
   label: string;
 }
 
+/**
+ * One collision-solved altitude-mark label (the marks plus the LCL). Text
+ * is set in ink; only the mark's own line wears its hue. Each label
+ * anchors on the half of the plot farthest from the traces at its
+ * altitude, and a label nudged off its true y carries a leader tick back.
+ */
+export interface SoundingMarkLabel {
+  key: SoundingMark["key"] | "lcl";
+  /** The owning mark's class — it colours the leader tick, never the text. */
+  className: string;
+  text: string;
+  x: number;
+  y: number;
+  anchor: "start" | "end";
+  /** The mark's own y — where the label would sit unnudged. */
+  trueY: number;
+  /** Tick from the solved label back to the true y; null when the label sits within the nudge threshold. */
+  leader: { x: number; y1: number; y2: number } | null;
+}
+
 /** Vertical node stacks hit-testing interpolates against. */
 export interface SoundingSampling {
   temperatureC: ReadonlyArray<FieldNode>;
@@ -156,11 +188,13 @@ export interface SoundingScene {
   };
   traces: ReadonlyArray<SoundingTrace>;
   marks: ReadonlyArray<SoundingMark>;
+  /** The marks' and LCL's labels, collision-solved — renderers print these, never the marks' raw text. */
+  markLabels: ReadonlyArray<SoundingMarkLabel>;
   barbs: ReadonlyArray<SoundingBarb>;
   lcl: SoundingLclMark | null;
   /** Published levels inside the domain this hour — the count a reader can take off the dots. */
   levelCount: number;
-  /** The one-line statement of what the chart is not, printed under the plot: a flyable-band profile capped by the published column. */
+  /** The plain-words honesty line printed under the plot: how many levels the model published and where the column ends. */
   capNote: string;
   sampling: SoundingSampling;
 }

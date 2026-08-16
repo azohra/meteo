@@ -39,15 +39,17 @@ function escapeXml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-const DOT_RADIUS = 2.6;
+const DOT_RADIUS = 2.75;
+const DOT_HALO_WIDTH = 2;
 const LCL_RADIUS = 3.2;
+const CALM_RADIUS = 3.6;
 
 function renderBarb(barb: SoundingBarb, barbX: number): string {
   if (barb.calm) {
     return el("circle", {
       cx: short(barbX),
       cy: short(barb.y),
-      r: 3.6,
+      r: CALM_RADIUS,
       class: "meteo-sounding-barb",
       "stroke-width": 1.1,
       fill: "none",
@@ -107,7 +109,7 @@ export function renderSoundingSvg(
         y2: short(tick.y),
         class: "meteo-sounding-gridline",
         "stroke-width": 1,
-        opacity: 0.35,
+        opacity: 0.28,
       }),
       text(
         {
@@ -127,6 +129,8 @@ export function renderSoundingSvg(
       "hPa",
     ),
   );
+  // hPa ticks are secondary furniture — present, but muted below the
+  // altitude labels they shadow.
   for (const tick of scene.axes.pressureAltitude) {
     if (tick.pressureHpa === null) continue;
     body.push(
@@ -137,12 +141,14 @@ export function renderSoundingSvg(
         y2: short(tick.y),
         class: "meteo-sounding-gridline",
         "stroke-width": 1,
+        opacity: 0.6,
       }),
       text(
         {
           x: plotRight + 8,
           y: short(tick.y + 3),
           class: "meteo-sounding-tick meteo-sounding-mono",
+          opacity: 0.7,
         },
         String(tick.pressureHpa),
       ),
@@ -158,7 +164,7 @@ export function renderSoundingSvg(
         y2: plotBottom,
         class: "meteo-sounding-gridline",
         "stroke-width": 0.6,
-        opacity: 0.18,
+        opacity: 0.12,
       }),
       text(
         {
@@ -225,44 +231,37 @@ export function renderSoundingSvg(
       body.push(el("path", { d: trace.bandPath, class: `${trace.className}-band` }));
     }
   }
+  // Hierarchy in paint order too: the dashed parcel derivation sits under
+  // the solid environment traces, and every published-level dot sits over
+  // every line.
+  const tracePath = (trace: (typeof scene.traces)[number]) => {
+    if (trace.segmentPath === "") return;
+    const attrs: Record<string, AttrValue> = {
+      d: trace.segmentPath,
+      class: trace.className,
+      fill: "none",
+      "stroke-width": trace.strokeWidth,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round",
+    };
+    if (trace.dash) attrs["stroke-dasharray"] = trace.dash;
+    body.push(el("path", attrs));
+  };
+  for (const trace of scene.traces) if (trace.key === "parcel") tracePath(trace);
+  for (const trace of scene.traces) if (trace.key !== "parcel") tracePath(trace);
   for (const trace of scene.traces) {
-    if (trace.segmentPath !== "") {
-      const attrs: Record<string, AttrValue> = {
-        d: trace.segmentPath,
-        class: trace.className,
-        fill: "none",
-        "stroke-width": trace.strokeWidth,
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-      };
-      if (trace.dash) attrs["stroke-dasharray"] = trace.dash;
-      body.push(el("path", attrs));
+    if (trace.key === "parcel") continue;
+    for (const sample of trace.samples) {
+      body.push(
+        el("circle", {
+          cx: short(sample.x),
+          cy: short(sample.y),
+          r: DOT_RADIUS,
+          class: `${trace.className}-dot`,
+          "stroke-width": DOT_HALO_WIDTH,
+        }),
+      );
     }
-    if (trace.key !== "parcel") {
-      for (const sample of trace.samples) {
-        body.push(
-          el("circle", {
-            cx: short(sample.x),
-            cy: short(sample.y),
-            r: DOT_RADIUS,
-            class: `${trace.className}-dot`,
-            "stroke-width": 1,
-          }),
-        );
-      }
-    }
-    body.push(
-      text(
-        {
-          x: short(trace.label.x),
-          y: short(trace.label.y),
-          "text-anchor": trace.label.anchor,
-          class: `${trace.className}-label meteo-sounding-trace-label meteo-sounding-haloed-text`,
-          "stroke-width": 2.5,
-        },
-        trace.label.text,
-      ),
-    );
   }
 
   if (scene.lcl) {
@@ -274,32 +273,63 @@ export function renderSoundingSvg(
         class: "meteo-sounding-lcl",
         "stroke-width": 1.2,
       }),
+    );
+  }
+
+  // Mark and LCL labels: collision-solved by the scene, printed in ink
+  // over the traces; a nudged label carries a leader tick — in the mark's
+  // own hue — back to the true height.
+  for (const label of scene.markLabels) {
+    if (label.leader) {
+      body.push(
+        el("line", {
+          x1: short(label.leader.x),
+          x2: short(label.leader.x),
+          y1: short(label.leader.y1),
+          y2: short(label.leader.y2),
+          class: label.className,
+          "stroke-width": 1,
+        }),
+      );
+    }
+    body.push(
       text(
         {
-          // Above-right of the marker: the LCL often sits at the cloud-base
-          // line, whose label hangs just above it at the plot's left edge.
-          x: short(scene.lcl.x + 7),
-          y: short(scene.lcl.y - 6),
-          class: "meteo-sounding-lcl-label meteo-sounding-haloed-text",
+          x: short(label.x),
+          y: short(label.y),
+          "text-anchor": label.anchor,
+          class: "meteo-sounding-mark-label meteo-sounding-haloed-text",
           "stroke-width": 2.5,
         },
-        scene.lcl.label,
+        label.text,
       ),
     );
   }
 
-  // Mark labels draw over the traces, not under them, so a trace crossing
-  // the plot's left edge can never overpaint a printed altitude.
-  for (const mark of scene.marks) {
+  // Trace identity labels: the chip wears the trace's colour and real
+  // dash; the word wears ink.
+  for (const trace of scene.traces) {
+    const chipAttrs: Record<string, AttrValue> = {
+      x1: short(trace.label.chip.x1),
+      x2: short(trace.label.chip.x2),
+      y1: short(trace.label.chip.y),
+      y2: short(trace.label.chip.y),
+      class: trace.className,
+      "stroke-width": trace.strokeWidth,
+      "stroke-linecap": "round",
+    };
+    if (trace.dash) chipAttrs["stroke-dasharray"] = trace.dash;
     body.push(
+      el("line", chipAttrs),
       text(
         {
-          x: plotLeft + 6,
-          y: short(mark.y - 4),
-          class: `${mark.className}-label meteo-sounding-mark-label meteo-sounding-haloed-text`,
+          x: short(trace.label.x),
+          y: short(trace.label.y),
+          "text-anchor": trace.label.anchor,
+          class: "meteo-sounding-trace-label meteo-sounding-haloed-text",
           "stroke-width": 2.5,
         },
-        mark.label,
+        trace.label.text,
       ),
     );
   }
@@ -343,6 +373,7 @@ const KEY_ROW_H = 26;
 type KeyRowItem =
   | { kind: "line"; label: string; className: string; dash: string | null; strokeWidth: number }
   | { kind: "dot"; label: string; className: string }
+  | { kind: "calm"; label: string; className: string }
   | { kind: "chip"; label: string; className: string };
 
 function keyRowItems(spec: SoundingKeySpec): KeyRowItem[][] {
@@ -362,6 +393,8 @@ function keyRowItems(spec: SoundingKeySpec): KeyRowItem[][] {
   }
   if (spec.band)
     traces.push({ kind: "chip", label: spec.band.label, className: "meteo-sounding-key-band" });
+  if (spec.calm)
+    traces.push({ kind: "calm", label: spec.calm.label, className: "meteo-sounding-barb" });
   const marks: KeyRowItem[] = spec.marks.map((entry) => ({
     kind: "line" as const,
     label: entry.label,
@@ -386,10 +419,14 @@ export function renderSoundingKeySvg(
   const stylesheet =
     options.stylesheet === undefined ? DEFAULT_SOUNDING_STYLESHEET : options.stylesheet;
   const rows = keyRowItems(spec);
+  const swatchWidth = (item: KeyRowItem) => {
+    if (item.kind === "line") return KEY_SWATCH_W;
+    if (item.kind === "chip") return KEY_CHIP_W;
+    if (item.kind === "calm") return 2 * CALM_RADIUS + 4;
+    return 2 * DOT_RADIUS + 4;
+  };
   const itemWidth = (item: KeyRowItem) =>
-    (item.kind === "line" ? KEY_SWATCH_W : item.kind === "chip" ? KEY_CHIP_W : 2 * DOT_RADIUS + 4) +
-    KEY_LABEL_GAP +
-    Math.ceil(item.label.length * KEY_LABEL_CHAR_PX);
+    swatchWidth(item) + KEY_LABEL_GAP + Math.ceil(item.label.length * KEY_LABEL_CHAR_PX);
   const rowWidth = (row: KeyRowItem[]) =>
     row.reduce((sum, item) => sum + itemWidth(item), 0) +
     KEY_ENTRY_GAP * Math.max(row.length - 1, 0);
@@ -425,6 +462,18 @@ export function renderSoundingKeySvg(
           }),
         );
         x += 2 * DOT_RADIUS + 4;
+      } else if (item.kind === "calm") {
+        body.push(
+          el("circle", {
+            cx: short(x + CALM_RADIUS + 2),
+            cy: short(swatchY),
+            r: CALM_RADIUS,
+            class: item.className,
+            "stroke-width": 1.1,
+            fill: "none",
+          }),
+        );
+        x += 2 * CALM_RADIUS + 4;
       } else {
         body.push(
           el("rect", {

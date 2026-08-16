@@ -7,11 +7,13 @@ import { short } from "../../scene/path.js";
 import { bandOf, resolveHour, type Band, type ResolvedHour } from "../../scene/resolve.js";
 import type { PressureAltitudeTick } from "../../scene/types.js";
 import { M_TO_FT } from "../../scene/scene.js";
+import { solveLabelRows, solveVerticalLabels } from "./labels.js";
 import {
   DEFAULT_SOUNDING_OVERLAYS,
   type SoundingAltitudeTick,
   type SoundingBarb,
   type SoundingMark,
+  type SoundingMarkLabel,
   type SoundingOverlays,
   type SoundingScene,
   type SoundingSceneOptions,
@@ -20,15 +22,27 @@ import {
   type SoundingTraceSample,
 } from "./types.js";
 
-const DEFAULT_WIDTH = 480;
+const DEFAULT_WIDTH = 420;
 const DEFAULT_HEIGHT = 560;
-const MARGIN_LEFT = 62;
-const PRESSURE_GUTTER = 40;
-const BARB_GUTTER = 60;
+const MARGIN_LEFT = 48;
+const PRESSURE_GUTTER = 34;
+const BARB_GUTTER = 46;
 const MARGIN_TOP = 20;
 const AXIS_ROW = 34;
 const NOTE_ROW = 16;
 const TEMPERATURE_PAD_C = 2;
+
+/* Trace identity labels: a colored line-chip, then the word in ink. */
+const TRACE_CHIP_W = 12;
+const TRACE_CHIP_GAP = 4;
+const TRACE_LABEL_CHAR_PX = 6.1;
+const TRACE_LABEL_ROW_H = 13;
+const TRACE_LABEL_BASE_OFFSET = 8;
+
+/* Mark labels: stacked apart when marks coincide, leader tick when nudged. */
+const MARK_LABEL_MIN_GAP = 12;
+const MARK_LABEL_EDGE_PAD = 6;
+const MARK_LEADER_EDGE_PAD = 2.5;
 
 interface TraceBands {
   temperature: Band;
@@ -204,17 +218,6 @@ export function buildSoundingScene(
     plotLeft + plotWidth * ((temperatureC - temperatureMinC) / (temperatureMaxC - temperatureMinC));
 
   const traces: SoundingTrace[] = [];
-  // Traces can converge at the column top (saturation aloft), so each
-  // label leaves the shared point in its own direction.
-  const labelAt = (
-    key: SoundingTrace["key"],
-    top: { x: number; y: number },
-    text: string,
-  ): SoundingTrace["label"] => {
-    if (key === "temperature") return { x: top.x + 7, y: top.y + 3.5, text, anchor: "start" };
-    if (key === "dewPoint") return { x: top.x - 7, y: top.y + 3.5, text, anchor: "end" };
-    return { x: top.x, y: top.y - 8, text, anchor: "middle" };
-  };
   const traceOf = (
     key: SoundingTrace["key"],
     className: string,
@@ -231,7 +234,6 @@ export function buildSoundingScene(
       y: y(node.altitudeM),
       surface: node.surface,
     }));
-    const top = samples[samples.length - 1];
     return {
       key,
       className,
@@ -242,12 +244,20 @@ export function buildSoundingScene(
       ),
       dash,
       strokeWidth,
-      label: labelAt(key, top, labelText),
+      // Placeholder; every trace label is placed at once by the row solver
+      // below, after the full trace set is known.
+      label: {
+        x: 0,
+        y: 0,
+        text: labelText,
+        anchor: "start",
+        chip: { x1: 0, x2: 0, y: 0 },
+      },
     };
   };
 
   if (overlays.temperature) {
-    const trace = traceOf("temperature", "meteo-sounding-temp", "T", "4 3", 1.6, [
+    const trace = traceOf("temperature", "meteo-sounding-temp", "Temperature", null, 2, [
       {
         altitudeM: floorM,
         valueC: hour.surface.temperatureC,
@@ -264,7 +274,7 @@ export function buildSoundingScene(
     if (trace) traces.push(trace);
   }
   if (overlays.dewPoint) {
-    const trace = traceOf("dewPoint", "meteo-sounding-dewpoint", "Td", "4 3", 1.6, [
+    const trace = traceOf("dewPoint", "meteo-sounding-dewpoint", "Dew point", null, 2, [
       {
         altitudeM: floorM,
         valueC: hour.surface.dewPointC,
@@ -294,9 +304,9 @@ export function buildSoundingScene(
     const trace = traceOf(
       "parcel",
       "meteo-sounding-parcel",
-      "parcel",
-      "7 3",
-      1.8,
+      "Parcel",
+      "6 4",
+      2,
       parcelNodes.map((node, index) => ({
         altitudeM: node.altitudeM,
         valueC: node.value,
@@ -305,6 +315,54 @@ export function buildSoundingScene(
       })),
     );
     if (trace) traces.push(trace);
+  }
+
+  // Identity labels sit at the surface end, where the traces separate
+  // widest: each wants the spot just beside its own trace at the base
+  // row's height, and the row solver climbs a colliding label one row up —
+  // the parcel starts on the temperature trace, so those two always stack.
+  {
+    const plotBottom = plotTop + plotHeight;
+    const minX = plotLeft + 4;
+    const maxX = plotLeft + plotWidth - 4;
+    // The trace's x where the base row sits, interpolated on its own
+    // straight segments, so the label hugs the line rather than the
+    // surface dot when the trace kinks off the surface.
+    const traceXAtY = (samples: ReadonlyArray<SoundingTraceSample>, yPx: number): number => {
+      for (let index = 0; index + 1 < samples.length; index += 1) {
+        const below = samples[index];
+        const above = samples[index + 1];
+        if (yPx <= below.y && yPx >= above.y) {
+          const t = below.y === above.y ? 0 : (below.y - yPx) / (below.y - above.y);
+          return below.x + t * (above.x - below.x);
+        }
+      }
+      return yPx > samples[0].y ? samples[0].x : samples[samples.length - 1].x;
+    };
+    const chipRowY = plotBottom - TRACE_LABEL_BASE_OFFSET - 3.5;
+    const placements = solveLabelRows(
+      traces.map((trace) => {
+        const widthPx =
+          TRACE_CHIP_W + TRACE_CHIP_GAP + Math.ceil(trace.label.text.length * TRACE_LABEL_CHAR_PX);
+        // Just right of the trace; the solver's clamp slides an edge label
+        // back into the lane and its rows keep any resulting collisions
+        // stacked instead of overprinted.
+        return { id: trace.key, naturalX: traceXAtY(trace.samples, chipRowY) + 8, widthPx };
+      }),
+      { minX, maxX, gapPx: 10 },
+    );
+    for (const placement of placements) {
+      const trace = traces.find((entry) => entry.key === placement.id);
+      if (trace === undefined) continue;
+      const labelY = plotBottom - TRACE_LABEL_BASE_OFFSET - placement.row * TRACE_LABEL_ROW_H;
+      trace.label = {
+        x: placement.x + TRACE_CHIP_W + TRACE_CHIP_GAP,
+        y: labelY,
+        text: trace.label.text,
+        anchor: "start",
+        chip: { x1: placement.x, x2: placement.x + TRACE_CHIP_W, y: labelY - 3.5 },
+      };
+    }
   }
 
   const lcl =
@@ -371,6 +429,95 @@ export function buildSoundingScene(
     markOf("launch", "meteo-sounding-mark-launch", "launch", "2 4", launchElevationM, null);
   }
 
+  const temperatureNodes: FieldNode[] = [
+    { altitudeM: floorM, value: hour.surface.temperatureC },
+    ...levels.map((level) => ({ altitudeM: level.heightM, value: level.temperatureC })),
+  ];
+  const dewPointNodes: FieldNode[] = [
+    { altitudeM: floorM, value: hour.surface.dewPointC },
+    ...levels.map((level) => ({ altitudeM: level.heightM, value: level.dewPointC })),
+  ];
+
+  // Mark and LCL labels: each anchors on the half of the plot farthest
+  // from the traces at its altitude, and within each side the vertical
+  // solver stacks coincident labels apart, leaving a leader tick back to
+  // the true height when a label had to move.
+  const markLabels: SoundingMarkLabel[] = [];
+  {
+    const plotBottom = plotTop + plotHeight;
+    const plotRight = plotLeft + plotWidth;
+    const entries: Array<{
+      key: SoundingMarkLabel["key"];
+      className: string;
+      text: string;
+      lineY: number;
+      altitudeM: number;
+    }> = [
+      ...marks.map((mark) => ({
+        key: mark.key as SoundingMarkLabel["key"],
+        className: mark.className,
+        text: mark.label,
+        lineY: mark.y,
+        altitudeM: mark.altitudeM,
+      })),
+      ...(lcl !== null
+        ? [
+            {
+              key: "lcl" as const,
+              // The line class, not the marker's: the leader tick strokes
+              // in the LCL hue where the marker class paints halo strokes.
+              className: "meteo-sounding-lcl-line",
+              text: lcl.label,
+              lineY: lcl.y,
+              altitudeM: lcl.altitudeM,
+            },
+          ]
+        : []),
+    ];
+    const sideOf = (altitudeM: number): "left" | "right" => {
+      const xs = [temperatureNodes, dewPointNodes, parcelNodes]
+        .map((nodes) => interpolateVertical(nodes, altitudeM))
+        .filter((value): value is number => value !== null)
+        .map((value) => x(value));
+      if (xs.length === 0) return "left";
+      const leftFree = Math.min(...xs) - plotLeft;
+      const rightFree = plotRight - Math.max(...xs);
+      return rightFree > leftFree ? "right" : "left";
+    };
+    for (const side of ["left", "right"] as const) {
+      const group = entries.filter((entry) => sideOf(entry.altitudeM) === side);
+      if (group.length === 0) continue;
+      const placements = solveVerticalLabels(
+        // The natural baseline hangs just above the mark's own line.
+        group.map((entry) => ({ id: entry.key, trueY: entry.lineY - 4 })),
+        { minGapPx: MARK_LABEL_MIN_GAP, topY: plotTop + 12, bottomY: plotBottom - 6 },
+      );
+      for (const placement of placements) {
+        const entry = group.find((candidate) => candidate.key === placement.id);
+        if (entry === undefined) continue;
+        markLabels.push({
+          key: entry.key,
+          className: entry.className,
+          text: entry.text,
+          x: side === "left" ? plotLeft + MARK_LABEL_EDGE_PAD : plotRight - MARK_LABEL_EDGE_PAD,
+          y: placement.y,
+          anchor: side === "left" ? "start" : "end",
+          trueY: entry.lineY,
+          leader: placement.leader
+            ? {
+                x:
+                  side === "left"
+                    ? plotLeft + MARK_LEADER_EDGE_PAD
+                    : plotRight - MARK_LEADER_EDGE_PAD,
+                y1: entry.lineY,
+                y2: placement.y - 3.5,
+              }
+            : null,
+        });
+      }
+    }
+  }
+
   const barbs: SoundingBarb[] = [];
   if (overlays.wind) {
     const place = (altitudeM: number, speedMps: number, directionDeg: number, surface: boolean) => {
@@ -430,17 +577,17 @@ export function buildSoundingScene(
     )
     .map((entry) => ({ ...entry, y: y(entry.altitudeM) }));
 
-  const temperatureStep = temperatureMaxC - temperatureMinC > 45 ? 10 : 5;
+  // Temperature furniture stays recessive: gridlines every 10° only.
   const temperatureTicks: SoundingTemperatureTick[] = [];
-  for (let t = temperatureMinC; t <= temperatureMaxC; t += temperatureStep) {
+  for (let t = Math.ceil(temperatureMinC / 10) * 10; t <= temperatureMaxC; t += 10) {
     temperatureTicks.push({ temperatureC: t, x: x(t), label: `${t}°` });
   }
 
   const columnTopM = levels.length > 0 ? levels[levels.length - 1].heightM : floorM;
   const capNote =
     levels.length > 0
-      ? `flyable-band profile · ${levelCount} published levels · column ends at ${Math.round(columnTopM)} m`
-      : "flyable-band profile · no published levels this hour — surface only";
+      ? `${levelCount} published levels · top of column ${Math.round(columnTopM)} m`
+      : "no published levels this hour — surface only";
 
   const surfaceWind = windToComponents(hour.surface.windSpeedMps, hour.surface.windDirectionDeg);
   const levelWinds = levels.map((level) =>
@@ -470,19 +617,14 @@ export function buildSoundingScene(
     axes: { altitude: altitudeTicks, pressureAltitude, temperature: temperatureTicks },
     traces,
     marks,
+    markLabels,
     barbs,
     lcl,
     levelCount,
     capNote,
     sampling: {
-      temperatureC: [
-        { altitudeM: floorM, value: hour.surface.temperatureC },
-        ...levels.map((level) => ({ altitudeM: level.heightM, value: level.temperatureC })),
-      ],
-      dewPointC: [
-        { altitudeM: floorM, value: hour.surface.dewPointC },
-        ...levels.map((level) => ({ altitudeM: level.heightM, value: level.dewPointC })),
-      ],
+      temperatureC: temperatureNodes,
+      dewPointC: dewPointNodes,
       windU: [
         { altitudeM: floorM, value: surfaceWind.uMps },
         ...levels.map((level, index) => ({

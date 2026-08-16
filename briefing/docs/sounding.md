@@ -92,12 +92,13 @@ carries:
 
 - **Every published level draws as a dot** on the temperature and
   dew-point traces (plus one dot for the surface sample). The reader can
-  count the model's levels directly off the chart, and the note under
-  the plot states the count and where the column ends.
-- **Segments between dots are straight and dashed** — visibly
-  interpolation, token-distinct from the dots. Nothing smooths, and no
-  curve suggests structure between levels that the model never
-  published.
+  count the model's levels directly off the chart, and the plain note
+  under the plot states the count and where the column ends
+  (`5 published levels · top of column 2538 m`).
+- **Segments between dots are straight** — never a curve, so nothing
+  suggests structure between levels that the model never published. The
+  measured environment draws solid; only the parcel trace dashes,
+  because it alone is a derivation rather than a published value.
 - **A 5-level ensemble column renders honestly**: five dots, four
   straight segments, and p25–p75 envelopes behind the traces and behind
   each ensemble-valued mark. The envelope is the members' spread at the
@@ -134,11 +135,21 @@ and `xForTemperature` expose the scales for consumer overlays.
 `renderSoundingSvg(scene, { idPrefix })` emits a self-contained SVG
 document: stable ordering, two-decimal geometry, identical bytes for
 identical input. Give each sounding on a page its own `idPrefix`.
-`buildSoundingKeySpec(scene)` reports only what the scene actually drew
-— traces with their real dash and stroke width, the published-level dot,
-the envelope note only when a band drew, the marks, the LCL — and
-`renderSoundingKeySvg` serializes it with the same stylesheet. Rebuild
-the key from the final scene after every overlay change.
+
+The chart labels itself in place: each trace carries its name in ink
+behind a short line-chip in the trace's colour at the surface end, and
+each altitude mark (and the LCL) prints its name and height beside its
+own line, anchored on the half of the plot farthest from the traces at
+that altitude. Both label sets are collision-solved deterministically —
+coincident marks stack a minimum gap apart, and a label nudged off its
+true height carries a leader tick back to it — so `buildSoundingKeySpec(scene)`
+keys only what the plot cannot say for itself: the published-level dot,
+the ensemble envelope when one drew, and the calm circle when the wind
+ladder drew a calm level. That is at most three entries. Pass
+`selfLabeled` (the exported `SOUNDING_SELF_LABELED` is the complete set)
+to opt the self-labeling traces, marks, and LCL back into the key, and
+`renderSoundingKeySvg` serializes the spec with the same stylesheet.
+Rebuild the key from the final scene after every overlay change.
 
 ## Theming
 
@@ -151,6 +162,7 @@ same colour on both charts — but the sounding reads only its own family;
 override tokens on an ancestor, exactly as the
 [SVG renderer page](/docs/briefing/svg/) describes for the Meteogram,
 and pass `stylesheet: null` to supply all class styling yourself. Colour
-is never the only encoding: traces differ by dash and by their printed
-`T` / `Td` / `parcel` labels, marks by dash and label, and the dots and
-note survive any palette.
+is never the only encoding: the solid environment traces differ from the
+dashed parcel derivation, every trace prints its name in ink beside a
+line-chip, marks differ by dash and printed label, and the dots and note
+survive any palette.
