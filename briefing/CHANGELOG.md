@@ -1,5 +1,17 @@
 # @azohra/meteo.briefing
 
+## 0.5.0
+
+### Minor Changes
+
+- f2f9fb8: One schemaVersion constant per document family. The shared `SCHEMA_VERSION` export is gone: manifests pin `MANIFEST_SCHEMA_VERSION`, the model catalogue `MODEL_CATALOGUE_SCHEMA_VERSION`, the run index `RUNS_INDEX_SCHEMA_VERSION`, smoke documents `SMOKE_SCHEMA_VERSION`, and observation documents `OBSERVATION_SCHEMA_VERSION`. Every value is still 1, so no published document changes — only the import name moves. A breaking change to one family now bumps its own constant without invalidating readers of the others.
+- f2f9fb8: An invalid `DocumentMiss` now carries `declaredSchemaVersion` when the refused bytes are well-formed JSON with a numeric `schemaVersion`, so a reader can tell "published by a newer writer — upgrade the package" apart from corruption. The Compatibility page gains the rollout order for a schemaVersion bump: move the writer first, readers promptly after.
+- a217302: `pathYAtX` on the scene subpaths: y of a drawn series line at an arbitrary x, inverting the exact cubic the serializer strokes (the control-point formula is now defined in one place) with `pointPath`'s null-splitting. Consumers drawing continuation stubs or cursor anchors against a series no longer need to mirror the curve math.
+
+### Patch Changes
+
+- adfc251: `TransportInit` gains an optional `body` for writing clients (a publisher's PUT); readers never set it.
+
 ## 0.4.1
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @azohra/meteo.forecast
 
+## 0.4.0
+
+### Minor Changes
+
+- adfc251: New `meteo forecast publish --model SLUG [--data PATH]` moves the publication protocol into the engine. The verb skips when the build wrote nothing, and refuses to publish backwards (an unreachable bucket throws during that check rather than passing it). Upload order is history archives, then site documents, then the manifest (the publication's commit point), with closed month archives on the immutable TTL; `runs.json` is then regenerated and uploaded from the published manifests. Every object key comes from `documentPaths`, so operator upload scripts no longer restate the layout, the month arithmetic, or the ordering. Cache lifetimes remain the deployment's choice (`--cache-live` / `--cache-closed`, TRIAL defaults, caller-movable). `publishModel` and the pure `publishPlan` are exported for programmatic use, and dataset reads now build their keys from `documentPaths` too.
+
+### Patch Changes
+
+- f2f9fb8: `parseSites` validates the catalogue through the reader contract's `sitesCatalogueSchema` before applying its writer-side identity-only strictness, so both sides read field semantics from one schema. A malformed slug or empty timeZone the old hand-rolled parser accepted is now refused; the strictness divergence is documented in Configure launches. Every schemaVersion the engine stamps (profiles, manifests, smoke, observation, runs index, sites, site context) is imported from `@azohra/meteo.briefing/contract` instead of re-declared.
+- Updated dependencies [f2f9fb8]
+- Updated dependencies [f2f9fb8]
+- Updated dependencies [a217302]
+- Updated dependencies [adfc251]
+  - @azohra/meteo.briefing@0.5.0
+
 ## 0.3.2
 
 ### Patch Changes
