@@ -23,6 +23,17 @@ export {
   type WindnerdRecords,
 } from "./adapters/windnerd.js";
 export {
+  HOLOGRAM_API_BASE,
+  TRIAL_HOLOGRAM_CACHE_TTL_SECONDS,
+  hologramConnectivityConfigSchema,
+  hologramServiceState,
+  hologramTimeToIso,
+  loadHologramConnectivity,
+  parseHologramConnectivity,
+  type HologramConnectivityConfig,
+  type HologramConnectivityOptions,
+} from "./hologram.js";
+export {
   loadTempestStation,
   parseTempestWind,
   type TempestAdapterOptions,

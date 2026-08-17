@@ -41,6 +41,18 @@ export type {
 } from "./contract.js";
 
 export {
+  CONNECTIVITY_SERVICE_STATES,
+  connectivitySessionSchema,
+  parseStationConnectivity,
+  stationConnectivitySchema,
+} from "./connectivity.js";
+export type {
+  ConnectivityServiceState,
+  ConnectivitySession,
+  StationConnectivity,
+} from "./connectivity.js";
+
+export {
   CALM_THRESHOLD_MPS,
   COMPASS_POINTS,
   compassDirection,

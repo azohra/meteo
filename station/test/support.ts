@@ -148,6 +148,78 @@ export function tempestPayload(
   });
 }
 
+/* Mirrors a live /devices/{id} capture from 2026-08-17, identifiers faked:
+ * lastsession stringifies cellid/lac/linkid while usage records keep them
+ * numeric, an open session's end is the all-zeros sentinel, and the
+ * flat-rate plan declares data: 0. */
+export function hologramDevicePayload(
+  lastsession: Record<string, unknown> | null = {},
+  link: Record<string, unknown> = {},
+  device: Record<string, unknown> = {},
+): string {
+  return JSON.stringify({
+    success: true,
+    data: {
+      id: 4200001,
+      name: "Bluff (12001)",
+      orgid: 900001,
+      type: "device",
+      whencreated: "2026-07-24 20:40:55",
+      tags: [],
+      imei: "000000000000000",
+      phonenumber: "",
+      lastsession:
+        lastsession === null
+          ? undefined
+          : {
+              linkid: "4300001",
+              bytes: 161832,
+              session_begin: "2026-08-17 18:01:28",
+              session_end: "0000-00-00 00:00:00",
+              imei: "000000000000000",
+              cellid: "103016202",
+              tadig: "CANRW",
+              lac: "35155",
+              network_name: "Rogers Communication Partnership",
+              radio_access_technology: "LTE",
+              active: true,
+              latitude: 49.1,
+              longitude: -122.0,
+              range: 20000,
+              is_reporting_window_with_usage: "1",
+              ...lastsession,
+            },
+      links: {
+        cellular: [
+          {
+            id: 4300001,
+            deviceid: 4200001,
+            orgid: 900001,
+            sim: "8944500000000000000",
+            msisdn: "882360000000000",
+            imsi: 234500000000000,
+            state: "LIVE",
+            profile_state: "ENABLED",
+            apn: "hologram",
+            overagelimit: 10_000_000_000,
+            data_threshold: -1,
+            carrierid: 2,
+            whenclaimed: "2026-07-24 20:40:55",
+            whenexpires: "2026-08-23 20:40:55",
+            last_connect_time: "2026-08-17 18:01:28",
+            last_network_used: "Rogers Communication Partnership",
+            cur_billing_data_used: 12148067,
+            last_billing_data_used: 0,
+            plan: { id: 2096, zone: "global", name: "Global G3 Standard Flat Rate", data: 0 },
+            ...link,
+          },
+        ],
+      },
+      ...device,
+    },
+  });
+}
+
 function ecowittLeaf(unit: string, value: string): Record<string, unknown> {
   return { time: "1754431980", unit, value };
 }
