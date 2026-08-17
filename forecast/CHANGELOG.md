@@ -1,5 +1,20 @@
 # @azohra/meteo.forecast
 
+## 0.5.0
+
+### Minor Changes
+
+- 2fddd75: Builders and `terrain` accept `--sites dataset` to read `sites.json` from the dataset root, so operators no longer keep a site catalogue in their own repository. `publish --models` uploads the packaged model catalogue. `terrain --sync` regenerates and publishes the site context when the published catalogue has moved, and is a no-op when the context is fresh. After every model upload, `publish` reads the manifest back and parses it with the reader contract's guard, so an unconsumable publication fails in the publishing job's log instead of in a consumer's ingest. `sites.json` remains the one root file the engine never writes.
+- e3e5f9a: `meteo forecast terrain` writes site-context v3, where each entry records verbatim the catalogue point it measured. New `--check` flag: reports fresh or stale for the published context against the published catalogue, read through the dataset path. Stale covers everything regenerating cures (absent context, a site the context never measured, a moved point, a v2 context). A missing or unreadable catalogue throws, and an unreachable dataset produces no verdict.
+- 69c7134: Dataset reads and the publisher's PUTs now share one S3 client: signing, key encoding, the retryable-code table, and backoff. The endpoint variable is renamed to the vendor-neutral `METEO_S3_ENDPOINT` (`R2_ENDPOINT` stays honored as an alias). The `freshness` verb is replaced by `publish --dry-run`, which prints the verdict and the plan without uploading. `--cache-closed` is renamed `--cache-closed-months` to match its option. `SITE_FIELDS` derives from the contract's entry schema instead of restating it.
+
+### Patch Changes
+
+- Updated dependencies [e3e5f9a]
+- Updated dependencies [69c7134]
+- Updated dependencies [59efe10]
+  - @azohra/meteo.briefing@0.6.0
+
 ## 0.4.0
 
 ### Minor Changes

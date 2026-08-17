@@ -1,5 +1,13 @@
 # @azohra/meteo.briefing
 
+## 0.6.0
+
+### Minor Changes
+
+- e3e5f9a: site-context.json v3: every entry now carries the `point` it was measured at, required on the wire. The point is the catalogue value echoed verbatim at generation time; it records the measurement's provenance and serves as the staleness test (a catalogue that has moved off it means regenerate). This is the first two-link guard chain: v2 documents parse forever and normalize up with `point` absent (stale, not invalid). The normalized `SiteContext`/`SiteContextEntry` types carry the optional point and the document's own `schemaVersion`.
+- 69c7134: An invalid `DocumentMiss` from the family-aware loaders also carries `supportedSchemaVersion` (the newest version the installed guard parses), so one log line can read "got 3, support 1" without consulting a constant. Callers of the generic `loadDocument`/`loadSiteSet` can thread their own via the new `supportedSchemaVersion` option.
+- 59efe10: Parse guards normalize up. Every family's guard is now a version chain: the wire schema of each version ever published, oldest first, each carrying the upgrade that lifts it one version forward. A guard parses everything its family ever published and returns the newest shape, refusing only versions newer than the package. A chain never drops a version, because month archives are append-only and immutable, so their documents must stay readable. Every family has one version today, so nothing changes behaviorally; the exported mechanism (`versionedGuard`) is what the first real schemaVersion bump will use. The Compatibility page's rollout section shrinks to one rule: never move a writer to a version no released reader parses; consumers upgrade at their own pace, in any order.
+
 ## 0.5.0
 
 ### Minor Changes
