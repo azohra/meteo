@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 2,
-  "generatedAt": "2026-08-12T18:19:20Z",
+  "schemaVersion": 3,
+  "generatedAt": "2026-08-17T16:38:04Z",
   "sources": [
     {
       "id": "glo30",
@@ -41,6 +41,10 @@
   ],
   "sites": {
     "test-hill": {
+      "point": {
+        "latitude": 49.4581,
+        "longitude": -117.3956
+      },
       "elevation": {
         "source": "lidarbc",
         "elevationM": 1225.1
@@ -96,6 +100,10 @@
       }
     },
     "test-ridge": {
+      "point": {
+        "latitude": 49.76,
+        "longitude": -117.18
+      },
       "elevation": {
         "source": "mrdem30",
         "elevationM": 2177.8
@@ -156,6 +164,10 @@
       }
     },
     "test-valley": {
+      "point": {
+        "latitude": 49.2964,
+        "longitude": -117.6325
+      },
       "elevation": {
         "source": "lidarbc",
         "elevationM": 495.5

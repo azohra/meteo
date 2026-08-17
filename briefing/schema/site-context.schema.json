@@ -6,7 +6,7 @@
   "properties": {
     "schemaVersion": {
       "type": "number",
-      "const": 2
+      "const": 3
     },
     "generatedAt": {
       "type": "string",
@@ -83,6 +83,22 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
+          "point": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude"
+            ],
+            "description": "The catalogue point this entry measured, echoed verbatim from sites.json at generation time. Identity stays in the catalogue — this is the measurement's provenance, and the staleness test: a catalogue that has moved off this point means the context wants regenerating."
+          },
           "elevation": {
             "type": "object",
             "properties": {
@@ -250,11 +266,12 @@
           }
         },
         "required": [
+          "point",
           "elevation",
           "terrain",
           "landCover"
         ],
-        "description": "One site's measured ground truth: the elevation pick, terrain analysis, and land cover. Coordinates and timezone are NOT echoed here — sites.json is their home; join by slug."
+        "description": "One site's measured ground truth: the point it was measured at, the elevation pick, terrain analysis, and land cover. Timezone is not echoed — sites.json is its home; join by slug."
       },
       "description": "Site slug → context. Join against sites.json; slugs are the identity."
     }
@@ -265,5 +282,5 @@
     "sources",
     "sites"
   ],
-  "description": "site-context.json — static per-site ground truth (the elevation pick, terrain, land cover), machine-measured from open data and committed beside the hand-maintained catalogues: humans author WHERE (sites.json); the pipeline measures WHAT (this file). No cadence: regenerate when the site catalogue changes."
+  "description": "site-context.json — static per-site ground truth (the point measured, the elevation pick, terrain, land cover), machine-measured from open data and published beside the hand-maintained catalogues: humans author WHERE (sites.json); the pipeline measures WHAT (this file) and stamps where it measured. No cadence: regenerate when the site catalogue moves."
 }

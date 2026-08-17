@@ -1,5 +1,5 @@
 import {
-  siteContextSchema,
+  parseSiteContext,
   sitesCatalogueSchema,
   type LandCoverClass,
   type SiteCatalogueEntry,
@@ -10,7 +10,13 @@ import {
 import rawContext from "../../../scenarios/catalog/site-context.json";
 import rawSites from "../../../scenarios/catalog/sites.json";
 
-const context: SiteContext = siteContextSchema.parse(rawContext);
+// The docs site is a reader like any other: it reads through the guard, so
+// a version bump normalizes instead of breaking the build.
+const parsedContext = parseSiteContext(rawContext);
+if (parsedContext === null) {
+  throw new Error("scenarios/catalog/site-context.json fails the contract guard");
+}
+const context: SiteContext = parsedContext;
 const catalogue = sitesCatalogueSchema.parse(rawSites);
 
 export const SITE_CONTEXT: SiteContext = context;

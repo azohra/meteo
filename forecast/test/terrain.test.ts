@@ -406,8 +406,11 @@ describe("buildDocument", () => {
     const validate = ajv.compile(schema);
     expect(validate(published), JSON.stringify(validate.errors)).toBe(true);
 
-    expect(published.schemaVersion).toBe(2);
+    expect(published.schemaVersion).toBe(3);
     const dundee = published.sites.dundee;
+    // The measured point echoes the catalogue verbatim — never rounded, so
+    // the staleness test's exact equality holds.
+    expect(dundee.point).toEqual({ latitude: 49.291977, longitude: -117.183569 });
     expect(dundee.terrain.elevationM).toBe(1492.1);
     expect(dundee.terrain.slopeDeg).toBe(18.3);
     expect(dundee.terrain.aspectDeg).toBe(0); // 359.7 wraps to 0

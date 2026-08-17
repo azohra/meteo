@@ -11,7 +11,7 @@ export const RUNS_INDEX_SCHEMA_VERSION = 1;
 export const SITE_FORECAST_SCHEMA_VERSION = 2;
 
 export const SITES_SCHEMA_VERSION = 2;
-export const SITE_CONTEXT_SCHEMA_VERSION = 2;
+export const SITE_CONTEXT_SCHEMA_VERSION = 3;
 
 const slugSchema = z
   .string()
@@ -896,33 +896,71 @@ export const siteContextLandCoverSchema = z
   );
 export type SiteContextLandCover = z.infer<typeof siteContextLandCoverSchema>;
 
+export const siteContextPointSchema = z
+  .object({ latitude: z.number(), longitude: z.number() })
+  .describe(
+    "The catalogue point this entry measured, echoed verbatim from sites.json at generation time. Identity stays in the catalogue — this is the measurement's provenance, and the staleness test: a catalogue that has moved off this point means the context wants regenerating.",
+  );
+export type SiteContextPoint = z.infer<typeof siteContextPointSchema>;
+
+const siteContextEntryFields = {
+  elevation: siteContextElevationSchema,
+  terrain: siteContextTerrainSchema,
+  landCover: siteContextLandCoverSchema,
+};
+
 export const siteContextEntrySchema = z
   .object({
-    elevation: siteContextElevationSchema,
-    terrain: siteContextTerrainSchema,
-    landCover: siteContextLandCoverSchema,
+    point: siteContextPointSchema,
+    ...siteContextEntryFields,
   })
   .describe(
-    "One site's measured ground truth: the elevation pick, terrain analysis, and land cover. Coordinates and timezone are NOT echoed here — sites.json is their home; join by slug.",
+    "One site's measured ground truth: the point it was measured at, the elevation pick, terrain analysis, and land cover. Timezone is not echoed — sites.json is its home; join by slug.",
   );
-export type SiteContextEntry = z.infer<typeof siteContextEntrySchema>;
+
+/* The normalized shape guards return: `point` is absent only in v2
+   documents, which predate the echo — a measurement whose point is unknown
+   is stale by definition. */
+export type SiteContextEntry = z.infer<z.ZodObject<typeof siteContextEntryFields>> & {
+  point?: SiteContextPoint;
+};
+
+const contextEnvelopeFields = {
+  generatedAt: utcInstantSchema.describe("When the context was generated, UTC."),
+  sources: z
+    .array(siteContextSourceSchema)
+    .min(1)
+    .describe("Every upstream source any site block references, with licence attributions."),
+};
 
 export const siteContextSchema = z
   .object({
     schemaVersion: z.literal(SITE_CONTEXT_SCHEMA_VERSION),
-    generatedAt: utcInstantSchema.describe("When the context was generated, UTC."),
-    sources: z
-      .array(siteContextSourceSchema)
-      .min(1)
-      .describe("Every upstream source any site block references, with licence attributions."),
+    ...contextEnvelopeFields,
     sites: z
       .record(slugSchema, siteContextEntrySchema)
       .describe("Site slug → context. Join against sites.json; slugs are the identity."),
   })
   .describe(
-    "site-context.json — static per-site ground truth (the elevation pick, terrain, land cover), machine-measured from open data and committed beside the hand-maintained catalogues: humans author WHERE (sites.json); the pipeline measures WHAT (this file). No cadence: regenerate when the site catalogue changes.",
+    "site-context.json — static per-site ground truth (the point measured, the elevation pick, terrain, land cover), machine-measured from open data and published beside the hand-maintained catalogues: humans author WHERE (sites.json); the pipeline measures WHAT (this file) and stamps where it measured. No cadence: regenerate when the site catalogue moves.",
   );
-export type SiteContext = z.infer<typeof siteContextSchema>;
+
+/* v2 on the wire: identical minus the measured point. Parses forever;
+   normalizes up with `point` absent. */
+const siteContextV2Schema = z.object({
+  schemaVersion: z.literal(2),
+  ...contextEnvelopeFields,
+  sites: z.record(slugSchema, z.object(siteContextEntryFields)),
+});
+
+/* Normalized: `schemaVersion` stays the document's own (a v2 document does
+   not pretend to be v3), and entries carry the optional point above. */
+export interface SiteContext {
+  schemaVersion: number;
+  generatedAt: string;
+  sources: SiteContextSource[];
+  sites: Record<string, SiteContextEntry>;
+}
 
 export const runsIndexEntrySchema = z.object({
   referenceTime: utcInstantSchema.describe("The model's currently published run, UTC."),
@@ -1062,7 +1100,10 @@ export function parseSitesCatalogueJson(text: string): SitesCatalogue | null {
   return parseSitesCatalogue(tryParseJson(text));
 }
 
+// The first real two-link chain: v2 predates the measured point and
+// normalizes up with `point` absent — stale by definition, never invalid.
 const siteContextGuard = versionedGuard<SiteContext>([
+  { version: 2, schema: siteContextV2Schema, upgrade: (document) => document },
   { version: SITE_CONTEXT_SCHEMA_VERSION, schema: siteContextSchema },
 ]);
 

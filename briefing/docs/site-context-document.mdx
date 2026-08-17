@@ -35,14 +35,21 @@ site-context.json
 ├── schemaVersion + generatedAt
 ├── sources[] { id, product, kind, resolutionM, licence, attribution, url }
 └── sites { <site-slug> → entry }
+    ├── point { latitude, longitude }
     ├── elevation { source, elevationM }
     ├── terrain { source, elevationM, slopeDeg, aspectDeg, relief[] }
     └── landCover { source, atLaunch, fractions[] }
 ```
 
-Site slugs are the identity: join `sites` against `sites.json` by slug.
-Coordinates and timezone are deliberately **not** echoed here:
-`sites.json` is their home. Every `source` field inside a site block names
+Site slugs are the identity: join `sites` against `sites.json` by slug —
+the catalogue stays the home of WHERE. Each entry's `point` is not a
+second home for identity; it is the measurement's **provenance**, echoed
+verbatim from the catalogue at generation time, and it is the staleness
+test: a catalogue that has moved off an entry's point means the context
+wants regenerating (`meteo forecast terrain --check` answers from the
+published pair). Parsed v2 documents carry no `point` — a measurement
+whose point is unknown is stale by definition. Timezone is not echoed;
+the catalogue is its home. Every `source` field inside a site block names
 a `sources[]` entry, and each `sources[]` entry carries the attribution
 statement its licence requires: the attribution travels with the data,
 and renderers that display a source's values display it.

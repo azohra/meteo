@@ -546,7 +546,12 @@ export interface SiteContextDocument {
   sources: SourceEntry[];
   sites: Record<
     string,
-    { elevation: ElevationPick; terrain: TerrainBlock; landCover: LandCoverBlock }
+    {
+      point: { latitude: number; longitude: number };
+      elevation: ElevationPick;
+      terrain: TerrainBlock;
+      landCover: LandCoverBlock;
+    }
   >;
 }
 
@@ -585,7 +590,15 @@ export async function buildDocument(
       );
     }
     const landCover = await landCoverOf(site);
-    entries[slug] = { elevation, terrain, landCover };
+    // The catalogue point, echoed verbatim (never rounded): staleness is
+    // exact equality against sites.json, so a rounded echo would read as a
+    // permanently moved point.
+    entries[slug] = {
+      point: { latitude: site.latitude, longitude: site.longitude },
+      elevation,
+      terrain,
+      landCover,
+    };
     referenced.add(elevation.source);
     referenced.add(terrain.source);
     referenced.add(landCover.source);

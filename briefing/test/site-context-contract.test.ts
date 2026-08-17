@@ -144,16 +144,32 @@ describe("site context contract", () => {
     expect(parseSiteContext(stripped)).toBeNull();
   });
 
-  it("rejects a coordinate echo — sites.json is the home of identity", () => {
-    const echoed = {
-      ...CONTEXT,
-      sites: {
-        dundee: { ...CONTEXT.sites.dundee, latitude: 49.291977 },
-      },
-    };
-    const parsed = parseSiteContext(echoed);
+  it("v2 parses forever and normalizes up with the point absent — stale by definition, never invalid", () => {
+    const parsed = parseSiteContext(CONTEXT);
     expect(parsed).not.toBeNull();
-    expect((parsed!.sites.dundee as Record<string, unknown>).latitude).toBeUndefined();
+    expect(parsed!.schemaVersion).toBe(2);
+    expect(parsed!.sites.dundee?.point).toBeUndefined();
+    // Reader tolerance unchanged: a stray v2 field strips rather than refuses.
+    const stray = {
+      ...CONTEXT,
+      sites: { dundee: { ...CONTEXT.sites.dundee, latitude: 49.291977 } },
+    };
+    expect(
+      (parseSiteContext(stray)!.sites.dundee as Record<string, unknown>).latitude,
+    ).toBeUndefined();
+  });
+
+  it("v3 carries the measured point as first-class provenance — required on the wire", () => {
+    const point = { latitude: 49.291977, longitude: -117.183569 };
+    const v3 = {
+      ...CONTEXT,
+      schemaVersion: 3,
+      sites: { dundee: { ...CONTEXT.sites.dundee, point } },
+    };
+    expect(parseSiteContext(v3)?.sites.dundee?.point).toEqual(point);
+    // A v3 document without its point is an incomplete measurement.
+    const pointless = { ...CONTEXT, schemaVersion: 3 };
+    expect(parseSiteContext(pointless)).toBeNull();
   });
 
   it("rejects an unknown land-cover class name", () => {

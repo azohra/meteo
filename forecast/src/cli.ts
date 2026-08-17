@@ -23,7 +23,7 @@ const USAGE = "usage: meteo forecast <build|publish|terrain|runs-index|freshness
 const BUILD_USAGE =
   "usage: meteo forecast build (--model SLUG | --all) --sites PATH " +
   "[--output PATH] [--max-steps N] [--history|--no-history] [--dry-run]";
-const TERRAIN_USAGE = "usage: meteo forecast terrain --sites PATH [--output PATH]";
+const TERRAIN_USAGE = "usage: meteo forecast terrain (--sites PATH [--output PATH] | --check)";
 const RUNS_INDEX_USAGE = "usage: meteo forecast runs-index [--output PATH]";
 const FRESHNESS_USAGE = "usage: meteo forecast freshness --model SLUG --manifest PATH";
 const CATALOGUE_USAGE = "usage: meteo forecast catalogue [--output PATH]";
@@ -316,15 +316,35 @@ async function catalogueCommand(args: readonly string[], stdout: Print): Promise
   return 0;
 }
 
-async function terrainCommand(args: readonly string[], overrides: CliOverrides): Promise<number> {
+async function terrainCommand(
+  args: readonly string[],
+  overrides: CliOverrides,
+  stdout: Print,
+): Promise<number> {
   const { values } = parseArgs({
     args: [...args],
     options: {
       sites: { type: "string" },
       output: { type: "string" },
+      check: { type: "boolean", default: false },
     },
     allowPositionals: false,
   });
+  if (values.check) {
+    if (values.sites !== undefined || values.output !== undefined) {
+      throw new UsageError("--check reads the published dataset; it takes no --sites or --output");
+    }
+    const { publishedContextFresh } = await import("./context-freshness.js");
+    try {
+      stdout((await publishedContextFresh(overrides.dataset ?? {})) ? "fresh" : "stale");
+    } catch (error) {
+      if (error instanceof PublisherConfigurationError) {
+        throw error;
+      }
+      throw new CliFailure((error as Error).message, { cause: error });
+    }
+    return 0;
+  }
   const sitesPath = requiredSitesPath(values.sites);
   const sites = loadSitesForCli(sitesPath);
   const output =
@@ -370,7 +390,7 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
       case "build":
         return await buildCommand(rest, overrides, stdout, stderr);
       case "terrain":
-        return await terrainCommand(rest, overrides);
+        return await terrainCommand(rest, overrides, stdout);
       case "runs-index":
         return await runsIndexCommand(rest, overrides);
       case "freshness":
