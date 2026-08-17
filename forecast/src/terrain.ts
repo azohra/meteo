@@ -3,10 +3,9 @@ import { dirname } from "node:path";
 import { fromUrl } from "geotiff";
 import proj4 from "proj4";
 
+import { SITE_CONTEXT_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 import { roundContract, roundDocument, writeJson } from "./publish.js";
 import { REQUEST_TIMEOUT_S, USER_AGENT, type TransportFetch } from "./providers/transport.js";
-
-export const SCHEMA_VERSION = 2;
 
 export const RELIEF_RADII_M: readonly number[] = [1_000, 3_000, 10_000];
 export const LAND_COVER_RADII_M: readonly number[] = [1_000, 3_000];
@@ -608,7 +607,7 @@ export async function buildDocument(
     );
   }
   return {
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: SITE_CONTEXT_SCHEMA_VERSION,
     generatedAt,
     sources: Object.keys(SOURCES)
       .filter((sourceId) => referenced.has(sourceId))

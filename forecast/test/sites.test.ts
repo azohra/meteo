@@ -57,6 +57,15 @@ describe("parseSites", () => {
     ).toThrowError(/unknown fields what3words/);
   });
 
+  it("field semantics are the reader contract's — a value sitesCatalogueSchema refuses fails here too", () => {
+    expect(() => parseSites(catalogue([{ ...SITE, slug: "Not A Slug" }]))).toThrowError(
+      /sites catalogue contract/,
+    );
+    expect(() => parseSites(catalogue([{ ...SITE, timeZone: "" }]))).toThrowError(
+      /sites catalogue contract/,
+    );
+  });
+
   it("the repository catalogue loads with every field a builder samples", () => {
     const path = join(__dirname, "..", "..", "scenarios", "catalog", "sites.json");
     const sites = parseSites(readFileSync(path, "utf-8"), path);

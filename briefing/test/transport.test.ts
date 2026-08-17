@@ -335,6 +335,37 @@ describe("loadSmoke", () => {
     });
     expect(
       await loadSmoke({ fetch, baseUrl: BASE, modelSlug: "raqdps", siteSlug: "dundee" }),
+    ).toEqual({ miss: "invalid", url: SMOKE_URL, declaredSchemaVersion: 2 });
+  });
+
+  it("an invalid miss echoes the document's declared schemaVersion so a reader can say 'upgrade', not just 'invalid'", async () => {
+    const run = smokePair("2026-08-08T00:00:00Z");
+    const futureSmoke = { ...run.smoke, schemaVersion: 99 };
+    const versioned = stubFetch({
+      [SMOKE_MANIFEST_URL]: [ok(run.manifest)],
+      [SMOKE_URL]: [ok(futureSmoke)],
+    });
+    expect(
+      await loadSmoke({
+        fetch: versioned.fetch,
+        baseUrl: BASE,
+        modelSlug: "raqdps",
+        siteSlug: "dundee",
+      }),
+    ).toEqual({ miss: "invalid", url: SMOKE_URL, declaredSchemaVersion: 99 });
+
+    // Unversioned garbage stays a bare invalid miss: that one is corruption.
+    const garbage = stubFetch({
+      [SMOKE_MANIFEST_URL]: [ok(run.manifest)],
+      [SMOKE_URL]: [ok({ prototype: true })],
+    });
+    expect(
+      await loadSmoke({
+        fetch: garbage.fetch,
+        baseUrl: BASE,
+        modelSlug: "raqdps",
+        siteSlug: "dundee",
+      }),
     ).toEqual({ miss: "invalid", url: SMOKE_URL });
   });
 });
@@ -384,7 +415,7 @@ describe("loadObservation", () => {
         modelSlug: "goes18-dsr",
         siteSlug: "dundee",
       }),
-    ).toEqual({ miss: "invalid", url: OBSERVATION_URL });
+    ).toEqual({ miss: "invalid", url: OBSERVATION_URL, declaredSchemaVersion: 2 });
 
     const failing = stubFetch({ [OBSERVATION_URL]: [status(503)] });
     await expect(

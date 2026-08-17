@@ -1,16 +1,14 @@
 import { usableLiftTopM } from "@azohra/meteo.briefing/derive";
-import type {
-  ForecastHour,
-  ForecastLevel,
-  ForecastSemantics,
-  ForecastSite,
-  ForecastSmoke,
-  ForecastSurface,
-  SiteForecast,
+import {
+  SITE_FORECAST_SCHEMA_VERSION,
+  type ForecastHour,
+  type ForecastLevel,
+  type ForecastSemantics,
+  type ForecastSite,
+  type ForecastSmoke,
+  type ForecastSurface,
+  type SiteForecast,
 } from "@azohra/meteo.briefing/contract";
-
-export const SCHEMA_VERSION = 1;
-export const SITE_FORECAST_SCHEMA_VERSION = 2;
 
 const DRY_ADIABATIC_LAPSE_C_PER_M = 0.0098;
 const SINK_RATE_MPS = 1.0;

@@ -5,7 +5,10 @@ import {
   publishedHistory as publishedHistoryDataset,
   publishedManifest as publishedManifestDataset,
 } from "../dataset.js";
-import { SCHEMA_VERSION } from "../derive.js";
+import {
+  MANIFEST_SCHEMA_VERSION,
+  OBSERVATION_SCHEMA_VERSION,
+} from "@azohra/meteo.briefing/contract";
 import { appendHistoryLines } from "../history.js";
 import { manifestStats, roundDocument, writeJson, type PublishedManifest } from "../publish.js";
 import { parseSites } from "../sites.js";
@@ -129,7 +132,7 @@ export function observationManifest(
     model: slug,
     observationCount,
     referenceTime: lastObservedAt,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats,
   };
@@ -480,7 +483,7 @@ export function siteDocument(
   generatedAt: string,
 ): unknown {
   return roundDocument({
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: OBSERVATION_SCHEMA_VERSION,
     model: product.slug,
     quantity: product.quantity,
     observed: {

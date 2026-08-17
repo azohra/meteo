@@ -12,15 +12,14 @@ import {
   type DecodeJ2kSampled,
   type GribField,
 } from "@azohra/meteo.grib";
-import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import {
+  MANIFEST_SCHEMA_VERSION,
+  SITE_FORECAST_SCHEMA_VERSION,
+  type ForecastSemantics,
+} from "@azohra/meteo.briefing/contract";
 import { datamartBase, fetchBytes } from "../providers/datamart.js";
 import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
-import {
-  SCHEMA_VERSION,
-  SITE_FORECAST_SCHEMA_VERSION,
-  deriveSiteForecast,
-  type SourceHour,
-} from "../derive.js";
+import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { aggregateMemberProfiles, type MemberProfile } from "../ensemble.js";
 import { appendHistory, type ArchivableProfile } from "../history.js";
 import { dewPointDepression } from "../moisture.js";
@@ -826,7 +825,7 @@ export async function buildGeps(options: GepsBuildOptions): Promise<boolean> {
     memberCount: MEMBER_COUNT,
     model: SLUG,
     referenceTime,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats: manifestStats(stats, startedAt),
   };

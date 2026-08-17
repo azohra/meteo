@@ -37,7 +37,11 @@ in [`site-context.json`](/docs/briefing/site-context-document/).
 ```
 
 The catalogue must satisfy `sitesCatalogueSchema` from `@azohra/meteo.briefing/contract` or
-the generated `briefing/schema/sites.schema.json` artifact. You publish it to
+the generated `briefing/schema/sites.schema.json` artifact — and the engine
+holds it stricter than a reader would: `meteo forecast build` refuses
+unknown fields and `elevationM` outright, where the reader contract merely
+strips them. A field someone typed and the pipeline silently ignored is the
+failure the strictness exists to catch. You publish it to
 the dataset root **verbatim** — a build never copies it there
 ([Publish static output](/docs/forecast/static-output/#publish-the-dataset-root)
 walks the root files).

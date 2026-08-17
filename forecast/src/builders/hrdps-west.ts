@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
 import { NotFoundError } from "../providers/datamart.js";
-import { SCHEMA_VERSION, deriveSiteForecast, type SourceHour } from "../derive.js";
+import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { appendHistory, type ArchivableProfile } from "../history.js";
 import { manifestStats, roundDocument, writeJson } from "../publish.js";
 import { maskSentinel } from "../sentinel.js";
@@ -26,7 +26,7 @@ import {
   type BuilderHour,
 } from "./common.js";
 import { TASK_CONCURRENCY, concurrencyLimit, liveDatamartWire, type DatamartWire } from "./eccc.js";
-import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import { MANIFEST_SCHEMA_VERSION, type ForecastSemantics } from "@azohra/meteo.briefing/contract";
 
 export const SLUG = "hrdps-west";
 export const BASE_URL = "https://dd.alpha.weather.gc.ca/model_hrdps/west/1km/grib2";
@@ -403,7 +403,7 @@ export async function buildHrdpsWest(options: HrdpsWestBuildOptions): Promise<bo
     lastForecastHour: result.lastForecastHour,
     model: SLUG,
     referenceTime,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats: manifestStats(stats, startedAt),
   };

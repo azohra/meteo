@@ -3,7 +3,7 @@ title: Model manifest
 description: Read the identity, extent, sites, and build accounting of one static model publication.
 ---
 
-import { SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
+import { MANIFEST_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
 
 Each published model directory contains `manifest.json`. It is the small
 discovery document paired with the larger site profiles.
@@ -22,7 +22,7 @@ discovery document paired with the larger site profiles.
 
 | Field | Meaning |
 | --- | --- |
-| `schemaVersion` | Manifest contract version, pinning `SCHEMA_VERSION` (<code>{SCHEMA_VERSION}</code>) |
+| `schemaVersion` | Manifest contract version, pinning `MANIFEST_SCHEMA_VERSION` (<code>{MANIFEST_SCHEMA_VERSION}</code>) |
 | `model` | Catalogue slug and directory identity |
 | `referenceTime` | Provider model initialization time |
 | `generatedAt` | Time this publication was generated |

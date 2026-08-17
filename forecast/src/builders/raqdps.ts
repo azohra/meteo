@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
 import { datamartBase } from "../providers/datamart.js";
-import { SCHEMA_VERSION } from "../derive.js";
+import { MANIFEST_SCHEMA_VERSION, SMOKE_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 import { appendHistory, type ArchivableProfile } from "../history.js";
 import { manifestStats, roundDocument, writeJson } from "../publish.js";
 import { parseSites, type Site } from "../sites.js";
@@ -171,7 +171,7 @@ async function sampleDocuments(
 
   const generatedAt = (options.generatedAt ?? profileInstant)();
   const documents: SmokeDocument[] = sites.map((site) => ({
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: SMOKE_SCHEMA_VERSION,
     model: SLUG,
     run: { referenceTime, generatedAt },
     site: {
@@ -266,7 +266,7 @@ export async function buildRaqdps(options: RaqdpsBuildOptions): Promise<boolean>
     lastForecastHour: result.lastForecastHour,
     model: SLUG,
     referenceTime,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats: manifestStats(stats, startedAt),
   };

@@ -3,7 +3,7 @@ title: Model catalogue
 description: Discover models and render their declared capabilities from the catalogue.
 ---
 
-import { SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
+import { MODEL_CATALOGUE_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
 
 `models.json` is the machine-readable declaration of which models exist
 in the dataset; provider evidence lives in the dated
@@ -15,7 +15,7 @@ in the dataset; provider evidence lives in the dated
 | --- | --- |
 | **Published at** | `models.json` at the dataset root, beside `sites.json` and `site-context.json` |
 | **Parse** | `parseModelCatalogueJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
-| **Zod authority** | `modelCatalogueSchema`, pinning `SCHEMA_VERSION` (<code>{SCHEMA_VERSION}</code>) |
+| **Zod authority** | `modelCatalogueSchema`, pinning `MODEL_CATALOGUE_SCHEMA_VERSION` (<code>{MODEL_CATALOGUE_SCHEMA_VERSION}</code>) |
 | **JSON Schema** | [`models.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/models.schema.json) |
 | **Discovery** | this document *is* discovery: `models`, plus the optional `smokeModels` and `observationModels` arrays |
 

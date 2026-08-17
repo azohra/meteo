@@ -61,6 +61,14 @@ export class TransportHttpError extends Error {
 export interface DocumentMiss {
   miss: "absent" | "invalid";
   url: string;
+  /**
+   * For an invalid miss whose bytes are well-formed JSON carrying a numeric
+   * `schemaVersion`: that declared number. Newer than the installed
+   * contract's constant for the family means a newer writer published it —
+   * upgrade the package rather than debugging bytes. Absent when the bytes
+   * are not versioned JSON at all — that one is corruption.
+   */
+  declaredSchemaVersion?: number;
 }
 
 /**
@@ -365,8 +373,29 @@ async function fetchDocument<T extends object>(
   const response = await fetch(url);
   if (response.status === 404) return { miss: "absent", url };
   if (!response.ok) throw new TransportHttpError(response.status, url);
-  const parsed = guard(await response.text());
-  return parsed === null ? { miss: "invalid", url } : parsed;
+  const text = await response.text();
+  const parsed = guard(text);
+  if (parsed !== null) return parsed;
+  const declared = declaredSchemaVersion(text);
+  return declared === undefined
+    ? { miss: "invalid", url }
+    : { miss: "invalid", url, declaredSchemaVersion: declared };
+}
+
+/* An invalid document that is still well-formed JSON with a numeric
+   schemaVersion is almost always a version story, not corruption — echo the
+   number so the reader can say "upgrade" instead of only "invalid". */
+function declaredSchemaVersion(text: string): number | undefined {
+  try {
+    const document: unknown = JSON.parse(text);
+    if (typeof document !== "object" || document === null || Array.isArray(document)) {
+      return undefined;
+    }
+    const version = (document as { schemaVersion?: unknown }).schemaVersion;
+    return typeof version === "number" ? version : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function trimTrailingSlash(url: string): string {

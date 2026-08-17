@@ -1,6 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { roundContract } from "@azohra/meteo.briefing/contract";
+import { roundContract, RUNS_INDEX_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 import { compactJson, writeJson } from "@azohra/meteo.briefing/history";
 import { cataloguedModelSlugs, packagedModelsPath } from "./catalogue.js";
 
@@ -134,7 +134,7 @@ export function runsIndex(
       generatedAt: manifest.generatedAt,
     };
   }
-  return { schemaVersion: 1, runs };
+  return { schemaVersion: RUNS_INDEX_SCHEMA_VERSION, runs };
 }
 
 export function writeRunsIndex(

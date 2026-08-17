@@ -4,7 +4,16 @@ description: The one rule for reading published documents, the current document 
 ---
 
 import { Aside } from '../../../components/docs/starlight';
-import { SCHEMA_VERSION, SITE_FORECAST_SCHEMA_VERSION, SITES_SCHEMA_VERSION, SITE_CONTEXT_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
+import {
+  MANIFEST_SCHEMA_VERSION,
+  MODEL_CATALOGUE_SCHEMA_VERSION,
+  OBSERVATION_SCHEMA_VERSION,
+  RUNS_INDEX_SCHEMA_VERSION,
+  SITE_CONTEXT_SCHEMA_VERSION,
+  SITE_FORECAST_SCHEMA_VERSION,
+  SITES_SCHEMA_VERSION,
+  SMOKE_SCHEMA_VERSION,
+} from '@azohra/meteo.briefing/contract';
 import { BRIEFING_PACKAGE_VERSION } from '../../../components/docs/package-info';
 
 Published documents and npm packages version independently. One rule
@@ -19,11 +28,18 @@ document with the package you chose, and let the parser answer.
 
 ## Document families
 
-| Documents | Current `schemaVersion` | Owner |
+Every family pins its own exported constant, so a breaking change to one
+family never invalidates readers of another:
+
+| Documents | Current `schemaVersion` | Constant (all in the zod contract, `briefing/src/contract.ts`) |
 | --- | ---: | --- |
-| Site-forecast and history | <code>{SITE_FORECAST_SCHEMA_VERSION}</code> | the zod contract in `briefing/src/contract.ts` |
-| Manifests, model catalogue, smoke, observation, run index | <code>{SCHEMA_VERSION}</code> | the same contract |
-| Site catalogue and site context | <code>{SITES_SCHEMA_VERSION}</code>, <code>{SITE_CONTEXT_SCHEMA_VERSION}</code> | `SITES_SCHEMA_VERSION`, `SITE_CONTEXT_SCHEMA_VERSION` in the same contract |
+| Site-forecast and history | <code>{SITE_FORECAST_SCHEMA_VERSION}</code> | `SITE_FORECAST_SCHEMA_VERSION` |
+| Manifests (forecast and observation) | <code>{MANIFEST_SCHEMA_VERSION}</code> | `MANIFEST_SCHEMA_VERSION` |
+| Model catalogue | <code>{MODEL_CATALOGUE_SCHEMA_VERSION}</code> | `MODEL_CATALOGUE_SCHEMA_VERSION` |
+| Run index | <code>{RUNS_INDEX_SCHEMA_VERSION}</code> | `RUNS_INDEX_SCHEMA_VERSION` |
+| Smoke documents | <code>{SMOKE_SCHEMA_VERSION}</code> | `SMOKE_SCHEMA_VERSION` |
+| Observation documents | <code>{OBSERVATION_SCHEMA_VERSION}</code> | `OBSERVATION_SCHEMA_VERSION` |
+| Site catalogue and site context | <code>{SITES_SCHEMA_VERSION}</code>, <code>{SITE_CONTEXT_SCHEMA_VERSION}</code> | `SITES_SCHEMA_VERSION`, `SITE_CONTEXT_SCHEMA_VERSION` |
 
 The generated JSON Schemas under each package's `schema/` directory
 describe the inputs the released package accepts; the zod schemas and
@@ -48,6 +64,32 @@ Validate with the raw-text guards at every storage or network boundary —
 the [contract guide](/docs/briefing/contract/) carries the worked fence.
 Never patch a rejected document in presentation code: upgrade the
 publisher or choose a compatible package before validation.
+
+## Rolling a schemaVersion bump across a deployment
+
+A deployment has three moving parts: readers pinning
+`@azohra/meteo.briefing`, an operator pinning `@azohra/meteo.forecast`
+(which embeds its own briefing as the writer), and the published dataset
+between them. Parse guards pin exactly one version per family, so during
+a breaking rollout one side always refuses the other's documents — the
+choreography picks which side, and keeps the window short:
+
+1. **Release the schema change**: one briefing release carries the new
+   parser; the forecast release that embeds it is the new writer.
+2. **Move the operator's engine pin first.** Its next publication
+   carries the new number; deployed readers refuse it as
+   `{ miss: "invalid" }` with `declaredSchemaVersion` echoing the newer
+   number — the signal to upgrade the package, not to debug bytes — and
+   an [ingesting reader](/docs/briefing/run-an-ingest/) keeps serving
+   what it last stored: stale, never wrong.
+3. **Move every reader's briefing pin promptly.** The moment it lands,
+   current publications parse again; documents stored under the old
+   version re-guard as invalid until the next ingest replaces them, so
+   the gap is one ingest cycle, not a migration.
+
+Reader-first is the wrong order: a new reader refuses every
+already-published document at once, emptying a deployment instead of
+staling it.
 
 ## The forecast engine's boundary
 

@@ -1,20 +1,27 @@
-export const SITES_SCHEMA_VERSION = 2;
+import {
+  SITES_SCHEMA_VERSION,
+  sitesCatalogueSchema,
+  type SiteCatalogueEntry,
+} from "@azohra/meteo.briefing/contract";
+
+export { SITES_SCHEMA_VERSION };
 
 export const SITE_FIELDS = ["slug", "name", "latitude", "longitude", "timeZone"] as const;
 
 /** One catalogued site: identity and build selection, nothing measured. */
-export interface Site {
-  slug: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  timeZone: string;
-}
+export type Site = SiteCatalogueEntry;
 
 /**
  * Parses the catalogue's sites out of the versioned envelope; accepts raw
  * JSON text or an already-parsed document, with `source` naming the
  * catalogue in error messages.
+ *
+ * Shape and field semantics are the reader contract's
+ * (`sitesCatalogueSchema`); on top of it this writer-side parser refuses
+ * what the reader would merely strip — unknown fields and `elevationM` —
+ * because a catalogue entry someone typed and the pipeline silently
+ * ignored is exactly the plausible-but-wrong failure the strictness
+ * exists to catch.
  */
 export function parseSites(input: string | unknown, source = "sites.json"): Site[] {
   const document: unknown = typeof input === "string" ? JSON.parse(input) : input;
@@ -28,14 +35,21 @@ export function parseSites(input: string | unknown, source = "sites.json"): Site
         `this pipeline reads version ${SITES_SCHEMA_VERSION}`,
     );
   }
-  const sites = (document as { sites: Site[] }).sites;
-  if (!sites || sites.length === 0) {
+  const rawSites = (document as { sites?: unknown[] }).sites;
+  if (!rawSites || rawSites.length === 0) {
     throw new Error(`${source} lists no sites`);
   }
-  for (const site of sites) {
-    requireIdentityOnly(site as unknown as Record<string, unknown>, source);
+  for (const site of rawSites) {
+    requireIdentityOnly(site as Record<string, unknown>, source);
   }
-  return sites;
+  const parsed = sitesCatalogueSchema.safeParse(document);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new Error(
+      `${source} fails the sites catalogue contract at ${issue.path.join(".")}: ${issue.message}`,
+    );
+  }
+  return parsed.data.sites;
 }
 
 function requireIdentityOnly(site: Record<string, unknown>, source: string): void {

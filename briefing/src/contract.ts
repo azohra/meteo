@@ -1,6 +1,13 @@
 import { z } from "zod";
 
-export const SCHEMA_VERSION = 1;
+/* One version constant per document family: a breaking change to one family
+   bumps its own constant, and deployed readers of every other family keep
+   parsing. Writers import these — the numbers have no second home. */
+export const MANIFEST_SCHEMA_VERSION = 1;
+export const SMOKE_SCHEMA_VERSION = 1;
+export const OBSERVATION_SCHEMA_VERSION = 1;
+export const MODEL_CATALOGUE_SCHEMA_VERSION = 1;
+export const RUNS_INDEX_SCHEMA_VERSION = 1;
 export const SITE_FORECAST_SCHEMA_VERSION = 2;
 
 export const SITES_SCHEMA_VERSION = 2;
@@ -344,7 +351,7 @@ export type SmokeDocumentSite = z.infer<typeof smokeDocumentSiteSchema>;
 
 export const smokeDocumentSchema = z
   .object({
-    schemaVersion: z.literal(SCHEMA_VERSION),
+    schemaVersion: z.literal(SMOKE_SCHEMA_VERSION),
     model: slugSchema,
     run: forecastRunSchema,
     site: smokeDocumentSiteSchema,
@@ -429,7 +436,7 @@ export type ObservationDocumentSite = z.infer<typeof observationDocumentSiteSche
 
 export const observationDocumentSchema = z
   .object({
-    schemaVersion: z.literal(SCHEMA_VERSION),
+    schemaVersion: z.literal(OBSERVATION_SCHEMA_VERSION),
     model: slugSchema,
     /** The measured quantity this document's series carries; mirrors the catalogue entry's `quantity`. Absence means the document predates the tag — the entry shape still names the quantity, never that it is unknown. */
     quantity: z
@@ -511,7 +518,7 @@ export type ForecastManifestStats = z.infer<typeof forecastManifestStatsSchema>;
 
 export const forecastManifestSchema = z
   .object({
-    schemaVersion: z.literal(SCHEMA_VERSION),
+    schemaVersion: z.literal(MANIFEST_SCHEMA_VERSION),
     model: slugSchema,
     referenceTime: utcInstantSchema,
     generatedAt: utcInstantSchema,
@@ -532,7 +539,7 @@ export type ForecastManifest = z.infer<typeof forecastManifestSchema>;
 
 export const observationManifestSchema = z
   .object({
-    schemaVersion: z.literal(SCHEMA_VERSION),
+    schemaVersion: z.literal(MANIFEST_SCHEMA_VERSION),
     model: slugSchema,
     referenceTime: utcInstantSchema.describe(
       "The newest measured instant — equal to lastObservedAt; doubles as the freshness instant wherever manifests are compared.",
@@ -701,7 +708,7 @@ export type ObservationModelEntry = z.infer<typeof observationModelEntrySchema>;
 
 export const modelCatalogueSchema = z
   .object({
-    schemaVersion: z.literal(SCHEMA_VERSION),
+    schemaVersion: z.literal(MODEL_CATALOGUE_SCHEMA_VERSION),
     models: z.array(modelEntrySchema),
     /** Smoke-document models — separate from `models` so pre-smoke consumers keep parsing the catalogue. */
     smokeModels: z
@@ -728,6 +735,8 @@ export const siteCatalogueEntrySchema = z
     slug: slugSchema,
     name: z.string().min(1),
     latitude: z.number(),
+    /* Unranged on purpose: builders sample grids in both geographic (-180..180)
+       and 0..360 longitude conventions, and the catalogue accepts either. */
     longitude: z.number(),
     /** The site's IANA timezone — required here, the catalogue is its home; builders echo it per-profile as the optional `site.timeZone`. */
     timeZone: z
@@ -917,7 +926,7 @@ export type RunsIndexEntry = z.infer<typeof runsIndexEntrySchema>;
 
 export const runsIndexSchema = z
   .object({
-    schemaVersion: z.literal(SCHEMA_VERSION),
+    schemaVersion: z.literal(RUNS_INDEX_SCHEMA_VERSION),
     runs: z
       .record(slugSchema, runsIndexEntrySchema)
       .describe("Model slug -> the manifest's (referenceTime, generatedAt) pair."),

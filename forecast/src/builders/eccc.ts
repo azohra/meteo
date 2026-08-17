@@ -17,7 +17,7 @@ import {
   type J2kDecoderPool,
   type J2kDecoderPoolOptions,
 } from "@azohra/meteo.grib/j2k-node";
-import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import { MANIFEST_SCHEMA_VERSION, type ForecastSemantics } from "@azohra/meteo.briefing/contract";
 import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
 import {
   NotFoundError,
@@ -25,7 +25,7 @@ import {
   fetchBytes,
   type FetchBytesOptions,
 } from "../providers/datamart.js";
-import { SCHEMA_VERSION, deriveSiteForecast, type SourceHour } from "../derive.js";
+import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { appendHistory, type ArchivableProfile } from "../history.js";
 import { manifestStats, roundDocument, writeJson } from "../publish.js";
 import { maskSentinel } from "../sentinel.js";
@@ -852,7 +852,7 @@ export async function buildEccc(model: DatamartModel, options: EcccBuildOptions)
     lastForecastHour: result.lastForecastHour,
     model: model.slug,
     referenceTime,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats: manifestStats(stats, startedAt),
   };

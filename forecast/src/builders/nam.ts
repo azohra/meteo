@@ -8,9 +8,9 @@ import {
   pairSpan,
   type IdxRecord,
 } from "@azohra/meteo.grib";
-import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import { MANIFEST_SCHEMA_VERSION, type ForecastSemantics } from "@azohra/meteo.briefing/contract";
 import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
-import { SCHEMA_VERSION, deriveSiteForecast, type SourceHour } from "../derive.js";
+import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { appendHistory, type ArchivableProfile } from "../history.js";
 import { dewPointDepression } from "../moisture.js";
 import {
@@ -619,7 +619,7 @@ export async function buildNam(product: NamProduct, options: NamBuildOptions): P
     lastForecastHour: result.lastForecastHour,
     model: product.slug,
     referenceTime,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats: manifestStats(stats, startedAt),
   };

@@ -1,9 +1,9 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { MissingRecordError, findRecord, type IdxRecord } from "@azohra/meteo.grib";
-import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import { MANIFEST_SCHEMA_VERSION, type ForecastSemantics } from "@azohra/meteo.briefing/contract";
 import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
-import { SCHEMA_VERSION, deriveSiteForecast, type SourceHour } from "../derive.js";
+import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { appendHistory, type ArchivableProfile } from "../history.js";
 import { dewPointDepression } from "../moisture.js";
 import {
@@ -504,7 +504,7 @@ export async function buildGfs(options: GfsBuildOptions): Promise<boolean> {
     lastForecastHour: result.lastForecastHour,
     model: SLUG,
     referenceTime,
-    schemaVersion: SCHEMA_VERSION,
+    schemaVersion: MANIFEST_SCHEMA_VERSION,
     sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
     stats: manifestStats(stats, startedAt),
   };
