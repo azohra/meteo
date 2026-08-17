@@ -1,6 +1,6 @@
 {
   "name": "@azohra/meteo.station",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "The station capability of meteo by Azohra: live weather-station reading, derivation, and display - the wire contract, provider adapters, a polling client, a Node server, and React and custom-element display bindings.",
   "keywords": [
     "weather-station",
