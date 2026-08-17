@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PublisherConfigurationError } from "../src/config.js";
-import { openMonths, publishModel, publishPlan } from "../src/upload.js";
+import { openMonths, publishModel, publishModels, publishPlan } from "../src/upload.js";
 import type { TransportFetch, TransportInit } from "../src/providers/transport.js";
 import { noSleep, useCleanWireEnv } from "./helpers/wire.js";
 
@@ -38,12 +38,20 @@ function scratchTree(model: string): string {
   const sites = join(root, model, "sites");
   mkdirSync(sites, { recursive: true });
   writeFileSync(join(sites, "dundee.json"), `{"site":"dundee"}`);
+  // Wire-valid: the read-back canary parses the uploaded manifest with the
+  // reader contract's guard, so the fixture must be a real manifest.
   writeFileSync(
     join(root, model, "manifest.json"),
     JSON.stringify({
+      schemaVersion: 1,
       model,
       referenceTime: "2026-08-16T06:00:00Z",
       generatedAt: "2026-08-16T09:12:00Z",
+      firstForecastHour: 0,
+      lastForecastHour: 12,
+      forecastHours: 13,
+      sites: [{ name: "Dundee", slug: "dundee" }],
+      stats: { downloads: 4, downloadBytes: 1024, retries: 0, durationMs: 900 },
     }),
   );
   return root;
@@ -55,31 +63,51 @@ interface SeenRequest {
   headers: Record<string, string>;
 }
 
-/* URL-aware wire: GETs answer by script, PUTs succeed unless told otherwise. */
+/* URL-aware, stateful wire: PUTs are stored by path; a later GET answers
+   with the stored object (the bucket's read-after-write), so the read-back
+   canary exercises the real round trip. GETs of never-PUT keys answer by
+   script; readBack: "garbage" corrupts stored objects on read to prove the
+   canary refuses. */
 function s3Wire({
   manifestGet = { status: 404, body: xmlError("NoSuchKey") },
   putStatus = 200,
   putBody = "",
+  readBack = "stored",
 }: {
   manifestGet?: { status: number; body: string };
   putStatus?: number;
   putBody?: string;
+  readBack?: "stored" | "garbage";
 } = {}): { fetch: TransportFetch; seen: SeenRequest[] } {
   const seen: SeenRequest[] = [];
+  const stored = new Map<string, Uint8Array>();
   const fetch: TransportFetch = async (url: string, init?: TransportInit) => {
     const method = init?.method ?? "GET";
-    seen.push({
-      method,
-      path: decodeURIComponent(new URL(url).pathname),
-      headers: init?.headers ?? {},
-    });
-    const answer =
-      method === "PUT"
-        ? { status: putStatus, body: putBody }
-        : { status: manifestGet.status, body: manifestGet.body };
-    const bytes = new TextEncoder().encode(answer.body);
+    const path = decodeURIComponent(new URL(url).pathname);
+    seen.push({ method, path, headers: init?.headers ?? {} });
+    if (method === "PUT") {
+      if (putStatus === 200 && init?.body !== undefined && typeof init.body !== "string") {
+        stored.set(path, new Uint8Array(init.body));
+      }
+      const bytes = new TextEncoder().encode(putBody);
+      return {
+        status: putStatus,
+        headers: new Headers(),
+        arrayBuffer: async () => bytes.slice().buffer as ArrayBuffer,
+      };
+    }
+    const object = stored.get(path);
+    if (object !== undefined) {
+      const bytes = readBack === "stored" ? object : new TextEncoder().encode("{ corrupt");
+      return {
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: async () => bytes.slice().buffer as ArrayBuffer,
+      };
+    }
+    const bytes = new TextEncoder().encode(manifestGet.body);
     return {
-      status: answer.status,
+      status: manifestGet.status,
       headers: new Headers(),
       arrayBuffer: async () => bytes.slice().buffer as ArrayBuffer,
     };
@@ -188,6 +216,41 @@ describe("publishModel", () => {
     expect(puts[6].headers["content-type"]).toBe("application/json");
     // The freshness read precedes every upload: never publish blind.
     expect(wire.seen[0]).toMatchObject({ method: "GET", path: `/${BUCKET}/gfs/manifest.json` });
+    // The read-back canary re-fetches the manifest after its PUT: the
+    // publication parsed with the reader's guard the moment it landed.
+    const manifestPutAt = wire.seen.findIndex(
+      (request) => request.method === "PUT" && request.path === `/${BUCKET}/gfs/manifest.json`,
+    );
+    const canaryAt = wire.seen.findIndex(
+      (request, at) =>
+        at > manifestPutAt &&
+        request.method === "GET" &&
+        request.path === `/${BUCKET}/gfs/manifest.json`,
+    );
+    expect(canaryAt).toBeGreaterThan(manifestPutAt);
+  });
+
+  it("a publication the reader's guard refuses fails read-back loudly", async () => {
+    s3Env();
+    const root = scratchTree("gfs");
+    const wire = s3Wire({ readBack: "garbage" });
+    await expect(
+      publishModel("gfs", { dataRoot: root, now: NOW, fetch: wire.fetch, sleep: noSleep }),
+    ).rejects.toThrowError(/read-back/);
+    // Nothing advanced past the canary: runs.json was never written.
+    expect(
+      wire.seen.some((request) => request.method === "PUT" && request.path.endsWith("/runs.json")),
+    ).toBe(false);
+  });
+
+  it("publishModels uploads the packaged catalogue to the dataset root", async () => {
+    s3Env();
+    const wire = s3Wire();
+    await publishModels({ fetch: wire.fetch, sleep: noSleep });
+    expect(wire.seen).toHaveLength(1);
+    expect(wire.seen[0]).toMatchObject({ method: "PUT", path: `/${BUCKET}/models.json` });
+    expect(wire.seen[0].headers["cache-control"]).toBe("public, max-age=300");
+    expect(wire.seen[0].headers["content-type"]).toBe("application/json");
   });
 
   it("reports nothing to do when the builder wrote no manifest", async () => {

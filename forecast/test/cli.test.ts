@@ -603,6 +603,141 @@ describe("meteo forecast runs-index", () => {
   });
 });
 
+describe("the dataset as the site catalogue's home", () => {
+  const catalogueBody = JSON.stringify({ schemaVersion: 2, sites: [SITE] });
+
+  function contextBody(point: { latitude: number; longitude: number }): string {
+    return JSON.stringify({
+      schemaVersion: 3,
+      generatedAt: "2026-08-17T08:00:00Z",
+      sources: [
+        {
+          id: "glo30",
+          product: "Copernicus GLO-30 DEM",
+          kind: "surfaceModel",
+          resolutionM: 30,
+          licence: "Copernicus DEM licence",
+          attribution: "produced using Copernicus WorldDEM-30",
+          url: "https://registry.opendata.aws/copernicus-dem/",
+        },
+      ],
+      sites: {
+        [SITE.slug]: {
+          point,
+          elevation: { source: "glo30", elevationM: 1200 },
+          terrain: {
+            source: "glo30",
+            elevationM: 1200,
+            slopeDeg: 10,
+            aspectDeg: 180,
+            relief: [{ radiusKm: 1, minM: 900, maxM: 1400, percentile: 70 }],
+          },
+          landCover: {
+            source: "glo30",
+            atLaunch: "grassland",
+            fractions: [{ radiusKm: 1, byClass: { grassland: 1 } }],
+          },
+        },
+      },
+    });
+  }
+
+  it("build --sites dataset builds from the published catalogue", async () => {
+    const wire = stubFetch([{ status: 200, body: catalogueBody }]);
+    const io = capture();
+    const result = await main(
+      ["forecast", "build", "--model", "gfs", "--sites", "dataset", "--dry-run"],
+      { dataset: { fetch: wire.fetch }, runBuilder: neverDispatch, ...io },
+    );
+    expect(result).toBe(0);
+    expect(io.out.join("\n")).toContain("1 site(s)");
+  });
+
+  it("build --sites dataset fails loudly when no catalogue is published", async () => {
+    const wire = stubFetch([{ status: 404 }]);
+    const io = capture();
+    const result = await main(
+      ["forecast", "build", "--model", "gfs", "--sites", "dataset", "--dry-run"],
+      { dataset: { fetch: wire.fetch }, runBuilder: neverDispatch, ...io },
+    );
+    expect(result).toBe(1);
+    expect(io.err.join("\n")).toContain("no sites.json is published");
+  });
+
+  it("terrain --sync is a quiet no-op while the context matches the catalogue", async () => {
+    const wire = stubFetch([
+      { status: 200, body: catalogueBody },
+      { status: 200, body: contextBody({ latitude: SITE.latitude, longitude: SITE.longitude }) },
+    ]);
+    const io = capture();
+    const result = await main(["forecast", "terrain", "--sync"], {
+      dataset: { fetch: wire.fetch },
+      terrain: neverDispatch,
+      ...io,
+    });
+    expect(result).toBe(0);
+    expect(io.out).toEqual(["fresh"]);
+  });
+
+  it("terrain --sync regenerates and publishes when the catalogue moved", async () => {
+    delete process.env["METEO_DATA_BASE"];
+    process.env["METEO_S3_ENDPOINT"] = "https://account.r2.cloudflarestorage.com";
+    process.env["AWS_ACCESS_KEY_ID"] = "key";
+    process.env["AWS_SECRET_ACCESS_KEY"] = "secret";
+    process.env["METEO_R2_BUCKET"] = "meteo-data";
+    const noSuchKey = '<?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchKey</Code></Error>';
+    const wire = stubFetch([
+      { status: 200, body: catalogueBody }, // freshness: the catalogue
+      { status: 404, body: noSuchKey }, // freshness: no context yet — stale
+      { status: 200, body: catalogueBody }, // the sites terrain measures
+      { status: 200 }, // the context PUT
+    ]);
+    const generated: string[] = [];
+    const io = capture();
+    const result = await main(["forecast", "terrain", "--sync"], {
+      dataset: { fetch: wire.fetch },
+      terrain: async (sites, outputPath) => {
+        generated.push(`${sites.length}:${outputPath}`);
+        writeFileSync(outputPath, "{}");
+        return 0;
+      },
+      ...io,
+    });
+    expect(result).toBe(0);
+    expect(generated).toHaveLength(1);
+    expect(io.out).toEqual(["regenerated site-context for 1 site(s) and published it"]);
+    const last = wire.requests[wire.requests.length - 1];
+    expect(last.init?.method).toBe("PUT");
+    expect(last.url).toContain("/site-context.json");
+  });
+
+  it("publish --models uploads the packaged catalogue", async () => {
+    delete process.env["METEO_DATA_BASE"];
+    process.env["METEO_S3_ENDPOINT"] = "https://account.r2.cloudflarestorage.com";
+    process.env["AWS_ACCESS_KEY_ID"] = "key";
+    process.env["AWS_SECRET_ACCESS_KEY"] = "secret";
+    process.env["METEO_R2_BUCKET"] = "meteo-data";
+    const wire = stubFetch([{ status: 200 }]);
+    const io = capture();
+    expect(
+      await main(["forecast", "publish", "--models"], { dataset: { fetch: wire.fetch }, ...io }),
+    ).toBe(0);
+    expect(io.out).toEqual(["Published models.json."]);
+    expect(wire.requests[0].url).toContain("/models.json");
+
+    const dry = capture();
+    expect(
+      await main(["forecast", "publish", "--models", "--dry-run"], {
+        dataset: { fetch: stubFetch([]).fetch },
+        ...dry,
+      }),
+    ).toBe(0);
+    expect(dry.out).toEqual(["Would publish models.json."]);
+
+    expect(await main(["forecast", "publish", "--models", "--model", "gfs"], capture())).toBe(2);
+  });
+});
+
 describe("meteo forecast publish --dry-run", () => {
   // The freshness verdicts live inside publish now; --dry-run is the probe.
   function s3Env(): void {

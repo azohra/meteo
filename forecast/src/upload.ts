@@ -1,9 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseManifestJson } from "@azohra/meteo.briefing/contract";
 import { documentPaths } from "@azohra/meteo.briefing/transport";
-import { cataloguedModelSlugs } from "./catalogue.js";
+import { cataloguedModelSlugs, packagedModelsPath } from "./catalogue.js";
 import { PublisherConfigurationError } from "./config.js";
 import {
+  fetchPublished,
   prefetchedManifestReader,
   publishedManifest,
   RETRYABLE_S3_CODES,
@@ -160,10 +162,7 @@ export interface PublishOptions extends DatasetOptions {
  * throws rather than reading as either verdict), uploads in plan order, and
  * advances runs.json.
  */
-export async function publishModel(
-  modelSlug: string,
-  options: PublishOptions = {},
-): Promise<PublishVerdict> {
+function requireS3Mode(): void {
   if (!s3Mode()) {
     throw new PublisherConfigurationError(
       "publishing needs the authenticated S3 endpoint: set METEO_S3_ENDPOINT " +
@@ -172,6 +171,13 @@ export async function publishModel(
         "METEO_DATA_BASE unset — the public base cannot accept writes",
     );
   }
+}
+
+export async function publishModel(
+  modelSlug: string,
+  options: PublishOptions = {},
+): Promise<PublishVerdict> {
+  requireS3Mode();
   const dataRoot = options.dataRoot ?? "data";
   const manifestPath = join(dataRoot, modelSlug, "manifest.json");
   if (!existsSync(manifestPath)) {
@@ -192,6 +198,19 @@ export async function publishModel(
     await putObject(upload.key, readFileSync(upload.path), upload, options);
   }
 
+  // Read-back canary: the publication must parse with the reader's guard the
+  // moment it lands, so a writer/reader break surfaces here — in the
+  // publishing job's log — instead of in some consumer's ingest later.
+  const echoed = await fetchPublished(documentPaths.manifest(modelSlug), options);
+  const parsed = echoed === null ? null : parseManifestJson(new TextDecoder().decode(echoed));
+  if (parsed === null || parsed.generatedAt !== local.generatedAt) {
+    throw new Error(
+      `published ${modelSlug} manifest failed read-back: the object just ` +
+        "uploaded does not parse with the reader contract's guard (or is " +
+        "not the one uploaded) — the publication is not consumable",
+    );
+  }
+
   const runsPath = join(dataRoot, "runs.json");
   const reader = await prefetchedManifestReader(cataloguedModelSlugs(), options);
   writeRunsIndex(reader, runsPath);
@@ -202,6 +221,36 @@ export async function publishModel(
     options,
   );
   return { verdict: "published", objects: plan.length + 1 };
+}
+
+/**
+ * Publishes the packaged model catalogue — models.json at the dataset
+ * root, the engine's own declaration of what it builds. sites.json and
+ * site-context.json are NOT published here: the site catalogue is the
+ * deployment owner's write, and the context follows the terrain verbs.
+ */
+export async function publishModels(options: PublishOptions = {}): Promise<void> {
+  requireS3Mode();
+  await putObject(
+    documentPaths.models(),
+    readFileSync(packagedModelsPath()),
+    { cacheControl: options.cacheLifetimes?.live ?? TRIAL_LIVE_TTL, contentType: JSON_TYPE },
+    options,
+  );
+}
+
+/** Publishes freshly generated site-context bytes to the dataset root. */
+export async function publishSiteContext(
+  bytes: Uint8Array,
+  options: PublishOptions = {},
+): Promise<void> {
+  requireS3Mode();
+  await putObject(
+    documentPaths.siteContext(),
+    bytes,
+    { cacheControl: options.cacheLifetimes?.live ?? TRIAL_LIVE_TTL, contentType: JSON_TYPE },
+    options,
+  );
 }
 
 async function putObject(

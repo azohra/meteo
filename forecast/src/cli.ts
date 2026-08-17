@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -13,7 +14,7 @@ import {
   type PublisherConfig,
 } from "./config.js";
 import type { DatasetOptions } from "./dataset.js";
-import { parseSites, type Site } from "./sites.js";
+import { parseSites, SITES_SCHEMA_VERSION, type Site } from "./sites.js";
 
 class CliFailure extends Error {}
 
@@ -21,13 +22,14 @@ class UsageError extends Error {}
 
 const USAGE = "usage: meteo forecast <build|publish|terrain|runs-index|catalogue> ...";
 const BUILD_USAGE =
-  "usage: meteo forecast build (--model SLUG | --all) --sites PATH " +
+  "usage: meteo forecast build (--model SLUG | --all) --sites PATH|dataset " +
   "[--output PATH] [--max-steps N] [--history|--no-history] [--dry-run]";
-const TERRAIN_USAGE = "usage: meteo forecast terrain (--sites PATH [--output PATH] | --check)";
+const TERRAIN_USAGE =
+  "usage: meteo forecast terrain (--sites PATH|dataset [--output PATH] | --check | --sync)";
 const RUNS_INDEX_USAGE = "usage: meteo forecast runs-index [--output PATH]";
 const CATALOGUE_USAGE = "usage: meteo forecast catalogue [--output PATH]";
 const PUBLISH_USAGE =
-  "usage: meteo forecast publish --model SLUG [--data PATH] [--dry-run] " +
+  "usage: meteo forecast publish (--model SLUG [--data PATH] | --models) [--dry-run] " +
   "[--cache-live VALUE] [--cache-closed-months VALUE]";
 
 export interface CliOverrides {
@@ -61,6 +63,24 @@ function loadSitesForCli(path: string): Site[] {
       `invalid sites file ${path}: ${(error as Error).message}`,
     );
   }
+}
+
+/* `--sites dataset` builds from the catalogue the deployment owner
+   published to the dataset root. Builders read sites from a path, so the
+   fetched identity lands in a scratch file — a bridge, never a home. */
+async function resolveSitesPath(
+  sites: string | undefined,
+  overrides: CliOverrides,
+): Promise<string> {
+  const requested = sites ?? process.env["METEO_SITES"];
+  if (requested !== "dataset") {
+    return requiredSitesPath(sites);
+  }
+  const { publishedSites } = await import("./published-sites.js");
+  const catalogued = await publishedSites(overrides.dataset ?? {});
+  const path = join(mkdtempSync(join(tmpdir(), "meteo-sites-")), "sites.json");
+  writeFileSync(path, JSON.stringify({ schemaVersion: SITES_SCHEMA_VERSION, sites: catalogued }));
+  return path;
 }
 
 function requiredSitesPath(sites: string | undefined): string {
@@ -151,7 +171,7 @@ async function buildCommand(
       : parsePositiveInteger("--max-steps", values["max-steps"]);
   const history = !values["no-history"];
   const config: PublisherConfig = {
-    sitesPath: requiredSitesPath(values.sites),
+    sitesPath: await resolveSitesPath(values.sites, overrides),
     outputRoot: resolvePath(values.output!),
     history,
     ...(maxSteps !== undefined ? { maxSteps } : {}),
@@ -204,6 +224,7 @@ async function publishCommand(
     args: [...args],
     options: {
       model: { type: "string" },
+      models: { type: "boolean", default: false },
       data: { type: "string", default: "data" },
       // Cache lifetimes are deployment choices; the TRIAL defaults live
       // with the upload module.
@@ -213,16 +234,39 @@ async function publishCommand(
     },
     allowPositionals: false,
   });
-  if (values.model === undefined) {
-    throw new UsageError("the following arguments are required: --model");
+  if (values.models && values.model !== undefined) {
+    throw new UsageError("argument --models: not allowed with argument --model");
   }
-  const { publishModel } = await import("./upload.js");
+  if (values.model === undefined && !values.models) {
+    throw new UsageError("one of the arguments --model --models is required");
+  }
+  const { publishModel, publishModels } = await import("./upload.js");
+  const lifetimes = {
+    live: values["cache-live"],
+    closedMonths: values["cache-closed-months"],
+  };
+  if (values.models) {
+    try {
+      if (values["dry-run"]) {
+        stdout("Would publish models.json.");
+        return 0;
+      }
+      await publishModels({ ...(overrides.dataset ?? {}), cacheLifetimes: lifetimes });
+      stdout("Published models.json.");
+    } catch (error) {
+      if (error instanceof PublisherConfigurationError) {
+        throw error;
+      }
+      throw new CliFailure((error as Error).message, { cause: error });
+    }
+    return 0;
+  }
   try {
-    const result = await publishModel(values.model, {
+    const result = await publishModel(values.model!, {
       ...(overrides.dataset ?? {}),
       dataRoot: resolvePath(values.data!),
       now: overrides.now,
-      cacheLifetimes: { live: values["cache-live"], closedMonths: values["cache-closed-months"] },
+      cacheLifetimes: lifetimes,
       dryRun: values["dry-run"],
     });
     if (result.verdict === "would-publish") {
@@ -298,16 +342,43 @@ async function terrainCommand(
       sites: { type: "string" },
       output: { type: "string" },
       check: { type: "boolean", default: false },
+      sync: { type: "boolean", default: false },
     },
     allowPositionals: false,
   });
-  if (values.check) {
+  if (values.check || values.sync) {
     if (values.sites !== undefined || values.output !== undefined) {
-      throw new UsageError("--check reads the published dataset; it takes no --sites or --output");
+      throw new UsageError(
+        `--${values.check ? "check" : "sync"} reads the published dataset; it takes no --sites or --output`,
+      );
+    }
+    if (values.check && values.sync) {
+      throw new UsageError(
+        "argument --sync: not allowed with argument --check (--sync checks first)",
+      );
     }
     const { publishedContextFresh } = await import("./context-freshness.js");
     try {
-      stdout((await publishedContextFresh(overrides.dataset ?? {})) ? "fresh" : "stale");
+      const fresh = await publishedContextFresh(overrides.dataset ?? {});
+      if (values.check) {
+        stdout(fresh ? "fresh" : "stale");
+        return 0;
+      }
+      // --sync: the self-healing tick step — regenerate and publish the
+      // context iff the catalogue moved; fresh is a quiet no-op.
+      if (fresh) {
+        stdout("fresh");
+        return 0;
+      }
+      const { publishedSites } = await import("./published-sites.js");
+      const sites = await publishedSites(overrides.dataset ?? {});
+      const output = join(mkdtempSync(join(tmpdir(), "meteo-terrain-")), "site-context.json");
+      const generate = overrides.terrain ?? (await import("./terrain.js")).generate;
+      const code = await generate(sites, output);
+      if (code !== 0) return code;
+      const { publishSiteContext } = await import("./upload.js");
+      await publishSiteContext(readFileSync(output), { ...(overrides.dataset ?? {}) });
+      stdout(`regenerated site-context for ${sites.length} site(s) and published it`);
     } catch (error) {
       if (error instanceof PublisherConfigurationError) {
         throw error;
@@ -316,7 +387,7 @@ async function terrainCommand(
     }
     return 0;
   }
-  const sitesPath = requiredSitesPath(values.sites);
+  const sitesPath = await resolveSitesPath(values.sites, overrides);
   const sites = loadSitesForCli(sitesPath);
   const output =
     values.output === undefined

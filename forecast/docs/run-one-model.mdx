@@ -69,10 +69,10 @@ meteo forecast build (--model SLUG | --all) --sites PATH
                [--history | --no-history]
                [--dry-run]
 
-meteo forecast publish --model SLUG [--data PATH] [--dry-run]
+meteo forecast publish (--model SLUG [--data PATH] | --models) [--dry-run]
                [--cache-live VALUE] [--cache-closed-months VALUE]
 
-meteo forecast terrain (--sites PATH [--output PATH] | --check)
+meteo forecast terrain (--sites PATH|dataset [--output PATH] | --check | --sync)
 
 meteo forecast runs-index [--output PATH]
 
@@ -80,7 +80,9 @@ meteo forecast catalogue [--output PATH]
 ```
 
 A site catalogue is required (`--sites` or `METEO_SITES`); which sites an
-operator publishes is their decision, so there is no default. The output
+operator publishes is their decision, so there is no default. Passing the
+literal `dataset` builds from the `sites.json` published at the dataset
+root, so site identity needs no home in an operator's repository. The output
 root defaults to `./data`. `--model` and `--all` are mutually exclusive.
 Unknown model slugs, missing or unreadable site files, invalid site
 catalogues, and unusable output paths fail with an actionable error.
@@ -95,7 +97,8 @@ publish backwards (`--dry-run` prints the verdict and the plan without
 moving a byte); `terrain` regenerates
 [`site-context.json`](/docs/briefing/site-context-document/), and
 `terrain --check` answers `fresh` or `stale` for the published context
-against the published catalogue; `runs-index` regenerates `runs.json`
+against the published catalogue, and `terrain --sync` regenerates and
+publishes the context when the answer is stale; `runs-index` regenerates `runs.json`
 wholesale from the published manifests; `catalogue` emits the packaged
 `models.json`. Teaching-scenario generation is source-checkout tooling,
 not engine surface.

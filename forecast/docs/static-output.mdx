@@ -53,10 +53,10 @@ effect — an upload flow publishes each as its own step:
 
 | Root file | Produced by |
 | --- | --- |
-| `models.json` | `meteo forecast catalogue --output` emits the packaged [model catalogue](/docs/briefing/catalogue/) |
-| `sites.json` | you author it ([Configure launches](/docs/forecast/configure-launches/)); upload it verbatim |
-| `site-context.json` | `meteo forecast terrain --sites ./sites.json --output` measures it |
-| `runs.json` | `meteo forecast runs-index --output` regenerates it wholesale from the published manifests |
+| `models.json` | `meteo forecast catalogue --output` emits the packaged [model catalogue](/docs/briefing/catalogue/); against a bucket, `meteo forecast publish --models` uploads it in one step |
+| `sites.json` | you author it ([Configure launches](/docs/forecast/configure-launches/)); upload it verbatim — the one root file the engine never writes |
+| `site-context.json` | `meteo forecast terrain --sites ./sites.json --output` measures it; against a bucket, `terrain --sync` regenerates and publishes it whenever the catalogue moved |
+| `runs.json` | `meteo forecast runs-index --output` regenerates it wholesale from the published manifests; `publish` advances it after every model upload |
 
 A dataset root without `models.json` and `site-context.json` fails the read
 side's discovery and rendering paths, so publish all four before pointing a
@@ -95,8 +95,16 @@ Cache lifetimes remain your deployment's choice (`--cache-live`,
 dataset fact behind them is that a closed month archive never changes
 again, so your closed-months value may safely be immutable.
 
+After the manifest lands, `publish` reads it back and parses it with the
+reader contract's guard — a publication a reader could not consume fails
+in the publishing job's log, not in some consumer's ingest later.
+
 Of the [dataset-root files](#publish-the-dataset-root), `publish`
-advances only `runs.json`; the three catalogues remain their own steps.
+advances `runs.json` after every model and `publish --models` uploads the
+model catalogue; `terrain --sync` keeps the site context following the
+site catalogue. `sites.json` itself stays the deployment owner's write —
+the engine reads it (builders accept `--sites dataset` to build straight
+from the published catalogue) and never writes it.
 
 ## Put the tree on static storage
 
