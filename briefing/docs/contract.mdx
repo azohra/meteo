@@ -16,7 +16,12 @@ import {
 
 The `@azohra/meteo.briefing/contract` export is the executable authority for published JSON.
 Its zod schemas, inferred TypeScript types, nullable parse guards, and generated
-JSON Schemas describe the same nine document families.
+JSON Schemas describe the same nine document families. Every guard
+normalizes up: it parses each version its family ever published and
+returns the newest shape, refusing only versions newer than the package —
+so archived documents stay readable forever, and only "published by a
+newer writer" reads as invalid
+([Compatibility](/docs/compatibility/) carries the rollout rule).
 
 ![A profile document block by block: excerpts of a real profile, the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.](figures/contract-anatomy.svg)
 

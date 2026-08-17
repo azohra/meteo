@@ -53,8 +53,11 @@ These rules hold across every family:
   zero;
 - changing a stored field's unit or meaning, removing or renaming one, or
   making an optional field required changes the `schemaVersion`;
-- readers tolerate unknown additive keys but reject an unsupported
-  `schemaVersion`;
+- readers parse **every version a family ever published**, normalizing old
+  documents up to the newest shape, and reject only a `schemaVersion` newer
+  than the package — a guard never drops a version, because month archives
+  are append-only and immutable, so every past version's documents stay on
+  the wire forever;
 - model identity is an open slug from `models.json`, not a package enum;
   and
 - stored documents keep their own run, site, and semantics — never
@@ -70,26 +73,25 @@ publisher or choose a compatible package before validation.
 A deployment has three moving parts: readers pinning
 `@azohra/meteo.briefing`, an operator pinning `@azohra/meteo.forecast`
 (which embeds its own briefing as the writer), and the published dataset
-between them. Parse guards pin exactly one version per family, so during
-a breaking rollout one side always refuses the other's documents — the
-choreography picks which side, and keeps the window short:
+between them. Guards normalize up — a package parses every version its
+family ever published and returns the newest shape — while writers emit
+only the newest, so the bump itself carries the choreography:
 
-1. **Release the schema change**: one briefing release carries the new
-   parser; the forecast release that embeds it is the new writer.
-2. **Move the operator's engine pin first.** Its next publication
-   carries the new number; deployed readers refuse it as
-   `{ miss: "invalid" }` with `declaredSchemaVersion` echoing the newer
-   number — the signal to upgrade the package, not to debug bytes — and
-   an [ingesting reader](/docs/briefing/run-an-ingest/) keeps serving
-   what it last stored: stale, never wrong.
-3. **Move every reader's briefing pin promptly.** The moment it lands,
-   current publications parse again; documents stored under the old
-   version re-guard as invalid until the next ingest replaces them, so
-   the gap is one ingest cycle, not a migration.
+1. **The release that bumps a family ships the upgrade with it**: the new
+   briefing parses the new version *and* everything before it; the
+   forecast release that embeds it is the new writer.
+2. **Consumers upgrade at their own pace, in any order.** A reader that
+   upgrades early keeps parsing the old documents still being published;
+   a reader that upgrades late keeps serving until it does — its only
+   symptom for new documents is `{ miss: "invalid" }` with
+   `declaredSchemaVersion` naming the newer number, the signal to upgrade
+   the package, not to debug bytes. An
+   [ingesting reader](/docs/briefing/run-an-ingest/) serves what it last
+   stored throughout: stale, never wrong.
 
-Reader-first is the wrong order: a new reader refuses every
-already-published document at once, emptying a deployment instead of
-staling it.
+The one rule left is the release rule: never move a writer to a version
+no released reader parses. Everything else is a pin bump on the
+consumer's own schedule.
 
 ## The forecast engine's boundary
 

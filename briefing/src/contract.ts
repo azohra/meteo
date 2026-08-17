@@ -364,9 +364,12 @@ export const smokeDocumentSchema = z
   );
 export type SmokeDocument = z.infer<typeof smokeDocumentSchema>;
 
+const smokeDocumentGuard = versionedGuard<SmokeDocument>([
+  { version: SMOKE_SCHEMA_VERSION, schema: smokeDocumentSchema },
+]);
+
 export function parseSmokeDocument(value: unknown): SmokeDocument | null {
-  const result = smokeDocumentSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return smokeDocumentGuard.parse(value);
 }
 
 export function parseSmokeDocumentJson(text: string): SmokeDocument | null {
@@ -467,9 +470,12 @@ export const observationDocumentSchema = z
   );
 export type ObservationDocument = z.infer<typeof observationDocumentSchema>;
 
+const observationDocumentGuard = versionedGuard<ObservationDocument>([
+  { version: OBSERVATION_SCHEMA_VERSION, schema: observationDocumentSchema },
+]);
+
 export function parseObservationDocument(value: unknown): ObservationDocument | null {
-  const result = observationDocumentSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return observationDocumentGuard.parse(value);
 }
 
 export function parseObservationDocumentJson(text: string): ObservationDocument | null {
@@ -936,72 +942,144 @@ export const runsIndexSchema = z
   );
 export type RunsIndex = z.infer<typeof runsIndexSchema>;
 
+const siteForecastGuard = versionedGuard<SiteForecast>([
+  { version: SITE_FORECAST_SCHEMA_VERSION, schema: siteForecastSchema },
+]);
+
 export function parseSiteForecast(value: unknown): SiteForecast | null {
-  const result = siteForecastSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return siteForecastGuard.parse(value);
 }
 
 export function parseSiteForecastJson(text: string): SiteForecast | null {
   return parseSiteForecast(tryParseJson(text));
 }
 
+const forecastManifestGuard = versionedGuard<ForecastManifest>([
+  { version: MANIFEST_SCHEMA_VERSION, schema: forecastManifestSchema },
+]);
+
 export function parseForecastManifest(value: unknown): ForecastManifest | null {
-  const result = forecastManifestSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return forecastManifestGuard.parse(value);
 }
 
 export function parseForecastManifestJson(text: string): ForecastManifest | null {
   return parseForecastManifest(tryParseJson(text));
 }
 
+/**
+ * A document family's version chain: the wire schema of every version ever
+ * published, oldest first, each non-final link carrying the upgrade that
+ * lifts its shape one version forward. Parsing normalizes up — a document
+ * of any chained version returns as the newest shape — so readers accept
+ * everything a family ever published while writers emit only the newest.
+ * A chain NEVER drops a version: month archives are append-only and
+ * immutable, so every past version's documents stay on the wire forever,
+ * and a reader that forgot one would orphan history.
+ */
+export interface FamilyVersionLink {
+  version: number;
+  schema: z.ZodTypeAny;
+  /** Lifts this version's parsed shape one link forward; required on every non-final link. */
+  upgrade?: (document: unknown) => unknown;
+}
+
+export interface VersionedGuard<Newest> {
+  parse(value: unknown): Newest | null;
+  /** Every schemaVersion this guard accepts, oldest first. */
+  supportedVersions: readonly number[];
+  /** The version writers emit — the last link's. */
+  newestVersion: number;
+}
+
+export function versionedGuard<Newest>(
+  chain: readonly FamilyVersionLink[],
+): VersionedGuard<Newest> {
+  const supportedVersions = chain.map((link) => link.version);
+  return {
+    supportedVersions,
+    newestVersion: supportedVersions[supportedVersions.length - 1],
+    parse(value: unknown): Newest | null {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+      const declared = (value as { schemaVersion?: unknown }).schemaVersion;
+      const start = chain.findIndex((link) => link.version === declared);
+      if (start === -1) return null;
+      const parsed = chain[start].schema.safeParse(value);
+      if (!parsed.success) return null;
+      let document: unknown = parsed.data;
+      for (let index = start; index < chain.length - 1; index += 1) {
+        document = chain[index].upgrade!(document);
+      }
+      return document as Newest;
+    },
+  };
+}
+
+const observationManifestGuard = versionedGuard<ObservationManifest>([
+  { version: MANIFEST_SCHEMA_VERSION, schema: observationManifestSchema },
+]);
+
 export function parseObservationManifest(value: unknown): ObservationManifest | null {
-  const result = observationManifestSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return observationManifestGuard.parse(value);
 }
 
 export function parseObservationManifestJson(text: string): ObservationManifest | null {
   return parseObservationManifest(tryParseJson(text));
 }
 
+const manifestGuard = versionedGuard<Manifest>([
+  { version: MANIFEST_SCHEMA_VERSION, schema: manifestSchema },
+]);
+
 export function parseManifest(value: unknown): Manifest | null {
-  const result = manifestSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return manifestGuard.parse(value);
 }
 
 export function parseManifestJson(text: string): Manifest | null {
   return parseManifest(tryParseJson(text));
 }
 
+const modelCatalogueGuard = versionedGuard<ModelCatalogue>([
+  { version: MODEL_CATALOGUE_SCHEMA_VERSION, schema: modelCatalogueSchema },
+]);
+
 export function parseModelCatalogue(value: unknown): ModelCatalogue | null {
-  const result = modelCatalogueSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return modelCatalogueGuard.parse(value);
 }
 
 export function parseModelCatalogueJson(text: string): ModelCatalogue | null {
   return parseModelCatalogue(tryParseJson(text));
 }
 
+const sitesCatalogueGuard = versionedGuard<SitesCatalogue>([
+  { version: SITES_SCHEMA_VERSION, schema: sitesCatalogueSchema },
+]);
+
 export function parseSitesCatalogue(value: unknown): SitesCatalogue | null {
-  const result = sitesCatalogueSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return sitesCatalogueGuard.parse(value);
 }
 
 export function parseSitesCatalogueJson(text: string): SitesCatalogue | null {
   return parseSitesCatalogue(tryParseJson(text));
 }
 
+const siteContextGuard = versionedGuard<SiteContext>([
+  { version: SITE_CONTEXT_SCHEMA_VERSION, schema: siteContextSchema },
+]);
+
 export function parseSiteContext(value: unknown): SiteContext | null {
-  const result = siteContextSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return siteContextGuard.parse(value);
 }
 
 export function parseSiteContextJson(text: string): SiteContext | null {
   return parseSiteContext(tryParseJson(text));
 }
 
+const runsIndexGuard = versionedGuard<RunsIndex>([
+  { version: RUNS_INDEX_SCHEMA_VERSION, schema: runsIndexSchema },
+]);
+
 export function parseRunsIndex(value: unknown): RunsIndex | null {
-  const result = runsIndexSchema.safeParse(value);
-  return result.success ? result.data : null;
+  return runsIndexGuard.parse(value);
 }
 
 export function parseRunsIndexJson(text: string): RunsIndex | null {
