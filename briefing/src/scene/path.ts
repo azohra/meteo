@@ -8,19 +8,32 @@ export function short(value: number): number {
   return Number(value.toFixed(2));
 }
 
+/* The Catmull-Rom-flavoured control points of one cubic segment — the one
+   home for the formula, shared by the serializer below and pathYAtX so a
+   query can never drift from the drawn stroke. */
+function segmentControls(
+  points: readonly PlotPoint[],
+  index: number,
+): { firstX: number; firstY: number; secondX: number; secondY: number } {
+  const previous = points[Math.max(0, index - 1)];
+  const current = points[index];
+  const next = points[index + 1];
+  const following = points[Math.min(points.length - 1, index + 2)];
+  return {
+    firstX: current.x + (next.x - previous.x) / 6,
+    firstY: current.y + (next.y - previous.y) / 6,
+    secondX: next.x - (following.x - current.x) / 6,
+    secondY: next.y - (following.y - current.y) / 6,
+  };
+}
+
 function curvedSegments(points: readonly PlotPoint[]): string {
   if (points.length < 2) return "";
   if (points.length === 2) return ` L${short(points[1].x)},${short(points[1].y)}`;
   let result = "";
   for (let index = 0; index < points.length - 1; index += 1) {
-    const previous = points[Math.max(0, index - 1)];
-    const current = points[index];
     const next = points[index + 1];
-    const following = points[Math.min(points.length - 1, index + 2)];
-    const firstX = current.x + (next.x - previous.x) / 6;
-    const firstY = current.y + (next.y - previous.y) / 6;
-    const secondX = next.x - (following.x - current.x) / 6;
-    const secondY = next.y - (following.y - current.y) / 6;
+    const { firstX, firstY, secondX, secondY } = segmentControls(points, index);
     result += ` C${short(firstX)},${short(firstY)} ${short(secondX)},${short(secondY)} ${short(next.x)},${short(next.y)}`;
   }
   return result;
@@ -65,6 +78,59 @@ export function sampledPath(points: ReadonlyArray<PlotPoint | null>): {
     segment = [];
   }
   return { path: paths.join(" "), dots };
+}
+
+function cubicAt(a: number, b: number, c: number, d: number, t: number): number {
+  const u = 1 - t;
+  return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
+}
+
+/**
+ * y of the drawn series line at an arbitrary x, or null where the line is
+ * broken or x falls outside every run. Nulls split the points into runs
+ * exactly as `pointPath` does, a two-point run is the straight segment the
+ * serializer draws, and longer runs invert the same cubic
+ * `segmentControls` feeds the stroke — so a caller's continuation stub or
+ * cursor anchor meets the line instead of a straight-line approximation
+ * drifting off it. Within a run x must increase monotonically (plot
+ * columns do; control xs lean forward over uniform pitch), so bisection
+ * on t converges.
+ */
+export function pathYAtX(points: ReadonlyArray<PlotPoint | null>, x: number): number | null {
+  let run: PlotPoint[] = [];
+  for (const point of [...points, null]) {
+    if (point) {
+      run.push(point);
+      continue;
+    }
+    const y = runYAtX(run, x);
+    if (y !== null) return y;
+    run = [];
+  }
+  return null;
+}
+
+function runYAtX(run: readonly PlotPoint[], x: number): number | null {
+  if (run.length < 2 || x < run[0].x || x > run[run.length - 1].x) return null;
+  const index = run.findIndex(
+    (point, at) => at < run.length - 1 && x >= point.x && x <= run[at + 1].x,
+  );
+  if (index === -1) return null;
+  const current = run[index];
+  const next = run[index + 1];
+  if (run.length === 2) {
+    return current.y + ((x - current.x) / (next.x - current.x)) * (next.y - current.y);
+  }
+  const { firstX, firstY, secondX, secondY } = segmentControls(run, index);
+  let low = 0;
+  let high = 1;
+  for (let step = 0; step < 24; step += 1) {
+    const mid = (low + high) / 2;
+    if (cubicAt(current.x, firstX, secondX, next.x, mid) < x) low = mid;
+    else high = mid;
+  }
+  const t = (low + high) / 2;
+  return cubicAt(current.y, firstY, secondY, next.y, t);
 }
 
 /** Translucent envelope between two edges (ensemble p25-p75 bands), using the same curved segments as the median line so the line can never exit its own envelope; nulls split the band into runs. */

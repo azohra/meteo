@@ -32,7 +32,7 @@ export {
   type FieldNode,
 } from "./field.js";
 export { BARB_GLYPH_RADIUS, windBarbParts, windBarbPaths, type WindBarbParts } from "./barbs.js";
-export { curvedPath, pointPath, bandPath, type PlotPoint } from "./path.js";
+export { curvedPath, pointPath, bandPath, pathYAtX, type PlotPoint } from "./path.js";
 export {
   DEFAULT_CAPE_CLASSES,
   DEFAULT_OVERLAYS,
