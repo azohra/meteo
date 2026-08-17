@@ -135,6 +135,19 @@ describe("publishPlan", () => {
     });
   });
 
+  it("cache lifetimes are the caller's — the TRIAL defaults move without touching the plan", () => {
+    const root = scratchTree("gfs");
+    const plan = publishPlan("gfs", root, NOW(), {
+      live: "public, max-age=60",
+      closedMonths: "public, max-age=604800",
+    });
+    const byKey = new Map(plan.map((upload) => [upload.key, upload]));
+    expect(byKey.get("gfs/manifest.json")?.cacheControl).toBe("public, max-age=60");
+    expect(byKey.get("gfs/history/dundee/2026-06.jsonl.gz")?.cacheControl).toBe(
+      "public, max-age=604800",
+    );
+  });
+
   it("tolerates a model without history (observation trees)", () => {
     const root = mkdtempSync(join(tmpdir(), "meteo-upload-test-"));
     mkdirSync(join(root, "goes18-dsr", "sites"), { recursive: true });

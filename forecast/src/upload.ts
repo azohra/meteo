@@ -21,8 +21,21 @@ import { REQUEST_TIMEOUT_S } from "./providers/transport.js";
    Every key comes from the reader contract's documentPaths: the layout has
    one home, and this module never spells a path. */
 
-const SHORT_TTL = "public, max-age=300";
-const CLOSED_TTL = "public, max-age=31536000, immutable";
+/* Cache lifetimes are the operator's, not the platform's — a deployment
+   chooses them to match its own tick and CDN. What IS the dataset's own
+   semantics: a closed month archive never changes again, so whatever the
+   operator picks for closed months may safely be immutable, while
+   everything else changes with the next run. The TRIAL defaults suit a
+   15-minute tick and are caller-movable. */
+export interface CacheLifetimes {
+  /** Objects the next run replaces: manifests, site documents, open months, runs.json. TRIAL default "public, max-age=300". */
+  live?: string;
+  /** Month archives that can no longer receive an append. TRIAL default "public, max-age=31536000, immutable". */
+  closedMonths?: string;
+}
+
+const TRIAL_LIVE_TTL = "public, max-age=300";
+const TRIAL_CLOSED_TTL = "public, max-age=31536000, immutable";
 const JSON_TYPE = "application/json";
 const GZIP_TYPE = "application/gzip";
 
@@ -51,7 +64,14 @@ export function openMonths(now: Date): { current: string; previous: string } {
  * indexes, site documents, and the manifest last. Pure — walks the local
  * tree and the clock, moves no bytes.
  */
-export function publishPlan(modelSlug: string, dataRoot: string, now: Date): PlannedUpload[] {
+export function publishPlan(
+  modelSlug: string,
+  dataRoot: string,
+  now: Date,
+  lifetimes: CacheLifetimes = {},
+): PlannedUpload[] {
+  const liveTtl = lifetimes.live ?? TRIAL_LIVE_TTL;
+  const closedTtl = lifetimes.closedMonths ?? TRIAL_CLOSED_TTL;
   const modelRoot = join(dataRoot, modelSlug);
   const open = openMonths(now);
   const isOpen = (month: string) => month === open.current || month === open.previous;
@@ -70,7 +90,7 @@ export function publishPlan(modelSlug: string, dataRoot: string, now: Date): Pla
           (isOpen(month) ? openArchives : closedArchives).push({
             path,
             key: documentPaths.history(modelSlug, site, month),
-            cacheControl: isOpen(month) ? SHORT_TTL : CLOSED_TTL,
+            cacheControl: isOpen(month) ? liveTtl : closedTtl,
             contentType: GZIP_TYPE,
           });
         } else if (file.endsWith(".index.json")) {
@@ -78,7 +98,7 @@ export function publishPlan(modelSlug: string, dataRoot: string, now: Date): Pla
           (isOpen(month) ? openIndexes : closedIndexes).push({
             path,
             key: documentPaths.historyIndex(modelSlug, site, month),
-            cacheControl: isOpen(month) ? SHORT_TTL : CLOSED_TTL,
+            cacheControl: isOpen(month) ? liveTtl : closedTtl,
             contentType: JSON_TYPE,
           });
         }
@@ -94,7 +114,7 @@ export function publishPlan(modelSlug: string, dataRoot: string, now: Date): Pla
       sites.push({
         path: join(sitesRoot, file),
         key: documentPaths.siteDocument(modelSlug, file.slice(0, -".json".length)),
-        cacheControl: SHORT_TTL,
+        cacheControl: liveTtl,
         contentType: JSON_TYPE,
       });
     }
@@ -109,7 +129,7 @@ export function publishPlan(modelSlug: string, dataRoot: string, now: Date): Pla
     {
       path: join(modelRoot, "manifest.json"),
       key: documentPaths.manifest(modelSlug),
-      cacheControl: SHORT_TTL,
+      cacheControl: liveTtl,
       contentType: JSON_TYPE,
     },
   ];
@@ -123,6 +143,7 @@ export type PublishVerdict =
 export interface PublishOptions extends DatasetOptions {
   dataRoot?: string;
   now?: () => Date;
+  cacheLifetimes?: CacheLifetimes;
 }
 
 const RETRYABLE_S3_CODES = new Set([
@@ -165,7 +186,7 @@ export async function publishModel(
   }
 
   const now = options.now ?? (() => new Date());
-  const plan = publishPlan(modelSlug, dataRoot, now());
+  const plan = publishPlan(modelSlug, dataRoot, now(), options.cacheLifetimes);
   for (const upload of plan) {
     await putObject(upload.key, readFileSync(upload.path), upload, options);
   }
@@ -176,7 +197,7 @@ export async function publishModel(
   await putObject(
     documentPaths.runs(),
     readFileSync(runsPath),
-    { cacheControl: SHORT_TTL, contentType: JSON_TYPE },
+    { cacheControl: options.cacheLifetimes?.live ?? TRIAL_LIVE_TTL, contentType: JSON_TYPE },
     options,
   );
   return { verdict: "published", objects: plan.length + 1 };

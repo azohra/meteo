@@ -27,7 +27,8 @@ const TERRAIN_USAGE = "usage: meteo forecast terrain --sites PATH [--output PATH
 const RUNS_INDEX_USAGE = "usage: meteo forecast runs-index [--output PATH]";
 const FRESHNESS_USAGE = "usage: meteo forecast freshness --model SLUG --manifest PATH";
 const CATALOGUE_USAGE = "usage: meteo forecast catalogue [--output PATH]";
-const PUBLISH_USAGE = "usage: meteo forecast publish --model SLUG [--data PATH]";
+const PUBLISH_USAGE =
+  "usage: meteo forecast publish --model SLUG [--data PATH] [--cache-live VALUE] [--cache-closed VALUE]";
 
 export interface CliOverrides {
   runBuilder?: (slug: string, options: RegistryBuildOptions) => Promise<unknown>;
@@ -201,7 +202,14 @@ async function publishCommand(
 ): Promise<number> {
   const { values } = parseArgs({
     args: [...args],
-    options: { model: { type: "string" }, data: { type: "string", default: "data" } },
+    options: {
+      model: { type: "string" },
+      data: { type: "string", default: "data" },
+      // Cache lifetimes are deployment choices; the TRIAL defaults live
+      // with the upload module.
+      "cache-live": { type: "string" },
+      "cache-closed": { type: "string" },
+    },
     allowPositionals: false,
   });
   if (values.model === undefined) {
@@ -213,6 +221,7 @@ async function publishCommand(
       ...(overrides.dataset ?? {}),
       dataRoot: resolvePath(values.data!),
       now: overrides.now,
+      cacheLifetimes: { live: values["cache-live"], closedMonths: values["cache-closed"] },
     });
     if (result.verdict === "nothing") {
       stdout(`No new ${values.model} output to upload.`);

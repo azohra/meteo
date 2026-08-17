@@ -69,26 +69,31 @@ check for TypeScript consumers.
 
 ## Publish with the engine
 
-For an S3-compatible bucket, `meteo forecast publish` uploads one model's
-freshly built tree through the authenticated endpoint — the same
-credential set dataset reads use (`R2_ENDPOINT`, `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY`, `METEO_R2_BUCKET`; `METEO_DATA_BASE` stays
-unset):
+If your destination is an S3-compatible bucket, `meteo forecast publish`
+can run the upload itself, in the S3 mode
+[Environment and credentials](/docs/forecast/environment/) describes —
+one deployment choice among the sync approaches below, not the required
+one:
 
 ```sh title="Terminal"
 meteo forecast build --model gfs --sites ./sites.json --output data
 meteo forecast publish --model gfs --data data
 ```
 
-The verb owns the publication protocol so no upload script restates it:
-it skips when the build wrote nothing, refuses to publish a scratch tree
-older than the published dataset (an unreachable bucket fails loudly
-rather than reading as either verdict), uploads history archives before
-site documents before the manifest — the manifest is the publication's
-commit point, so nothing it references appears after it — serves closed
-month archives on an immutable TTL, and then regenerates and uploads
-`runs.json` from the published manifests. Every object key comes from the
-reader contract's `documentPaths`.
+What the verb owns is the publication protocol, so an upload script does
+not have to restate it: it skips when the build wrote nothing, refuses to
+publish a scratch tree older than the published dataset (an unreachable
+bucket fails loudly rather than reading as either verdict), uploads
+history archives before site documents before the manifest — the
+manifest is the publication's commit point, so nothing it references
+appears after it — and then regenerates and uploads `runs.json` from the
+published manifests. Every object key comes from the reader contract's
+`documentPaths`.
+
+Cache lifetimes remain your deployment's choice (`--cache-live`,
+`--cache-closed`); the TRIAL defaults suit a 15-minute tick, and the one
+dataset fact behind them is that a closed month archive never changes
+again, so your closed-months value may safely be immutable.
 
 Of the [dataset-root files](#publish-the-dataset-root), `publish`
 advances only `runs.json`; the three catalogues remain their own steps.
