@@ -603,13 +603,27 @@ describe("meteo forecast runs-index", () => {
   });
 });
 
-describe("meteo forecast freshness", () => {
-  function localManifest(generatedAt: string): string {
-    const tmp = scratch();
-    const path = join(tmp, "manifest.json");
-    writeFileSync(path, JSON.stringify({ model: "gfs", generatedAt }));
-    return path;
+describe("meteo forecast publish --dry-run", () => {
+  // The freshness verdicts live inside publish now; --dry-run is the probe.
+  function s3Env(): void {
+    delete process.env["METEO_DATA_BASE"];
+    process.env["METEO_S3_ENDPOINT"] = "https://account.r2.cloudflarestorage.com";
+    process.env["AWS_ACCESS_KEY_ID"] = "key";
+    process.env["AWS_SECRET_ACCESS_KEY"] = "secret";
+    process.env["METEO_R2_BUCKET"] = "meteo-data";
   }
+
+  function modelTree(generatedAt: string): string {
+    const root = scratch();
+    mkdirSync(join(root, "gfs"), { recursive: true });
+    writeFileSync(
+      join(root, "gfs", "manifest.json"),
+      JSON.stringify({ model: "gfs", referenceTime: "2026-08-09T06:00:00Z", generatedAt }),
+    );
+    return root;
+  }
+
+  const noSuchKey = '<?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchKey</Code></Error>';
 
   function published(generatedAt: string): string {
     return JSON.stringify({
@@ -619,77 +633,93 @@ describe("meteo forecast freshness", () => {
     });
   }
 
-  it("prints exactly `fresh` when nothing is published", async () => {
-    const manifest = localManifest("2026-08-09T09:12:00Z");
-    const wire = stubFetch([{ status: 404 }]);
+  it("reports what it would publish when nothing is published yet — and moves no bytes", async () => {
+    s3Env();
+    const data = modelTree("2026-08-09T09:12:00Z");
+    const wire = stubFetch([{ status: 404, body: noSuchKey }]);
     const io = capture();
 
-    const result = await main(["forecast", "freshness", "--model", "gfs", "--manifest", manifest], {
-      dataset: { fetch: wire.fetch },
-      ...io,
-    });
+    const result = await main(
+      ["forecast", "publish", "--model", "gfs", "--data", data, "--dry-run"],
+      { dataset: { fetch: wire.fetch }, ...io },
+    );
 
     expect(result).toBe(0);
-    expect(io.out).toEqual(["fresh"]);
+    expect(io.out).toEqual(["Would publish 2 objects for gfs."]);
+    expect(wire.requests.filter((request) => request.init?.method === "PUT")).toHaveLength(0);
   });
 
-  it("prints exactly `fresh` when the published manifest is older", async () => {
-    const manifest = localManifest("2026-08-09T09:12:00Z");
+  it("would publish over an older published manifest", async () => {
+    s3Env();
+    const data = modelTree("2026-08-09T09:12:00Z");
     const wire = stubFetch([{ status: 200, body: published("2026-08-09T03:00:00Z") }]);
     const io = capture();
 
     expect(
-      await main(["forecast", "freshness", "--model", "gfs", "--manifest", manifest], {
+      await main(["forecast", "publish", "--model", "gfs", "--data", data, "--dry-run"], {
         dataset: { fetch: wire.fetch },
         ...io,
       }),
     ).toBe(0);
-    expect(io.out).toEqual(["fresh"]);
+    expect(io.out).toEqual(["Would publish 2 objects for gfs."]);
   });
 
-  it("prints exactly `stale` when the published manifest is not older — still exit 0", async () => {
-    const manifest = localManifest("2026-08-09T09:12:00Z");
+  it("skips when the published manifest is not older — still exit 0", async () => {
+    s3Env();
+    const data = modelTree("2026-08-09T09:12:00Z");
     const wire = stubFetch([{ status: 200, body: published("2026-08-09T09:12:00Z") }]);
     const io = capture();
 
     expect(
-      await main(["forecast", "freshness", "--model", "gfs", "--manifest", manifest], {
+      await main(["forecast", "publish", "--model", "gfs", "--data", data, "--dry-run"], {
         dataset: { fetch: wire.fetch },
         ...io,
       }),
     ).toBe(0);
-    expect(io.out).toEqual(["stale"]);
+    expect(io.out).toEqual([
+      "Published gfs manifest is not older than the local one; skipping upload.",
+    ]);
   });
 
   it("a broken read exits nonzero WITHOUT a verdict — never `stale`", async () => {
-    // The upload flow skips on `stale`; a transport failure that printed
-    // stale would silently stop publication. It must fail loudly instead.
-    const manifest = localManifest("2026-08-09T09:12:00Z");
+    // Publication skips on stale; a transport failure that read as stale
+    // would silently stop publishing. It must fail loudly instead.
+    s3Env();
+    const data = modelTree("2026-08-09T09:12:00Z");
     const wire = stubFetch([new Error("reset"), new Error("reset"), new Error("reset")]);
     const io = capture();
 
-    const result = await main(["forecast", "freshness", "--model", "gfs", "--manifest", manifest], {
-      dataset: { fetch: wire.fetch, sleep: async () => {} },
-      ...io,
-    });
+    const result = await main(
+      ["forecast", "publish", "--model", "gfs", "--data", data, "--dry-run"],
+      { dataset: { fetch: wire.fetch, sleep: async () => {} }, ...io },
+    );
 
     expect(result).toBe(1);
     expect(io.out).toEqual([]);
   });
 
-  it("an unreadable local manifest is a failure, not a verdict", async () => {
+  it("an absent local manifest means nothing to upload — the builder wrote nothing", async () => {
+    s3Env();
     const io = capture();
     const result = await main(
-      ["forecast", "freshness", "--model", "gfs", "--manifest", join(scratch(), "missing.json")],
+      ["forecast", "publish", "--model", "gfs", "--data", scratch(), "--dry-run"],
       { dataset: { fetch: stubFetch([]).fetch }, ...io },
     );
-    expect(result).toBe(1);
-    expect(io.out).toEqual([]);
+    expect(result).toBe(0);
+    expect(io.out).toEqual(["No new gfs output to upload."]);
   });
 
-  it("requires --model and --manifest", async () => {
-    expect(await main(["forecast", "freshness", "--manifest", "x.json"], capture())).toBe(2);
-    expect(await main(["forecast", "freshness", "--model", "gfs"], capture())).toBe(2);
+  it("requires --model, and refuses to publish without the authenticated endpoint", async () => {
+    expect(await main(["forecast", "publish", "--dry-run"], capture())).toBe(2);
+    // useCleanWireEnv leaves METEO_DATA_BASE set: read-only configuration.
+    const io = capture();
+    expect(
+      await main(["forecast", "publish", "--model", "gfs", "--dry-run"], {
+        dataset: { fetch: stubFetch([]).fetch },
+        ...io,
+      }),
+    ).toBe(1);
+    expect(io.err.join("\n")).toContain("METEO_S3_ENDPOINT");
   });
 });
 

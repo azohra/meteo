@@ -230,7 +230,7 @@ describe("loadForecast", () => {
         modelSlug: "hrdps-continental",
         siteSlug: "dundee",
       }),
-    ).toEqual({ miss: "invalid", url: PROFILE_URL });
+    ).toEqual({ miss: "invalid", url: PROFILE_URL, supportedSchemaVersion: 2 });
   });
 
   it("throws TransportHttpError on non-404 failures instead of masking them", async () => {
@@ -335,7 +335,12 @@ describe("loadSmoke", () => {
     });
     expect(
       await loadSmoke({ fetch, baseUrl: BASE, modelSlug: "raqdps", siteSlug: "dundee" }),
-    ).toEqual({ miss: "invalid", url: SMOKE_URL, declaredSchemaVersion: 2 });
+    ).toEqual({
+      miss: "invalid",
+      url: SMOKE_URL,
+      declaredSchemaVersion: 2,
+      supportedSchemaVersion: 1,
+    });
   });
 
   it("an invalid miss echoes the document's declared schemaVersion so a reader can say 'upgrade', not just 'invalid'", async () => {
@@ -352,7 +357,12 @@ describe("loadSmoke", () => {
         modelSlug: "raqdps",
         siteSlug: "dundee",
       }),
-    ).toEqual({ miss: "invalid", url: SMOKE_URL, declaredSchemaVersion: 99 });
+    ).toEqual({
+      miss: "invalid",
+      url: SMOKE_URL,
+      declaredSchemaVersion: 99,
+      supportedSchemaVersion: 1,
+    });
 
     // Unversioned garbage stays a bare invalid miss: that one is corruption.
     const garbage = stubFetch({
@@ -366,7 +376,7 @@ describe("loadSmoke", () => {
         modelSlug: "raqdps",
         siteSlug: "dundee",
       }),
-    ).toEqual({ miss: "invalid", url: SMOKE_URL });
+    ).toEqual({ miss: "invalid", url: SMOKE_URL, supportedSchemaVersion: 1 });
   });
 });
 
@@ -415,7 +425,12 @@ describe("loadObservation", () => {
         modelSlug: "goes18-dsr",
         siteSlug: "dundee",
       }),
-    ).toEqual({ miss: "invalid", url: OBSERVATION_URL, declaredSchemaVersion: 2 });
+    ).toEqual({
+      miss: "invalid",
+      url: OBSERVATION_URL,
+      declaredSchemaVersion: 2,
+      supportedSchemaVersion: 1,
+    });
 
     const failing = stubFetch({ [OBSERVATION_URL]: [status(503)] });
     await expect(
@@ -574,6 +589,7 @@ describe("loadRuns", () => {
     expect(await loadRuns({ fetch: invalid.fetch, baseUrl: BASE })).toEqual({
       miss: "invalid",
       url: `${BASE}/runs.json`,
+      supportedSchemaVersion: 1,
     });
     const failing = stubFetch({ [`${BASE}/runs.json`]: [status(500)] });
     await expect(loadRuns({ fetch: failing.fetch, baseUrl: BASE })).rejects.toThrow(

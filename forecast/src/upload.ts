@@ -1,17 +1,20 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { AwsClient } from "aws4fetch";
 import { documentPaths } from "@azohra/meteo.briefing/transport";
 import { cataloguedModelSlugs } from "./catalogue.js";
 import { PublisherConfigurationError } from "./config.js";
 import {
   prefetchedManifestReader,
   publishedManifest,
+  RETRYABLE_S3_CODES,
+  s3Backoff,
+  s3ErrorCode,
   s3Mode,
+  s3ObjectName,
+  signedS3Fetch,
   type DatasetOptions,
 } from "./dataset.js";
 import { writeRunsIndex } from "./publish.js";
-import { REQUEST_TIMEOUT_S } from "./providers/transport.js";
 
 /* Publishing a model is an ordered upload, and the order is the protocol:
    history archives before site profiles before the manifest — the manifest
@@ -138,22 +141,16 @@ export function publishPlan(
 export type PublishVerdict =
   | { verdict: "nothing" }
   | { verdict: "stale" }
+  | { verdict: "would-publish"; objects: number }
   | { verdict: "published"; objects: number };
 
 export interface PublishOptions extends DatasetOptions {
   dataRoot?: string;
   now?: () => Date;
   cacheLifetimes?: CacheLifetimes;
+  /** Compute the verdict and the plan without moving a byte. */
+  dryRun?: boolean;
 }
-
-const RETRYABLE_S3_CODES = new Set([
-  "InternalError",
-  "RequestTimeout",
-  "ServiceUnavailable",
-  "SlowDown",
-  "Throttling",
-  "ThrottlingException",
-]);
 
 /**
  * Publishes one model's scratch tree to the dataset bucket: skips without a
@@ -169,9 +166,10 @@ export async function publishModel(
 ): Promise<PublishVerdict> {
   if (!s3Mode()) {
     throw new PublisherConfigurationError(
-      "publishing needs the authenticated S3 endpoint: set R2_ENDPOINT, " +
-        "AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and METEO_R2_BUCKET, and " +
-        "leave METEO_DATA_BASE unset — the public base cannot accept writes",
+      "publishing needs the authenticated S3 endpoint: set METEO_S3_ENDPOINT " +
+        "(R2_ENDPOINT is honored as an alias), AWS_ACCESS_KEY_ID, " +
+        "AWS_SECRET_ACCESS_KEY, and METEO_R2_BUCKET, and leave " +
+        "METEO_DATA_BASE unset — the public base cannot accept writes",
     );
   }
   const dataRoot = options.dataRoot ?? "data";
@@ -187,6 +185,9 @@ export async function publishModel(
 
   const now = options.now ?? (() => new Date());
   const plan = publishPlan(modelSlug, dataRoot, now(), options.cacheLifetimes);
+  if (options.dryRun) {
+    return { verdict: "would-publish", objects: plan.length + 1 };
+  }
   for (const upload of plan) {
     await putObject(upload.key, readFileSync(upload.path), upload, options);
   }
@@ -209,61 +210,36 @@ async function putObject(
   headers: { cacheControl: string; contentType: string },
   options: DatasetOptions,
 ): Promise<void> {
-  const fetchImpl = options.fetch ?? globalThis.fetch;
-  const sleep = options.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
-  const random = options.random ?? Math.random;
-  const endpoint = (process.env["R2_ENDPOINT"] ?? "").replace(/\/+$/, "");
-  const bucket = process.env["METEO_R2_BUCKET"];
-  if (!bucket) {
-    throw new PublisherConfigurationError(
-      "publishing needs METEO_R2_BUCKET to name the dataset bucket",
-    );
-  }
-  const client = new AwsClient({
-    accessKeyId: process.env["AWS_ACCESS_KEY_ID"] ?? "",
-    secretAccessKey: process.env["AWS_SECRET_ACCESS_KEY"] ?? "",
-    service: "s3",
-    region: "auto",
-  });
-  const url = `${endpoint}/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
   // Copied into a fresh ArrayBuffer so the bytes satisfy BodyInit regardless
   // of the source buffer's backing store.
   const bytes = new Uint8Array(body);
+  const init = {
+    method: "PUT" as const,
+    headers: {
+      "cache-control": headers.cacheControl,
+      "content-type": headers.contentType,
+    },
+    body: bytes,
+  };
 
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const signed = await client.sign(url, {
-      method: "PUT",
-      headers: {
-        "cache-control": headers.cacheControl,
-        "content-type": headers.contentType,
-      },
-      body: bytes,
-    });
-    let status: number | null = null;
-    let payload: Uint8Array | null = null;
+    let exchange: { status: number; payload: Uint8Array } | null = null;
     try {
-      const response = await fetchImpl(signed.url, {
-        method: "PUT",
-        headers: Object.fromEntries(signed.headers),
-        body: bytes,
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_S * 1000),
-      });
-      status = response.status;
-      payload = new Uint8Array(await response.arrayBuffer());
+      exchange = await signedS3Fetch(key, init, options);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
     }
-    if (status !== null) {
-      if (status === 200) return;
-      const code = /<Code>([^<]*)<\/Code>/.exec(new TextDecoder().decode(payload!))?.[1] ?? null;
-      if (!RETRYABLE_S3_CODES.has(code ?? "") && status < 500) {
-        throw new Error(`PUT s3://${bucket}/${key} failed with ${code ?? status}`);
+    if (exchange !== null) {
+      if (exchange.status === 200) return;
+      const code = s3ErrorCode(exchange.payload);
+      if (!RETRYABLE_S3_CODES.has(code ?? "") && exchange.status < 500) {
+        throw new Error(`PUT ${s3ObjectName(key)} failed with ${code ?? exchange.status}`);
       }
-      lastError = new Error(`PUT s3://${bucket}/${key} failed with ${code ?? status}`);
+      lastError = new Error(`PUT ${s3ObjectName(key)} failed with ${code ?? exchange.status}`);
     }
     if (attempt < 2) {
-      await sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+      await s3Backoff(attempt, options);
     }
   }
   throw lastError!;

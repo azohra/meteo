@@ -1,4 +1,9 @@
 import {
+  MANIFEST_SCHEMA_VERSION,
+  OBSERVATION_SCHEMA_VERSION,
+  RUNS_INDEX_SCHEMA_VERSION,
+  SITE_FORECAST_SCHEMA_VERSION,
+  SMOKE_SCHEMA_VERSION,
   parseObservationDocumentJson,
   parseRunsIndexJson,
   parseSmokeDocumentJson,
@@ -71,6 +76,12 @@ export interface DocumentMiss {
    * are not versioned JSON at all — that one is corruption.
    */
   declaredSchemaVersion?: number;
+  /**
+   * The newest schemaVersion the loader's guard speaks, when the loader
+   * knows its family. "got 3, speak 1" in one log line: declared newer
+   * than supported means a newer writer published — upgrade the package.
+   */
+  supportedSchemaVersion?: number;
 }
 
 /**
@@ -147,6 +158,8 @@ export interface LoadSiteDocumentOptions {
 export interface LoadDocumentOptions<T extends RunStampedDocument> extends LoadSiteDocumentOptions {
   /** The contract guard for the site document; the manifest side of the pair is always guarded by the forecast-manifest guard. */
   guard: (text: string) => T | null;
+  /** The newest schemaVersion the guard speaks, echoed on an invalid miss so the reader can say "upgrade" instead of only "invalid". */
+  supportedSchemaVersion?: number;
 }
 
 export interface LoadedDocument<T extends RunStampedDocument> {
@@ -174,8 +187,8 @@ export async function loadDocument<T extends RunStampedDocument>(
 
   const fetchPair = async () => {
     const [manifest, document] = await Promise.all([
-      fetchDocument(fetch, manifestUrl, parseForecastManifestJson),
-      fetchDocument(fetch, documentUrl, guard),
+      fetchDocument(fetch, manifestUrl, parseForecastManifestJson, MANIFEST_SCHEMA_VERSION),
+      fetchDocument(fetch, documentUrl, guard, options.supportedSchemaVersion),
     ]);
     return { manifest, document };
   };
@@ -212,7 +225,11 @@ export interface LoadedForecast {
 export async function loadForecast(
   options: LoadForecastOptions,
 ): Promise<LoadedForecast | DocumentMiss> {
-  const loaded = await loadDocument({ ...options, guard: parseSiteForecastJson });
+  const loaded = await loadDocument({
+    ...options,
+    guard: parseSiteForecastJson,
+    supportedSchemaVersion: SITE_FORECAST_SCHEMA_VERSION,
+  });
   if (isMiss(loaded)) return loaded;
   return { manifest: loaded.manifest, profile: loaded.document, stale: loaded.stale };
 }
@@ -228,7 +245,11 @@ export interface LoadedSmoke {
 
 /** The smoke-typed `loadDocument`: smoke documents carry the same run stamp as profiles, so they run the identical skew dance. */
 export async function loadSmoke(options: LoadSmokeOptions): Promise<LoadedSmoke | DocumentMiss> {
-  const loaded = await loadDocument({ ...options, guard: parseSmokeDocumentJson });
+  const loaded = await loadDocument({
+    ...options,
+    guard: parseSmokeDocumentJson,
+    supportedSchemaVersion: SMOKE_SCHEMA_VERSION,
+  });
   if (isMiss(loaded)) return loaded;
   return { manifest: loaded.manifest, smoke: loaded.document, stale: loaded.stale };
 }
@@ -253,7 +274,12 @@ export async function loadObservation(
 ): Promise<ObservationDocument | DocumentMiss> {
   const base = trimTrailingSlash(options.baseUrl);
   const documentUrl = `${base}/${documentPaths.siteDocument(options.modelSlug, options.siteSlug)}`;
-  return fetchDocument(options.fetch, documentUrl, parseObservationDocumentJson);
+  return fetchDocument(
+    options.fetch,
+    documentUrl,
+    parseObservationDocumentJson,
+    OBSERVATION_SCHEMA_VERSION,
+  );
 }
 
 export interface LoadSiteSetOptions<T extends RunStampedDocument> {
@@ -265,6 +291,8 @@ export interface LoadSiteSetOptions<T extends RunStampedDocument> {
   siteSlugs: readonly string[];
   /** The contract guard for the site documents, exactly as in `loadDocument`. */
   guard: (text: string) => T | null;
+  /** As in `loadDocument`: the guard's newest schemaVersion, echoed on invalid misses. */
+  supportedSchemaVersion?: number;
   retry?: RetryOptions;
 }
 
@@ -306,14 +334,24 @@ export async function loadSiteSet<T extends RunStampedDocument>(
   const delayMs = options.retry?.delayMs ?? 1500;
   const sleep = options.retry?.sleep ?? defaultSleep;
 
-  let manifest = await fetchDocument(fetch, manifestUrl, parseForecastManifestJson);
+  let manifest = await fetchDocument(
+    fetch,
+    manifestUrl,
+    parseForecastManifestJson,
+    MANIFEST_SCHEMA_VERSION,
+  );
   if (isMiss(manifest)) return manifest;
 
   const documents: Record<string, T> = {};
   const misses: Record<string, DocumentMiss> = {};
   await Promise.all(
     siteSlugs.map(async (siteSlug) => {
-      const loaded = await fetchDocument(fetch, documentUrl(siteSlug), guard);
+      const loaded = await fetchDocument(
+        fetch,
+        documentUrl(siteSlug),
+        guard,
+        options.supportedSchemaVersion,
+      );
       if (isMiss(loaded)) misses[siteSlug] = loaded;
       else documents[siteSlug] = loaded;
     }),
@@ -326,9 +364,14 @@ export async function loadSiteSet<T extends RunStampedDocument>(
   if (disagreeing.length > 0) {
     await sleep(delayMs);
     const [retriedManifest] = await Promise.all([
-      fetchDocument(fetch, manifestUrl, parseForecastManifestJson),
+      fetchDocument(fetch, manifestUrl, parseForecastManifestJson, MANIFEST_SCHEMA_VERSION),
       ...disagreeing.map(async (siteSlug) => {
-        const retried = await fetchDocument(fetch, documentUrl(siteSlug), guard);
+        const retried = await fetchDocument(
+          fetch,
+          documentUrl(siteSlug),
+          guard,
+          options.supportedSchemaVersion,
+        );
         if (!isMiss(retried)) documents[siteSlug] = retried;
       }),
     ]);
@@ -360,7 +403,12 @@ export interface LoadRunsOptions {
 /** Fetches data/runs.json — the cross-model run index — with the same miss semantics as `loadForecast`. */
 export async function loadRuns(options: LoadRunsOptions): Promise<RunsIndex | DocumentMiss> {
   const base = trimTrailingSlash(options.baseUrl);
-  return fetchDocument(options.fetch, `${base}/${documentPaths.runs()}`, parseRunsIndexJson);
+  return fetchDocument(
+    options.fetch,
+    `${base}/${documentPaths.runs()}`,
+    parseRunsIndexJson,
+    RUNS_INDEX_SCHEMA_VERSION,
+  );
 }
 
 function isMiss<T extends object>(value: T | DocumentMiss): value is DocumentMiss {
@@ -371,6 +419,7 @@ async function fetchDocument<T extends object>(
   fetch: TransportFetch,
   url: string,
   guard: (text: string) => T | null,
+  supported?: number,
 ): Promise<T | DocumentMiss> {
   const response = await fetch(url);
   if (response.status === 404) return { miss: "absent", url };
@@ -379,9 +428,12 @@ async function fetchDocument<T extends object>(
   const parsed = guard(text);
   if (parsed !== null) return parsed;
   const declared = declaredSchemaVersion(text);
-  return declared === undefined
-    ? { miss: "invalid", url }
-    : { miss: "invalid", url, declaredSchemaVersion: declared };
+  return {
+    miss: "invalid",
+    url,
+    ...(declared === undefined ? {} : { declaredSchemaVersion: declared }),
+    ...(supported === undefined ? {} : { supportedSchemaVersion: supported }),
+  };
 }
 
 /* An invalid document that is still well-formed JSON with a numeric

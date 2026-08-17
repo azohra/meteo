@@ -42,7 +42,7 @@ the CLI so external site and output paths are scoped consistently.
    ```
 
    Deployments that read their bucket directly instead leave it unset and
-   provide the R2 credential set (`METEO_R2_BUCKET`, `R2_ENDPOINT`,
+   provide the S3 credential set (`METEO_R2_BUCKET`, `METEO_S3_ENDPOINT`,
    `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
 5. **Run the build.** Remove `--dry-run` (and `--max-steps`, if you used
    it) for the full declared horizon.
@@ -69,11 +69,12 @@ meteo forecast build (--model SLUG | --all) --sites PATH
                [--history | --no-history]
                [--dry-run]
 
-meteo forecast terrain --sites PATH [--output PATH]
+meteo forecast publish --model SLUG [--data PATH] [--dry-run]
+               [--cache-live VALUE] [--cache-closed-months VALUE]
+
+meteo forecast terrain (--sites PATH [--output PATH] | --check)
 
 meteo forecast runs-index [--output PATH]
-
-meteo forecast freshness --model SLUG --manifest PATH
 
 meteo forecast catalogue [--output PATH]
 ```
@@ -89,11 +90,13 @@ successful build also appends
 the [append-only month archives](/docs/briefing/history-archives/) and their sidecar
 indexes. `--no-history` publishes current documents only.
 
-`terrain` regenerates
-[`site-context.json`](/docs/briefing/site-context-document/);
-`runs-index` regenerates `runs.json` wholesale from the published
-manifests; `freshness` prints exactly `fresh` or `stale` so an upload flow
-can refuse to publish backwards; `catalogue` emits the packaged
+`publish` uploads one model's tree in publication order, refusing to
+publish backwards (`--dry-run` prints the verdict and the plan without
+moving a byte); `terrain` regenerates
+[`site-context.json`](/docs/briefing/site-context-document/), and
+`terrain --check` answers `fresh` or `stale` for the published context
+against the published catalogue; `runs-index` regenerates `runs.json`
+wholesale from the published manifests; `catalogue` emits the packaged
 `models.json`. Teaching-scenario generation is source-checkout tooling,
 not engine surface.
 

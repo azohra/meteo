@@ -1,4 +1,5 @@
 import {
+  siteCatalogueEntrySchema,
   SITES_SCHEMA_VERSION,
   sitesCatalogueSchema,
   type SiteCatalogueEntry,
@@ -6,7 +7,9 @@ import {
 
 export { SITES_SCHEMA_VERSION };
 
-export const SITE_FIELDS = ["slug", "name", "latitude", "longitude", "timeZone"] as const;
+// Derived from the contract's own entry schema — the field list has no
+// second home to drift in.
+export const SITE_FIELDS = siteCatalogueEntrySchema.keyof().options;
 
 /** One catalogued site: identity and build selection, nothing measured. */
 export type Site = SiteCatalogueEntry;

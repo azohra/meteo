@@ -19,16 +19,16 @@ class CliFailure extends Error {}
 
 class UsageError extends Error {}
 
-const USAGE = "usage: meteo forecast <build|publish|terrain|runs-index|freshness|catalogue> ...";
+const USAGE = "usage: meteo forecast <build|publish|terrain|runs-index|catalogue> ...";
 const BUILD_USAGE =
   "usage: meteo forecast build (--model SLUG | --all) --sites PATH " +
   "[--output PATH] [--max-steps N] [--history|--no-history] [--dry-run]";
 const TERRAIN_USAGE = "usage: meteo forecast terrain (--sites PATH [--output PATH] | --check)";
 const RUNS_INDEX_USAGE = "usage: meteo forecast runs-index [--output PATH]";
-const FRESHNESS_USAGE = "usage: meteo forecast freshness --model SLUG --manifest PATH";
 const CATALOGUE_USAGE = "usage: meteo forecast catalogue [--output PATH]";
 const PUBLISH_USAGE =
-  "usage: meteo forecast publish --model SLUG [--data PATH] [--cache-live VALUE] [--cache-closed VALUE]";
+  "usage: meteo forecast publish --model SLUG [--data PATH] [--dry-run] " +
+  "[--cache-live VALUE] [--cache-closed-months VALUE]";
 
 export interface CliOverrides {
   runBuilder?: (slug: string, options: RegistryBuildOptions) => Promise<unknown>;
@@ -208,7 +208,8 @@ async function publishCommand(
       // Cache lifetimes are deployment choices; the TRIAL defaults live
       // with the upload module.
       "cache-live": { type: "string" },
-      "cache-closed": { type: "string" },
+      "cache-closed-months": { type: "string" },
+      "dry-run": { type: "boolean", default: false },
     },
     allowPositionals: false,
   });
@@ -221,9 +222,12 @@ async function publishCommand(
       ...(overrides.dataset ?? {}),
       dataRoot: resolvePath(values.data!),
       now: overrides.now,
-      cacheLifetimes: { live: values["cache-live"], closedMonths: values["cache-closed"] },
+      cacheLifetimes: { live: values["cache-live"], closedMonths: values["cache-closed-months"] },
+      dryRun: values["dry-run"],
     });
-    if (result.verdict === "nothing") {
+    if (result.verdict === "would-publish") {
+      stdout(`Would publish ${result.objects} objects for ${values.model}.`);
+    } else if (result.verdict === "nothing") {
       stdout(`No new ${values.model} output to upload.`);
     } else if (result.verdict === "stale") {
       stdout(
@@ -256,39 +260,6 @@ async function runsIndexCommand(args: readonly string[], overrides: CliOverrides
       overrides.dataset ?? {},
     );
     publish.writeRunsIndex(reader, resolvePath(values.output!));
-  } catch (error) {
-    if (error instanceof PublisherConfigurationError) {
-      throw error;
-    }
-    throw new CliFailure((error as Error).message, { cause: error });
-  }
-  return 0;
-}
-
-async function freshnessCommand(
-  args: readonly string[],
-  overrides: CliOverrides,
-  stdout: Print,
-): Promise<number> {
-  const { values } = parseArgs({
-    args: [...args],
-    options: { model: { type: "string" }, manifest: { type: "string" } },
-    allowPositionals: false,
-  });
-  if (values.model === undefined) {
-    throw new UsageError("the following arguments are required: --model");
-  }
-  if (values.manifest === undefined) {
-    throw new UsageError("the following arguments are required: --manifest");
-  }
-  const dataset = await import("./dataset.js");
-  try {
-    const local = JSON.parse(readFileSync(resolvePath(values.manifest), "utf-8")) as {
-      generatedAt: string;
-    };
-    const published = await dataset.publishedManifest(values.model, overrides.dataset ?? {});
-    const fresh = published === null || published.generatedAt < local.generatedAt;
-    stdout(fresh ? "fresh" : "stale");
   } catch (error) {
     if (error instanceof PublisherConfigurationError) {
       throw error;
@@ -363,8 +334,6 @@ function usageFor(command: string | undefined): string {
       return TERRAIN_USAGE;
     case "runs-index":
       return RUNS_INDEX_USAGE;
-    case "freshness":
-      return FRESHNESS_USAGE;
     case "catalogue":
       return CATALOGUE_USAGE;
     case "publish":
@@ -393,8 +362,6 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         return await terrainCommand(rest, overrides, stdout);
       case "runs-index":
         return await runsIndexCommand(rest, overrides);
-      case "freshness":
-        return await freshnessCommand(rest, overrides, stdout);
       case "catalogue":
         return await catalogueCommand(rest, stdout);
       case "publish":

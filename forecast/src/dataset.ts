@@ -14,18 +14,25 @@ export function dataBase(): string {
   if (!base) {
     throw new PublisherConfigurationError(
       "no published data base is configured: set METEO_DATA_BASE to the " +
-        "dataset's public URL, or provide the R2 credential set " +
-        "(R2_ENDPOINT, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) plus " +
-        "METEO_R2_BUCKET to read through the authenticated S3 API",
+        "dataset's public URL, or provide the S3 credential set " +
+        "(METEO_S3_ENDPOINT, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) " +
+        "plus METEO_R2_BUCKET to read through the authenticated S3 API",
     );
   }
   return base.replace(/\/+$/, "");
 }
 
+/* The endpoint's vendor-neutral name; R2_ENDPOINT stays honored as an
+   alias for deployments that configured it before the rename. */
+function s3Endpoint(): string | undefined {
+  return process.env["METEO_S3_ENDPOINT"] ?? process.env["R2_ENDPOINT"];
+}
+
 export function s3Mode(): boolean {
   return (
     !process.env["METEO_DATA_BASE"] &&
-    ["R2_ENDPOINT", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"].every((name) => process.env[name])
+    s3Endpoint() !== undefined &&
+    ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"].every((name) => process.env[name])
   );
 }
 
@@ -33,8 +40,8 @@ function s3Bucket(): string {
   const bucket = process.env["METEO_R2_BUCKET"];
   if (!bucket) {
     throw new PublisherConfigurationError(
-      "dataset reads are in authenticated S3 mode (R2_ENDPOINT and the " +
-        "AWS credentials are set) but no bucket is configured: set " +
+      "dataset reads are in authenticated S3 mode (METEO_S3_ENDPOINT and " +
+        "the AWS credentials are set) but no bucket is configured: set " +
         "METEO_R2_BUCKET to the dataset bucket's name, or set " +
         "METEO_DATA_BASE to read a published tree over public HTTPS",
     );
@@ -48,7 +55,11 @@ export interface DatasetOptions {
   random?: () => number;
 }
 
-const RETRYABLE_S3_CODES = new Set([
+/* The one home for the S3 wire: retryable error codes, error-code
+   extraction, the signed exchange (client construction, key encoding,
+   timeout), and the backoff — shared by the read path here and the
+   publisher's PUTs so the wire never grows a second implementation. */
+export const RETRYABLE_S3_CODES = new Set([
   "InternalError",
   "RequestTimeout",
   "ServiceUnavailable",
@@ -57,62 +68,88 @@ const RETRYABLE_S3_CODES = new Set([
   "ThrottlingException",
 ]);
 
-const R2_SIGV4_REGION = "auto";
+const S3_SIGV4_REGION = "auto";
 
-async function fetchPublishedS3(key: string, options: DatasetOptions): Promise<Uint8Array | null> {
+export function s3ErrorCode(payload: Uint8Array): string | null {
+  return /<Code>([^<]*)<\/Code>/.exec(new TextDecoder().decode(payload))?.[1] ?? null;
+}
+
+export interface SignedS3Init {
+  method: "GET" | "PUT";
+  headers?: Record<string, string>;
+  body?: Uint8Array<ArrayBuffer>;
+}
+
+/** One signed request against the dataset bucket; throws on transport failure. */
+export async function signedS3Fetch(
+  key: string,
+  init: SignedS3Init,
+  options: DatasetOptions,
+): Promise<{ status: number; payload: Uint8Array }> {
   const fetchImpl = options.fetch ?? globalThis.fetch;
-  const sleep = options.sleep ?? defaultSleep;
-  const random = options.random ?? Math.random;
-  const endpoint = (process.env["R2_ENDPOINT"] ?? "").replace(/\/+$/, "");
+  const endpoint = (s3Endpoint() ?? "").replace(/\/+$/, "");
   const bucket = s3Bucket();
   const client = new AwsClient({
     accessKeyId: process.env["AWS_ACCESS_KEY_ID"] ?? "",
     secretAccessKey: process.env["AWS_SECRET_ACCESS_KEY"] ?? "",
     service: "s3",
-    region: R2_SIGV4_REGION,
+    region: S3_SIGV4_REGION,
   });
   const url = `${endpoint}/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
+  const signed = await client.sign(url, init);
+  const response = await fetchImpl(signed.url, {
+    method: init.method,
+    headers: Object.fromEntries(signed.headers),
+    ...(init.body === undefined ? {} : { body: init.body }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_S * 1000),
+  });
+  return { status: response.status, payload: new Uint8Array(await response.arrayBuffer()) };
+}
 
+export function s3Backoff(attempt: number, options: DatasetOptions): Promise<void> {
+  const sleep = options.sleep ?? defaultSleep;
+  const random = options.random ?? Math.random;
+  return sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+}
+
+/** `s3://bucket/key` for error messages. */
+export function s3ObjectName(key: string): string {
+  return `s3://${s3Bucket()}/${key}`;
+}
+
+async function fetchPublishedS3(key: string, options: DatasetOptions): Promise<Uint8Array | null> {
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const signed = await client.sign(url, { method: "GET" });
-    let response: TransportResponse | null = null;
-    let payload: Uint8Array | null = null;
+    let exchange: { status: number; payload: Uint8Array } | null = null;
     try {
-      response = await fetchImpl(signed.url, {
-        method: "GET",
-        headers: Object.fromEntries(signed.headers),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_S * 1000),
-      });
-      payload = new Uint8Array(await response.arrayBuffer());
+      exchange = await signedS3Fetch(key, { method: "GET" }, options);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      response = null;
     }
-    if (response !== null) {
-      if (response.status === 200) {
-        return payload!;
+    if (exchange !== null) {
+      if (exchange.status === 200) {
+        return exchange.payload;
       }
-      const code = /<Code>([^<]*)<\/Code>/.exec(new TextDecoder().decode(payload!))?.[1] ?? null;
+      const code = s3ErrorCode(exchange.payload);
       if (code === "NoSuchKey") {
         return null;
       }
       if (code === "AccessDenied") {
         throw new Error(
-          `s3://${bucket}/${key} on ${endpoint} answered AccessDenied: this ` +
-            "process holds credentials, so denial is a misconfigured token " +
-            "or bucket policy — never absence. Fix the R2 token's read " +
-            "permission, or unset R2_ENDPOINT / AWS_ACCESS_KEY_ID / " +
+          `${s3ObjectName(key)} answered AccessDenied: this process holds ` +
+            "credentials, so denial is a misconfigured token or bucket " +
+            "policy — never absence. Fix the token's read permission, or " +
+            "unset METEO_S3_ENDPOINT / R2_ENDPOINT / AWS_ACCESS_KEY_ID / " +
             "AWS_SECRET_ACCESS_KEY to read the public base.",
         );
       }
-      if (!RETRYABLE_S3_CODES.has(code ?? "") && response.status < 500) {
-        throw new Error(`s3://${bucket}/${key} failed with ${code ?? response.status}`);
+      if (!RETRYABLE_S3_CODES.has(code ?? "") && exchange.status < 500) {
+        throw new Error(`${s3ObjectName(key)} failed with ${code ?? exchange.status}`);
       }
-      lastError = new Error(`s3://${bucket}/${key} failed with ${code ?? response.status}`);
+      lastError = new Error(`${s3ObjectName(key)} failed with ${code ?? exchange.status}`);
     }
     if (attempt < 2) {
-      await sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+      await s3Backoff(attempt, options);
     }
   }
   throw lastError!;
