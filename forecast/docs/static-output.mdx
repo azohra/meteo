@@ -67,6 +67,32 @@ pair. Their `referenceTime` values must agree before rendering; the
 [`@azohra/meteo.briefing/transport` loader](/docs/briefing/transport/) performs that
 check for TypeScript consumers.
 
+## Publish with the engine
+
+For an S3-compatible bucket, `meteo forecast publish` uploads one model's
+freshly built tree through the authenticated endpoint — the same
+credential set dataset reads use (`R2_ENDPOINT`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `METEO_R2_BUCKET`; `METEO_DATA_BASE` stays
+unset):
+
+```sh title="Terminal"
+meteo forecast build --model gfs --sites ./sites.json --output data
+meteo forecast publish --model gfs --data data
+```
+
+The verb owns the publication protocol so no upload script restates it:
+it skips when the build wrote nothing, refuses to publish a scratch tree
+older than the published dataset (an unreachable bucket fails loudly
+rather than reading as either verdict), uploads history archives before
+site documents before the manifest — the manifest is the publication's
+commit point, so nothing it references appears after it — serves closed
+month archives on an immutable TTL, and then regenerates and uploads
+`runs.json` from the published manifests. Every object key comes from the
+reader contract's `documentPaths`.
+
+Of the [dataset-root files](#publish-the-dataset-root), `publish`
+advances only `runs.json`; the three catalogues remain their own steps.
+
 ## Put the tree on static storage
 
 Copy or sync the output directory only after a successful builder exit. Keep

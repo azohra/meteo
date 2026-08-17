@@ -26,6 +26,8 @@ export interface TransportInit {
   method?: string;
   headers?: Record<string, string>;
   signal?: AbortSignal;
+  /** Request body for writing clients (a publisher's PUT); readers never set it. */
+  body?: Uint8Array<ArrayBuffer> | string;
 }
 
 /** The subset of a WHATWG Response the byte-oriented clients read. */

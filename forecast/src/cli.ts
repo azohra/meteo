@@ -19,7 +19,7 @@ class CliFailure extends Error {}
 
 class UsageError extends Error {}
 
-const USAGE = "usage: meteo forecast <build|terrain|runs-index|freshness|catalogue> ...";
+const USAGE = "usage: meteo forecast <build|publish|terrain|runs-index|freshness|catalogue> ...";
 const BUILD_USAGE =
   "usage: meteo forecast build (--model SLUG | --all) --sites PATH " +
   "[--output PATH] [--max-steps N] [--history|--no-history] [--dry-run]";
@@ -27,11 +27,13 @@ const TERRAIN_USAGE = "usage: meteo forecast terrain --sites PATH [--output PATH
 const RUNS_INDEX_USAGE = "usage: meteo forecast runs-index [--output PATH]";
 const FRESHNESS_USAGE = "usage: meteo forecast freshness --model SLUG --manifest PATH";
 const CATALOGUE_USAGE = "usage: meteo forecast catalogue [--output PATH]";
+const PUBLISH_USAGE = "usage: meteo forecast publish --model SLUG [--data PATH]";
 
 export interface CliOverrides {
   runBuilder?: (slug: string, options: RegistryBuildOptions) => Promise<unknown>;
   terrain?: (sites: readonly Site[], outputPath: string) => Promise<number>;
   dataset?: DatasetOptions;
+  now?: () => Date;
   stdout?: (line: string) => void;
   stderr?: (line: string) => void;
 }
@@ -192,6 +194,44 @@ async function buildCommand(
   return 0;
 }
 
+async function publishCommand(
+  args: readonly string[],
+  overrides: CliOverrides,
+  stdout: Print,
+): Promise<number> {
+  const { values } = parseArgs({
+    args: [...args],
+    options: { model: { type: "string" }, data: { type: "string", default: "data" } },
+    allowPositionals: false,
+  });
+  if (values.model === undefined) {
+    throw new UsageError("the following arguments are required: --model");
+  }
+  const { publishModel } = await import("./upload.js");
+  try {
+    const result = await publishModel(values.model, {
+      ...(overrides.dataset ?? {}),
+      dataRoot: resolvePath(values.data!),
+      now: overrides.now,
+    });
+    if (result.verdict === "nothing") {
+      stdout(`No new ${values.model} output to upload.`);
+    } else if (result.verdict === "stale") {
+      stdout(
+        `Published ${values.model} manifest is not older than the local one; skipping upload.`,
+      );
+    } else {
+      stdout(`Published ${result.objects} objects for ${values.model}; runs.json advanced.`);
+    }
+  } catch (error) {
+    if (error instanceof PublisherConfigurationError) {
+      throw error;
+    }
+    throw new CliFailure((error as Error).message, { cause: error });
+  }
+  return 0;
+}
+
 async function runsIndexCommand(args: readonly string[], overrides: CliOverrides): Promise<number> {
   const { values } = parseArgs({
     args: [...args],
@@ -298,6 +338,8 @@ function usageFor(command: string | undefined): string {
       return FRESHNESS_USAGE;
     case "catalogue":
       return CATALOGUE_USAGE;
+    case "publish":
+      return PUBLISH_USAGE;
     default:
       return USAGE;
   }
@@ -326,6 +368,8 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         return await freshnessCommand(rest, overrides, stdout);
       case "catalogue":
         return await catalogueCommand(rest, stdout);
+      case "publish":
+        return await publishCommand(rest, overrides, stdout);
       default:
         throw new UsageError(
           command === undefined

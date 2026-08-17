@@ -1,4 +1,5 @@
 import { AwsClient } from "aws4fetch";
+import { documentPaths } from "@azohra/meteo.briefing/transport";
 import { PublisherConfigurationError } from "./config.js";
 import type { PublishedManifest, PublishedManifestReader } from "./publish.js";
 import {
@@ -177,7 +178,7 @@ export async function publishedManifest(
   modelSlug: string,
   options: DatasetOptions = {},
 ): Promise<PublishedManifest | null> {
-  const payload = await fetchPublished(`${modelSlug}/manifest.json`, options);
+  const payload = await fetchPublished(documentPaths.manifest(modelSlug), options);
   return payload === null
     ? null
     : (JSON.parse(new TextDecoder().decode(payload)) as PublishedManifest);
@@ -197,7 +198,7 @@ export async function publishedHistory(
   month: string,
   options: DatasetOptions = {},
 ): Promise<Uint8Array> {
-  const payload = await fetchPublished(`${modelSlug}/history/${siteId}/${month}.jsonl.gz`, options);
+  const payload = await fetchPublished(documentPaths.history(modelSlug, siteId, month), options);
   return payload ?? new Uint8Array(0);
 }
 
