@@ -68,7 +68,8 @@ The live stream backs two arms:
 
 - **Current mode** (`mode: "current"`) reads only the `INIT` frame and hangs
   up: reading and telemetry from the digest, the sample ring as `samples`,
-  history null. The frame caches for 15 seconds under
+  the digest's ten 1-minute and twelve 5-minute step blocks as
+  `recentSummaries`, history null. The frame caches for 15 seconds under
   `windnerd/live/<locationId>`. When the live connect fails, current falls
   back to the records road and logs the failure; a broken stream never
   makes current worse than it was without one.

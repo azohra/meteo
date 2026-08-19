@@ -12,6 +12,7 @@ export {
   parseWindnerdLiveInit,
   parseWindnerdLiveLocation,
   parseWindnerdLiveSampleRecords,
+  parseWindnerdRecentSummaries,
   parseWindnerdRecords,
   WINDNERD_LIVE_SAMPLE_INTERVAL_SECONDS,
   WINDNERD_RECORD_PERIODS_MINUTES,

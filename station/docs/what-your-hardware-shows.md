@@ -11,12 +11,12 @@ This page is the map from your hardware to your screen.
 
 ## What each vendor declares
 
-| Vendor | `gustLull` | `temperature` | `conditions` | `history` | `live` | `battery` |
-|---|---|---|---|---|---|---|
-| [WindNerd](/docs/station/adapters/windnerd/) | yes | if configured | pressure, if configured | **yes** | **yes** | if configured |
-| [Tempest](/docs/station/adapters/tempest/) | yes | yes | yes | **no** | no | no |
-| [Campbell](/docs/station/adapters/campbell/) | yes | yes | no | **yes** | no | no |
-| [Ecowitt](/docs/station/adapters/ecowitt/) | yes | yes | yes | **no** | no | if configured |
+| Vendor | `gustLull` | `temperature` | `conditions` | `history` | `live` | `battery` | `recentSummaries` |
+|---|---|---|---|---|---|---|---|
+| [WindNerd](/docs/station/adapters/windnerd/) | yes | if configured | pressure, if configured | **yes** | **yes** | if configured | **yes** |
+| [Tempest](/docs/station/adapters/tempest/) | yes | yes | yes | **no** | no | no | no |
+| [Campbell](/docs/station/adapters/campbell/) | yes | yes | no | **yes** | no | no | no |
+| [Ecowitt](/docs/station/adapters/ecowitt/) | yes | yes | yes | **no** | no | if configured | no |
 
 A [custom adapter](/docs/station/adapters/) declares its own row.
 
@@ -30,6 +30,7 @@ A [custom adapter](/docs/station/adapters/) declares its own row.
 | `temperature` | Temperature readouts and the temperature trend series | Absent |
 | `gustLull` | Gust and lull flanks on strips and current readouts | Absent |
 | `battery` | The wire document's telemetry block | No display surface reads it today; it travels for your own consumers |
+| `recentSummaries` | The wire's pre-digested step blocks (WindNerd: ten 1-minute and twelve 5-minute steps), refreshed by the live stream's `summaries` frames | Absent from the document; not derivable client-side — the samples ring covers only ~10 minutes |
 
 Two consequences worth planning around:
 

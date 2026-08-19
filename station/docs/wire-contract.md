@@ -40,6 +40,7 @@ SSE data event, discriminated on `type`:
 | `init` | `{ schemaVersion, servedAt, station }`: a full ok station with its sample ring | once per connection |
 | `samples` | `{ stationId, samples }`: the newest batch of instantaneous samples | as the source batches them |
 | `reading` | `{ stationId, servedAt, reading, telemetry }`: a fresh reading | as the source digests |
+| `summaries` | `{ stationId, servedAt, summaries }`: the source's pre-digested step blocks, whole | with each digest, when the source keeps them |
 | `ping` | `{ servedAt }`: keepalive; feeds the client's idle watchdog | ~20 s |
 | `unavailable` | `{ stationId, reason }`: terminal; the stream closes after it | on failure |
 
@@ -109,6 +110,12 @@ document or null; they never throw.
   `favorableDirections={declaredFavorableDirections(station) ?? ownArcs}` —
   so a vendor's opinion never becomes a judgment default. The optional
   `broadcastDelaySeconds` states the source's own live-playback delay.
+- **Recent summaries are the source's own digests.** The
+  `recentSummaries` block (gated by the capability of the same name)
+  carries pre-digested rolling step windows — reused `HistoryPoint`s,
+  oldest first, an empty step absent — that a client cannot derive itself:
+  the samples ring covers only ~10 minutes. The block travels whole; a
+  merge never mixes two sources' steps.
 - **History points may carry per-period extremes and the vector mean.**
   `windVectorAvgMps`, `temperatureMinC`/`temperatureMaxC`, and
   `seaLevelPressureMinHpa`/`seaLevelPressureMaxHpa` are additive and

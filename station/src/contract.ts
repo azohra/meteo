@@ -128,6 +128,21 @@ export const historySchema = z
   .meta({ id: "History" });
 export type History = z.infer<typeof historySchema>;
 
+/* A pre-digested rolling window the SOURCE maintains — WindNerd's
+ * last-10-minutes-by-1-minute and last-hour-by-5-minutes blocks are the
+ * shape's origin. Not derivable client-side: the samples ring covers only
+ * ~10 minutes, so a source that keeps these is the only honest supplier. */
+export const recentSummarySchema = z
+  .object({
+    windowMinutes: z.number().finite().positive().describe("The rolling window this summarises."),
+    stepMinutes: z.number().finite().positive().describe("Minutes each point covers."),
+    points: z
+      .array(historyPointSchema)
+      .describe("Oldest first, one per filled step; a step the source left empty is ABSENT."),
+  })
+  .meta({ id: "RecentSummary" });
+export type RecentSummary = z.infer<typeof recentSummarySchema>;
+
 export const liveSampleSchema = z
   .object({
     observedAt: isoTime,
@@ -167,6 +182,13 @@ export const capabilitiesSchema = z
       .boolean()
       .nullish()
       .describe("The station reports battery telemetry; absent or null reads as false."),
+    recentSummaries: z
+      .boolean()
+      .nullish()
+      .describe(
+        "The source maintains pre-digested rolling step summaries; absent " +
+          "or null reads as false.",
+      ),
   })
   .describe(
     "Declared from what the hardware carries, never inferred from data. " +
@@ -228,6 +250,7 @@ export const stationSchema = z
       history: historySchema.nullable(),
       telemetry: telemetrySchema.nullish(),
       samples: liveSamplesSchema.nullish(),
+      recentSummaries: z.array(recentSummarySchema).nullish(),
     }),
     z.object({
       ...stationMetaShape,
@@ -281,6 +304,12 @@ export const stationLiveFrameSchema = z
       servedAt: isoTime,
       reading: readingSchema,
       telemetry: telemetrySchema.nullable(),
+    }),
+    z.object({
+      type: z.literal("summaries"),
+      stationId: z.string().min(1),
+      servedAt: isoTime,
+      summaries: z.array(recentSummarySchema),
     }),
     z.object({
       type: z.literal("ping"),

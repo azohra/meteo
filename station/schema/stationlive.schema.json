@@ -93,6 +93,35 @@
       "properties": {
         "type": {
           "type": "string",
+          "const": "summaries"
+        },
+        "stationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "servedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "summaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecentSummary"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "stationId",
+        "servedAt",
+        "summaries"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
           "const": "ping"
         },
         "servedAt": {
@@ -280,6 +309,19 @@
               "anyOf": [
                 {
                   "$ref": "#/$defs/LiveSamples"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "recentSummaries": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/RecentSummary"
+                  }
                 },
                 {
                   "type": "null"
@@ -503,6 +545,17 @@
         },
         "battery": {
           "description": "The station reports battery telemetry; absent or null reads as false.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recentSummaries": {
+          "description": "The source maintains pre-digested rolling step summaries; absent or null reads as false.",
           "anyOf": [
             {
               "type": "boolean"
@@ -984,6 +1037,33 @@
         "observedAt",
         "windMps",
         "windDirectionDeg"
+      ]
+    },
+    "RecentSummary": {
+      "type": "object",
+      "properties": {
+        "windowMinutes": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "The rolling window this summarises."
+        },
+        "stepMinutes": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Minutes each point covers."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HistoryPoint"
+          },
+          "description": "Oldest first, one per filled step; a step the source left empty is ABSENT."
+        }
+      },
+      "required": [
+        "windowMinutes",
+        "stepMinutes",
+        "points"
       ]
     }
   }

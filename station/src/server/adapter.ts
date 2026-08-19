@@ -3,6 +3,7 @@ import {
   type History,
   type LiveSamples,
   type Reading,
+  type RecentSummary,
   type Station,
   type StationMeta,
   type StationTelemetry,
@@ -36,6 +37,7 @@ export type StationAdapterResult = {
   readonly history: History | null;
   readonly telemetry?: StationTelemetry | null;
   readonly samples?: LiveSamples | null;
+  readonly recentSummaries?: RecentSummary[] | null;
   readonly meta?: Partial<StationMeta>;
 };
 
@@ -72,6 +74,7 @@ export function defineStationAdapter<C, O extends StationAdapterOptions = Statio
         history: mode === "current" ? null : result.history,
         telemetry: result.telemetry ?? null,
         samples: result.samples ?? null,
+        recentSummaries: result.recentSummaries ?? null,
       };
     } catch (error) {
       logUpstreamFailure(environment, `${meta.name} live wind unavailable`, error, {

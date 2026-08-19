@@ -5,6 +5,7 @@ import {
   parseStandardTimeOffset,
   parseWindnerdLiveInit,
   parseWindnerdLiveLocation,
+  parseWindnerdRecentSummaries,
   parseWindnerdRecords,
   windnerdEnrichedMeta,
   windnerdLiveReading,
@@ -198,6 +199,7 @@ describe("loadWindnerdStation", () => {
       history: true,
       live: true,
       battery: false,
+      recentSummaries: true,
     });
     expect(station.pageUrl).toBe("https://windnerd.net/en/bluff-launch");
     expect(station.elevationM).toBe(1370);
@@ -592,6 +594,63 @@ describe("parseWindnerdLiveLocation", () => {
   });
 });
 
+describe("parseWindnerdRecentSummaries", () => {
+  it("maps both step blocks onto history points, anchored at the digest clock", () => {
+    const summaries = parseWindnerdRecentSummaries(windnerdLiveDigestPayload());
+    expect(summaries?.map((block) => [block.windowMinutes, block.stepMinutes])).toEqual([
+      [10, 1],
+      [60, 5],
+    ]);
+    const minute = summaries?.[0];
+    expect(minute?.points.map((point) => point.observedAt)).toEqual([
+      "2026-08-05T22:11:45.000Z",
+      "2026-08-05T22:12:45.000Z",
+    ]);
+    expect(minute?.points[0]).toMatchObject({
+      windAvgMps: 7,
+      windVectorAvgMps: 8,
+      windGustMps: 14,
+      windLullMps: 6,
+      windDirectionDeg: 290,
+      temperatureC: null,
+    });
+  });
+
+  it("keeps an empty step absent and nulls a calm step's direction", () => {
+    const calm = { wind_avg_2D: 0, wind_avg_1D: 0.2, wind_min: 0, wind_max: 0.4, wind_dir: 120 };
+    const summaries = parseWindnerdRecentSummaries(
+      windnerdLiveDigestPayload({
+        last_10mn_by_1mn: [null, calm, null],
+        last_60mn_by_5mn: undefined,
+      }),
+    );
+    expect(summaries).toHaveLength(1);
+    expect(summaries?.[0]?.points).toHaveLength(1);
+    expect(summaries?.[0]?.points[0]?.windDirectionDeg).toBeNull();
+    /* The one kept step sits one step before the anchor — slot two of three. */
+    expect(summaries?.[0]?.points[0]?.observedAt).toBe("2026-08-05T22:11:45.000Z");
+  });
+
+  it("declares nothing for a malformed block or a digest without blocks", () => {
+    expect(
+      parseWindnerdRecentSummaries(
+        windnerdLiveDigestPayload({
+          last_10mn_by_1mn: [{ wind_avg_1D: "brisk" }],
+          last_60mn_by_5mn: undefined,
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      parseWindnerdRecentSummaries(
+        windnerdLiveDigestPayload({
+          last_10mn_by_1mn: undefined,
+          last_60mn_by_5mn: undefined,
+        }),
+      ),
+    ).toBeNull();
+  });
+});
+
 describe("windnerdEnrichedMeta", () => {
   const location = {
     declaredFavorableDirections: [{ fromDeg: 170, toDeg: 0 }],
@@ -812,6 +871,8 @@ describe("loadWindnerdStation current mode", () => {
     expect(station.samples?.points).toHaveLength(3);
     expect(station.samples?.points[2]?.windDirectionDeg).toBeNull();
     expect(station.recommendedPollSeconds).toBe(15);
+    /* The digest's step blocks ride the current document. */
+    expect(station.recentSummaries?.map((block) => block.stepMinutes)).toEqual([1, 5]);
   });
 
   it("serves a second current load from the init cache", async () => {

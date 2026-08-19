@@ -84,7 +84,8 @@ subscribes to the `/live` route and folds its
 [frames](/docs/station/wire-contract/#the-documents) into one snapshot:
 `{ status, station, samples, servedAt, receivedAtMs, error }`. `status` is
 `"connecting" | "open" | "backoff" | "stopped"`; `station` is seeded by the
-`init` frame and refreshed in place by `reading` frames; `samples` is a
+`init` frame and refreshed in place by `reading` frames, its
+`recentSummaries` block replaced whole by `summaries` frames; `samples` is a
 rolling window (default 600 s), oldest first, deduplicated by `observedAt`;
 the overlap a reconnect's `init` replays folds away.
 

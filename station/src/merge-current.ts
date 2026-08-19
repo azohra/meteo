@@ -29,6 +29,10 @@ export function mergeCurrent(feed: StationFeed, current: StationCurrent): MergeR
           ...incoming,
           reading: preserveOmitted(incoming.reading, prior?.reading ?? null),
           history: prior?.history ?? null,
+          /* A current that carries no summaries (a records-road fallback)
+           * never wipes fresher live-folded blocks; one that does carries
+           * the whole block — provenance is never mixed. */
+          recentSummaries: incoming.recentSummaries ?? prior?.recentSummaries ?? null,
         };
       }),
     },

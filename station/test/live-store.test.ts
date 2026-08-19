@@ -152,6 +152,35 @@ describe("createStationLiveStore", () => {
     store.stop();
   });
 
+  it("folds summaries frames into the station without disturbing the samples ring", async () => {
+    const { connections, fetchMock } = connectionQueue();
+    vi.stubGlobal("fetch", fetchMock);
+    const store = createStationLiveStore("/wind", "test-station");
+    store.start();
+    await settle();
+    connections[0]?.push(initFrame([samplePoint(0)]));
+    await settle();
+    const before = store.getSnapshot().samples;
+
+    const block = {
+      windowMinutes: 10,
+      stepMinutes: 1,
+      points: okStation().history?.points.slice(0, 2) ?? [],
+    };
+    connections[0]?.push({
+      type: "summaries",
+      stationId: "test-station",
+      servedAt: iso(BASE_MS + 90_000),
+      summaries: [block],
+    });
+    await settle();
+    const snapshot = store.getSnapshot();
+    expect(snapshot.station?.status === "ok" && snapshot.station.recentSummaries).toEqual([block]);
+    expect(snapshot.samples).toEqual(before);
+    expect(snapshot.servedAt).toBe(iso(BASE_MS + 90_000));
+    store.stop();
+  });
+
   it("trims the window and dedupes the overlap a reconnect's init replays", async () => {
     vi.useFakeTimers();
     vi.spyOn(Math, "random").mockReturnValue(0.5);

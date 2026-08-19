@@ -83,6 +83,33 @@ describe("mergeCurrent", () => {
     expect(result.feed.stations[0]?.reading?.temperatureC).toBe(-3.5);
   });
 
+  it("keeps a fresher live-folded summaries block over a current that carries none", () => {
+    const block = {
+      windowMinutes: 10,
+      stepMinutes: 1,
+      points: okStation().history?.points.slice(0, 2) ?? [],
+    };
+    const prior = okStation({ recentSummaries: [block] });
+    const feed = feedFixture([prior]);
+    const withoutBlocks = mergeCurrent(feed, {
+      schemaVersion: 2,
+      servedAt: iso(BASE_MS + 61_000),
+      station: { ...okStation(), history: null },
+    });
+    const kept = withoutBlocks.feed.stations[0];
+    expect(kept?.status === "ok" && kept.recentSummaries).toEqual([block]);
+
+    /* A current that does carry blocks wins them whole. */
+    const fresher = { ...block, stepMinutes: 5, windowMinutes: 60 };
+    const withBlocks = mergeCurrent(feed, {
+      schemaVersion: 2,
+      servedAt: iso(BASE_MS + 62_000),
+      station: { ...okStation(), history: null, recentSummaries: [fresher] },
+    });
+    const replaced = withBlocks.feed.stations[0];
+    expect(replaced?.status === "ok" && replaced.recentSummaries).toEqual([fresher]);
+  });
+
   it("reports merged:false and keeps the feed when the current response is unavailable", () => {
     const feed = feedFixture();
     const result = mergeCurrent(feed, {

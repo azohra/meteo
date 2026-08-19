@@ -19,6 +19,7 @@ import {
   parseWindnerdLiveDigest,
   parseWindnerdLiveInit,
   parseWindnerdLiveSampleRecords,
+  parseWindnerdRecentSummaries,
   WINDNERD_LIVE_INIT_TIMEOUT_MS,
   WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS,
   windnerdEnrichedMeta,
@@ -115,8 +116,7 @@ export async function openWindnerdLive(
         try {
           for await (const event of events) {
             resetIdle();
-            const frame = mapLiveEvent(event, config, environment);
-            if (frame) enqueue(frame);
+            for (const frame of mapLiveEvent(event, config, environment)) enqueue(frame);
           }
           /* The upstream hung up mid-stream; the client reconnects for a
            * fresh init frame. */
@@ -187,6 +187,7 @@ async function readInitFrame(
         history: null,
         telemetry,
         samples: windnerdLiveSamples(init.samples),
+        recentSummaries: init.recentSummaries,
       };
       return {
         type: "init",
@@ -213,11 +214,11 @@ function mapLiveEvent(
   event: SseEvent,
   config: WindnerdStationConfig,
   environment: ResolvedEnvironment,
-): StationLiveFrame | null {
+): StationLiveFrame[] {
   if (event.event === "ping") {
-    return { type: "ping", servedAt: environment.now().toISOString() };
+    return [{ type: "ping", servedAt: environment.now().toISOString() }];
   }
-  if (event.event !== "message") return null;
+  if (event.event !== "message") return [];
   let frame: unknown;
   try {
     frame = JSON.parse(event.data);
@@ -229,29 +230,34 @@ function mapLiveEvent(
   }
   switch (frame.type) {
     case "WIND_SAMPLES":
-      return {
-        type: "samples",
-        stationId: config.id,
-        samples: windnerdLiveSamples(
-          parseWindnerdLiveSampleRecords(frame.samples, config.locationId),
-        ),
-      };
+      return [
+        {
+          type: "samples",
+          stationId: config.id,
+          samples: windnerdLiveSamples(
+            parseWindnerdLiveSampleRecords(frame.samples, config.locationId),
+          ),
+        },
+      ];
     case "LAST_DIGEST": {
       const { reading, telemetry } = windnerdLiveReading(
         parseWindnerdLiveDigest(frame, config.locationId),
         config,
       );
-      return {
-        type: "reading",
-        stationId: config.id,
-        servedAt: environment.now().toISOString(),
-        reading,
-        telemetry,
-      };
+      const servedAt = environment.now().toISOString();
+      const summaries = parseWindnerdRecentSummaries(frame);
+      return [
+        { type: "reading", stationId: config.id, servedAt, reading, telemetry },
+        /* The digest's step blocks ride the same upstream frame; absent
+         * blocks emit nothing rather than an empty list. */
+        ...(summaries != null
+          ? [{ type: "summaries", stationId: config.id, servedAt, summaries } as const]
+          : []),
+      ];
     }
     default:
       /* Unknown frame types are the vendor's future, not our contract break. */
-      return null;
+      return [];
   }
 }
 

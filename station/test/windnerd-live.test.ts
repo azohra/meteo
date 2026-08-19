@@ -97,6 +97,7 @@ describe("openWindnerdLive", () => {
       "ping",
       "samples",
       "reading",
+      "summaries",
       "unavailable",
     ]);
 
@@ -121,7 +122,25 @@ describe("openWindnerdLive", () => {
     expect(reading.reading.windAvgMps).toBe(9);
     expect(reading.telemetry).toEqual({ batteryVoltage: 4.15 });
 
-    const terminal = frames[4];
+    /* The digest's step blocks ride the same LAST_DIGEST as a summaries
+     * frame: one 1-minute block of two steps, one 5-minute block of one,
+     * timestamps walked back from the digest anchor. */
+    const summaries = frames[4];
+    if (summaries?.type !== "summaries") throw new Error("expected summaries");
+    expect(summaries.stationId).toBe("dundee");
+    expect(summaries.servedAt).toBe(reading.servedAt);
+    expect(summaries.summaries.map((block) => [block.windowMinutes, block.stepMinutes])).toEqual([
+      [10, 1],
+      [60, 5],
+    ]);
+    expect(summaries.summaries[0]?.points.map((point) => point.observedAt)).toEqual([
+      "2026-08-05T22:11:45.000Z",
+      "2026-08-05T22:12:45.000Z",
+    ]);
+    expect(summaries.summaries[0]?.points[0]?.windAvgMps).toBe(7);
+    expect(summaries.summaries[0]?.points[0]?.windVectorAvgMps).toBe(8);
+
+    const terminal = frames[5];
     if (terminal?.type !== "unavailable") throw new Error("expected unavailable");
     expect(terminal.reason).toBe("upstream_error");
   });

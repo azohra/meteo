@@ -126,6 +126,19 @@ export function createStationLiveStore(
         });
         return;
       }
+      case "summaries": {
+        const station = snapshot.station;
+        setSnapshot({
+          ...snapshot,
+          status: "open",
+          station:
+            station?.status === "ok" ? { ...station, recentSummaries: frame.summaries } : station,
+          servedAt: frame.servedAt,
+          receivedAtMs: Date.now(),
+          error: null,
+        });
+        return;
+      }
       case "ping":
         /* Fed the idle watchdog by arriving; the snapshot has nothing new. */
         return;

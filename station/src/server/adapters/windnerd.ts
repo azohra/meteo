@@ -4,6 +4,7 @@ import {
   type HistoryPoint,
   type LiveSamples,
   type Reading,
+  type RecentSummary,
   type StationMeta,
   type StationTelemetry,
 } from "../../contract.js";
@@ -97,6 +98,7 @@ export function windnerdStationMeta(config: WindnerdStationConfig): StationMeta 
       history: true,
       live: true,
       battery: config.hasBattery,
+      recentSummaries: true,
     },
     samplingWindowSeconds: 60,
     recommendedPollSeconds: 60,
@@ -275,6 +277,7 @@ export type WindnerdLiveInit = {
   samples: WindnerdLiveSampleRecord[];
   location: WindnerdLiveLocation | null;
   broadcastDelaySeconds: number | null;
+  recentSummaries: RecentSummary[] | null;
 };
 
 export function windnerdLiveStreamUrl(
@@ -302,7 +305,67 @@ export function parseWindnerdLiveInit(value: string, locationId: number): Windne
     location: parseWindnerdLiveLocation(data.location),
     broadcastDelaySeconds:
       typeof delay === "number" && Number.isFinite(delay) && delay >= 0 ? delay : null,
+    recentSummaries: parseWindnerdRecentSummaries(data.digest),
   };
+}
+
+/* The digest's pre-digested step blocks — ten 1-minute steps and twelve
+ * 5-minute steps — as the contract's RecentSummary list, timestamps walked
+ * back from the digest's own anchor. Tolerant by design: a malformed block
+ * declares nothing rather than something plausible-but-wrong. Accepts both
+ * homes of the digest record, the INIT frame's digest field and a
+ * LAST_DIGEST frame itself. */
+export function parseWindnerdRecentSummaries(value: unknown): RecentSummary[] | null {
+  if (!isRecord(value) || !isRecord(value.recent)) return null;
+  const anchor = value.recent.date_utc;
+  if (typeof anchor !== "string") return null;
+  const anchorMs = Date.parse(anchor);
+  if (!Number.isFinite(anchorMs)) return null;
+
+  const summaries: RecentSummary[] = [];
+  const blocks: Array<{ entries: unknown; stepMinutes: number; windowMinutes: number }> = [
+    { entries: value.last_10mn_by_1mn, stepMinutes: 1, windowMinutes: 10 },
+    { entries: value.last_60mn_by_5mn, stepMinutes: 5, windowMinutes: 60 },
+  ];
+  for (const { entries, stepMinutes, windowMinutes } of blocks) {
+    if (!Array.isArray(entries)) continue;
+    const points = summaryPoints(entries, anchorMs, stepMinutes);
+    if (points == null) continue;
+    summaries.push({ windowMinutes, stepMinutes, points });
+  }
+  return summaries.length > 0 ? summaries : null;
+}
+
+function summaryPoints(
+  entries: unknown[],
+  anchorMs: number,
+  stepMinutes: number,
+): HistoryPoint[] | null {
+  const points: HistoryPoint[] = [];
+  const finiteIn = (entry: unknown, minimum: number, maximum: number) =>
+    typeof entry === "number" && Number.isFinite(entry) && entry >= minimum && entry <= maximum
+      ? entry
+      : null;
+  for (const [index, entry] of entries.entries()) {
+    if (entry == null) continue; /* an empty step stays absent, never zeroed */
+    if (!isRecord(entry)) return null;
+    const windAvgMps =
+      finiteIn(entry.wind_avg_1D, 0, MAX_WIND_MPS) ?? finiteIn(entry.wind_avg_2D, 0, MAX_WIND_MPS);
+    const windDirectionDeg = finiteIn(entry.wind_dir, 0, 360);
+    if (windAvgMps == null || windDirectionDeg == null) return null;
+    points.push({
+      observedAt: new Date(
+        anchorMs - (entries.length - 1 - index) * stepMinutes * 60_000,
+      ).toISOString(),
+      windAvgMps,
+      windGustMps: finiteIn(entry.wind_max, 0, MAX_WIND_MPS),
+      windLullMps: finiteIn(entry.wind_min, 0, MAX_WIND_MPS),
+      windDirectionDeg: isCalm(windAvgMps) ? null : normalizeDegrees(windDirectionDeg),
+      windVectorAvgMps: finiteIn(entry.wind_avg_2D, 0, MAX_WIND_MPS),
+      temperatureC: null,
+    });
+  }
+  return points;
 }
 
 /* Tolerant by design: a malformed or absent block reads as null — the
@@ -517,6 +580,7 @@ async function loadWindnerdLiveCurrent(
     history: null,
     telemetry,
     samples: windnerdLiveSamples(init.samples),
+    recentSummaries: init.recentSummaries,
     meta: {
       recommendedPollSeconds: WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS,
       ...windnerdEnrichedMeta(config, init.location, init.broadcastDelaySeconds),
