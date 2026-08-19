@@ -1,5 +1,12 @@
 # @azohra/meteo.forecast
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [b634597]
+  - @azohra/meteo.briefing@0.6.1
+
 ## 0.5.0
 
 ### Minor Changes

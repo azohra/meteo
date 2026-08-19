@@ -15,6 +15,7 @@
     "gates:static": "pnpm run lint && pnpm run fmt:check",
     "gates": "node internal/gates.mjs",
     "build": "pnpm --filter '!meteo-site' -r build && vp pack",
+    "release": "pnpm run build && pnpm run gates && changeset publish",
     "test": "vp test",
     "test:all": "pnpm run test && pnpm -r test",
     "typecheck": "pnpm run build && tsc -p tsconfig.json --noEmit",

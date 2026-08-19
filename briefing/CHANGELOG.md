@@ -1,5 +1,13 @@
 # @azohra/meteo.briefing
 
+## 0.6.1
+
+### Patch Changes
+
+- b634597: `DirectionArc`, `inDirectionArcs`, and `directionArcSpanDeg` (FROM bearings; `fromDeg > toDeg` wraps through north; boundaries inclusive) and the Meeus `solarEventsForDate` move to `@azohra/meteo.core`. Briefing's `LaunchWindowArc` becomes an alias, its private containment math now calls the core function, and `solarEventsForDate` is re-exported unchanged. No behaviour change.
+- Updated dependencies [b634597]
+  - @azohra/meteo.core@0.2.0
+
 ## 0.6.0
 
 ### Minor Changes

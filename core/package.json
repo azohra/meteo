@@ -1,6 +1,6 @@
 {
   "name": "@azohra/meteo.core",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "The foundation of meteo by Azohra: the shared physical vocabulary every platform package builds on - units and conversions, angles, the platform's one wind sign convention, zod schema primitives, upstream-failure vocabulary, and the schema-artifact rendering machinery.",
   "keywords": [
     "weather",
