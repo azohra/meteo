@@ -1,5 +1,0 @@
----
-"@azohra/meteo.station": minor
----
-
-New climatology view pairs: `ClimatologyRose` / `<meteo-climatology-rose>` (wedges stacked by the document's own thresholds; `windRoseScene` accepts a pre-aggregated `summary` and draws bandCounts as radial segments via the new `roseBandPath`; captions beneath show the favorable share when arcs are supplied, and coverage only on the unfiltered view since the ledger cannot vouch for a slice) and `ClimatologyDailyPattern` / `<meteo-climatology-daily-pattern>` (the cube through the daily-pattern drawing; `dailyPatternScene` refactored around a shared `dailyPatternSlotsScene`). `useStationClimatology(base, stationId)` wraps the fetch-once store for React; `months`/`slots` filters re-sum the held document without refetching. The shared drawing halves are exported for composition (`WindRoseSceneView`/`DailyPatternSceneView`, `windRoseSceneDom`/`dailyPatternSceneDom`). `StationStrings` gains `noClimatology`; the gallery gains a thirteenth section, Climatology.
