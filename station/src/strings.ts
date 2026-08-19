@@ -33,6 +33,9 @@ export type StationStrings = {
   favorableLabel: string;
   percentFavorable: (percent: number) => string;
   noClimatology: string;
+  recentWindowLabel: (windowMinutes: number) => string;
+  lastNightLowLabel: string;
+  pressureDeltaLabel: (windowHours: number) => string;
   dailyPatternSamples: (sampleCount: number) => string;
   dailyPatternCoverage: (sampleCount: number, expectedCount: number) => string;
   compassSpoken: Record<CompassPoint, string>;
@@ -103,6 +106,9 @@ export type StationStrings = {
     roseFavorable: (sectors: string) => string;
     roseGeneric: string;
     sampleStrip: (stationName: string) => string;
+    compassFan: (stationName: string) => string;
+    recentSummaries: (stationName: string) => string;
+    airExtremes: (stationName: string) => string;
     sparkline: (stationName: string) => string;
     strip: (stationName: string) => string;
     summary: (endedAtFormatted: string) => string;
@@ -139,6 +145,12 @@ export const defaultStrings: StationStrings = {
   favorableLabel: "Favorable",
   percentFavorable: (percent) => `${percent}% favorable`,
   noClimatology: "No climatology available",
+  recentWindowLabel: (windowMinutes) =>
+    windowMinutes % 60 === 0 && windowMinutes >= 60
+      ? `Last ${windowMinutes / 60} h`
+      : `Last ${windowMinutes} min`,
+  lastNightLowLabel: "Last night low",
+  pressureDeltaLabel: (windowHours) => `Pressure ${windowHours} h`,
   dailyPatternSamples: (sampleCount) => `${sampleCount} samples`,
   dailyPatternCoverage: (sampleCount, expectedCount) =>
     `${sampleCount} samples · ${Math.round((sampleCount / Math.max(1, expectedCount)) * 100)}%`,
@@ -246,6 +258,10 @@ export const defaultStrings: StationStrings = {
     roseGeneric: "Wind direction distribution",
     sampleStrip: (stationName) =>
       `Live wind at ${stationName}: each point is a single sample, and the vanes below point where the wind blew to.`,
+    compassFan: (stationName) =>
+      `Live compass at ${stationName}: the solid needle is the newest sample, the faint fan every sample of the window — a tight fan means steady direction.`,
+    recentSummaries: (stationName) => `Recent step summaries at ${stationName}`,
+    airExtremes: (stationName) => `Air extremes at ${stationName}`,
     sparkline: (stationName) => `six hours of wind at ${stationName}`,
     strip: (stationName) => `Latest reading at ${stationName}`,
     summary: (endedAtFormatted) => `Summary of the period ending ${endedAtFormatted}`,

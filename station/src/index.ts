@@ -68,6 +68,8 @@ export {
   isCalm,
   normalizeDegrees,
   periodSummary,
+  lastNightLowC,
+  pressureDeltaHpa,
   pressureTendency,
   seaLevelPressureHpa,
   speedFromMps,

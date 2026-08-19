@@ -10,11 +10,14 @@ import {
 } from "../src/index.js";
 import type { HistoryPoint, Station } from "../src/index.js";
 import {
+  AirExtremes,
   AirMatrix,
   BandChip,
   ClimatologyDailyPattern,
   ClimatologyRose,
+  CompassFan,
   CurrentConditions,
+  RecentSummaries,
   DailyPattern,
   Dial,
   Direction,
@@ -692,6 +695,66 @@ describe("parity: charts (fallback width, initial render)", () => {
     );
     expect(reactDom).toBe(elementDom);
     expect(reactDom).toContain(defaultStrings.noHistory);
+  });
+
+  it("CompassFan, RecentSummaries, AirExtremes — the live-theatre twins", () => {
+    const favorable = [{ fromDeg: 260, toDeg: 340 }];
+    const ring = {
+      intervalSeconds: 3,
+      points: Array.from({ length: 12 }, (_, index) => ({
+        observedAt: iso(BASE_MS + index * 3_000),
+        windMps: index === 2 ? 0.2 : 5 + (index % 3),
+        windDirectionDeg: index === 2 ? null : (280 + index) % 360,
+      })),
+    };
+    expectParity(
+      <CompassFan favorableDirections={favorable} samples={ring} />,
+      "meteo-compass-fan",
+      (el) => {
+        el.samples = ring;
+        el.favorableDirections = favorable;
+      },
+    );
+
+    const blocks = [
+      { windowMinutes: 10, stepMinutes: 1, points: makePoints(10) },
+      { windowMinutes: 60, stepMinutes: 5, points: makePoints(12) },
+    ];
+    expectParity(
+      <RecentSummaries favorableDirections={favorable} summaries={blocks} unit="knots" />,
+      "meteo-recent-summaries",
+      (el) => {
+        el.summaries = blocks;
+        el.favorableDirections = favorable;
+        el.setAttribute("unit", "knots");
+      },
+    );
+
+    const nowMs = Date.parse("2026-06-21T20:00:00Z");
+    const airStation = okStation({
+      latitude: 49.07,
+      longitude: -117.8,
+      history: {
+        periodMinutes: 60,
+        points: Array.from({ length: 48 }, (_, index) => {
+          const observedMs = Date.parse("2026-06-20T00:00:00Z") + index * 3_600_000;
+          const hourUtc = new Date(observedMs).getUTCHours();
+          return {
+            observedAt: iso(observedMs),
+            windAvgMps: 3,
+            windGustMps: null,
+            windLullMps: null,
+            windDirectionDeg: 90,
+            temperatureC: hourUtc >= 5 && hourUtc <= 13 ? 7.5 : 22,
+            seaLevelPressureHpa: 1008 + index * 0.1,
+          };
+        }),
+      },
+    });
+    expectParity(<AirExtremes nowMs={nowMs} station={airStation} />, "meteo-air-extremes", (el) => {
+      el.station = airStation;
+      el.setAttribute("now-ms", String(nowMs));
+    });
   });
 
   it("ClimatologyRose and ClimatologyDailyPattern — the cube-fed twins", () => {

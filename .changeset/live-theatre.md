@@ -1,0 +1,5 @@
+---
+"@azohra/meteo.station": minor
+---
+
+The live theatre: three new pairs. `CompassFan` / `<meteo-compass-fan>` draws the newest sample as the solid needle and every sample of the rolling window as a faint fan aged by tenth (`meteo-fan-ghost-0..9`; calm never fans — calm has no direction), wearing the favorable verdict ring; hidden without the `live` capability. `RecentSummaries` / `<meteo-recent-summaries>` panels the source's own step digests — per window the average, gust, and lull beside one verdict-tinted arrow per step; hidden without the `recentSummaries` capability, a declared-but-dark block notes the absence. `AirExtremes` / `<meteo-air-extremes>` tiles what served history can honestly derive: the last completed night's low via the new `lastNightLowC` (real astronomy — no coordinates, no tile) and the trailing 3 h pressure delta via the new `pressureDeltaHpa`, which now also powers `pressureTendency` so the word and the number can never disagree. `StationStrings` gains the window labels and the three aria sentences; the gallery gains its fifteenth section, Live theatre.

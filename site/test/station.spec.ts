@@ -18,6 +18,7 @@ const SECTION_IDS = [
   "roses",
   "seasons",
   "climatology",
+  "live-theatre",
   "trends",
   "air",
   "table",
@@ -87,6 +88,12 @@ test.describe("the docs component gallery exhibits the custom-elements binding",
       "samples",
     );
 
+    // Live theatre: the ghost fan and both step-summary panels render.
+    expect(
+      await page.locator("#live-fan path[class^='meteo-fan-ghost-']").count(),
+    ).toBeGreaterThan(30);
+    await expect(page.locator("#live-summaries .meteo-recent-summary")).toHaveCount(2);
+
     // Trends: temperature and pressure both draw for Launch Ridge.
     await expect(page.locator("#trends meteo-trend-chart .meteo-trend-svg")).toHaveCount(2);
 
@@ -121,7 +128,7 @@ test.describe("the docs component gallery exhibits the custom-elements binding",
     expect(externalRequests, "the gallery attempted external network access").toEqual([]);
   });
 
-  test("the thirteen registry sections all render, and the toolbar anchors them", async ({
+  test("the fourteen registry sections all render, and the toolbar anchors them", async ({
     page,
     baseURL,
   }) => {

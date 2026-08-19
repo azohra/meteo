@@ -114,6 +114,9 @@ full map.
 | `StationStrip` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness. `station`/`stationId`, `servedAt`, `receivedAtMs`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line, reason in words |
 | `AirMatrix` | Humidity → lightning behind a live disclosure; columns only for conditions-capable `stations` |
 | `FreshnessBadge` | A dot and a word, from `useFreshness` |
+| `CompassFan` | The live compass: the newest sample as the solid needle, every sample of the rolling window as a faint fan aged by tenth — a tight fan means steady direction. `samples` (from `useStationLive`) or `station`/`stationId`, `favorableDirections` (verdict ring). Hidden without the `live` capability |
+| `RecentSummaries` | The source's own step digests as panels: per window, average, gust, and lull beside one small arrow per step. `summaries` or `station`/`stationId`, `favorableDirections` (arrow verdicts), `unit`. Hidden without the `recentSummaries` capability; a declared-but-dark block notes the absence |
+| `AirExtremes` | Derived atmo tiles from served history: the last completed night's low (real astronomy — no coordinates, no tile) and the trailing 3 h pressure delta. `station`/`stationId`. Nothing derivable, nothing rendered |
 
 `receivedAtMs` is `number | null` everywhere; null (feed still loading) simply withholds
 the freshness badge.

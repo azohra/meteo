@@ -26,7 +26,9 @@ import type {
   BandChipElement,
   ClimatologyDailyPatternElement,
   ClimatologyRoseElement,
+  CompassFanElement,
   CurrentConditionsElement,
+  RecentSummariesElement,
   DailyPatternElement,
   StationFeedElement,
   WindHistoryChartElement,
@@ -144,6 +146,39 @@ export function initStationGallery(): void {
 
   /* Seasons: the rose narrows; the typical day always averages the lot. */
   if (pattern) pattern.points = season;
+
+  /* Live theatre: a deterministic sample ring and step blocks shaped like
+     the vendor's own digests — wired as properties like every live host
+     would. */
+  const liveFan = document.querySelector<CompassFanElement>("#live-fan");
+  const liveSummaries = document.querySelector<RecentSummariesElement>("#live-summaries");
+  if (liveFan || liveSummaries) {
+    const anchorMs = Date.now();
+    const ring = {
+      intervalSeconds: 3,
+      points: Array.from({ length: 60 }, (_, index) => ({
+        observedAt: new Date(anchorMs - (59 - index) * 3_000).toISOString(),
+        windMps: 4.5 + Math.sin(index / 5) * 1.5,
+        windDirectionDeg: (300 + Math.round(Math.sin(index / 4) * 18) + 360) % 360,
+      })),
+    };
+    if (liveFan) liveFan.samples = ring;
+    if (liveSummaries) {
+      const step = (count: number, stepMinutes: number) =>
+        Array.from({ length: count }, (_, index) => ({
+          observedAt: new Date(anchorMs - (count - 1 - index) * stepMinutes * 60_000).toISOString(),
+          windAvgMps: 4 + Math.sin(index / 2) * 1.2,
+          windGustMps: 6.5 + Math.sin(index / 2) * 1.4,
+          windLullMps: 2.2,
+          windDirectionDeg: (295 + index * 4) % 360,
+          temperatureC: null,
+        }));
+      liveSummaries.summaries = [
+        { windowMinutes: 10, stepMinutes: 1, points: step(10, 1) },
+        { windowMinutes: 60, stepMinutes: 5, points: step(12, 5) },
+      ];
+    }
+  }
 
   /* Climatology: the same season folded ONCE into the cube; every filter
      below is a client-side re-sum of the held document — no refetch, which

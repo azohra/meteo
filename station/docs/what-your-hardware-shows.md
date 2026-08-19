@@ -30,7 +30,7 @@ A [custom adapter](/docs/station/adapters/) declares its own row.
 | `temperature` | Temperature readouts and the temperature trend series | Absent |
 | `gustLull` | Gust and lull flanks on strips and current readouts | Absent |
 | `battery` | The wire document's telemetry block | No display surface reads it today; it travels for your own consumers |
-| `recentSummaries` | The wire's pre-digested step blocks (WindNerd: ten 1-minute and twelve 5-minute steps), refreshed by the live stream's `summaries` frames | Absent from the document; not derivable client-side — the samples ring covers only ~10 minutes |
+| `recentSummaries` | The wire's pre-digested step blocks (WindNerd: ten 1-minute and twelve 5-minute steps), refreshed by the live stream's `summaries` frames, drawn by `RecentSummaries` / `<meteo-recent-summaries>` | The panels render nothing; not derivable client-side — the samples ring covers only ~10 minutes |
 
 Two consequences worth planning around:
 

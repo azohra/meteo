@@ -22,7 +22,10 @@ export type { StationFeedContextValue } from "./components/StationFeedProvider.j
 export { StationStrip } from "./components/StationStrip.js";
 export { TrendChart } from "./components/TrendChart.js";
 export { WindArrow } from "./components/WindArrow.js";
+export { AirExtremes } from "./components/AirExtremes.js";
 export { ClimatologyDailyPattern } from "./components/ClimatologyDailyPattern.js";
+export { CompassFan } from "./components/CompassFan.js";
+export { RecentSummaries } from "./components/RecentSummaries.js";
 export { ClimatologyRose } from "./components/ClimatologyRose.js";
 export { DailyPattern } from "./components/DailyPattern.js";
 export { Readout } from "./components/Readout.js";

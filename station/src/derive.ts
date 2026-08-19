@@ -4,6 +4,7 @@ import {
   degreesToRadians,
   normalizeDegrees,
   radiansToDegrees,
+  solarEventsForDate,
 } from "@azohra/meteo.core";
 
 export { KMH_PER_MPS };
@@ -164,10 +165,14 @@ export function seaLevelPressureHpa(
 
 export type PressureTendency = "falling" | "rising" | "steady";
 
-export function pressureTendency(
+/** The signed sea-level pressure change over the trailing window, hPa —
+ * the number behind the tendency word. The reference is the carried point
+ * nearest the window's start, and a record covering under 60% of the
+ * window returns null rather than a delta over a shorter span. */
+export function pressureDeltaHpa(
   points: ReadonlyArray<{ observedAt: string; seaLevelPressureHpa?: number | null }>,
-  { windowHours = 3, thresholdHpa = 1.5 }: { windowHours?: number; thresholdHpa?: number } = {},
-): PressureTendency | null {
+  { windowHours = 3 }: { windowHours?: number } = {},
+): number | null {
   const carrying = points.filter((point) => point.seaLevelPressureHpa != null);
   const last = carrying[carrying.length - 1];
   if (!last) return null;
@@ -188,10 +193,57 @@ export function pressureTendency(
   ) {
     return null;
   }
-  const delta = (last.seaLevelPressureHpa as number) - (reference.seaLevelPressureHpa as number);
+  return (last.seaLevelPressureHpa as number) - (reference.seaLevelPressureHpa as number);
+}
+
+export function pressureTendency(
+  points: ReadonlyArray<{ observedAt: string; seaLevelPressureHpa?: number | null }>,
+  { windowHours = 3, thresholdHpa = 1.5 }: { windowHours?: number; thresholdHpa?: number } = {},
+): PressureTendency | null {
+  const delta = pressureDeltaHpa(points, { windowHours });
+  if (delta == null) return null;
   if (delta >= thresholdHpa) return "rising";
   if (delta <= -thresholdHpa) return "falling";
   return "steady";
+}
+
+/** The lowest temperature of the most recent completed night — the previous
+ * sunset to the latest sunrise, from real astronomy. Null without
+ * coordinates (never a guessed night), under a polar sky, or when no
+ * carried temperature falls inside the window. */
+export function lastNightLowC(
+  points: ReadonlyArray<{ observedAt: string; temperatureC?: number | null }>,
+  latitude: number | null,
+  longitude: number | null,
+  nowMs: number,
+): { lowC: number; fromMs: number; toMs: number } | null {
+  if (latitude == null || longitude == null) return null;
+  const dayMs = 86_400_000;
+  const dateKey = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  /* Walk back to the latest sunrise already behind now, then pair it with
+   * the sunset before it. */
+  for (
+    let dayStart = Math.floor(nowMs / dayMs) * dayMs;
+    dayStart >= nowMs - 3 * dayMs;
+    dayStart -= dayMs
+  ) {
+    const today = solarEventsForDate(dateKey(dayStart), latitude, longitude);
+    if (today == null) return null;
+    if (today.sunrise.getTime() > nowMs) continue;
+    const yesterday = solarEventsForDate(dateKey(dayStart - dayMs), latitude, longitude);
+    if (yesterday == null) return null;
+    const fromMs = yesterday.sunset.getTime();
+    const toMs = today.sunrise.getTime();
+    let lowC: number | null = null;
+    for (const point of points) {
+      if (point.temperatureC == null) continue;
+      const observedMs = Date.parse(point.observedAt);
+      if (observedMs < fromMs || observedMs > toMs) continue;
+      lowC = lowC == null ? point.temperatureC : Math.min(lowC, point.temperatureC);
+    }
+    return lowC == null ? null : { lowC, fromMs, toMs };
+  }
+  return null;
 }
 
 export type FreshnessStatus = "live" | "aging" | "stale";

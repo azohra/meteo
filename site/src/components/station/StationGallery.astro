@@ -26,6 +26,7 @@ import ExplicitSection from "./sections/ExplicitSection.astro";
 import InstrumentsSection from "./sections/InstrumentsSection.astro";
 import PrimitivesSection from "./sections/PrimitivesSection.astro";
 import RosesSection from "./sections/RosesSection.astro";
+import LiveTheatreSection from "./sections/LiveTheatreSection.astro";
 import ClimatologySection from "./sections/ClimatologySection.astro";
 import SeasonsSection from "./sections/SeasonsSection.astro";
 import StripsSection from "./sections/StripsSection.astro";
@@ -41,6 +42,7 @@ const SECTIONS: { id: string; nav: string }[] = [
   { id: "roses", nav: "Roses" },
   { id: "seasons", nav: "Seasons" },
   { id: "climatology", nav: "Climatology" },
+  { id: "live-theatre", nav: "Live theatre" },
   { id: "trends", nav: "Trends" },
   { id: "air", nav: "Air" },
   { id: "table", nav: "Table" },
@@ -66,6 +68,7 @@ const SECTIONS: { id: string; nav: string }[] = [
         <RosesSection />
         <SeasonsSection />
         <ClimatologySection />
+        <LiveTheatreSection />
         <TrendsSection />
         <AirSection />
         <TableSection />

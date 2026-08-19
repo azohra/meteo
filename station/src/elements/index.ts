@@ -8,8 +8,11 @@ import {
   TemperatureElement,
   UpdatedAtElement,
 } from "./elements/atoms.js";
+import { AirExtremesElement } from "./elements/AirExtremesElement.js";
 import { AirMatrixElement } from "./elements/AirMatrixElement.js";
 import { ClimatologyDailyPatternElement } from "./elements/ClimatologyDailyPatternElement.js";
+import { CompassFanElement } from "./elements/CompassFanElement.js";
+import { RecentSummariesElement } from "./elements/RecentSummariesElement.js";
 import { ClimatologyRoseElement } from "./elements/ClimatologyRoseElement.js";
 import { CurrentConditionsElement } from "./elements/CurrentConditionsElement.js";
 import { DailyPatternElement } from "./elements/DailyPatternElement.js";
@@ -42,8 +45,11 @@ export {
   TemperatureElement,
   UpdatedAtElement,
 } from "./elements/atoms.js";
+export { AirExtremesElement } from "./elements/AirExtremesElement.js";
 export { AirMatrixElement } from "./elements/AirMatrixElement.js";
 export { ClimatologyDailyPatternElement } from "./elements/ClimatologyDailyPatternElement.js";
+export { CompassFanElement } from "./elements/CompassFanElement.js";
+export { RecentSummariesElement } from "./elements/RecentSummariesElement.js";
 export { ClimatologyRoseElement } from "./elements/ClimatologyRoseElement.js";
 export { CurrentConditionsElement } from "./elements/CurrentConditionsElement.js";
 export { DailyPatternElement } from "./elements/DailyPatternElement.js";
@@ -73,8 +79,10 @@ export type { AmbientStationFeed } from "./lib/ambient.js";
 export const meteoElementTags = {
   "meteo-station-feed": StationFeedElement,
   "meteo-station-card": StationCardElement,
+  "meteo-air-extremes": AirExtremesElement,
   "meteo-air-matrix": AirMatrixElement,
   "meteo-band-chip": BandChipElement,
+  "meteo-compass-fan": CompassFanElement,
   "meteo-climatology-daily-pattern": ClimatologyDailyPatternElement,
   "meteo-climatology-rose": ClimatologyRoseElement,
   "meteo-current-conditions": CurrentConditionsElement,
@@ -86,6 +94,7 @@ export const meteoElementTags = {
   "meteo-gust": GustElement,
   "meteo-lull": LullElement,
   "meteo-pressure": PressureElement,
+  "meteo-recent-summaries": RecentSummariesElement,
   "meteo-sparkline": SparklineElement,
   "meteo-speed": SpeedElement,
   "meteo-station-strip": StationStripElement,

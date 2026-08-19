@@ -1,0 +1,32 @@
+---
+/* The live surfaces on a synthetic sample ring and step blocks: the compass
+   fan's ghost arrows age toward the ring, and the step summaries carry the
+   direction's recent story. Both are wired by the page script from the
+   same deterministic fixtures as everything else. */
+---
+
+<section class="station-section" id="live-theatre" aria-labelledby="live-theatre-title">
+  <h2 id="live-theatre-title">Live theatre</h2>
+  <p class="station-note">
+    <code>&lt;meteo-compass-fan&gt;</code> draws every sample of the rolling
+    window as a faint arrow aged by tenth — a tight fan means steady
+    direction — with the newest as the solid needle;
+    <code>&lt;meteo-recent-summaries&gt;</code> panels the source's own
+    1-minute and 5-minute step blocks. Both wear the launch window's
+    verdict.
+  </p>
+  <div class="station-grid station-grid-roses">
+    <div class="station-panel">
+      <h3><code>&lt;meteo-compass-fan&gt;</code>: the ghost fan</h3>
+      <meteo-compass-fan
+        favorable-directions='[{"fromDeg":260,"toDeg":340}]'
+        id="live-fan"></meteo-compass-fan>
+    </div>
+    <div class="station-panel">
+      <h3><code>&lt;meteo-recent-summaries&gt;</code>: the step blocks</h3>
+      <meteo-recent-summaries
+        favorable-directions='[{"fromDeg":260,"toDeg":340}]'
+        id="live-summaries"></meteo-recent-summaries>
+    </div>
+  </div>
+</section>

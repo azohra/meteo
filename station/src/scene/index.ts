@@ -1,5 +1,7 @@
+export * from "./air-extremes.js";
 export * from "./air-matrix.js";
 export * from "./atoms.js";
+export * from "./compass-fan.js";
 export * from "./card.js";
 export * from "./chart.js";
 export * from "./climatology-pattern.js";
@@ -9,6 +11,7 @@ export * from "./dial.js";
 export * from "./favorable-share.js";
 export * from "./glyphs.js";
 export * from "./daily-pattern.js";
+export * from "./recent-summaries.js";
 export * from "./rose.js";
 export * from "./sample-strip.js";
 export * from "./sparkline.js";
