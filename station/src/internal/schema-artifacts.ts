@@ -1,5 +1,6 @@
 import type { ExampleArtifact, SchemaArtifact } from "@azohra/meteo.core";
 import { stationCurrentSchema, stationFeedSchema, stationLiveFrameSchema } from "../contract.js";
+import { stationClimatologySchema } from "../contract-climatology.js";
 
 export const schemaArtifacts: readonly SchemaArtifact[] = [
   {
@@ -22,6 +23,13 @@ export const schemaArtifacts: readonly SchemaArtifact[] = [
     schema: stationLiveFrameSchema,
     description:
       "One frame per SSE data event on the /live stream. init seeds a full station document; samples and reading update it; unavailable is terminal — the stream closes after it.",
+  },
+  {
+    fileName: "stationclimatology.schema.json",
+    title: "StationClimatology",
+    schema: stationClimatologySchema,
+    description:
+      "The multi-year cube served at /climatology: (month, slot-of-day, sector) sums bucketed in the station's standard time, binned with the consumer's thresholds. Its own document family — it versions apart from the feed.",
   },
 ];
 
@@ -202,8 +210,77 @@ const exampleLive = {
   },
 };
 
+const exampleClimatology = {
+  $comment:
+    "Example @azohra/meteo.station climatology document. Validates against " +
+    "stationclimatology.schema.json; readers must ignore unknown keys (this one included). " +
+    "Cells nothing ever fell into are absent, never zero-filled; sums re-aggregate " +
+    "losslessly under any month/season/slot filter.",
+  schemaVersion: 1,
+  servedAt: "2026-08-05T22:13:00.000Z",
+  stationId: "bluff",
+  sectorCount: 16,
+  slotMinutes: 180,
+  thresholdsMps: [3.3333333333333335, 5.555555555555555, 7.777777777777778],
+  utcOffsetMinutes: -480,
+  years: [
+    { year: 2025, sampleCount: 2496, expectedCount: 2920 },
+    { year: 2026, sampleCount: 1704, expectedCount: 1736 },
+  ],
+  cells: [
+    {
+      month: 7,
+      slot: 4,
+      sampleCount: 58,
+      calmCount: 11,
+      sectors: [
+        {
+          sector: 12,
+          count: 31,
+          uSum: 148.2033,
+          vSum: -42.1188,
+          speedSumMps: 167.4,
+          bandCounts: [4, 9, 12, 6],
+          maxGustMps: 11.8,
+        },
+        {
+          sector: 13,
+          count: 16,
+          uSum: 61.077,
+          vSum: -33.9414,
+          speedSumMps: 72.1,
+          bandCounts: [3, 6, 5, 2],
+          maxGustMps: 9.4,
+        },
+      ],
+    },
+    {
+      month: 7,
+      slot: 5,
+      sampleCount: 49,
+      calmCount: 20,
+      sectors: [
+        {
+          sector: 12,
+          count: 29,
+          uSum: 101.9385,
+          vSum: -28.9704,
+          speedSumMps: 114.9,
+          bandCounts: [8, 11, 8, 2],
+          maxGustMps: 10.2,
+        },
+      ],
+    },
+  ],
+};
+
 export const exampleArtifacts: readonly ExampleArtifact[] = [
   { fileName: "example-feed.json", document: exampleFeed, schema: stationFeedSchema },
   { fileName: "example-current.json", document: exampleCurrent, schema: stationCurrentSchema },
   { fileName: "example-live.json", document: exampleLive, schema: stationLiveFrameSchema },
+  {
+    fileName: "example-climatology.json",
+    document: exampleClimatology,
+    schema: stationClimatologySchema,
+  },
 ];

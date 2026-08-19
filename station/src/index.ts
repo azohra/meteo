@@ -85,7 +85,37 @@ export type {
 export { requireResolved, resolveDisplay, resolveStation } from "./display.js";
 export type { DisplayDefaults, DisplayProps, ResolvedDisplay } from "./display.js";
 
-export { currentEndpoint, feedEndpoint, liveEndpoint } from "./endpoints.js";
+export { climatologyEndpoint, currentEndpoint, feedEndpoint, liveEndpoint } from "./endpoints.js";
+export {
+  STATION_CLIMATOLOGY_SCHEMA_VERSION,
+  climatologyCellSchema,
+  climatologySectorSchema,
+  climatologyYearSchema,
+  parseStationClimatology,
+  parseStationClimatologyJson,
+  stationClimatologySchema,
+} from "./contract-climatology.js";
+export type {
+  ClimatologyCell,
+  ClimatologySector,
+  ClimatologyYear,
+  StationClimatology,
+} from "./contract-climatology.js";
+export {
+  accumulatedCells,
+  climatologyCoverage,
+  climatologyFavorableShare,
+  climatologyPattern,
+  climatologyRose,
+  createClimatologyAccumulator,
+  foldClimatologyPoints,
+} from "./climatology.js";
+export type {
+  ClimatologyAccumulator,
+  ClimatologyCoverage,
+  ClimatologyFilters,
+  ClimatologyFoldParams,
+} from "./climatology.js";
 
 export {
   directionCell,

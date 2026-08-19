@@ -116,6 +116,26 @@ describe("parseWindnerdRecords", () => {
     ).toThrow("WindNerd location 8675 returned an invalid pressure_hpa_avg");
   });
 
+  it("parses an empty window that drops sensor columns wholesale — the real pre-station year shape", () => {
+    /* Verified live: a year before the station existed carries only the
+     * wind columns (plus the historical time_offset), all empty. */
+    const empty = JSON.stringify({
+      records: {
+        wind_avg_1D: [],
+        wind_avg_2D: [],
+        wind_max: [],
+        wind_min: [],
+        wind_dir: [],
+        date_utc: [],
+        time_offset: [],
+      },
+    });
+    const records = parseWindnerdRecords(empty, 240, true);
+    expect(records.observedAt).toEqual([]);
+    expect(records.temperatureC).toEqual([]);
+    expect(records.stationPressureHpa).toEqual([]);
+  });
+
   it("rejects a response that is not a record set", () => {
     expect(() => parseWindnerdRecords(JSON.stringify({ error: "nope" }), 8675)).toThrow(
       "WindNerd location 8675 returned no records",

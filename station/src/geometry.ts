@@ -286,6 +286,9 @@ export type RoseSector = {
   meanSpeedMps: number | null;
   maxGustMps: number | null;
   count: number;
+  /** Non-calm records per speed band, present only when the caller passed
+   * bandThresholdsMps — stacking is a judgment the consumer supplies. */
+  bandCounts?: number[] | undefined;
 };
 
 export type WindRoseSummary = {
@@ -294,12 +297,18 @@ export type WindRoseSummary = {
   sampleCount: number;
 };
 
-export function windRose(points: ReadonlyArray<HistoryPoint>, sectorCount = 16): WindRoseSummary {
+export function windRose(
+  points: ReadonlyArray<HistoryPoint>,
+  sectorCount = 16,
+  options: { bandThresholdsMps?: ReadonlyArray<number> } = {},
+): WindRoseSummary {
   const sectorWidth = 360 / sectorCount;
+  const bounds = options.bandThresholdsMps ?? null;
   const sectors = Array.from({ length: sectorCount }, (_, index) => ({
     bearingDeg: index * sectorWidth,
     speeds: [] as number[],
     gusts: [] as number[],
+    bandCounts: bounds == null ? null : Array.from({ length: bounds.length + 1 }, () => 0),
   }));
   let calm = 0;
   let counted = 0;
@@ -313,6 +322,10 @@ export function windRose(points: ReadonlyArray<HistoryPoint>, sectorCount = 16):
     const sector = sectors[index] as (typeof sectors)[number];
     sector.speeds.push(point.windAvgMps);
     if (point.windGustMps != null) sector.gusts.push(point.windGustMps);
+    if (bounds != null && sector.bandCounts != null) {
+      const band = speedBand(point.windAvgMps, bounds);
+      sector.bandCounts[band] = (sector.bandCounts[band] ?? 0) + 1;
+    }
   }
   const blowing = counted - calm;
   return {
@@ -327,6 +340,7 @@ export function windRose(points: ReadonlyArray<HistoryPoint>, sectorCount = 16):
           ? null
           : sector.speeds.reduce((sum, speed) => sum + speed, 0) / sector.speeds.length,
       maxGustMps: sector.gusts.length === 0 ? null : Math.max(...sector.gusts),
+      ...(sector.bandCounts == null ? {} : { bandCounts: sector.bandCounts }),
     })),
   };
 }

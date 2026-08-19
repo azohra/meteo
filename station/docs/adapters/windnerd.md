@@ -109,9 +109,9 @@ time, not UTC, confirmed live: the local grid is the ordinary
 `00:00, 03:00, 06:00…`, but a station eight hours west of UTC has those
 boundaries arrive stamped `08:00Z, 11:00Z, 14:00Z…`; each `date_utc` is the
 correct UTC instant of its local boundary, not a UTC-aligned bucket. The
-records response no longer states that offset itself (the historical
-`time_offset` column is retired upstream, verified live); the standard
-offset now rides the live `INIT` frame's location block as
+adapter no longer parses the response's historical `time_offset` column
+(absent below period 180, and a per-record column where it appears); the
+standard offset rides the live `INIT` frame's location block as
 `standard_timeoffset`, which `parseWindnerdLiveLocation` surfaces as
 `standardUtcOffsetMinutes` — the honest clock for climatological bucketing.
 

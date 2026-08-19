@@ -59,6 +59,7 @@ const DECLARED_LABELS = new Map([
   ["docs/core/conventions", "Units, angles, one wind sign"],
   ["docs/forecast/model-capabilities", "Model capabilities"],
   ["docs/station/client-data", "Client data"],
+  ["docs/station/climatology", "Climatology"],
   ["docs/station/wire-contract", "Wire contract"],
 ]);
 

@@ -12,7 +12,10 @@ import { loadCampbellStation } from "./adapters/campbell.js";
 import { loadEcowittStation } from "./adapters/ecowitt.js";
 import { loadTempestStation } from "./adapters/tempest.js";
 import { loadWindnerdStation } from "./adapters/windnerd.js";
+import { loadWindnerdClimatology } from "./adapters/windnerd-climatology.js";
 import { openWindnerdLive } from "./adapters/windnerd-live.js";
+import type { StationClimatology } from "../contract-climatology.js";
+import type { SpeedThresholds } from "../derive.js";
 import {
   stationConfigSchema,
   type CustomStationConfig,
@@ -97,6 +100,56 @@ export async function openStationLive(
   return openWindnerdLive(entry.config, {
     environment,
     signal: options.signal,
+  });
+}
+
+export class StationClimatologyUnsupportedError extends Error {
+  constructor(stationId: string) {
+    super(`station "${stationId}" has no climatology archive`);
+    this.name = "StationClimatologyUnsupportedError";
+  }
+}
+
+export type LoadStationClimatologyOptions = {
+  stations: StationsInput;
+  stationId: string;
+  /** The consumer's speed-band bounds — a judgment parameter, no default. */
+  thresholds: SpeedThresholds;
+  years?: number;
+  sectorCount?: number;
+  slotMinutes?: number;
+  environment?: ServerEnvironment;
+  request?: Request;
+};
+
+/**
+ * Builds the climatology document for one configured station. Unknown ids
+ * throw UnknownStationError; stations whose vendor keeps no reachable
+ * archive — and stations whose config failed validation — throw
+ * StationClimatologyUnsupportedError.
+ */
+export async function loadStationClimatology(
+  options: LoadStationClimatologyOptions,
+): Promise<StationClimatology> {
+  const environment = resolveEnvironment(options.environment);
+  const assembled = assembleStations(
+    await resolveStations({ stations: options.stations, request: options.request }, environment),
+    environment,
+  );
+  const entry = assembled.find(
+    (candidate) =>
+      ("config" in candidate ? candidate.config.id : candidate.degraded.id) === options.stationId,
+  );
+  if (!entry) throw new UnknownStationError(options.stationId);
+  if ("degraded" in entry || entry.config.vendor !== "windnerd") {
+    throw new StationClimatologyUnsupportedError(options.stationId);
+  }
+  return loadWindnerdClimatology(entry.config, {
+    thresholds: options.thresholds,
+    years: options.years,
+    sectorCount: options.sectorCount,
+    slotMinutes: options.slotMinutes,
+    environment,
   });
 }
 

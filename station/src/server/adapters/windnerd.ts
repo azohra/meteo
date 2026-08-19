@@ -26,7 +26,7 @@ import {
   type ResolvedEnvironment,
 } from "../environment.js";
 
-const WINDNERD_RECORDS_URL = "https://windnerd.net/api/records";
+export const WINDNERD_RECORDS_URL = "https://windnerd.net/api/records";
 const WINDNERD_LIVE_URL = "https://windnerd.net/api/live-url";
 const RECORD_PERIOD_MINUTES = 1;
 /* The vendor's full catalogue, verified against the live API 2026-08-19:
@@ -595,7 +595,7 @@ async function loadWindnerdLiveCurrent(
  * pays a live connection. Enrichment is best-effort: a failure declares
  * nothing and never fails the load. Consumer config always wins. */
 
-type CachedWindnerdLocation = {
+export type CachedWindnerdLocation = {
   location: WindnerdLiveLocation | null;
   broadcastDelaySeconds: number | null;
 };
@@ -616,23 +616,32 @@ async function cacheWindnerdLocation(
   );
 }
 
+/** The spot's cached location block, read through the 6-hour cache — one
+ * live connection at most, then cache-served. Throws on a cold cache with a
+ * dark live road; callers decide whether that degrades or fails. */
+export async function loadWindnerdLocation(
+  config: WindnerdStationConfig,
+  environment: ResolvedEnvironment,
+  options: WindnerdAdapterOptions = {},
+): Promise<CachedWindnerdLocation> {
+  const cached = await environment.cache.get(`windnerd/location/${config.locationId}`);
+  if (cached != null) return JSON.parse(cached) as CachedWindnerdLocation;
+  const init = parseWindnerdLiveInit(
+    await fetchWindnerdLiveInitText(config, environment, options),
+    config.locationId,
+  );
+  await cacheWindnerdLocation(config, environment, init);
+  return { location: init.location, broadcastDelaySeconds: init.broadcastDelaySeconds };
+}
+
 async function loadWindnerdLocationEnrichment(
   config: WindnerdStationConfig,
   environment: ResolvedEnvironment,
   options: WindnerdAdapterOptions,
 ): Promise<Partial<StationMeta>> {
   try {
-    const cached = await environment.cache.get(`windnerd/location/${config.locationId}`);
-    if (cached != null) {
-      const parsed = JSON.parse(cached) as CachedWindnerdLocation;
-      return windnerdEnrichedMeta(config, parsed.location, parsed.broadcastDelaySeconds);
-    }
-    const init = parseWindnerdLiveInit(
-      await fetchWindnerdLiveInitText(config, environment, options),
-      config.locationId,
-    );
-    await cacheWindnerdLocation(config, environment, init);
-    return windnerdEnrichedMeta(config, init.location, init.broadcastDelaySeconds);
+    const parsed = await loadWindnerdLocation(config, environment, options);
+    return windnerdEnrichedMeta(config, parsed.location, parsed.broadcastDelaySeconds);
   } catch (error) {
     logUpstreamFailure(environment, `${config.name} location metadata unavailable`, error, {
       station: config.id,
@@ -737,6 +746,17 @@ export function parseWindnerdRecords(
     records[name] == null
       ? dates.map(() => null)
       : nullableSeries(records[name], dates.length, name, fail, minimum, maximum);
+  /* An empty window drops sensor columns wholesale (verified live: a year
+   * before the station existed carries only the wind columns), so the
+   * required-column rule applies only when records exist. */
+  const requiredSeries = (
+    name: string,
+    minimum = -Infinity,
+    maximum = Infinity,
+  ): Array<number | null> =>
+    dates.length === 0
+      ? []
+      : nullableSeries(records[name], dates.length, name, fail, minimum, maximum);
   return {
     averageSpeedMps: speeds("wind_avg_1D"),
     vectorAverageSpeedMps: optionalSeries("wind_avg_2D", 0, MAX_WIND_MPS),
@@ -744,21 +764,14 @@ export function parseWindnerdRecords(
     gustSpeedMps: speeds("wind_max"),
     lullSpeedMps: speeds("wind_min"),
     observedAt: (dates as string[]).map((date) => recordTimeToIso(date, locationId)),
-    temperatureC: nullableSeries(records.temperature_avg, dates.length, "temperature_avg", fail),
+    temperatureC: requiredSeries("temperature_avg"),
     temperatureMinC: optionalSeries("temperature_min"),
     temperatureMaxC: optionalSeries("temperature_max"),
     /* The declared board's average column is required — a config that
      * declares pressure and a response without it is a loud mismatch — but
      * the min/max spread is a genuinely optional extra. */
     stationPressureHpa: hasPressure
-      ? nullableSeries(
-          records.pressure_hpa_avg,
-          dates.length,
-          "pressure_hpa_avg",
-          fail,
-          STATION_PRESSURE_MIN_HPA,
-          STATION_PRESSURE_MAX_HPA,
-        )
+      ? requiredSeries("pressure_hpa_avg", STATION_PRESSURE_MIN_HPA, STATION_PRESSURE_MAX_HPA)
       : dates.map(() => null),
     stationPressureMinHpa: hasPressure
       ? optionalSeries("pressure_hpa_min", STATION_PRESSURE_MIN_HPA, STATION_PRESSURE_MAX_HPA)

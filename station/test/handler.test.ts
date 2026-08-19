@@ -157,6 +157,65 @@ describe("createStationFeedHandler /current", () => {
   });
 });
 
+describe("createStationFeedHandler /climatology", () => {
+  const climatologyRoute: StubRoute = (url) => {
+    if (url.pathname.includes("/api/live-url/")) {
+      return sseResponse({ data: windnerdLiveInitPayload() });
+    }
+    if (url.hostname === "windnerd.net") return windnerdPayload();
+    throw new Error(`unexpected host ${url.hostname}`);
+  };
+  const climatology = { thresholds: { unit: "kmh" as const, values: [12, 20, 28] }, years: 2 };
+
+  it("404s when the host mounted no climatology judgment", async () => {
+    const { handler } = handlerWith(climatologyRoute);
+    const response = await handler(new Request("http://host/api/climatology?station=bluff"));
+    expect(response.status).toBe(404);
+  });
+
+  it("serves the cube with a long cache life and honours If-None-Match", async () => {
+    const { handler } = handlerWith(climatologyRoute, { climatology });
+    const response = await handler(new Request("http://host/api/climatology?station=bluff"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=21600");
+    const etag = response.headers.get("ETag");
+    expect(etag).not.toBeNull();
+    const document = (await response.json()) as { schemaVersion: number; stationId: string };
+    expect(document.schemaVersion).toBe(1);
+    expect(document.stationId).toBe("bluff");
+
+    const revalidated = await handler(
+      new Request("http://host/api/climatology?station=bluff", {
+        headers: { "If-None-Match": etag as string },
+      }),
+    );
+    expect(revalidated.status).toBe(304);
+  });
+
+  it("404s a vendor with no archive, 404s an unknown station, 400s a missing parameter", async () => {
+    const { handler } = handlerWith(climatologyRoute, { climatology });
+    expect((await handler(new Request("http://host/api/climatology?station=base"))).status).toBe(
+      404,
+    );
+    expect((await handler(new Request("http://host/api/climatology?station=nope"))).status).toBe(
+      404,
+    );
+    expect((await handler(new Request("http://host/api/climatology"))).status).toBe(400);
+  });
+
+  it("502s when the archive itself is refused", async () => {
+    const { handler } = handlerWith(
+      (url) =>
+        url.pathname.includes("/api/live-url/")
+          ? sseResponse({ data: windnerdLiveInitPayload() })
+          : new Response("down", { status: 502 }),
+      { climatology },
+    );
+    const response = await handler(new Request("http://host/api/climatology?station=bluff"));
+    expect(response.status).toBe(502);
+  });
+});
+
 describe("createStationFeedHandler configuration", () => {
   const invalidCampbell = {
     vendor: "campbell",

@@ -50,6 +50,7 @@ import { createStationFeedHandler } from "@azohra/meteo.station/server";
 | [Custom elements](/docs/station/elements/) | The custom-elements binding: registration, attributes vs properties |
 | [Theming](/docs/station/theming/) | `.meteo-root` scoping, token tables, dark mode, `@layer` |
 | [Client data](/docs/station/client-data/) | The framework-free layer beneath both bindings: poller semantics, stores, the merge clock rule |
+| [Climatology](/docs/station/climatology/) | The multi-year cube: the whole archive as (month, slot, sector) sums, filtered client-side with no refetch |
 | [Wire contract](/docs/station/wire-contract/) | The document shape, semantics, evolution rules, HTTP protocol, freshness model |
 
 JSON Schema for the station wire documents lives in

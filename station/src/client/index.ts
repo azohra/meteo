@@ -23,4 +23,6 @@ export {
   liveSnapshotToCurrent,
 } from "./live.js";
 export type { LiveStatus, StationLiveSnapshot, StationLiveStore } from "./live.js";
+export { createStationClimatologyStore } from "./climatology.js";
+export type { StationClimatologySnapshot, StationClimatologyStore } from "./climatology.js";
 export { subscribeTicker } from "./ticker.js";

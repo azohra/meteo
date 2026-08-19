@@ -1,9 +1,13 @@
 import type { StationCurrent, StationFeed, StationLiveFrame } from "../contract.js";
+import type { StationClimatology } from "../contract-climatology.js";
+import type { SpeedThresholds } from "../derive.js";
 import {
   DEFAULT_HISTORY_HOURS,
+  StationClimatologyUnsupportedError,
   StationLiveUnsupportedError,
   UnknownStationError,
   assembleStations,
+  loadStationClimatology,
   loadStationCurrent,
   loadStationFeed,
   openStationLive,
@@ -16,7 +20,11 @@ import {
 } from "./environment.js";
 import { encodeStationLiveSse, STATION_LIVE_SSE_HEADERS } from "./live.js";
 
-export type StationFeedHandlerRoute = "feed" | "current" | "live";
+export type StationFeedHandlerRoute = "feed" | "current" | "live" | "climatology";
+
+/* Near-immutable history: the running year's fetch cache is 6 hours, and
+ * the served document follows it. */
+const CLIMATOLOGY_CACHE_SECONDS = 21_600;
 
 const ALLOWED_METHODS = "GET, HEAD, OPTIONS";
 
@@ -27,6 +35,15 @@ export type StationFeedHandlerOptions = {
   basePath?: string;
   cors?: boolean | string;
   cacheControl?: string | ((route: StationFeedHandlerRoute, maxAgeSeconds: number) => string);
+  /** Mounting the /climatology route is the host's judgment call: the
+   * thresholds that bin every stack come from here, no default. Absent,
+   * the route answers 404. */
+  climatology?: {
+    thresholds: SpeedThresholds;
+    years?: number;
+    sectorCount?: number;
+    slotMinutes?: number;
+  };
   environment?: ServerEnvironment;
 };
 
@@ -105,15 +122,66 @@ export function createStationFeedHandler(options: StationFeedHandlerOptions): St
             ? "current"
             : pathname === `${basePath}/live`
               ? "live"
-              : null
+              : pathname === `${basePath}/climatology`
+                ? "climatology"
+                : null
         : pathname.endsWith("/feed")
           ? "feed"
           : pathname.endsWith("/current")
             ? "current"
             : pathname.endsWith("/live")
               ? "live"
-              : null;
+              : pathname.endsWith("/climatology")
+                ? "climatology"
+                : null;
     if (!route) return respond({ error: "not found" }, 404);
+
+    if (route === "climatology") {
+      /* Absence is the host's configuration, permanent for this mount. */
+      if (options.climatology == null) {
+        return respond({ error: "climatology not configured" }, 404);
+      }
+      const stationId = url.searchParams.get("station");
+      if (!stationId) return respond({ error: "missing station parameter" }, 400);
+      let document: StationClimatology;
+      try {
+        document = await loadStationClimatology({
+          stations: options.stations,
+          stationId,
+          thresholds: options.climatology.thresholds,
+          years: options.climatology.years,
+          sectorCount: options.climatology.sectorCount,
+          slotMinutes: options.climatology.slotMinutes,
+          environment: options.environment,
+          request,
+        });
+      } catch (error) {
+        if (error instanceof UnknownStationError) {
+          return respond({ error: "unknown station" }, 404);
+        }
+        if (error instanceof StationClimatologyUnsupportedError) {
+          return respond({ error: "station has no climatology archive" }, 404);
+        }
+        return respond(
+          { error: "climatology unavailable", reason: unavailableReasonForError(error) },
+          502,
+        );
+      }
+      const headers = {
+        "Cache-Control": cacheControlFor("climatology", CLIMATOLOGY_CACHE_SECONDS),
+        ETag: weakEtag({
+          schemaVersion: document.schemaVersion,
+          stationId: document.stationId,
+          thresholdsMps: document.thresholdsMps,
+          years: document.years,
+          cells: document.cells,
+        }),
+      };
+      if (etagMatches(request.headers.get("If-None-Match"), headers.ETag)) {
+        return notModified(headers);
+      }
+      return respond(document, 200, headers);
+    }
 
     /* Live carries no history, so ?hours= does not apply and is ignored. */
     if (route === "live") {

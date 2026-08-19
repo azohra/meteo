@@ -11,3 +11,7 @@ export function currentEndpoint(base: string, stationId: string): string {
 export function liveEndpoint(base: string, stationId: string): string {
   return `${trimBase(base)}/live?station=${encodeURIComponent(stationId)}`;
 }
+
+export function climatologyEndpoint(base: string, stationId: string): string {
+  return `${trimBase(base)}/climatology?station=${encodeURIComponent(stationId)}`;
+}

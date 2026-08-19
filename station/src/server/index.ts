@@ -6,6 +6,13 @@ export * from "./handler.js";
 export * from "./live.js";
 export { openWindnerdLive, type WindnerdLiveOptions } from "./adapters/windnerd-live.js";
 export {
+  CLIMATOLOGY_DEFAULT_SECTOR_COUNT,
+  CLIMATOLOGY_DEFAULT_YEARS,
+  CLIMATOLOGY_RECORD_PERIOD_MINUTES,
+  loadWindnerdClimatology,
+  type WindnerdClimatologyOptions,
+} from "./adapters/windnerd-climatology.js";
+export {
   loadWindnerdStation,
   parseStandardTimeOffset,
   parseWindnerdLiveDigest,

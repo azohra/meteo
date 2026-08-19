@@ -99,6 +99,7 @@ export const sidebar = [
       { slug: "docs/station/elements", label: "Custom elements" },
       { slug: "docs/station/theming", label: "Theming" },
       { slug: "docs/station/client-data", label: "Client data" },
+      { slug: "docs/station/climatology", label: "Climatology" },
       { slug: "docs/station/wire-contract", label: "Wire contract" },
     ],
   },
