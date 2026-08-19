@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { historyGaps } from "../src/index.js";
 import {
   loadWindnerdStation,
+  parseStandardTimeOffset,
   parseWindnerdLiveInit,
+  parseWindnerdLiveLocation,
   parseWindnerdRecords,
+  windnerdEnrichedMeta,
   windnerdLiveReading,
   windnerdStationConfigSchema,
 } from "../src/server/index.js";
@@ -124,25 +127,47 @@ describe("parseWindnerdRecords", () => {
     );
   });
 
-  it("reads utcOffsetMinutes only where the vendor sends it — the 180-minute aggregate", () => {
-    expect(parseWindnerdRecords(windnerdPayload(), 8675).utcOffsetMinutes).toBeNull();
+  it("reads the vector average where sent, all-null where the column is absent", () => {
+    expect(parseWindnerdRecords(windnerdPayload(), 8675).vectorAverageSpeedMps).toEqual([
+      5.5, 11, 8,
+    ]);
     expect(
-      parseWindnerdRecords(windnerdPayload({ time_offset: [-480, -480, -480] }), 8675)
-        .utcOffsetMinutes,
-    ).toBe(-480);
-  });
-
-  it("takes the first given time_offset rather than requiring every record to agree", () => {
-    expect(
-      parseWindnerdRecords(windnerdPayload({ time_offset: [null, -480, -480] }), 8675)
-        .utcOffsetMinutes,
-    ).toBe(-480);
-  });
-
-  it("rejects a time_offset outside a real UTC offset", () => {
+      parseWindnerdRecords(windnerdPayload({ wind_avg_2D: undefined }), 8675).vectorAverageSpeedMps,
+    ).toEqual([null, null, null]);
     expect(() =>
-      parseWindnerdRecords(windnerdPayload({ time_offset: [-1000, -1000, -1000] }), 8675),
-    ).toThrow("WindNerd location 8675 returned an invalid time_offset");
+      parseWindnerdRecords(windnerdPayload({ wind_avg_2D: [5.5, 999, 8] }), 8675),
+    ).toThrow("WindNerd location 8675 returned an invalid wind_avg_2D");
+  });
+
+  it("reads the optional temperature spread, all-null where the columns are absent", () => {
+    const spread = parseWindnerdRecords(
+      windnerdPayload({ temperature_min: [18.1, null, 20.3], temperature_max: [23.5, null, 26] }),
+      8675,
+    );
+    expect(spread.temperatureMinC).toEqual([18.1, null, 20.3]);
+    expect(spread.temperatureMaxC).toEqual([23.5, null, 26]);
+    const bare = parseWindnerdRecords(windnerdPayload(), 8675);
+    expect(bare.temperatureMinC).toEqual([null, null, null]);
+    expect(bare.temperatureMaxC).toEqual([null, null, null]);
+  });
+
+  it("reads the optional pressure spread only on a declared board", () => {
+    const payload = windnerdPayload({
+      pressure_hpa_min: [947.1, null, 946.8],
+      pressure_hpa_max: [948.2, null, 947.9],
+    });
+    const declared = parseWindnerdRecords(payload, 8675, true);
+    expect(declared.stationPressureMinHpa).toEqual([947.1, null, 946.8]);
+    expect(declared.stationPressureMaxHpa).toEqual([948.2, null, 947.9]);
+    const undeclared = parseWindnerdRecords(payload, 8675);
+    expect(undeclared.stationPressureMinHpa).toEqual([null, null, null]);
+    /* The declared board's average column stays required; the spread alone
+     * is optional. */
+    expect(parseWindnerdRecords(windnerdPayload(), 8675, true).stationPressureMinHpa).toEqual([
+      null,
+      null,
+      null,
+    ]);
   });
 });
 
@@ -464,11 +489,16 @@ describe("loadWindnerdStation", () => {
     expect(station.reason).toBe("contract_break");
   });
 
-  it("serves a second load from the cache", async () => {
-    const { environment, requests } = stubEnvironment(() => windnerdPayload());
+  it("serves a second load from the cache — records and the location read alike", async () => {
+    const { environment, requests } = stubEnvironment((url) =>
+      url.pathname.includes("/api/live-url/")
+        ? sseResponse({ data: windnerdLiveInitPayload() })
+        : windnerdPayload(),
+    );
     await loadWindnerdStation(config, { environment });
     await loadWindnerdStation(config, { environment });
-    expect(requests).toHaveLength(1);
+    expect(requests.filter((url) => url.pathname === "/api/records")).toHaveLength(1);
+    expect(requests).toHaveLength(2);
   });
 
   it("requests the vendor's own aggregate period and carries it onto the wire", async () => {
@@ -487,7 +517,7 @@ describe("loadWindnerdStation", () => {
     const station = await loadWindnerdStation(config, {
       environment,
       // @ts-expect-error deliberately outside WindnerdRecordPeriodMinutes
-      recordPeriodMinutes: 30,
+      recordPeriodMinutes: 7,
     });
     if (station.status !== "unavailable") throw new Error("expected unavailable");
     expect(station.reason).toBe("contract_break");
@@ -495,11 +525,16 @@ describe("loadWindnerdStation", () => {
   });
 
   it("keys the cache by period, so a live pull and a season pull never collide", async () => {
-    const { environment, requests } = stubEnvironment(() => windnerdPayload());
+    const { environment, requests } = stubEnvironment((url) =>
+      url.pathname.includes("/api/live-url/")
+        ? sseResponse({ data: windnerdLiveInitPayload() })
+        : windnerdPayload(),
+    );
     await loadWindnerdStation(config, { environment, recordPeriodMinutes: 1 });
     await loadWindnerdStation(config, { environment, recordPeriodMinutes: 180 });
     await loadWindnerdStation(config, { environment, recordPeriodMinutes: 180 });
-    expect(requests).toHaveLength(2);
+    expect(requests.filter((url) => url.pathname === "/api/records")).toHaveLength(2);
+    expect(requests.filter((url) => url.pathname.includes("/api/live-url/"))).toHaveLength(1);
   });
 });
 
@@ -511,6 +546,85 @@ const batteryConfig = windnerdStationConfigSchema.parse({
   locationId: 240,
   elevationM: 1485,
   hasBattery: true,
+});
+
+describe("parseWindnerdLiveLocation", () => {
+  it("reads the spot's declarations off the init frame", () => {
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload(), 8675);
+    expect(init.broadcastDelaySeconds).toBe(60);
+    expect(init.location).toEqual({
+      declaredFavorableDirections: [{ fromDeg: 170, toDeg: 0 }],
+      altitudeM: 1485,
+      timeZone: "America/Vancouver",
+      latitude: 49.28,
+      longitude: -123.12,
+      standardUtcOffsetMinutes: -480,
+    });
+  });
+
+  it("keeps an explicitly empty dir_ranges apart from an absent one", () => {
+    expect(
+      parseWindnerdLiveLocation({ location_type_meta: { dir_ranges: [] } })
+        ?.declaredFavorableDirections,
+    ).toEqual([]);
+    expect(parseWindnerdLiveLocation({})?.declaredFavorableDirections).toBeNull();
+    /* One bad arc poisons the list: declare nothing over a partial lie. */
+    expect(
+      parseWindnerdLiveLocation({
+        location_type_meta: { dir_ranges: [{ from: 170, to: 0 }, { from: "west" }] },
+      })?.declaredFavorableDirections,
+    ).toBeNull();
+  });
+
+  it("reads nothing at all from a malformed or absent block", () => {
+    expect(parseWindnerdLiveLocation(null)).toBeNull();
+    expect(parseWindnerdLiveLocation("Bluff Launch")).toBeNull();
+    const init = parseWindnerdLiveInit(windnerdLiveInitPayload({ location: undefined }), 8675);
+    expect(init.location).toBeNull();
+  });
+
+  it("parses the standard offset and refuses an impossible one", () => {
+    expect(parseStandardTimeOffset("-08:00")).toBe(-480);
+    expect(parseStandardTimeOffset("+05:45")).toBe(345);
+    expect(parseStandardTimeOffset("-15:00")).toBeNull();
+    expect(parseStandardTimeOffset("8:00")).toBeNull();
+    expect(parseStandardTimeOffset(60)).toBeNull();
+  });
+});
+
+describe("windnerdEnrichedMeta", () => {
+  const location = {
+    declaredFavorableDirections: [{ fromDeg: 170, toDeg: 0 }],
+    altitudeM: 1485,
+    timeZone: "America/Vancouver",
+    latitude: 49.28,
+    longitude: -123.12,
+    standardUtcOffsetMinutes: -480,
+  };
+
+  it("lets consumer config beat every vendor guess, arc declarations excepted", () => {
+    const enriched = windnerdEnrichedMeta(
+      { latitude: 49.5, longitude: null, timeZone: null, elevationM: 1500 },
+      location,
+      60,
+    );
+    expect(enriched.latitude).toBe(49.5);
+    expect(enriched.longitude).toBe(-123.12);
+    expect(enriched.timeZone).toBe("America/Vancouver");
+    expect(enriched.elevationM).toBe(1500);
+    expect(enriched.declaredFavorableDirections).toEqual([{ fromDeg: 170, toDeg: 0 }]);
+    expect(enriched.broadcastDelaySeconds).toBe(60);
+  });
+
+  it("declares nothing when the vendor stated nothing", () => {
+    expect(
+      windnerdEnrichedMeta(
+        { latitude: null, longitude: null, timeZone: null, elevationM: null },
+        null,
+        null,
+      ),
+    ).toEqual({});
+  });
 });
 
 describe("parseWindnerdLiveInit", () => {
@@ -716,9 +830,12 @@ describe("loadWindnerdStation current mode", () => {
     const station = await loadWindnerdStation(config, { environment, mode: "current" });
     if (station.status !== "ok") throw new Error("expected ok");
 
+    /* The live road is tried twice: once for current, once (negative-cached
+     * afterwards) for the location enrichment the records road carries. */
     expect(requests.map((url) => url.pathname)).toEqual([
       "/api/live-url/bluff-launch",
       "/api/records",
+      "/api/live-url/bluff-launch",
     ]);
     expect(station.reading.windAvgMps).toBe(9);
     expect(station.samples).toBeNull();
@@ -744,15 +861,25 @@ describe("loadWindnerdStation current mode", () => {
     expect(station.reason).toBe("upstream_error");
   });
 
-  it("leaves full mode on the records road with no live connection", async () => {
+  it("full mode reads records plus one long-cached location read, and wears the spot's declarations", async () => {
     const { environment, requests } = stubEnvironment(liveRoute);
     const station = await loadWindnerdStation(batteryConfig, { environment });
     if (station.status !== "ok") throw new Error("expected ok");
 
-    expect(requests).toHaveLength(1);
-    expect(requests[0]?.pathname).toBe("/api/records");
+    expect(requests.map((url) => url.pathname)).toEqual(["/api/records", "/api/live-url/dundee"]);
     expect(station.telemetry).toBeNull();
     expect(station.samples).toBeNull();
     expect(station.history).not.toBeNull();
+    /* The INIT location block enriches the meta; consumer config wins. */
+    expect(station.declaredFavorableDirections).toEqual([{ fromDeg: 170, toDeg: 0 }]);
+    expect(station.broadcastDelaySeconds).toBe(60);
+    expect(station.elevationM).toBe(1485);
+    expect(station.latitude).toBe(49.28);
+    expect(station.longitude).toBe(-123.12);
+    expect(station.timeZone).toBe("America/Vancouver");
+
+    /* A second load pays neither road. */
+    await loadWindnerdStation(batteryConfig, { environment });
+    expect(requests).toHaveLength(2);
   });
 });

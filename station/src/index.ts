@@ -3,6 +3,8 @@ export {
   UNAVAILABLE_REASONS,
   airConditionsSchema,
   capabilitiesSchema,
+  declaredFavorableDirections,
+  directionArcSchema,
   emptyConditions,
   historyPointSchema,
   historySchema,

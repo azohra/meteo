@@ -21,6 +21,7 @@ import {
   parseWindnerdLiveSampleRecords,
   WINDNERD_LIVE_INIT_TIMEOUT_MS,
   WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS,
+  windnerdEnrichedMeta,
   windnerdLiveReading,
   windnerdLiveSamples,
   windnerdLiveStreamUrl,
@@ -179,6 +180,7 @@ async function readInitFrame(
       const { reading, telemetry } = windnerdLiveReading(init.digest, config);
       const station: Station = {
         ...windnerdStationMeta(config),
+        ...windnerdEnrichedMeta(config, init.location, init.broadcastDelaySeconds),
         recommendedPollSeconds: WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS,
         status: "ok",
         reading,

@@ -1,14 +1,8 @@
 import { z } from "zod";
 import { UPSTREAM_FAILURE_REASONS } from "@azohra/meteo.core";
+import type { DirectionArc } from "@azohra/meteo.core";
 
 export const STATION_SCHEMA_VERSION = 2;
-
-export const STATION_WIRE_V1_RENAMES: Record<string, string> = {
-  averageMps: "windAvgMps",
-  gustMps: "windGustMps",
-  lullMps: "windLullMps",
-  directionDeg: "windDirectionDeg",
-};
 
 export const UNAVAILABLE_REASONS = [...UPSTREAM_FAILURE_REASONS, "not_configured"] as const;
 export type UnavailableReason = (typeof UNAVAILABLE_REASONS)[number];
@@ -100,6 +94,19 @@ export const historyPointSchema = z
       .describe("Degrees FROM; null exactly when the period was calm (below 0.5 m/s)."),
     temperatureC: z.number().finite().nullable(),
     seaLevelPressureHpa: z.number().finite().positive().nullish(),
+    /* Additive per-period extremes and the vector mean; absent or null
+     * reads as 'not published here', never zero. */
+    windVectorAvgMps: speedMps
+      .nullish()
+      .describe(
+        "Vector-mean m/s over the period — the honest input for further " +
+          "vector re-aggregation; at most windAvgMps. Absent or null reads " +
+          "as 'not published here'.",
+      ),
+    temperatureMinC: z.number().finite().nullish(),
+    temperatureMaxC: z.number().finite().nullish(),
+    seaLevelPressureMinHpa: z.number().finite().positive().nullish(),
+    seaLevelPressureMaxHpa: z.number().finite().positive().nullish(),
   })
   .meta({ id: "HistoryPoint" });
 export type HistoryPoint = z.infer<typeof historyPointSchema>;
@@ -169,6 +176,17 @@ export const capabilitiesSchema = z
   .meta({ id: "StationCapabilities" });
 export type StationCapabilities = z.infer<typeof capabilitiesSchema>;
 
+export const directionArcSchema = z
+  .object({
+    fromDeg: z.number().finite().describe("Degrees FROM, clockwise from north."),
+    toDeg: z
+      .number()
+      .finite()
+      .describe("Degrees FROM; fromDeg > toDeg wraps through north, boundaries inclusive."),
+  })
+  .describe("One arc of favorable FROM bearings — core's DirectionArc shape on the wire.")
+  .meta({ id: "DirectionArc" });
+
 const stationMetaShape = {
   id: z.string().min(1),
   name: z.string().min(1),
@@ -178,6 +196,21 @@ const stationMetaShape = {
   longitude: z.number().finite().min(-180).lt(180).nullable(),
   timeZone: z.string().min(1).nullable(),
   elevationM: z.number().finite().nullable(),
+  /* Vendor-declared spot data, never a judgment default: components do not
+   * read this field themselves — a consumer opts in explicitly, e.g.
+   * favorableDirections={declaredFavorableDirections(station) ?? ownArcs}.
+   * null or absent = the source declares nothing knowable; [] = the source
+   * explicitly declares none. */
+  declaredFavorableDirections: z.array(directionArcSchema).nullish(),
+  broadcastDelaySeconds: z
+    .number()
+    .finite()
+    .min(0)
+    .nullish()
+    .describe(
+      "The source's own live-playback delay, seconds; absent or null when " +
+        "the vendor states none.",
+    ),
   capabilities: capabilitiesSchema,
   samplingWindowSeconds: z.number().finite().positive().nullable(),
   recommendedPollSeconds: z.number().finite().positive(),
@@ -321,4 +354,12 @@ export function emptyConditions(overrides: Partial<AirConditions> = {}): AirCond
 
 export function unavailableStation(meta: StationMeta, reason: UnavailableReason): Station {
   return { ...meta, status: "unavailable", reason, reading: null, history: null };
+}
+
+/** The source's declared favorable sectors, or null when it declares nothing
+ * knowable. Data, not judgment: no component reads the meta field itself —
+ * a consumer opts in, e.g.
+ * `favorableDirections={declaredFavorableDirections(station) ?? ownArcs}`. */
+export function declaredFavorableDirections(station: StationMeta): DirectionArc[] | null {
+  return station.declaredFavorableDirections ?? null;
 }

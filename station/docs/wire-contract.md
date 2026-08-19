@@ -102,6 +102,19 @@ document or null; they never throw.
   own block beside the reading, gated by the `battery` capability, and never
   inside `conditions`: air data stays air data. Like every sensor field, a
   declared battery that reports nothing is null, not absent structure.
+- **Declared favorable sectors are data, not judgment.**
+  `declaredFavorableDirections` on the meta carries what the *source*
+  declares about the spot (null or absent = nothing knowable, `[]` =
+  explicitly none). No component reads it: a consumer adopts it explicitly —
+  `favorableDirections={declaredFavorableDirections(station) ?? ownArcs}` —
+  so a vendor's opinion never becomes a judgment default. The optional
+  `broadcastDelaySeconds` states the source's own live-playback delay.
+- **History points may carry per-period extremes and the vector mean.**
+  `windVectorAvgMps`, `temperatureMinC`/`temperatureMaxC`, and
+  `seaLevelPressureMinHpa`/`seaLevelPressureMaxHpa` are additive and
+  nullish: absent or null reads as "not published here", never zero. The
+  vector mean is at most `windAvgMps` and is the honest input for further
+  vector re-aggregation.
 - **No prose on the wire.** Failures carry a reason code; degrees, not
   compass words. Display language, units, and colours are the client's.
 - **Units are SI: speeds are m/s**, converted for display via

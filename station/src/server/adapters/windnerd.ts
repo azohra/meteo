@@ -9,6 +9,7 @@ import {
 } from "../../contract.js";
 import { isCalm, normalizeDegrees, pressureTendency, seaLevelPressureHpa } from "../../derive.js";
 import { UpstreamError } from "@azohra/meteo.core";
+import type { DirectionArc } from "@azohra/meteo.core";
 import { sseEvents } from "../../sse.js";
 import { windnerdStationUrl, type WindnerdStationConfig } from "../config.js";
 import {
@@ -27,11 +28,17 @@ import {
 const WINDNERD_RECORDS_URL = "https://windnerd.net/api/records";
 const WINDNERD_LIVE_URL = "https://windnerd.net/api/live-url";
 const RECORD_PERIOD_MINUTES = 1;
-export const WINDNERD_RECORD_PERIODS_MINUTES = [1, 15, 60, 180] as const;
+/* The vendor's full catalogue, verified against the live API 2026-08-19:
+ * every other value (2, 3, 120, 240, 720, 1440 probed) returns 404. */
+export const WINDNERD_RECORD_PERIODS_MINUTES = [1, 5, 10, 15, 30, 60, 180, 360] as const;
 export type WindnerdRecordPeriodMinutes = (typeof WINDNERD_RECORD_PERIODS_MINUTES)[number];
 const CACHE_TTL_SECONDS = 60;
 const AGGREGATE_CACHE_TTL_SECONDS = 900;
 const LIVE_CACHE_TTL_SECONDS = 15;
+/* Spot metadata (sectors, altitude, offsets) changes on the owner's
+ * timescale, not the wind's. */
+const LOCATION_CACHE_TTL_SECONDS = 21_600;
+const LOCATION_MISS_CACHE_TTL_SECONDS = 900;
 export const WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS = 15;
 export const WINDNERD_LIVE_INIT_TIMEOUT_MS = 8_000;
 export const WINDNERD_LIVE_SAMPLE_INTERVAL_SECONDS = 3;
@@ -57,13 +64,17 @@ export type WindnerdAdapterOptions = StationAdapterOptions & {
 
 export type WindnerdRecords = {
   averageSpeedMps: number[];
+  vectorAverageSpeedMps: Array<number | null>;
   windDirectionDeg: number[];
   gustSpeedMps: number[];
   lullSpeedMps: number[];
   observedAt: string[];
   temperatureC: Array<number | null>;
+  temperatureMinC: Array<number | null>;
+  temperatureMaxC: Array<number | null>;
   stationPressureHpa: Array<number | null>;
-  utcOffsetMinutes: number | null;
+  stationPressureMinHpa: Array<number | null>;
+  stationPressureMaxHpa: Array<number | null>;
 };
 
 const UTC_OFFSET_MIN_MINUTES = -720;
@@ -144,8 +155,10 @@ export const loadWindnerdStation = defineStationAdapter<
     const last = points[points.length - 1];
     if (!last) throw new Error(`WindNerd location ${config.locationId} returned no wind`);
     const lastMs = Date.parse(last.observedAt);
+    const enrichment = await loadWindnerdLocationEnrichment(config, environment, options);
 
     return {
+      meta: enrichment,
       reading: {
         observedAt: last.observedAt,
         windAvgMps: last.windAvgMps,
@@ -170,7 +183,14 @@ export function windnerdHistoryPoints(
   const barometerElevationM = config.hasPressure ? (config.elevationM ?? null) : null;
   return records.observedAt.map((observedAt, index) => {
     const windAvgMps = records.averageSpeedMps[index] as number;
-    const stationPressure = records.stationPressureHpa[index] ?? null;
+    const reduced = (stationPressure: number | null) =>
+      barometerElevationM != null && stationPressure != null
+        ? seaLevelPressureHpa(
+            stationPressure,
+            barometerElevationM,
+            records.temperatureC[index] ?? null,
+          )
+        : null;
     return {
       observedAt,
       windAvgMps,
@@ -179,15 +199,13 @@ export function windnerdHistoryPoints(
       windDirectionDeg: isCalm(windAvgMps)
         ? null
         : normalizeDegrees(records.windDirectionDeg[index] as number),
+      windVectorAvgMps: records.vectorAverageSpeedMps[index] ?? null,
       temperatureC: config.hasTemperature ? (records.temperatureC[index] ?? null) : null,
-      seaLevelPressureHpa:
-        barometerElevationM != null && stationPressure != null
-          ? seaLevelPressureHpa(
-              stationPressure,
-              barometerElevationM,
-              records.temperatureC[index] ?? null,
-            )
-          : null,
+      temperatureMinC: config.hasTemperature ? (records.temperatureMinC[index] ?? null) : null,
+      temperatureMaxC: config.hasTemperature ? (records.temperatureMaxC[index] ?? null) : null,
+      seaLevelPressureHpa: reduced(records.stationPressureHpa[index] ?? null),
+      seaLevelPressureMinHpa: reduced(records.stationPressureMinHpa[index] ?? null),
+      seaLevelPressureMaxHpa: reduced(records.stationPressureMaxHpa[index] ?? null),
     };
   });
 }
@@ -240,9 +258,23 @@ export type WindnerdLiveSampleRecord = {
   directionDeg: number;
 };
 
+/* The INIT frame's location block: the vendor's public metadata about the
+ * spot. Parsed tolerantly — enrichment is best-effort and its absence never
+ * fails a load. */
+export type WindnerdLiveLocation = {
+  declaredFavorableDirections: DirectionArc[] | null;
+  altitudeM: number | null;
+  timeZone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  standardUtcOffsetMinutes: number | null;
+};
+
 export type WindnerdLiveInit = {
   digest: WindnerdLiveDigest;
   samples: WindnerdLiveSampleRecord[];
+  location: WindnerdLiveLocation | null;
+  broadcastDelaySeconds: number | null;
 };
 
 export function windnerdLiveStreamUrl(
@@ -263,10 +295,62 @@ export function parseWindnerdLiveInit(value: string, locationId: number): Windne
   if (!isRecord(data) || data.type !== "INIT") {
     throw new Error(`WindNerd location ${locationId} returned no live init frame`);
   }
+  const delay = data.delay;
   return {
     digest: parseWindnerdLiveDigest(data.digest, locationId),
     samples: parseWindnerdLiveSampleRecords(data.samples, locationId),
+    location: parseWindnerdLiveLocation(data.location),
+    broadcastDelaySeconds:
+      typeof delay === "number" && Number.isFinite(delay) && delay >= 0 ? delay : null,
   };
+}
+
+/* Tolerant by design: a malformed or absent block reads as null — the
+ * enrichment declares nothing rather than something plausible-but-wrong. */
+export function parseWindnerdLiveLocation(value: unknown): WindnerdLiveLocation | null {
+  if (!isRecord(value)) return null;
+  const finiteOrNull = (entry: unknown) =>
+    typeof entry === "number" && Number.isFinite(entry) ? entry : null;
+  const position = isRecord(value.guessed_position) ? value.guessed_position : null;
+  const meta = isRecord(value.location_type_meta) ? value.location_type_meta : null;
+  return {
+    declaredFavorableDirections: parseDirRanges(meta?.dir_ranges),
+    altitudeM: finiteOrNull(value.altitude),
+    timeZone: typeof value.timezone === "string" && value.timezone !== "" ? value.timezone : null,
+    latitude: finiteOrNull(position?.lat),
+    longitude: finiteOrNull(position?.lon),
+    standardUtcOffsetMinutes: parseStandardTimeOffset(value.standard_timeoffset),
+  };
+}
+
+function parseDirRanges(value: unknown): DirectionArc[] | null {
+  if (!Array.isArray(value)) return null;
+  const arcs: DirectionArc[] = [];
+  for (const entry of value) {
+    if (
+      !isRecord(entry) ||
+      typeof entry.from !== "number" ||
+      !Number.isFinite(entry.from) ||
+      typeof entry.to !== "number" ||
+      !Number.isFinite(entry.to)
+    ) {
+      /* One bad arc poisons the list: declare nothing over a partial lie. */
+      return null;
+    }
+    arcs.push({ fromDeg: entry.from, toDeg: entry.to });
+  }
+  return arcs;
+}
+
+/* "-08:00" → -480; the vendor states the station's STANDARD offset (no
+ * DST), the honest clock for climatological bucketing. */
+export function parseStandardTimeOffset(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const match = /^([+-])(\d{2}):(\d{2})$/.exec(value.trim());
+  if (match == null) return null;
+  const minutes = (match[1] === "-" ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3]));
+  if (minutes < UTC_OFFSET_MIN_MINUTES || minutes > UTC_OFFSET_MAX_MINUTES) return null;
+  return minutes;
 }
 
 /* Accepts both homes of the digest record: the INIT frame's digest field and
@@ -426,13 +510,94 @@ async function loadWindnerdLiveCurrent(
 ): Promise<StationAdapterResult> {
   const text = await fetchWindnerdLiveInitText(config, environment, options);
   const init = parseWindnerdLiveInit(text, config.locationId);
+  await cacheWindnerdLocation(config, environment, init);
   const { reading, telemetry } = windnerdLiveReading(init.digest, config);
   return {
     reading,
     history: null,
     telemetry,
     samples: windnerdLiveSamples(init.samples),
-    meta: { recommendedPollSeconds: WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS },
+    meta: {
+      recommendedPollSeconds: WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS,
+      ...windnerdEnrichedMeta(config, init.location, init.broadcastDelaySeconds),
+    },
+  };
+}
+
+/* ── Location enrichment ───────────────────────────────────────────────────
+ * The INIT frame's location block is the one public source of the spot's
+ * declared sectors, altitude, and offsets. It rides every live read for
+ * free; records mode reads it through a 6-hour cache so a feed poll never
+ * pays a live connection. Enrichment is best-effort: a failure declares
+ * nothing and never fails the load. Consumer config always wins. */
+
+type CachedWindnerdLocation = {
+  location: WindnerdLiveLocation | null;
+  broadcastDelaySeconds: number | null;
+};
+
+async function cacheWindnerdLocation(
+  config: WindnerdStationConfig,
+  environment: ResolvedEnvironment,
+  init: Pick<WindnerdLiveInit, "location" | "broadcastDelaySeconds">,
+): Promise<void> {
+  const cached: CachedWindnerdLocation = {
+    location: init.location,
+    broadcastDelaySeconds: init.broadcastDelaySeconds,
+  };
+  await environment.cache.put(
+    `windnerd/location/${config.locationId}`,
+    JSON.stringify(cached),
+    LOCATION_CACHE_TTL_SECONDS,
+  );
+}
+
+async function loadWindnerdLocationEnrichment(
+  config: WindnerdStationConfig,
+  environment: ResolvedEnvironment,
+  options: WindnerdAdapterOptions,
+): Promise<Partial<StationMeta>> {
+  try {
+    const cached = await environment.cache.get(`windnerd/location/${config.locationId}`);
+    if (cached != null) {
+      const parsed = JSON.parse(cached) as CachedWindnerdLocation;
+      return windnerdEnrichedMeta(config, parsed.location, parsed.broadcastDelaySeconds);
+    }
+    const init = parseWindnerdLiveInit(
+      await fetchWindnerdLiveInitText(config, environment, options),
+      config.locationId,
+    );
+    await cacheWindnerdLocation(config, environment, init);
+    return windnerdEnrichedMeta(config, init.location, init.broadcastDelaySeconds);
+  } catch (error) {
+    logUpstreamFailure(environment, `${config.name} location metadata unavailable`, error, {
+      station: config.id,
+    });
+    /* Negative-cache the miss so a dark live stream cannot tax every feed
+     * poll with a fresh connection attempt. */
+    const nothing: CachedWindnerdLocation = { location: null, broadcastDelaySeconds: null };
+    await environment.cache.put(
+      `windnerd/location/${config.locationId}`,
+      JSON.stringify(nothing),
+      LOCATION_MISS_CACHE_TTL_SECONDS,
+    );
+    return {};
+  }
+}
+
+export function windnerdEnrichedMeta(
+  config: Pick<WindnerdStationConfig, "latitude" | "longitude" | "timeZone" | "elevationM">,
+  location: WindnerdLiveLocation | null,
+  broadcastDelaySeconds: number | null,
+): Partial<StationMeta> {
+  if (location == null && broadcastDelaySeconds == null) return {};
+  return {
+    latitude: config.latitude ?? location?.latitude ?? null,
+    longitude: config.longitude ?? location?.longitude ?? null,
+    timeZone: config.timeZone ?? location?.timeZone ?? null,
+    elevationM: config.elevationM ?? location?.altitudeM ?? null,
+    declaredFavorableDirections: location?.declaredFavorableDirections ?? null,
+    broadcastDelaySeconds,
   };
 }
 
@@ -502,13 +667,25 @@ export function parseWindnerdRecords(
   };
   const speeds = (name: string) =>
     numberSeries(records[name], dates.length, 0, MAX_WIND_MPS, name, fail);
+  /* A column the response simply lacks reads as all-null — absence over a
+   * parse failure, since not every board publishes every sensor series. */
+  const optionalSeries = (name: string, minimum = -Infinity, maximum = Infinity) =>
+    records[name] == null
+      ? dates.map(() => null)
+      : nullableSeries(records[name], dates.length, name, fail, minimum, maximum);
   return {
     averageSpeedMps: speeds("wind_avg_1D"),
+    vectorAverageSpeedMps: optionalSeries("wind_avg_2D", 0, MAX_WIND_MPS),
     windDirectionDeg: numberSeries(records.wind_dir, dates.length, 0, 360, "wind_dir", fail),
     gustSpeedMps: speeds("wind_max"),
     lullSpeedMps: speeds("wind_min"),
     observedAt: (dates as string[]).map((date) => recordTimeToIso(date, locationId)),
     temperatureC: nullableSeries(records.temperature_avg, dates.length, "temperature_avg", fail),
+    temperatureMinC: optionalSeries("temperature_min"),
+    temperatureMaxC: optionalSeries("temperature_max"),
+    /* The declared board's average column is required — a config that
+     * declares pressure and a response without it is a loud mismatch — but
+     * the min/max spread is a genuinely optional extra. */
     stationPressureHpa: hasPressure
       ? nullableSeries(
           records.pressure_hpa_avg,
@@ -519,20 +696,13 @@ export function parseWindnerdRecords(
           STATION_PRESSURE_MAX_HPA,
         )
       : dates.map(() => null),
-    utcOffsetMinutes: parseUtcOffsetMinutes(records.time_offset, locationId),
+    stationPressureMinHpa: hasPressure
+      ? optionalSeries("pressure_hpa_min", STATION_PRESSURE_MIN_HPA, STATION_PRESSURE_MAX_HPA)
+      : dates.map(() => null),
+    stationPressureMaxHpa: hasPressure
+      ? optionalSeries("pressure_hpa_max", STATION_PRESSURE_MIN_HPA, STATION_PRESSURE_MAX_HPA)
+      : dates.map(() => null),
   };
-}
-
-function parseUtcOffsetMinutes(value: unknown, locationId: number): number | null {
-  if (!Array.isArray(value)) return null;
-  const first = value.find(
-    (entry): entry is number => typeof entry === "number" && Number.isFinite(entry),
-  );
-  if (first == null) return null;
-  if (first < UTC_OFFSET_MIN_MINUTES || first > UTC_OFFSET_MAX_MINUTES) {
-    throw new Error(`WindNerd location ${locationId} returned an invalid time_offset`);
-  }
-  return first;
 }
 
 function latestSensorValue(

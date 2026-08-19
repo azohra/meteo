@@ -90,7 +90,7 @@ Beyond the shared `{ historyHours, mode, environment }`,
 
 | Option | Meaning |
 |---|---|
-| `recordPeriodMinutes` | Record resolution: `1` (default), `15`, `60`, or `180` (the vendor's own whitelist); any other value throws before fetching. |
+| `recordPeriodMinutes` | Record resolution in minutes: `1` (default), `5`, `10`, `15`, `30`, `60`, `180`, or `360` — the vendor's own catalogue, verified live (every other value 404s upstream); any other value throws before fetching. |
 | `cacheTtlSeconds` | Overrides the 60 s (period 1) / 900 s (aggregate) default. |
 | `recordsUrl` | Overrides the records endpoint, for tests and proxies. |
 | `liveUrl` | Overrides the live endpoint base, for tests and proxies. |
@@ -103,16 +103,31 @@ patterns are in
 
 ### Aggregate buckets follow local standard time
 
-At period 180 the vendor buckets by the station's own local standard time,
-not UTC, confirmed live: the local grid is the ordinary
+At aggregate periods the vendor buckets by the station's own local standard
+time, not UTC, confirmed live: the local grid is the ordinary
 `00:00, 03:00, 06:00…`, but a station eight hours west of UTC has those
 boundaries arrive stamped `08:00Z, 11:00Z, 14:00Z…`; each `date_utc` is the
 correct UTC instant of its local boundary, not a UTC-aligned bucket. The
-response carries that offset as `time_offset` (one entry per record, not a
-single field, and only at period 180), and `parseWindnerdRecords` takes the
-first, surfacing it as the result's `utcOffsetMinutes`. It is not on the
-`Station` document `loadWindnerdStation` returns; only a caller running
-`parseWindnerdRecords` directly against the raw upstream text sees it.
+records response no longer states that offset itself (the historical
+`time_offset` column is retired upstream, verified live); the standard
+offset now rides the live `INIT` frame's location block as
+`standard_timeoffset`, which `parseWindnerdLiveLocation` surfaces as
+`standardUtcOffsetMinutes` — the honest clock for climatological bucketing.
+
+### The location block enriches the meta
+
+The live `INIT` frame carries the spot's public metadata, and the adapter
+keeps it instead of discarding it: `dir_ranges` land on the wire as
+[`declaredFavorableDirections`](/docs/station/wire-contract/#the-documents)
+(vendor-declared data a consumer may adopt — never a judgment default), the
+frame's `delay` as `broadcastDelaySeconds`, and `altitude`, `timezone`, and
+`guessed_position` fill only the meta fields the consumer's config left
+null — config always wins. Current mode reads the block off the `INIT`
+frame it already has; full (records) mode reads it through a 6-hour cache
+under `windnerd/location/<locationId>` so a feed poll never pays a live
+connection, with a 15-minute negative cache when the live road is down.
+Enrichment is best-effort: a failure declares nothing and never fails the
+load.
 
 ## What the adapter guards
 

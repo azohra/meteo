@@ -109,6 +109,31 @@
                 }
               ]
             },
+            "declaredFavorableDirections": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/DirectionArc"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "broadcastDelaySeconds": {
+              "description": "The source's own live-playback delay, seconds; absent or null when the vendor states none.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "capabilities": {
               "$ref": "#/$defs/StationCapabilities"
             },
@@ -251,6 +276,31 @@
                 }
               ]
             },
+            "declaredFavorableDirections": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/DirectionArc"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "broadcastDelaySeconds": {
+              "description": "The source's own live-playback delay, seconds; absent or null when the vendor states none.",
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "capabilities": {
               "$ref": "#/$defs/StationCapabilities"
             },
@@ -309,6 +359,24 @@
           ]
         }
       ]
+    },
+    "DirectionArc": {
+      "type": "object",
+      "properties": {
+        "fromDeg": {
+          "type": "number",
+          "description": "Degrees FROM, clockwise from north."
+        },
+        "toDeg": {
+          "type": "number",
+          "description": "Degrees FROM; fromDeg > toDeg wraps through north, boundaries inclusive."
+        }
+      },
+      "required": [
+        "fromDeg",
+        "toDeg"
+      ],
+      "description": "One arc of favorable FROM bearings — core's DirectionArc shape on the wire."
     },
     "StationCapabilities": {
       "type": "object",
@@ -674,6 +742,60 @@
           ]
         },
         "seaLevelPressureHpa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windVectorAvgMps": {
+          "description": "Vector-mean m/s over the period — the honest input for further vector re-aggregation; at most windAvgMps. Absent or null reads as 'not published here'.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperatureMinC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperatureMaxC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureMinHpa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureMaxHpa": {
           "anyOf": [
             {
               "type": "number",

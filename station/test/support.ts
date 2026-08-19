@@ -80,7 +80,19 @@ export function windnerdLiveInitPayload(overrides: Record<string, unknown> = {})
   return JSON.stringify({
     type: "INIT",
     delay: 60,
-    location: { id: 8675, name: "Bluff Launch", url: "bluff-launch" },
+    /* Shaped like the live INIT location block, verified 2026-08-19. */
+    location: {
+      id: 8675,
+      name: "Bluff Launch",
+      url: "bluff-launch",
+      timezone: "America/Vancouver",
+      location_type: 2,
+      location_type_meta: { dir_ranges: [{ from: 170, to: 0 }] },
+      altitude: 1485,
+      timeoffset: "-07:00",
+      standard_timeoffset: "-08:00",
+      guessed_position: { lat: 49.28, lon: -123.12 },
+    },
     samples: [
       { ts: "2026-08-05T22:12:39.000Z", sp: 8.1, dir: 288 },
       null,

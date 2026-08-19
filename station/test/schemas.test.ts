@@ -37,4 +37,40 @@ describe("wire contract evolution", () => {
     expect(parsed).not.toBeNull();
     expect(parsed).not.toHaveProperty("futureAdditiveField");
   });
+
+  it("a document published before the additive meta and point fields still parses", () => {
+    const feedExample = exampleArtifacts.find(
+      (example) => example.fileName === "example-feed.json",
+    );
+    const document = JSON.parse(JSON.stringify(feedExample?.document)) as {
+      stations: Array<Record<string, unknown>>;
+    };
+    for (const station of document.stations) {
+      delete station.declaredFavorableDirections;
+      delete station.broadcastDelaySeconds;
+      const history = station.history as { points?: Array<Record<string, unknown>> } | null;
+      for (const point of history?.points ?? []) {
+        delete point.windVectorAvgMps;
+        delete point.temperatureMinC;
+        delete point.temperatureMaxC;
+        delete point.seaLevelPressureMinHpa;
+        delete point.seaLevelPressureMaxHpa;
+      }
+    }
+    expect(parseStationFeed(document)).not.toBeNull();
+  });
+
+  it("declaredFavorableDirections keeps [] and null apart — explicitly none vs nothing knowable", () => {
+    const feedExample = exampleArtifacts.find(
+      (example) => example.fileName === "example-feed.json",
+    );
+    const document = JSON.parse(JSON.stringify(feedExample?.document)) as {
+      stations: Array<Record<string, unknown>>;
+    };
+    (document.stations[0] as Record<string, unknown>).declaredFavorableDirections = [];
+    (document.stations[1] as Record<string, unknown>).declaredFavorableDirections = null;
+    const parsed = parseStationFeed(document);
+    expect(parsed?.stations[0]?.declaredFavorableDirections).toEqual([]);
+    expect(parsed?.stations[1]?.declaredFavorableDirections).toBeNull();
+  });
 });
