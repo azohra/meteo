@@ -282,6 +282,35 @@ export const stationCurrentSchema = z.object({
 });
 export type StationCurrent = z.infer<typeof stationCurrentSchema>;
 
+/* One requested archive window — the pan/zoom road. Reuses the history
+ * shape so a client needs one decoder for served and browsed history. */
+export const stationHistorySchema = z
+  .object({
+    schemaVersion: z.literal(STATION_SCHEMA_VERSION),
+    servedAt: isoTime,
+    stationId: z.string().min(1),
+    history: historySchema.describe(
+      "The window's records at the served resolution; periodMinutes echoes " +
+        "what the source actually supplied, which may differ from the " +
+        "request when the vendor snapped it.",
+    ),
+  })
+  .meta({ id: "StationHistory" });
+export type StationHistory = z.infer<typeof stationHistorySchema>;
+
+export function parseStationHistory(value: unknown): StationHistory | null {
+  const result = stationHistorySchema.safeParse(value);
+  return result.success ? result.data : null;
+}
+
+export function parseStationHistoryJson(text: string): StationHistory | null {
+  try {
+    return parseStationHistory(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
 /* One frame per SSE data event on the /live route. The init frame reuses the
  * Station shape (history null) so a live client needs one decoder; the
  * unavailable frame is terminal — the stream closes after it. */

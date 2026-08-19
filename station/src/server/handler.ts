@@ -1,15 +1,17 @@
-import type { StationCurrent, StationFeed, StationLiveFrame } from "../contract.js";
+import type { StationCurrent, StationFeed, StationHistory, StationLiveFrame } from "../contract.js";
 import type { StationClimatology } from "../contract-climatology.js";
 import type { SpeedThresholds } from "../derive.js";
 import {
   DEFAULT_HISTORY_HOURS,
   StationClimatologyUnsupportedError,
+  StationHistoryUnsupportedError,
   StationLiveUnsupportedError,
   UnknownStationError,
   assembleStations,
   loadStationClimatology,
   loadStationCurrent,
   loadStationFeed,
+  loadStationHistory,
   openStationLive,
   type StationsInput,
 } from "./feed.js";
@@ -20,11 +22,17 @@ import {
 } from "./environment.js";
 import { encodeStationLiveSse, STATION_LIVE_SSE_HEADERS } from "./live.js";
 
-export type StationFeedHandlerRoute = "feed" | "current" | "live" | "climatology";
+export type StationFeedHandlerRoute = "feed" | "current" | "live" | "climatology" | "history";
 
 /* Near-immutable history: the running year's fetch cache is 6 hours, and
  * the served document follows it. */
 const CLIMATOLOGY_CACHE_SECONDS = 21_600;
+/* A fully-past archive window is immutable; one touching now still grows. */
+const HISTORY_PAST_CACHE_SECONDS = 86_400;
+const HISTORY_LIVE_CACHE_SECONDS = 60;
+/* The point budget bounds one response's size — a craft parameter (TRIAL);
+ * a wider span belongs at a coarser period. */
+const HISTORY_MAX_POINTS = 4_000;
 
 const ALLOWED_METHODS = "GET, HEAD, OPTIONS";
 
@@ -124,7 +132,9 @@ export function createStationFeedHandler(options: StationFeedHandlerOptions): St
               ? "live"
               : pathname === `${basePath}/climatology`
                 ? "climatology"
-                : null
+                : pathname === `${basePath}/history`
+                  ? "history"
+                  : null
         : pathname.endsWith("/feed")
           ? "feed"
           : pathname.endsWith("/current")
@@ -133,8 +143,73 @@ export function createStationFeedHandler(options: StationFeedHandlerOptions): St
               ? "live"
               : pathname.endsWith("/climatology")
                 ? "climatology"
-                : null;
+                : pathname.endsWith("/history")
+                  ? "history"
+                  : null;
     if (!route) return respond({ error: "not found" }, 404);
+
+    if (route === "history") {
+      const stationId = url.searchParams.get("station");
+      if (!stationId) return respond({ error: "missing station parameter" }, 400);
+      const fromMs = Date.parse(url.searchParams.get("from") ?? "");
+      const toMs = Date.parse(url.searchParams.get("to") ?? "");
+      const periodMinutes = Number(url.searchParams.get("period"));
+      if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs >= toMs) {
+        return respond({ error: "invalid window: from and to must be ISO times, from < to" }, 400);
+      }
+      if (!Number.isFinite(periodMinutes) || periodMinutes <= 0) {
+        return respond({ error: "invalid period: expected positive minutes" }, 400);
+      }
+      if ((toMs - fromMs) / (periodMinutes * 60_000) > HISTORY_MAX_POINTS) {
+        return respond(
+          { error: `window too fine: over ${HISTORY_MAX_POINTS} points — widen the period` },
+          400,
+        );
+      }
+      let document: StationHistory;
+      try {
+        document = await loadStationHistory({
+          stations: options.stations,
+          stationId,
+          fromMs,
+          toMs,
+          periodMinutes,
+          environment: options.environment,
+          request,
+        });
+      } catch (error) {
+        if (error instanceof UnknownStationError) {
+          return respond({ error: "unknown station" }, 404);
+        }
+        if (error instanceof StationHistoryUnsupportedError) {
+          return respond({ error: "station has no browsable archive" }, 404);
+        }
+        /* A period the vendor cannot serve is the caller's request to fix. */
+        if (error instanceof Error && error.message.includes("periodMinutes")) {
+          return respond({ error: error.message }, 400);
+        }
+        return respond(
+          { error: "history unavailable", reason: unavailableReasonForError(error) },
+          502,
+        );
+      }
+      const past = toMs <= Date.now();
+      const headers = {
+        "Cache-Control": cacheControlFor(
+          "history",
+          past ? HISTORY_PAST_CACHE_SECONDS : HISTORY_LIVE_CACHE_SECONDS,
+        ),
+        ETag: weakEtag({
+          schemaVersion: document.schemaVersion,
+          stationId: document.stationId,
+          history: document.history,
+        }),
+      };
+      if (etagMatches(request.headers.get("If-None-Match"), headers.ETag)) {
+        return notModified(headers);
+      }
+      return respond(document, 200, headers);
+    }
 
     if (route === "climatology") {
       /* Absence is the host's configuration, permanent for this mount. */

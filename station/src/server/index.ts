@@ -13,7 +13,9 @@ export {
   type WindnerdClimatologyOptions,
 } from "./adapters/windnerd-climatology.js";
 export {
+  loadWindnerdHistory,
   loadWindnerdStation,
+  type WindnerdHistoryQuery,
   parseStandardTimeOffset,
   parseWindnerdLiveDigest,
   parseWindnerdLiveInit,

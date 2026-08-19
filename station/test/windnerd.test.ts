@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { historyGaps } from "../src/index.js";
 import {
+  loadWindnerdHistory,
   loadWindnerdStation,
   parseStandardTimeOffset,
   parseWindnerdLiveInit,
@@ -868,6 +869,67 @@ describe("windnerdLiveReading", () => {
     expect(windnerdLiveReading(dark.digest, batteryConfig).telemetry).toEqual({
       batteryVoltage: null,
     });
+  });
+});
+
+describe("loadWindnerdHistory", () => {
+  it("aligns the fetch to whole UTC days and slices the response to the request", async () => {
+    const { environment, requests } = stubEnvironment(() =>
+      windnerdPayload({
+        date_utc: ["2026-08-05T10:00:00Z", "2026-08-05T22:11:45Z", "2026-08-05T23:59:00Z"],
+      }),
+    );
+    const history = await loadWindnerdHistory(
+      config,
+      {
+        fromMs: Date.parse("2026-08-05T12:00:00Z"),
+        toMs: Date.parse("2026-08-05T23:00:00Z"),
+        periodMinutes: 60,
+      },
+      { environment },
+    );
+    expect(requests[0]?.searchParams.get("from")).toBe("2026-08-05T00:00:00.000Z");
+    expect(requests[0]?.searchParams.get("to")).toBe("2026-08-06T00:00:00.000Z");
+    expect(requests[0]?.searchParams.get("period")).toBe("60");
+    /* The 10:00 record precedes the window; the 23:59 record follows it. */
+    expect(history.points.map((point) => point.observedAt)).toEqual(["2026-08-05T22:11:45.000Z"]);
+    expect(history.periodMinutes).toBe(60);
+  });
+
+  it("serves two zooms over the same day from one upstream fetch", async () => {
+    const { environment, requests } = stubEnvironment(() => windnerdPayload());
+    const day = { fromMs: Date.parse("2026-08-05T00:00:00Z"), periodMinutes: 60 as const };
+    await loadWindnerdHistory(
+      config,
+      { ...day, toMs: Date.parse("2026-08-05T12:00:00Z") },
+      { environment },
+    );
+    await loadWindnerdHistory(
+      config,
+      { ...day, toMs: Date.parse("2026-08-05T23:00:00Z") },
+      { environment },
+    );
+    expect(requests).toHaveLength(1);
+  });
+
+  it("refuses a period outside the vendor catalogue and an empty window", async () => {
+    const { environment, requests } = stubEnvironment(() => windnerdPayload());
+    await expect(
+      loadWindnerdHistory(
+        config,
+        {
+          fromMs: 0,
+          toMs: 1,
+          // @ts-expect-error deliberately outside WindnerdRecordPeriodMinutes
+          periodMinutes: 7,
+        },
+        { environment },
+      ),
+    ).rejects.toThrow("periodMinutes");
+    await expect(
+      loadWindnerdHistory(config, { fromMs: 5, toMs: 5, periodMinutes: 60 }, { environment }),
+    ).rejects.toThrow("empty");
+    expect(requests).toHaveLength(0);
   });
 });
 

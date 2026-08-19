@@ -14,12 +14,15 @@ export {
   parseStationCurrentJson,
   parseStationFeed,
   parseStationFeedJson,
+  parseStationHistory,
+  parseStationHistoryJson,
   parseStationLiveFrame,
   parseStationLiveFrameJson,
   readingSchema,
   recentSummarySchema,
   stationCurrentSchema,
   stationFeedSchema,
+  stationHistorySchema,
   stationLiveFrameSchema,
   stationMetaSchema,
   stationSchema,
@@ -38,6 +41,7 @@ export type {
   StationCapabilities,
   StationCurrent,
   StationFeed,
+  StationHistory,
   StationLiveFrame,
   StationMeta,
   StationTelemetry,
@@ -85,7 +89,13 @@ export type {
 export { requireResolved, resolveDisplay, resolveStation } from "./display.js";
 export type { DisplayDefaults, DisplayProps, ResolvedDisplay } from "./display.js";
 
-export { climatologyEndpoint, currentEndpoint, feedEndpoint, liveEndpoint } from "./endpoints.js";
+export {
+  climatologyEndpoint,
+  currentEndpoint,
+  feedEndpoint,
+  historyEndpoint,
+  liveEndpoint,
+} from "./endpoints.js";
 export {
   STATION_CLIMATOLOGY_SCHEMA_VERSION,
   climatologyCellSchema,

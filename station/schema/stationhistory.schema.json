@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meteo.azohra.com/schema/stationhistory.schema.json",
+  "title": "StationHistory",
+  "description": "One requested archive window served at /history — the pan/zoom road. Reuses the history shape; periodMinutes echoes what the source actually supplied.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 2
+    },
+    "servedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "history": {
+      "description": "The window's records at the served resolution; periodMinutes echoes what the source actually supplied, which may differ from the request when the vendor snapped it.",
+      "$ref": "#/$defs/History"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "servedAt",
+    "stationId",
+    "history"
+  ],
+  "$defs": {
+    "HistoryPoint": {
+      "type": "object",
+      "properties": {
+        "observedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "windAvgMps": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mean m/s over the record's period."
+        },
+        "windGustMps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windLullMps": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windDirectionDeg": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Degrees FROM; null exactly when the period was calm (below 0.5 m/s)."
+        },
+        "temperatureC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureHpa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windVectorAvgMps": {
+          "description": "Vector-mean m/s over the period — the honest input for further vector re-aggregation; at most windAvgMps. Absent or null reads as 'not published here'.",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperatureMinC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "temperatureMaxC": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureMinHpa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seaLevelPressureMaxHpa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "observedAt",
+        "windAvgMps",
+        "windGustMps",
+        "windLullMps",
+        "windDirectionDeg",
+        "temperatureC"
+      ]
+    },
+    "History": {
+      "type": "object",
+      "properties": {
+        "periodMinutes": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Minutes each point covers. Wind run, vane thinning, and dropout detection are functions of it."
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HistoryPoint"
+          },
+          "description": "A dropout is an ABSENT record, never a zeroed one — gaps carry no points."
+        }
+      },
+      "required": [
+        "periodMinutes",
+        "points"
+      ]
+    }
+  }
+}

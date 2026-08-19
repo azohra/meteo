@@ -25,4 +25,10 @@ export {
 export type { LiveStatus, StationLiveSnapshot, StationLiveStore } from "./live.js";
 export { createStationClimatologyStore } from "./climatology.js";
 export type { StationClimatologySnapshot, StationClimatologyStore } from "./climatology.js";
+export {
+  HISTORY_STORE_DEFAULT_MAX_WINDOWS,
+  createStationHistoryStore,
+  stationHistoryFetcher,
+} from "./history.js";
+export type { StationHistoryFetcher, StationHistoryQuery, StationHistoryStore } from "./history.js";
 export { subscribeTicker } from "./ticker.js";

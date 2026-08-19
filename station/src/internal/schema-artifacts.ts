@@ -1,5 +1,10 @@
 import type { ExampleArtifact, SchemaArtifact } from "@azohra/meteo.core";
-import { stationCurrentSchema, stationFeedSchema, stationLiveFrameSchema } from "../contract.js";
+import {
+  stationCurrentSchema,
+  stationFeedSchema,
+  stationHistorySchema,
+  stationLiveFrameSchema,
+} from "../contract.js";
 import { stationClimatologySchema } from "../contract-climatology.js";
 
 export const schemaArtifacts: readonly SchemaArtifact[] = [
@@ -23,6 +28,13 @@ export const schemaArtifacts: readonly SchemaArtifact[] = [
     schema: stationLiveFrameSchema,
     description:
       "One frame per SSE data event on the /live stream. init seeds a full station document; samples and reading update it; unavailable is terminal — the stream closes after it.",
+  },
+  {
+    fileName: "stationhistory.schema.json",
+    title: "StationHistory",
+    schema: stationHistorySchema,
+    description:
+      "One requested archive window served at /history — the pan/zoom road. Reuses the history shape; periodMinutes echoes what the source actually supplied.",
   },
   {
     fileName: "stationclimatology.schema.json",
@@ -274,10 +286,21 @@ const exampleClimatology = {
   ],
 };
 
+const exampleHistory = {
+  $comment:
+    "Example @azohra/meteo.station history-window document. Validates against " +
+    "stationhistory.schema.json; readers must ignore unknown keys (this one included).",
+  schemaVersion: 2,
+  servedAt: "2026-08-05T22:13:00.000Z",
+  stationId: "bluff",
+  history: (exampleFeed.stations[1] as { history: unknown }).history,
+};
+
 export const exampleArtifacts: readonly ExampleArtifact[] = [
   { fileName: "example-feed.json", document: exampleFeed, schema: stationFeedSchema },
   { fileName: "example-current.json", document: exampleCurrent, schema: stationCurrentSchema },
   { fileName: "example-live.json", document: exampleLive, schema: stationLiveFrameSchema },
+  { fileName: "example-history.json", document: exampleHistory, schema: stationHistorySchema },
   {
     fileName: "example-climatology.json",
     document: exampleClimatology,

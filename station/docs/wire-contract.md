@@ -156,7 +156,7 @@ families, applied to `STATION_SCHEMA_VERSION`:
 
 ## The HTTP protocol
 
-A mounted handler serves three routes (suffix-matched by default;
+A mounted handler serves five routes (suffix-matched by default;
 exact-matched under `basePath`):
 
 | Route | Document | Notes |
@@ -164,6 +164,8 @@ exact-matched under `basePath`):
 | `GET …/feed` | `StationFeed` | Every station + history. `?hours=` narrows the window; it must be in `(0, maxHistoryHours]` (default 6), out of range is a 400; valid values snap to quarter-hour steps. |
 | `GET …/current?station=<id>` | `StationCurrent` | One station, reading only: the light poll. |
 | `GET …/live?station=<id>` | `StationLiveFrame` stream | SSE (`text/event-stream`), one frame per data event. `?hours=` is ignored; live carries no history. |
+| `GET …/history?station=<id>&from=<iso>&to=<iso>&period=<min>` | `StationHistory` | One requested archive window — the pan/zoom road. 400 on a bad window, a period the vendor cannot serve, or a window over the point budget; 404 on a vendor with no archive. A fully-past window is immutable and caches a day. |
+| `GET …/climatology?station=<id>` | `StationClimatology` | The [multi-year cube](/docs/station/climatology/); 404 unless the host mounted its judgment thresholds. |
 
 Feed and current responses carry `Cache-Control` derived from upstream cache
 TTLs and a weak `ETag` computed over station content excluding `servedAt`, so

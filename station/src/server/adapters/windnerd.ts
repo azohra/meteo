@@ -1,6 +1,7 @@
 import {
   emptyConditions,
   type AirConditions,
+  type History,
   type HistoryPoint,
   type LiveSamples,
   type Reading,
@@ -23,6 +24,7 @@ import {
   fetchUpstreamStream,
   fetchUpstreamText,
   logUpstreamFailure,
+  resolveEnvironment,
   type ResolvedEnvironment,
 } from "../environment.js";
 
@@ -235,6 +237,70 @@ function windnerdConditions(
     pressureTrend: pressureTendency(points),
     seaLevelPressureHpa: reduced,
   });
+}
+
+/* ── The archive arm ───────────────────────────────────────────────────────
+ * Window/period-parameterized history for pan/zoom browsing. Fetch windows
+ * align to whole UTC days so every zoom over the same day reuses one cache
+ * entry (a sliding raw window would defeat the cache); the response is
+ * sliced back to the request. A window fully in the past is immutable and
+ * caches long. */
+
+const ARCHIVE_PAST_CACHE_TTL_SECONDS = 2_592_000;
+const ARCHIVE_LIVE_CACHE_TTL_SECONDS = 300;
+const DAY_MS = 86_400_000;
+
+export type WindnerdHistoryQuery = {
+  fromMs: number;
+  toMs: number;
+  periodMinutes: WindnerdRecordPeriodMinutes;
+};
+
+export async function loadWindnerdHistory(
+  config: WindnerdStationConfig,
+  query: WindnerdHistoryQuery,
+  options: WindnerdAdapterOptions = {},
+): Promise<History> {
+  const { fromMs, toMs, periodMinutes } = query;
+  if (!(WINDNERD_RECORD_PERIODS_MINUTES as readonly number[]).includes(periodMinutes)) {
+    throw new Error(
+      `WindNerd location ${config.locationId}: periodMinutes must be one of ` +
+        `${WINDNERD_RECORD_PERIODS_MINUTES.join(", ")}, got ${periodMinutes}`,
+    );
+  }
+  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs) || fromMs >= toMs) {
+    throw new Error(`WindNerd location ${config.locationId}: history window is empty`);
+  }
+  const environment = resolveEnvironment(options.environment);
+  const fromDayMs = Math.floor(fromMs / DAY_MS) * DAY_MS;
+  const toDayMs = Math.ceil(toMs / DAY_MS) * DAY_MS;
+  const nowMs = environment.now().getTime();
+
+  const url = new URL(options.recordsUrl ?? WINDNERD_RECORDS_URL);
+  url.searchParams.set("location_id", String(config.locationId));
+  url.searchParams.set("from", new Date(fromDayMs).toISOString());
+  url.searchParams.set("to", new Date(toDayMs).toISOString());
+  url.searchParams.set("period", String(periodMinutes));
+
+  const fromDay = new Date(fromDayMs).toISOString().slice(0, 10);
+  const toDay = new Date(toDayMs).toISOString().slice(0, 10);
+  const records = parseWindnerdRecords(
+    await fetchUpstreamText(environment, {
+      url,
+      cacheKey: `windnerd/${config.locationId}/archive/${periodMinutes}/${fromDay}-${toDay}`,
+      cacheTtlSeconds:
+        options.cacheTtlSeconds ??
+        (toDayMs <= nowMs ? ARCHIVE_PAST_CACHE_TTL_SECONDS : ARCHIVE_LIVE_CACHE_TTL_SECONDS),
+      subject: `WindNerd location ${config.locationId} archive`,
+    }),
+    config.locationId,
+    config.hasPressure,
+  );
+  const points = windnerdHistoryPoints(records, config).filter((point) => {
+    const observedMs = Date.parse(point.observedAt);
+    return observedMs >= fromMs && observedMs < toMs;
+  });
+  return { periodMinutes, points };
 }
 
 /* ── The live arm ──────────────────────────────────────────────────────────

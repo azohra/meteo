@@ -157,6 +157,31 @@ span's own edges must land within one typical sample period (scaled by the
 same gap tolerance an outage is judged by) of the window asked for, or it
 returns `null` rather than a two-point ghost of a trace.
 
+## Browsing the archive — fetcher injection
+
+Where re-slicing served points is not enough — a pan/zoom over months —
+the archive road is **fetcher injection**: the data contract is one
+function shape, and how a window is served is the host's business.
+
+```ts
+import {
+  createStationHistoryStore, // (fetcher, { maxWindows? }) => window-keyed LRU
+  stationHistoryFetcher, // (base, stationId, fetchInit?) => StationHistoryFetcher
+} from "@azohra/meteo.station/client";
+import type { StationHistoryFetcher } from "@azohra/meteo.station/client";
+```
+
+`StationHistoryFetcher` is `({ fromMs, toMs, periodMinutes }) =>
+Promise<StationHistory | null>`. A host that mounts the feed handler gets
+the default implementation from `stationHistoryFetcher` against the
+[`/history` route](/docs/station/wire-contract/#the-http-protocol); a host
+that serves history its own way — an authenticated server function, a
+proxy — supplies any function of that shape and never touches the handler.
+`createStationHistoryStore` wraps either in a window-keyed LRU: a revisited
+window costs nothing, an in-flight window is asked once, and a failed
+fetch is never cached so the next ask retries. The served document echoes
+the `periodMinutes` the source actually supplied.
+
 ## Display resolution — shared across bindings
 
 The components' ambient-default discipline is one exported rule,

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { parseStationCurrent, parseStationFeed, parseStationLiveFrame } from "../src/index.js";
+import {
+  parseStationCurrent,
+  parseStationFeed,
+  parseStationHistory,
+  parseStationLiveFrame,
+} from "../src/index.js";
 import { createStationFeedHandler, type StationConfigInput } from "../src/server/index.js";
 import {
   campbellCurrentPayload,
@@ -212,6 +217,60 @@ describe("createStationFeedHandler /climatology", () => {
       { climatology },
     );
     const response = await handler(new Request("http://host/api/climatology?station=bluff"));
+    expect(response.status).toBe(502);
+  });
+});
+
+describe("createStationFeedHandler /history", () => {
+  const WINDOW = "from=2026-08-05T00:00:00.000Z&to=2026-08-05T12:00:00.000Z&period=60";
+
+  it("serves a requested window that round-trips through the wire schema", async () => {
+    const { handler, requests } = handlerWith(allUpstreamsHealthy);
+    const response = await handler(new Request(`http://host/api/history?station=bluff&${WINDOW}`));
+    expect(response.status).toBe(200);
+    const document = parseStationHistory(await response.json());
+    expect(document?.stationId).toBe("bluff");
+    expect(document?.history.periodMinutes).toBe(60);
+    /* A fully-past window is immutable and caches long. */
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=86400");
+    expect(requests[0]?.searchParams.get("period")).toBe("60");
+
+    const etag = response.headers.get("ETag");
+    const revalidated = await handler(
+      new Request(`http://host/api/history?station=bluff&${WINDOW}`, {
+        headers: { "If-None-Match": etag as string },
+      }),
+    );
+    expect(revalidated.status).toBe(304);
+  });
+
+  it("400s a bad window, a bad period, and a window over the point budget", async () => {
+    const { handler } = handlerWith(allUpstreamsHealthy);
+    const status = async (query: string) =>
+      (await handler(new Request(`http://host/api/history?station=bluff&${query}`))).status;
+    expect(await status("from=yesterday&to=2026-08-05T12:00:00Z&period=60")).toBe(400);
+    expect(await status("from=2026-08-05T12:00:00Z&to=2026-08-05T00:00:00Z&period=60")).toBe(400);
+    expect(await status(`${WINDOW.replace("period=60", "period=0")}`)).toBe(400);
+    /* Vendor-refused period: valid shape, not in the catalogue. */
+    expect(await status(`${WINDOW.replace("period=60", "period=7")}`)).toBe(400);
+    /* A year at one minute blows the point budget. */
+    expect(await status("from=2026-01-01T00:00:00Z&to=2027-01-01T00:00:00Z&period=1")).toBe(400);
+  });
+
+  it("404s a vendor with no archive and an unknown station; 400s a missing station", async () => {
+    const { handler } = handlerWith(allUpstreamsHealthy);
+    expect(
+      (await handler(new Request(`http://host/api/history?station=base&${WINDOW}`))).status,
+    ).toBe(404);
+    expect(
+      (await handler(new Request(`http://host/api/history?station=nope&${WINDOW}`))).status,
+    ).toBe(404);
+    expect((await handler(new Request(`http://host/api/history?${WINDOW}`))).status).toBe(400);
+  });
+
+  it("502s when the archive upstream is refused", async () => {
+    const { handler } = handlerWith(() => new Response("down", { status: 502 }));
+    const response = await handler(new Request(`http://host/api/history?station=bluff&${WINDOW}`));
     expect(response.status).toBe(502);
   });
 });

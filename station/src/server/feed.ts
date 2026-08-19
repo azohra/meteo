@@ -5,13 +5,18 @@ import {
   type Station,
   type StationCurrent,
   type StationFeed,
+  type StationHistory,
   type StationLiveFrame,
   type StationMeta,
 } from "../contract.js";
 import { loadCampbellStation } from "./adapters/campbell.js";
 import { loadEcowittStation } from "./adapters/ecowitt.js";
 import { loadTempestStation } from "./adapters/tempest.js";
-import { loadWindnerdStation } from "./adapters/windnerd.js";
+import {
+  loadWindnerdHistory,
+  loadWindnerdStation,
+  type WindnerdRecordPeriodMinutes,
+} from "./adapters/windnerd.js";
 import { loadWindnerdClimatology } from "./adapters/windnerd-climatology.js";
 import { openWindnerdLive } from "./adapters/windnerd-live.js";
 import type { StationClimatology } from "../contract-climatology.js";
@@ -101,6 +106,62 @@ export async function openStationLive(
     environment,
     signal: options.signal,
   });
+}
+
+export class StationHistoryUnsupportedError extends Error {
+  constructor(stationId: string) {
+    super(`station "${stationId}" has no browsable archive`);
+    this.name = "StationHistoryUnsupportedError";
+  }
+}
+
+export type LoadStationHistoryOptions = {
+  stations: StationsInput;
+  stationId: string;
+  fromMs: number;
+  toMs: number;
+  periodMinutes: number;
+  environment?: ServerEnvironment;
+  request?: Request;
+};
+
+/**
+ * Loads one requested archive window for one configured station — the
+ * pan/zoom road. Unknown ids throw UnknownStationError; stations whose
+ * vendor keeps no reachable archive — and stations whose config failed
+ * validation — throw StationHistoryUnsupportedError.
+ */
+export async function loadStationHistory(
+  options: LoadStationHistoryOptions,
+): Promise<StationHistory> {
+  const environment = resolveEnvironment(options.environment);
+  const assembled = assembleStations(
+    await resolveStations({ stations: options.stations, request: options.request }, environment),
+    environment,
+  );
+  const entry = assembled.find(
+    (candidate) =>
+      ("config" in candidate ? candidate.config.id : candidate.degraded.id) === options.stationId,
+  );
+  if (!entry) throw new UnknownStationError(options.stationId);
+  if ("degraded" in entry || entry.config.vendor !== "windnerd") {
+    throw new StationHistoryUnsupportedError(options.stationId);
+  }
+  const history = await loadWindnerdHistory(
+    entry.config,
+    {
+      fromMs: options.fromMs,
+      toMs: options.toMs,
+      periodMinutes: options.periodMinutes as WindnerdRecordPeriodMinutes,
+    },
+    { environment },
+  );
+  return {
+    schemaVersion: STATION_SCHEMA_VERSION,
+    servedAt: environment.now().toISOString(),
+    stationId: options.stationId,
+    history,
+  };
 }
 
 export class StationClimatologyUnsupportedError extends Error {

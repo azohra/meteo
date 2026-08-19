@@ -1,0 +1,38 @@
+{
+  "$comment": "Example @azohra/meteo.station history-window document. Validates against stationhistory.schema.json; readers must ignore unknown keys (this one included).",
+  "schemaVersion": 2,
+  "servedAt": "2026-08-05T22:13:00.000Z",
+  "stationId": "bluff",
+  "history": {
+    "periodMinutes": 1,
+    "points": [
+      {
+        "observedAt": "2026-08-05T22:10:45.000Z",
+        "windAvgMps": 1.7,
+        "windGustMps": 2.2,
+        "windLullMps": 1.1,
+        "windDirectionDeg": 300,
+        "temperatureC": 20.2,
+        "seaLevelPressureHpa": 1007.7
+      },
+      {
+        "observedAt": "2026-08-05T22:11:45.000Z",
+        "windAvgMps": 3.3,
+        "windGustMps": 5.8,
+        "windLullMps": 1.9,
+        "windDirectionDeg": 310,
+        "temperatureC": null,
+        "seaLevelPressureHpa": null
+      },
+      {
+        "observedAt": "2026-08-05T22:12:45.000Z",
+        "windAvgMps": 2.5,
+        "windGustMps": 3.9,
+        "windLullMps": 1.7,
+        "windDirectionDeg": 290,
+        "temperatureC": 22.6,
+        "seaLevelPressureHpa": 1006.1
+      }
+    ]
+  }
+}

@@ -15,3 +15,17 @@ export function liveEndpoint(base: string, stationId: string): string {
 export function climatologyEndpoint(base: string, stationId: string): string {
   return `${trimBase(base)}/climatology?station=${encodeURIComponent(stationId)}`;
 }
+
+export function historyEndpoint(
+  base: string,
+  stationId: string,
+  query: { fromMs: number; toMs: number; periodMinutes: number },
+): string {
+  const params = new URLSearchParams({
+    station: stationId,
+    from: new Date(query.fromMs).toISOString(),
+    to: new Date(query.toMs).toISOString(),
+    period: String(query.periodMinutes),
+  });
+  return `${trimBase(base)}/history?${params.toString()}`;
+}
