@@ -2,6 +2,7 @@ import type { HistoryPoint, Station } from "../contract.js";
 import { normalizeDegrees, thresholdsToMps } from "../derive.js";
 import type { SpeedThresholds } from "../derive.js";
 import { speedBand, windRose } from "../geometry.js";
+import type { WindRoseSummary } from "../geometry.js";
 import {
   ROSE_CARDINAL_LETTERS,
   ROSE_CENTRE,
@@ -14,6 +15,7 @@ import {
   ROSE_PETAL_FILL,
   ROSE_SIZE,
   ROSE_TICK_REACH,
+  roseBandPath,
   rosePetalPath,
   rosePolar,
   roseRingArcPath,
@@ -65,7 +67,7 @@ export type WindRoseScene = {
     y: number;
     text: string;
   }>;
-  petals: Array<{ key: number; className: string; d: string }>;
+  petals: Array<{ key: number | string; className: string; d: string }>;
   ringLabel: { className: string; anchor: "start"; x: number; y: number; text: string } | null;
   hub: RoseCircle;
   dot: RoseCircle;
@@ -77,13 +79,18 @@ export function windRoseScene(input: {
   sectorCount: number;
   source: ReadonlyArray<HistoryPoint>;
   stationName: string | undefined;
+  /** A pre-aggregated summary (the climatology cube's road); given, the
+   * source is not consulted. Sectors carrying bandCounts draw as stacked
+   * wedges. */
+  summary?: WindRoseSummary | undefined;
   thresholds: SpeedThresholds | undefined;
   words: StationStrings;
 }): WindRoseScene {
-  const { favorableDirections, sectorCount, source, stationName, thresholds, words } = input;
+  const { favorableDirections, source, stationName, thresholds, words } = input;
   const boundsMps = thresholds == null ? null : thresholdsToMps(thresholds);
 
-  const rose = windRose(source, sectorCount);
+  const rose = input.summary ?? windRose(source, input.sectorCount);
+  const sectorCount = rose.sectors.length;
   const maxFrequency = Math.max(...rose.sectors.map((sector) => sector.frequency));
   const halfWidthDeg = (360 / sectorCount / 2) * ROSE_PETAL_FILL;
   const calmPercent = Math.round(rose.calmFraction * 100);
@@ -152,22 +159,45 @@ export function windRoseScene(input: {
         text: letter,
       };
     }),
-    petals: rose.sectors.flatMap((sector) => {
-      if (sector.count === 0 || maxFrequency === 0) return [];
-      const radius =
-        ROSE_HUB_RADIUS + (sector.frequency / maxFrequency) * (ROSE_MAX_RADIUS - ROSE_HUB_RADIUS);
-      const banded =
-        boundsMps != null && sector.meanSpeedMps != null
-          ? ` meteo-band-${speedBand(sector.meanSpeedMps, boundsMps)}`
-          : "";
-      return [
-        {
-          key: sector.bearingDeg,
-          className: `meteo-wind-rose-petal${banded}`,
-          d: rosePetalPath(sector.bearingDeg, radius, halfWidthDeg),
-        },
-      ];
-    }),
+    petals: rose.sectors.flatMap(
+      (sector): Array<{ key: number | string; className: string; d: string }> => {
+        if (sector.count === 0 || maxFrequency === 0) return [];
+        const radius =
+          ROSE_HUB_RADIUS + (sector.frequency / maxFrequency) * (ROSE_MAX_RADIUS - ROSE_HUB_RADIUS);
+        /* A sector carrying bandCounts draws as a stacked wedge: one radial
+         * segment per occupied band, calmest at the hub, shares of the
+         * sector's own count. */
+        if (sector.bandCounts != null) {
+          let cumulative = 0;
+          return sector.bandCounts.flatMap((bandCount, band) => {
+            if (bandCount === 0) return [];
+            const innerRadius =
+              ROSE_HUB_RADIUS + (cumulative / sector.count) * (radius - ROSE_HUB_RADIUS);
+            cumulative += bandCount;
+            const outerRadius =
+              ROSE_HUB_RADIUS + (cumulative / sector.count) * (radius - ROSE_HUB_RADIUS);
+            return [
+              {
+                key: `${sector.bearingDeg}-${band}`,
+                className: `meteo-wind-rose-petal meteo-band-${band}`,
+                d: roseBandPath(sector.bearingDeg, innerRadius, outerRadius, halfWidthDeg),
+              },
+            ];
+          });
+        }
+        const banded =
+          boundsMps != null && sector.meanSpeedMps != null
+            ? ` meteo-band-${speedBand(sector.meanSpeedMps, boundsMps)}`
+            : "";
+        return [
+          {
+            key: sector.bearingDeg,
+            className: `meteo-wind-rose-petal${banded}`,
+            d: rosePetalPath(sector.bearingDeg, radius, halfWidthDeg),
+          },
+        ];
+      },
+    ),
     ringLabel:
       maxFrequency > 0
         ? {

@@ -844,6 +844,38 @@
   font-feature-settings: "tnum";
 }
 
+/* ---------- climatology views ---------- */
+
+/* The cube's rose and typical day carry the honesty row beneath the
+ * drawing; the shared inner classes do the drawing itself. */
+.meteo-climatology-rose {
+  display: inline-block;
+}
+
+.meteo-climatology-caption {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--meteo-muted, #62717f);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.meteo-climatology-caption-favorable {
+  color: var(--meteo-wind-favorable, #2e9e63);
+  font-weight: 600;
+}
+
+.meteo-climatology-daily-pattern {
+  display: block;
+}
+
+.meteo-climatology-rose-na,
+.meteo-climatology-daily-pattern-na {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 0.82rem;
+  color: var(--meteo-muted, #62717f);
+}
+
 /* ---------- station table ---------- */
 
 .meteo-station-table {

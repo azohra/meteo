@@ -199,6 +199,7 @@ export {
   dialScaleMaxMps,
   dialSpeedArcPath,
   historyRuns,
+  roseBandPath,
   rosePetalPath,
   rosePolar,
   roseRingArcPath,

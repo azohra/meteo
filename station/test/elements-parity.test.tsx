@@ -2,11 +2,18 @@
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
-import { defaultStrings } from "../src/index.js";
+import {
+  accumulatedCells,
+  createClimatologyAccumulator,
+  defaultStrings,
+  foldClimatologyPoints,
+} from "../src/index.js";
 import type { HistoryPoint, Station } from "../src/index.js";
 import {
   AirMatrix,
   BandChip,
+  ClimatologyDailyPattern,
+  ClimatologyRose,
   CurrentConditions,
   DailyPattern,
   Dial,
@@ -685,6 +692,75 @@ describe("parity: charts (fallback width, initial render)", () => {
     );
     expect(reactDom).toBe(elementDom);
     expect(reactDom).toContain(defaultStrings.noHistory);
+  });
+
+  it("ClimatologyRose and ClimatologyDailyPattern — the cube-fed twins", () => {
+    const accumulator = createClimatologyAccumulator({
+      sectorCount: 16,
+      slotMinutes: 180,
+      thresholdsMps: [3, 6, 9],
+      utcOffsetMinutes: 0,
+    });
+    foldClimatologyPoints(
+      accumulator,
+      makePoints(96, (point, index) => ({
+        ...point,
+        observedAt: iso(Date.parse("2026-01-05T00:00:00Z") + index * 3 * 3_600_000),
+        windAvgMps: index % 5 === 0 ? 0.2 : (index % 9) + 1,
+        windDirectionDeg: index % 5 === 0 ? null : (index * 41) % 360,
+      })),
+    );
+    const doc = {
+      schemaVersion: 1 as const,
+      servedAt: iso(Date.parse("2026-08-05T22:13:00Z")),
+      stationId: "bluff",
+      sectorCount: 16,
+      slotMinutes: 180,
+      thresholdsMps: [3, 6, 9],
+      utcOffsetMinutes: 0,
+      years: [{ year: 2026, sampleCount: 96, expectedCount: 192 }],
+      cells: accumulatedCells(accumulator),
+    };
+    const favorable = [{ fromDeg: 260, toDeg: 340 }];
+
+    expectParity(
+      <ClimatologyRose document={doc} stationName="Bluff Launch" />,
+      "meteo-climatology-rose",
+      (el) => {
+        el.document = doc;
+        el.setAttribute("station-name", "Bluff Launch");
+      },
+    );
+    expectParity(
+      <ClimatologyRose document={doc} favorableDirections={favorable} months={[1]} />,
+      "meteo-climatology-rose",
+      (el) => {
+        el.document = doc;
+        el.favorableDirections = favorable;
+        el.setAttribute("months", "[1]");
+      },
+    );
+    expectParity(<ClimatologyRose document={null} />, "meteo-climatology-rose", (el) => {
+      el.document = null;
+    });
+
+    expectParity(
+      <ClimatologyDailyPattern document={doc} thresholds={thresholds} unit="knots" />,
+      "meteo-climatology-daily-pattern",
+      (el) => {
+        el.document = doc;
+        el.setAttribute("thresholds", JSON.stringify(thresholds));
+        el.setAttribute("unit", "knots");
+      },
+    );
+    expectParity(
+      <ClimatologyDailyPattern document={doc} months={[1]} />,
+      "meteo-climatology-daily-pattern",
+      (el) => {
+        el.document = doc;
+        el.setAttribute("months", "[1]");
+      },
+    );
   });
 
   it("DailyPattern — favorable arcs tint the vane row identically in both bindings", () => {

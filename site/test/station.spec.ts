@@ -17,6 +17,7 @@ const SECTION_IDS = [
   "charts",
   "roses",
   "seasons",
+  "climatology",
   "trends",
   "air",
   "table",
@@ -69,6 +70,23 @@ test.describe("the docs component gallery exhibits the custom-elements binding",
     expect(await page.locator("#season-rose .meteo-wind-rose-petal").count()).toBeGreaterThan(0);
     await expect(page.locator("#roses meteo-favorable-share .meteo-favorable-share-value")).toContainText("%");
 
+    // Climatology: stacked wedges (band-classed segments, more segments
+    // than occupied sectors), the honesty captions beneath, and the
+    // cube-fed typical day.
+    const climatologySegments = await page
+      .locator("#climatology-rose .meteo-wind-rose-petal")
+      .count();
+    expect(climatologySegments).toBeGreaterThan(0);
+    expect(
+      await page.locator("#climatology-rose .meteo-wind-rose-petal.meteo-band-1").count(),
+    ).toBeGreaterThan(0);
+    await expect(
+      page.locator("#climatology-rose .meteo-climatology-caption-favorable"),
+    ).toContainText("% favorable");
+    await expect(page.locator("#climatology-pattern .meteo-daily-pattern-caption")).toContainText(
+      "samples",
+    );
+
     // Trends: temperature and pressure both draw for Launch Ridge.
     await expect(page.locator("#trends meteo-trend-chart .meteo-trend-svg")).toHaveCount(2);
 
@@ -103,7 +121,7 @@ test.describe("the docs component gallery exhibits the custom-elements binding",
     expect(externalRequests, "the gallery attempted external network access").toEqual([]);
   });
 
-  test("the twelve registry sections all render, and the toolbar anchors them", async ({
+  test("the thirteen registry sections all render, and the toolbar anchors them", async ({
     page,
     baseURL,
   }) => {

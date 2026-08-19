@@ -22,6 +22,8 @@ export type { StationFeedContextValue } from "./components/StationFeedProvider.j
 export { StationStrip } from "./components/StationStrip.js";
 export { TrendChart } from "./components/TrendChart.js";
 export { WindArrow } from "./components/WindArrow.js";
+export { ClimatologyDailyPattern } from "./components/ClimatologyDailyPattern.js";
+export { ClimatologyRose } from "./components/ClimatologyRose.js";
 export { DailyPattern } from "./components/DailyPattern.js";
 export { Readout } from "./components/Readout.js";
 export type { ReadoutPart } from "../scene/index.js";
@@ -38,6 +40,7 @@ export {
 export { useFreshness } from "./hooks/useFreshness.js";
 export { useMeasuredChartWidth } from "./hooks/useMeasuredChartWidth.js";
 export { useStation } from "./hooks/useStation.js";
+export { useStationClimatology } from "./hooks/useStationClimatology.js";
 export { useStationCurrent } from "./hooks/useStationCurrent.js";
 export { useStationFeed } from "./hooks/useStationFeed.js";
 export { useStationLive } from "./hooks/useStationLive.js";

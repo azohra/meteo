@@ -100,16 +100,31 @@ export function rosePolar(bearingDeg: number, radius: number): readonly [number,
 const roseAt = ([x, y]: readonly [number, number]) => `${x.toFixed(1)} ${y.toFixed(1)}`;
 
 export function rosePetalPath(bearingDeg: number, radius: number, halfWidthDeg: number): string {
-  const outerLeft = rosePolar(bearingDeg - halfWidthDeg, radius);
-  const outerRight = rosePolar(bearingDeg + halfWidthDeg, radius);
-  const innerLeft = rosePolar(bearingDeg - halfWidthDeg, ROSE_HUB_RADIUS);
-  const innerRight = rosePolar(bearingDeg + halfWidthDeg, ROSE_HUB_RADIUS);
+  return roseBandPath(bearingDeg, ROSE_HUB_RADIUS, radius, halfWidthDeg);
+}
+
+/** One radial slice of a petal — a stacked wedge's band segment; the petal
+ * itself is the slice from the hub out. */
+export function roseBandPath(
+  bearingDeg: number,
+  innerRadius: number,
+  outerRadius: number,
+  halfWidthDeg: number,
+): string {
+  const outerLeft = rosePolar(bearingDeg - halfWidthDeg, outerRadius);
+  const outerRight = rosePolar(bearingDeg + halfWidthDeg, outerRadius);
+  const innerLeft = rosePolar(bearingDeg - halfWidthDeg, innerRadius);
+  const innerRight = rosePolar(bearingDeg + halfWidthDeg, innerRadius);
+  /* An integer radius prints bare (the hub always did), a computed one to
+   * one decimal — keeping every already-published petal path byte-stable. */
+  const arcRadius = (radius: number) =>
+    Number.isInteger(radius) ? String(radius) : radius.toFixed(1);
   return [
     `M ${roseAt(innerLeft)}`,
     `L ${roseAt(outerLeft)}`,
-    `A ${radius.toFixed(1)} ${radius.toFixed(1)} 0 0 1 ${roseAt(outerRight)}`,
+    `A ${outerRadius.toFixed(1)} ${outerRadius.toFixed(1)} 0 0 1 ${roseAt(outerRight)}`,
     `L ${roseAt(innerRight)}`,
-    `A ${ROSE_HUB_RADIUS} ${ROSE_HUB_RADIUS} 0 0 0 ${roseAt(innerLeft)}`,
+    `A ${arcRadius(innerRadius)} ${arcRadius(innerRadius)} 0 0 0 ${roseAt(innerLeft)}`,
     "Z",
   ].join(" ");
 }

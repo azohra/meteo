@@ -1,6 +1,8 @@
 "use client";
+import type { ReactNode } from "react";
 import { resolveDisplay } from "../../index.js";
 import { windRoseGate, windRoseScene, windRoseSource } from "../../scene/index.js";
+import type { WindRoseScene } from "../../scene/index.js";
 import type { FavorableDirection, HistoryPoint, Station } from "../../index.js";
 import type { StationStringOverrides } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
@@ -50,6 +52,18 @@ export function WindRose({
     words,
   });
 
+  return <WindRoseSceneView scene={scene} />;
+}
+
+/** One scene, one drawing — shared by the history-fed rose above and the
+ * climatology-fed twin, which appends its caption row as children. */
+export function WindRoseSceneView({
+  scene,
+  children,
+}: {
+  scene: WindRoseScene;
+  children?: ReactNode;
+}) {
   return (
     <div className={scene.className}>
       <svg
@@ -130,6 +144,7 @@ export function WindRose({
         />
       </svg>
       {scene.calmCaption && <p className={scene.calmCaption.className}>{scene.calmCaption.text}</p>}
+      {children}
     </div>
   );
 }

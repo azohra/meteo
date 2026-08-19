@@ -38,6 +38,43 @@ export function parseThresholdsAttribute(value: string | null): SpeedThresholds 
   return undefined;
 }
 
+function parseIntegerListAttribute(
+  value: string | null,
+  name: string,
+  minimum: number,
+  maximum: number,
+): number[] | undefined {
+  if (value == null || value.trim() === "") return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (
+      Array.isArray(parsed) &&
+      parsed.every(
+        (entry) =>
+          typeof entry === "number" &&
+          Number.isInteger(entry) &&
+          entry >= minimum &&
+          entry <= maximum,
+      )
+    ) {
+      return parsed as number[];
+    }
+  } catch {}
+  console.warn(
+    `meteo: invalid ${name} attribute ${JSON.stringify(value)} — expected a JSON list of ` +
+      `integers in [${minimum}, ${maximum}]; treating as absent.`,
+  );
+  return undefined;
+}
+
+export function parseMonthsAttribute(value: string | null): number[] | undefined {
+  return parseIntegerListAttribute(value, "months", 1, 12);
+}
+
+export function parseSlotsAttribute(value: string | null): number[] | undefined {
+  return parseIntegerListAttribute(value, "slots", 0, 1439);
+}
+
 export function parseArcsAttribute(value: string | null): FavorableDirection[] | null | undefined {
   if (value == null) return undefined;
   if (value.trim() === "none") return null;

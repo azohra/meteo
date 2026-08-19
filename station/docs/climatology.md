@@ -81,5 +81,14 @@ a filter interaction never refetches:
 
 `createStationClimatologyStore(url)` (the client subpath) fetches the
 document once and holds it; `climatologyEndpoint(base, stationId)` builds
-the URL. Month filters compose with
-`METEOROLOGICAL_SEASON_MONTHS` for season presets.
+the URL, and `useStationClimatology(base, stationId)` wraps both for React.
+Month filters compose with `METEOROLOGICAL_SEASON_MONTHS` for season
+presets.
+
+Two display pairs draw the cube directly:
+[`ClimatologyRose` / `<meteo-climatology-rose>`](/docs/station/react/#components)
+stacks each wedge by the document's own thresholds and captions the
+favorable share and coverage, and
+`ClimatologyDailyPattern` / `<meteo-climatology-daily-pattern>` runs the
+cube through the daily-pattern drawing — every filter change a re-sum of
+the held document.

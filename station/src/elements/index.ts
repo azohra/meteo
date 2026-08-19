@@ -9,6 +9,8 @@ import {
   UpdatedAtElement,
 } from "./elements/atoms.js";
 import { AirMatrixElement } from "./elements/AirMatrixElement.js";
+import { ClimatologyDailyPatternElement } from "./elements/ClimatologyDailyPatternElement.js";
+import { ClimatologyRoseElement } from "./elements/ClimatologyRoseElement.js";
 import { CurrentConditionsElement } from "./elements/CurrentConditionsElement.js";
 import { DailyPatternElement } from "./elements/DailyPatternElement.js";
 import { DialElement } from "./elements/DialElement.js";
@@ -41,6 +43,8 @@ export {
   UpdatedAtElement,
 } from "./elements/atoms.js";
 export { AirMatrixElement } from "./elements/AirMatrixElement.js";
+export { ClimatologyDailyPatternElement } from "./elements/ClimatologyDailyPatternElement.js";
+export { ClimatologyRoseElement } from "./elements/ClimatologyRoseElement.js";
 export { CurrentConditionsElement } from "./elements/CurrentConditionsElement.js";
 export { DailyPatternElement } from "./elements/DailyPatternElement.js";
 export { DialElement } from "./elements/DialElement.js";
@@ -71,6 +75,8 @@ export const meteoElementTags = {
   "meteo-station-card": StationCardElement,
   "meteo-air-matrix": AirMatrixElement,
   "meteo-band-chip": BandChipElement,
+  "meteo-climatology-daily-pattern": ClimatologyDailyPatternElement,
+  "meteo-climatology-rose": ClimatologyRoseElement,
   "meteo-current-conditions": CurrentConditionsElement,
   "meteo-daily-pattern": DailyPatternElement,
   "meteo-dial": DialElement,

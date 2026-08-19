@@ -143,23 +143,8 @@ export function dailyPatternScene(input: {
   width: number;
   words: StationStrings;
 }): DailyPatternScene {
-  const {
-    hatchId,
-    periodMinutes,
-    plotHeight,
-    points,
-    slotMinutes,
-    stationName,
-    thresholds,
-    unit,
-    utcOffsetMinutes,
-    width,
-    words,
-  } = input;
-  const shown = (speedMps: number) => roundSpeed(speedMps, unit);
-
+  const { periodMinutes, points, slotMinutes, utcOffsetMinutes } = input;
   const slots = dailyPattern(points, { slotMinutes, utcOffsetMinutes });
-  const synthetic = slots.map((slot) => slotPoint(slot, slotMinutes));
   const totalSamples = slots.reduce((sum, slot) => sum + slot.sampleCount, 0);
   const daysSpanned =
     points.length < 2
@@ -171,6 +156,43 @@ export function dailyPatternScene(input: {
     periodMinutes != null && daysSpanned != null && daysSpanned > 0
       ? Math.round((slotMinutes / periodMinutes) * daysSpanned * slots.length)
       : null;
+  return dailyPatternSlotsScene({
+    ...input,
+    slots,
+    coverage: { totalSamples, expectedSamples },
+  });
+}
+
+/** The same scene from pre-aggregated slots — the climatology cube's road:
+ * the caller owns the aggregation and the coverage words' inputs. */
+export function dailyPatternSlotsScene(input: {
+  coverage: { totalSamples: number; expectedSamples: number | null };
+  favorableDirections?: FavorableDirection[] | undefined;
+  hatchId: string;
+  plotHeight: number | undefined;
+  slotMinutes: number;
+  slots: ReadonlyArray<DailyPatternSlot>;
+  stationName: string | undefined;
+  thresholds: SpeedThresholds | undefined;
+  unit: SpeedUnit;
+  width: number;
+  words: StationStrings;
+}): DailyPatternScene {
+  const {
+    coverage,
+    hatchId,
+    plotHeight,
+    slotMinutes,
+    slots,
+    stationName,
+    thresholds,
+    unit,
+    width,
+    words,
+  } = input;
+  const shown = (speedMps: number) => roundSpeed(speedMps, unit);
+  const synthetic = slots.map((slot) => slotPoint(slot, slotMinutes));
+  const { totalSamples, expectedSamples } = coverage;
 
   const frame = stretchedChartFrame(width, plotHeight);
   const scales = displaySpeedScales(synthetic, frame, unit);

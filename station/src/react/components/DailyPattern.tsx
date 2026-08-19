@@ -13,6 +13,7 @@ import {
   dailyPatternSource,
   measuredChartWidth,
 } from "../../scene/index.js";
+import type { DailyPatternScene } from "../../scene/index.js";
 import type { FavorableDirection, HistoryPoint, SpeedUnit, Station } from "../../index.js";
 import type { StationStringOverrides, StationStrings } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
@@ -143,6 +144,12 @@ function MeasuredDailyPattern({
     words,
   });
 
+  return <DailyPatternSceneView scene={scene} />;
+}
+
+/** One scene, one drawing — shared by the history-fed pattern above and the
+ * climatology-fed twin. */
+export function DailyPatternSceneView({ scene }: { scene: DailyPatternScene }) {
   return (
     <>
       <output className={scene.caption.className}>{scene.caption.text}</output>

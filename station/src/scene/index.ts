@@ -2,6 +2,8 @@ export * from "./air-matrix.js";
 export * from "./atoms.js";
 export * from "./card.js";
 export * from "./chart.js";
+export * from "./climatology-pattern.js";
+export * from "./climatology-rose.js";
 export * from "./current.js";
 export * from "./dial.js";
 export * from "./favorable-share.js";

@@ -12,14 +12,20 @@
    present, pauses and resumes that loop. */
 import {
   METEOROLOGICAL_SEASON_MONTHS,
+  accumulatedCells,
+  createClimatologyAccumulator,
   filterByMonth,
   filterByTimeOfDay,
+  foldClimatologyPoints,
+  thresholdsToMps,
   windRose,
 } from "@azohra/meteo.station";
-import type { HistoryPoint, SpeedThresholds } from "@azohra/meteo.station";
+import type { HistoryPoint, SpeedThresholds, StationClimatology } from "@azohra/meteo.station";
 import { defineMeteoElements } from "@azohra/meteo.station/elements";
 import type {
   BandChipElement,
+  ClimatologyDailyPatternElement,
+  ClimatologyRoseElement,
   CurrentConditionsElement,
   DailyPatternElement,
   StationFeedElement,
@@ -132,6 +138,67 @@ export function initStationGallery(): void {
 
   /* Seasons: the rose narrows; the typical day always averages the lot. */
   if (pattern) pattern.points = season;
+
+  /* Climatology: the same season folded ONCE into the cube; every filter
+     below is a client-side re-sum of the held document — no refetch, which
+     is the section's whole point. */
+  const climatologyRose = document.querySelector<ClimatologyRoseElement>("#climatology-rose");
+  const climatologyPattern =
+    document.querySelector<ClimatologyDailyPatternElement>("#climatology-pattern");
+  if (climatologyRose || climatologyPattern) {
+    const accumulator = createClimatologyAccumulator({
+      sectorCount: 16,
+      slotMinutes: 180,
+      thresholdsMps: thresholdsToMps(THRESHOLDS),
+      utcOffsetMinutes: 0,
+    });
+    foldClimatologyPoints(accumulator, season);
+    const expectedCount =
+      season.length < 2
+        ? 0
+        : Math.round(
+            (Date.parse((season[season.length - 1] as HistoryPoint).observedAt) -
+              Date.parse((season[0] as HistoryPoint).observedAt)) /
+              (180 * 60_000),
+          );
+    const cube: StationClimatology = {
+      schemaVersion: 1,
+      servedAt: new Date().toISOString(),
+      stationId: "launch-ridge",
+      sectorCount: 16,
+      slotMinutes: 180,
+      thresholdsMps: thresholdsToMps(THRESHOLDS),
+      utcOffsetMinutes: 0,
+      years: [{ year: 2026, sampleCount: season.length, expectedCount }],
+      cells: accumulatedCells(accumulator),
+    };
+    if (climatologyRose) climatologyRose.document = cube;
+    if (climatologyPattern) climatologyPattern.document = cube;
+
+    for (const button of document.querySelectorAll<HTMLButtonElement>(
+      "[data-climatology-months]",
+    )) {
+      button.addEventListener("click", () => {
+        for (const sibling of document.querySelectorAll<HTMLButtonElement>(
+          "[data-climatology-months]",
+        )) {
+          sibling.setAttribute("aria-pressed", String(sibling === button));
+        }
+        const pick = button.dataset.climatologyMonths;
+        const months =
+          pick === "july"
+            ? "[7]"
+            : pick === "winter"
+              ? JSON.stringify(METEOROLOGICAL_SEASON_MONTHS.winter)
+              : null;
+        for (const element of [climatologyRose, climatologyPattern]) {
+          if (!element) continue;
+          if (months == null) element.removeAttribute("months");
+          else element.setAttribute("months", months);
+        }
+      });
+    }
+  }
 
   /* Band words are the consumer's vocabulary — five words, four bounds. */
   for (const chip of document.querySelectorAll<BandChipElement>("meteo-band-chip")) {

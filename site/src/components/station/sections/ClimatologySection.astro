@@ -1,0 +1,39 @@
+---
+/* The climatology cube's own views: one document folded once from the
+   generated season, sliced client-side by the page script — the stacked
+   rose and the cube-fed typical day, honesty captions included. */
+---
+
+<section class="station-section" id="climatology" aria-labelledby="climatology-title">
+  <h2 id="climatology-title">Climatology: the cube's views</h2>
+  <p class="station-note">
+    The same fourteen months folded once into a
+    <code>StationClimatology</code> cube: every wedge of
+    <code>&lt;meteo-climatology-rose&gt;</code> stacks by the document's own
+    thresholds, the favorable share and coverage caption ride beneath, and
+    <code>&lt;meteo-climatology-daily-pattern&gt;</code> re-sums the cube —
+    the July filter refetches nothing.
+  </p>
+  <div class="station-filter-row">
+    <div class="station-segmented" role="group" aria-label="Climatology filter">
+      <button type="button" data-climatology-months="all" aria-pressed="true">Whole record</button>
+      <button type="button" data-climatology-months="july" aria-pressed="false">July</button>
+      <button type="button" data-climatology-months="winter" aria-pressed="false">Dec–Feb</button>
+    </div>
+  </div>
+  <div class="station-grid station-grid-roses">
+    <div class="station-panel">
+      <h3><code>&lt;meteo-climatology-rose&gt;</code>: stacked wedges, judged ring</h3>
+      <meteo-climatology-rose
+        favorable-directions='[{"fromDeg":260,"toDeg":340}]'
+        id="climatology-rose"
+        station-name="Launch Ridge"></meteo-climatology-rose>
+    </div>
+    <div class="station-panel">
+      <h3><code>&lt;meteo-climatology-daily-pattern&gt;</code>: the cube's typical day</h3>
+      <meteo-climatology-daily-pattern
+        id="climatology-pattern"
+        station-name="Launch Ridge"></meteo-climatology-daily-pattern>
+    </div>
+  </div>
+</section>

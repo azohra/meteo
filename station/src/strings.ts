@@ -32,6 +32,7 @@ export type StationStrings = {
   percentShare: (percent: number) => string;
   favorableLabel: string;
   percentFavorable: (percent: number) => string;
+  noClimatology: string;
   dailyPatternSamples: (sampleCount: number) => string;
   dailyPatternCoverage: (sampleCount: number, expectedCount: number) => string;
   compassSpoken: Record<CompassPoint, string>;
@@ -137,6 +138,7 @@ export const defaultStrings: StationStrings = {
   percentShare: (percent) => `${percent}%`,
   favorableLabel: "Favorable",
   percentFavorable: (percent) => `${percent}% favorable`,
+  noClimatology: "No climatology available",
   dailyPatternSamples: (sampleCount) => `${sampleCount} samples`,
   dailyPatternCoverage: (sampleCount, expectedCount) =>
     `${sampleCount} samples · ${Math.round((sampleCount / Math.max(1, expectedCount)) * 100)}%`,
