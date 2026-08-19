@@ -6,6 +6,7 @@ export {
   radiansToDegrees,
 } from "./angles.js";
 export { directionArcSpanDeg, inDirectionArcs, type DirectionArc } from "./arcs.js";
+export { solarEventsForDate, type SolarEvents } from "./solar.js";
 export {
   componentsToWind,
   meanDirectionDeg,

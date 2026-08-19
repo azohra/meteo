@@ -24,6 +24,7 @@ import {
   gradedMeanTrace,
   speedGridLines,
   stretchedChartFrame,
+  nightRects,
   vaneCells,
   vaneGuideLines,
   vaneTickTexts,
@@ -85,6 +86,14 @@ export type WindChartScene = {
     x: number;
     y: number;
   }>;
+  nightRects: Array<{
+    key: number;
+    className: string;
+    height: number;
+    width: number;
+    x: number;
+    y: number;
+  }>;
   grid: Array<{ key: number; line: SceneLine; label: SceneText }>;
   thresholdGuides: Array<{ key: number; line: SceneLine; label: SceneText }>;
   vaneGuides: Array<{
@@ -128,6 +137,8 @@ export function windChartScene(input: {
   formatTime: FormatTime;
   hatchId: string;
   history: History;
+  /** Coordinates for night shading; absent or incomplete draws none. */
+  night?: { latitude: number | null; longitude: number | null } | null | undefined;
   plotHeight: number | undefined;
   stationName: string;
   thresholds: SpeedThresholds | undefined;
@@ -194,6 +205,7 @@ export function windChartScene(input: {
       },
     },
     zones: windZoneRects(boundsMps, frame, scales),
+    nightRects: nightRects(points, frame, scales, input.night),
     grid: speedGridLines(frame, scales, shown),
     thresholdGuides: windThresholdGuides(thresholds, boundsMps, unit, frame, scales, shown),
     vaneGuides: vaneGuideLines(vanes, frame, scales),

@@ -32,6 +32,7 @@ export function WindHistoryChart({
   plotHeight,
   windowHours,
   compareOffsetDays,
+  nightShading = false,
   strings: stringsProp,
   formatTime: formatTimeProp,
 }: {
@@ -43,6 +44,9 @@ export function WindHistoryChart({
   plotHeight?: number;
   windowHours?: number;
   compareOffsetDays?: 1 | 2 | 3;
+  /** Gray sunset-to-sunrise columns from the station's own coordinates;
+   * a station without them shades nothing — real astronomy or none. */
+  nightShading?: boolean;
   strings?: StationStringOverrides;
   formatTime?: FormatTime;
 }) {
@@ -80,6 +84,7 @@ export function WindHistoryChart({
           favorableDirections={favorableDirections}
           formatTime={formatTime}
           history={gate.history}
+          night={nightShading ? { latitude: station.latitude, longitude: station.longitude } : null}
           plotHeight={plotHeight}
           stationName={station.name}
           thresholds={thresholds}
@@ -98,6 +103,7 @@ function MeasuredChart({
   favorableDirections,
   formatTime,
   history,
+  night,
   plotHeight,
   stationName,
   thresholds,
@@ -110,6 +116,7 @@ function MeasuredChart({
   favorableDirections: FavorableDirection[] | undefined;
   formatTime: FormatTime;
   history: History;
+  night: { latitude: number | null; longitude: number | null } | null;
   plotHeight: number | undefined;
   stationName: string;
   thresholds: SpeedThresholds | undefined;
@@ -128,6 +135,7 @@ function MeasuredChart({
     formatTime,
     hatchId,
     history,
+    night,
     plotHeight,
     stationName,
     thresholds,
@@ -209,6 +217,16 @@ function MeasuredChart({
             width={zone.width}
             x={zone.x}
             y={zone.y}
+          />
+        ))}
+        {scene.nightRects.map((rect) => (
+          <rect
+            className={rect.className}
+            height={rect.height}
+            key={rect.key}
+            width={rect.width}
+            x={rect.x}
+            y={rect.y}
           />
         ))}
         {scene.grid.map(({ key, line, label }) => (

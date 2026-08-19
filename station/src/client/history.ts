@@ -14,7 +14,7 @@ export type StationHistoryQuery = {
 };
 
 /**
- * The archive components' data contract: one requested window in, one
+ * The archive fetch contract: one requested window in, one
  * parsed document (or null on failure) out. A host that mounts the feed
  * handler uses `stationHistoryFetcher`; one that serves history its own way
  * — an authenticated server function, a proxy — supplies any function of
@@ -92,4 +92,69 @@ export function createStationHistoryStore(
     },
     size: () => held.size,
   };
+}
+
+/* ── Paging the archive ──────────────────────────────────────────────────
+ * Window math for the host's own pager over the store. The library ships no
+ * archive control surface — what a pager looks like is the host's product
+ * decision — so these carry the parts that are facts, not taste: the
+ * vendor-shaped resolution ladder and calendar-day arithmetic. */
+
+/* The ladder and point target are craft parameters (TRIAL), caller-movable:
+ * the default ladder is the WindNerd record catalogue, and the target keeps
+ * one window's response readable and one fetch bounded. */
+export const ARCHIVE_DEFAULT_PERIODS_MINUTES = [1, 5, 10, 15, 30, 60, 180, 360] as const;
+export const ARCHIVE_TARGET_POINTS = 500;
+
+const DAY_MS = 86_400_000;
+
+export type ArchiveWindow = { fromMs: number; toMs: number };
+
+/** The finest ladder period that keeps the span at or under the point
+ * target; a span too wide for every rung takes the coarsest. */
+export function archivePeriodFor(
+  spanMs: number,
+  periods: ReadonlyArray<number> = ARCHIVE_DEFAULT_PERIODS_MINUTES,
+  targetPoints: number = ARCHIVE_TARGET_POINTS,
+): number {
+  const ascending = [...periods].sort((left, right) => left - right);
+  for (const period of ascending) {
+    if (spanMs / (period * 60_000) <= targetPoints) return period;
+  }
+  return ascending[ascending.length - 1] as number;
+}
+
+/** One whole LOCAL day from a YYYY-MM-DD date-input value — the day the
+ * person picking it means, not the UTC day; null when the value is not a
+ * real date. */
+export function archiveDayWindow(dateValue: string): ArchiveWindow | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const at = new Date(year, month - 1, day);
+  /* Date() rolls impossible values over into the next month; a rolled-over
+   * date was not a real one. */
+  if (at.getFullYear() !== year || at.getMonth() !== month - 1 || at.getDate() !== day) return null;
+  return { fromMs: at.getTime(), toMs: at.getTime() + DAY_MS };
+}
+
+/** The YYYY-MM-DD value naming an instant's local day. */
+export function archiveDayValue(atMs: number): string {
+  const at = new Date(atMs);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+}
+
+/** The day value a number of days away — how a pager steps. Stepping
+ * through noon of the target day keeps a DST-shifted midnight from landing
+ * the step on the wrong side. Null when the value is not a real date. */
+export function archiveDayStep(dateValue: string, deltaDays: number): string | null {
+  const window = archiveDayWindow(dateValue);
+  if (window == null) return null;
+  return archiveDayValue(window.fromMs + deltaDays * DAY_MS + DAY_MS / 2);
+}
+
+/** The trailing window ending now — a pager's "today". */
+export function archiveTrailingWindow(nowMs: number, spanMs = DAY_MS): ArchiveWindow {
+  return { fromMs: nowMs - spanMs, toMs: nowMs };
 }

@@ -1,4 +1,4 @@
-import { inDirectionArcs } from "@azohra/meteo.core";
+import { inDirectionArcs, solarEventsForDate } from "@azohra/meteo.core";
 import type { HistoryPoint } from "../contract.js";
 import { compassDirection, speedToMps } from "../derive.js";
 import type { SpeedThresholds, SpeedUnit } from "../derive.js";
@@ -267,6 +267,59 @@ export function windRowLabels(
       text: words.avgLabel,
     },
   };
+}
+
+/* Night shading: gray columns between each sunset and the next sunrise,
+ * from real astronomy — no coordinates, no shading, never a guessed night.
+ * Polar day and night likewise draw nothing: a truthful nothing. */
+export function nightRects(
+  points: ReadonlyArray<HistoryPoint>,
+  frame: ChartFrame,
+  scales: ChartScales,
+  night: { latitude: number | null; longitude: number | null } | null | undefined,
+): Array<{ key: number; className: string; height: number; width: number; x: number; y: number }> {
+  if (night?.latitude == null || night?.longitude == null || points.length < 2) return [];
+  const startMs = Date.parse((points[0] as HistoryPoint).observedAt);
+  const endMs = Date.parse((points[points.length - 1] as HistoryPoint).observedAt);
+  const rects: Array<{
+    key: number;
+    className: string;
+    height: number;
+    width: number;
+    x: number;
+    y: number;
+  }> = [];
+  const dayMs = 86_400_000;
+  for (
+    let dayStart = Math.floor(startMs / dayMs - 1) * dayMs;
+    dayStart <= endMs;
+    dayStart += dayMs
+  ) {
+    const today = solarEventsForDate(
+      new Date(dayStart).toISOString().slice(0, 10),
+      night.latitude,
+      night.longitude,
+    );
+    const tomorrow = solarEventsForDate(
+      new Date(dayStart + dayMs).toISOString().slice(0, 10),
+      night.latitude,
+      night.longitude,
+    );
+    if (today == null || tomorrow == null) continue;
+    const darkFrom = Math.max(today.sunset.getTime(), startMs);
+    const darkTo = Math.min(tomorrow.sunrise.getTime(), endMs);
+    if (darkFrom >= darkTo) continue;
+    const x = scales.xAtMs(darkFrom);
+    rects.push({
+      key: dayStart,
+      className: "meteo-night",
+      height: frame.plotBottom - frame.plotTop,
+      width: scales.xAtMs(darkTo) - x,
+      x,
+      y: frame.plotTop,
+    });
+  }
+  return rects;
 }
 
 export type VaneCell = {

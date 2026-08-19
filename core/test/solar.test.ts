@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { solarEventsForDate } from "../src/derive/solar.js";
+import { solarEventsForDate } from "../src/solar.js";
 
 const ONE_MINUTE_MS = 60_000;
 

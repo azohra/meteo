@@ -37,6 +37,7 @@ export class WindHistoryChartElement extends MeteoStationElement {
   static readonly observedAttributes = [
     "compare-offset-days",
     "favorable-directions",
+    "night-shading",
     "plot-height",
     "station-id",
     "thresholds",
@@ -89,6 +90,9 @@ export class WindHistoryChartElement extends MeteoStationElement {
       formatTime,
       this.#width,
       station.name,
+      this.hasAttribute("night-shading")
+        ? { latitude: station.latitude, longitude: station.longitude }
+        : null,
     );
   }
 
@@ -119,11 +123,13 @@ export class WindHistoryChartElement extends MeteoStationElement {
     formatTime: FormatTime,
     width: number,
     stationName: string,
+    night: { latitude: number | null; longitude: number | null } | null,
   ): void {
     const scene = windChartScene({
       compareOffsetDays: numberAttribute(this.getAttribute("compare-offset-days")),
       favorableDirections,
       formatTime,
+      night,
       hatchId: `meteo-hatch-e${++hatchCounter}`,
       history,
       plotHeight: numberAttribute(this.getAttribute("plot-height")),
@@ -206,6 +212,15 @@ export class WindHistoryChartElement extends MeteoStationElement {
           width: zone.width,
           x: zone.x,
           y: zone.y,
+        }),
+      ),
+      scene.nightRects.map((rect) =>
+        hs("rect", {
+          class: rect.className,
+          height: rect.height,
+          width: rect.width,
+          x: rect.x,
+          y: rect.y,
         }),
       ),
       scene.grid.map(({ line, label }) =>

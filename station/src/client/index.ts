@@ -26,9 +26,21 @@ export type { LiveStatus, StationLiveSnapshot, StationLiveStore } from "./live.j
 export { createStationClimatologyStore } from "./climatology.js";
 export type { StationClimatologySnapshot, StationClimatologyStore } from "./climatology.js";
 export {
+  ARCHIVE_DEFAULT_PERIODS_MINUTES,
+  ARCHIVE_TARGET_POINTS,
   HISTORY_STORE_DEFAULT_MAX_WINDOWS,
+  archiveDayStep,
+  archiveDayValue,
+  archiveDayWindow,
+  archivePeriodFor,
+  archiveTrailingWindow,
   createStationHistoryStore,
   stationHistoryFetcher,
 } from "./history.js";
-export type { StationHistoryFetcher, StationHistoryQuery, StationHistoryStore } from "./history.js";
+export type {
+  ArchiveWindow,
+  StationHistoryFetcher,
+  StationHistoryQuery,
+  StationHistoryStore,
+} from "./history.js";
 export { subscribeTicker } from "./ticker.js";

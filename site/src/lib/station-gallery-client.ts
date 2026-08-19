@@ -108,8 +108,14 @@ export function initStationGallery(): void {
   const seasonRose = document.querySelector<WindRoseElement>("#season-rose");
   const seasonCount = document.querySelector<HTMLElement>("#season-count");
   const pattern = document.querySelector<DailyPatternElement>("#station-pattern");
-  const season: HistoryPoint[] =
-    waysOutput || waysRose || seasonRose || pattern ? buildSeason() : [];
+  const seasonConsumers =
+    waysOutput ||
+    waysRose ||
+    seasonRose ||
+    pattern ||
+    document.querySelector("#climatology-rose") ||
+    document.querySelector("#climatology-pattern");
+  const season: HistoryPoint[] = seasonConsumers ? buildSeason() : [];
 
   /* "Two ways in": one fixed slice of the long history feeds both panels —
      the object windRose() returns and the component that draws it — so the

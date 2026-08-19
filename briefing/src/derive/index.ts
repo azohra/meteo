@@ -63,4 +63,6 @@ export {
   smokeHoursByValidAt,
   smokeTransmittance,
 } from "./smoke.js";
-export { solarEventsForDate, type SolarEvents } from "./solar.js";
+/* Lifted to core so station's night shading shares the same astronomy;
+ * re-exported here so briefing's public surface stays put. */
+export { solarEventsForDate, type SolarEvents } from "@azohra/meteo.core";

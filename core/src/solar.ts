@@ -1,4 +1,5 @@
-import { degreesToRadians, normalizeDegrees, radiansToDegrees } from "@azohra/meteo.core";
+import { degreesToRadians, radiansToDegrees } from "./angles.js";
+import { normalizeDegrees } from "./angles.js";
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 const MINUTES_PER_DAY = 1_440;

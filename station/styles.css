@@ -844,6 +844,13 @@
   font-feature-settings: "tnum";
 }
 
+/* Night columns: sunset to sunrise from real astronomy, quiet gray under
+ * every data layer. */
+.meteo-night {
+  fill: var(--meteo-muted, #62717f);
+  opacity: 0.12;
+}
+
 /* ---------- climatology views ---------- */
 
 /* The cube's rose and typical day carry the honesty row beneath the

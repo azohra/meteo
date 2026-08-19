@@ -159,9 +159,9 @@ returns `null` rather than a two-point ghost of a trace.
 
 ## Browsing the archive — fetcher injection
 
-Where re-slicing served points is not enough — a pan/zoom over months —
-the archive road is **fetcher injection**: the data contract is one
-function shape, and how a window is served is the host's business.
+Where re-slicing served points is not enough — browsing back through
+months — the archive road is **fetcher injection**: the data contract is
+one function shape, and how a window is served is the host's business.
 
 ```ts
 import {
@@ -181,6 +181,16 @@ proxy — supplies any function of that shape and never touches the handler.
 window costs nothing, an in-flight window is asked once, and a failed
 fetch is never cached so the next ask retries. The served document echoes
 the `periodMinutes` the source actually supplied.
+
+The library ships no archive control surface: what a pager looks like is
+the host's product decision, made in the host's own visual voice. The math
+that is fact rather than taste ships beside the store — `archivePeriodFor`
+(the vendor-shaped resolution ladder), `archiveDayWindow`,
+`archiveDayValue`, and `archiveDayStep` (LOCAL calendar-day arithmetic for
+a date field and ‹ › steps), and `archiveTrailingWindow` (a pager's
+"today"). Feed the chosen window to the store, and the returned points to
+[`WindHistoryChart`](/docs/station/react/) with `windowHours`,
+`compareOffsetDays`, and `nightShading`.
 
 ## Display resolution — shared across bindings
 
