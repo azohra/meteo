@@ -1,0 +1,5 @@
+---
+"@azohra/meteo.station": minor
+---
+
+Favorable directions become an ambient display parameter, judged everywhere a direction shows. `favorableDirections` joins the display resolution beside `thresholds` — same omitted/value/null trichotomy, no default — carried by `StationFeedProvider` and `<meteo-station-feed>` (property, or the `favorable-directions` JSON attribute). The dial draws the rose's judgment ring at its bezel; the history chart, daily pattern, and sample strip tint each vane by its own direction (`meteo-wind-vane-favorable`/`-unfavorable`); the `Direction` fragment tints its text and speaks the verdict (`meteo-direction-favorable`/`-unfavorable`, `aria.favorable`/`aria.unfavorable`). New `FavorableShare` / `<meteo-favorable-share>` states the share of non-calm history inside the arcs — hidden entirely without arcs, a calm note when nothing non-calm was measured, never a fabricated 0%. Calm never wears a verdict. `StationStrings` gains `favorableLabel`, `percentFavorable`, and the three aria entries; a hand-built full `StationStrings` object needs them — the minor bump is for this. No wire change (schemaVersion stays 2).

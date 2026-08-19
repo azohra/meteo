@@ -1,4 +1,4 @@
-import type { SpeedThresholds, SpeedUnit, StationFeed } from "../../index.js";
+import type { FavorableDirection, SpeedThresholds, SpeedUnit, StationFeed } from "../../index.js";
 import type { FormatTime, StationStringOverrides } from "../../index.js";
 
 export const STATION_FEED_CONTEXT_KEY = "station-feed";
@@ -12,4 +12,5 @@ export type AmbientStationFeed = {
   unit: SpeedUnit | undefined;
   formatTime: FormatTime | undefined;
   thresholds: SpeedThresholds | undefined;
+  favorableDirections: FavorableDirection[] | undefined;
 };

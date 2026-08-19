@@ -2,7 +2,7 @@
 import { useId } from "react";
 import { DIAL_SIZE, resolveDisplay } from "../../index.js";
 import { dialScene } from "../../scene/index.js";
-import type { SpeedThresholds, SpeedUnit, Station } from "../../index.js";
+import type { FavorableDirection, SpeedThresholds, SpeedUnit, Station } from "../../index.js";
 import type { FormatTime, StationStringOverrides } from "../../index.js";
 import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 
@@ -10,6 +10,7 @@ export function Dial({
   station: stationProp,
   stationId,
   thresholds: thresholdsProp,
+  favorableDirections: favorableDirectionsProp,
   unit: unitProp,
   size = DIAL_SIZE,
   calmWord = true,
@@ -18,6 +19,7 @@ export function Dial({
   station?: Station;
   stationId?: string;
   thresholds?: SpeedThresholds | null;
+  favorableDirections?: FavorableDirection[] | null;
   unit?: SpeedUnit;
   size?: number;
   calmWord?: boolean;
@@ -30,14 +32,24 @@ export function Dial({
     "station",
     stationProp ?? resolveStation(context, stationId),
   );
-  const { thresholds, unit, words } = resolveDisplay(context, {
+  const { favorableDirections, thresholds, unit, words } = resolveDisplay(context, {
     strings: stringsProp,
     thresholds: thresholdsProp,
+    favorableDirections: favorableDirectionsProp,
     unit: unitProp,
   });
   const bezelId = `meteo-bezel-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const scene = dialScene({ bezelId, calmWord, size, station, thresholds, unit, words });
+  const scene = dialScene({
+    bezelId,
+    calmWord,
+    favorableDirections,
+    size,
+    station,
+    thresholds,
+    unit,
+    words,
+  });
   const { gradient, centre } = scene;
 
   return (
@@ -75,6 +87,19 @@ export function Dial({
         cy={scene.ring.cy}
         r={scene.ring.r}
       />
+      {scene.verdictRing && (
+        <>
+          <circle
+            className={scene.verdictRing.unfavorable.className}
+            cx={scene.verdictRing.unfavorable.cx}
+            cy={scene.verdictRing.unfavorable.cy}
+            r={scene.verdictRing.unfavorable.r}
+          />
+          {scene.verdictRing.favorable.map((arc) => (
+            <path className={arc.className} d={arc.d} key={arc.key} />
+          ))}
+        </>
+      )}
       {scene.arc && <path className={scene.arc.className} d={scene.arc.d} />}
       {scene.ticks.map((tick) => (
         <line

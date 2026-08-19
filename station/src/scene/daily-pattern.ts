@@ -4,6 +4,7 @@ import type { SpeedThresholds, SpeedUnit } from "../derive.js";
 import { roundSpeed } from "../format.js";
 import { dailyPattern, thinVanes } from "../geometry.js";
 import type { ChartFrame, ChartScales, DailyPatternSlot } from "../geometry.js";
+import type { FavorableDirection } from "../instruments.js";
 import { EM_DASH } from "../strings.js";
 import type { StationStrings } from "../strings.js";
 import type { TickAnchor } from "./chart.js";
@@ -129,6 +130,7 @@ export type DailyPatternScene = {
 };
 
 export function dailyPatternScene(input: {
+  favorableDirections?: FavorableDirection[] | undefined;
   hatchId: string;
   periodMinutes: number | null;
   plotHeight: number | undefined;
@@ -214,10 +216,15 @@ export function dailyPatternScene(input: {
     mean: gradedMeanTrace(synthetic, scales, boundsMps),
     calmNote: calm ? calmNoteText(frame, words) : null,
     rowLabels: windRowLabels(frame, words),
-    vanes: vaneCells(vanes, frame, scales, (vane) =>
-      slots.slice(vane.startIndex, vane.endIndex).every((slot) => slot.sampleCount === 0)
-        ? EM_DASH
-        : String(shown(vane.windAvgMps)),
+    vanes: vaneCells(
+      vanes,
+      frame,
+      scales,
+      (vane) =>
+        slots.slice(vane.startIndex, vane.endIndex).every((slot) => slot.sampleCount === 0)
+          ? EM_DASH
+          : String(shown(vane.windAvgMps)),
+      input.favorableDirections,
     ),
     ticks: vaneTickTexts(vanes, frame, scales, (timeMs) =>
       formatMinuteOfDay((timeMs - SYNTHETIC_EPOCH_MS) / 60_000),

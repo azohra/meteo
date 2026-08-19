@@ -2,12 +2,16 @@
   <h2 id="roses-title">Wind roses</h2>
   <p class="station-note">
     Launch Ridge wears its 260°–340° launch window as a judgment
-    ring; the petals keep reporting distribution.
+    ring; the petals keep reporting distribution, and the favorable-share
+    stat states the verdict as one number.
   </p>
   <div class="station-grid station-grid-roses">
     <div class="station-panel">
       <h3>Launch Ridge: graded, launch window ring</h3>
       <meteo-wind-rose id="roses-ridge" station-id="launch-ridge"></meteo-wind-rose>
+      <meteo-favorable-share
+        favorable-directions='[{"fromDeg":260,"toDeg":340}]'
+        station-id="launch-ridge"></meteo-favorable-share>
     </div>
     <div class="station-panel">
       <h3>Summit Logger: plain</h3>

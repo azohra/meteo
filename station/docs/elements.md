@@ -111,8 +111,9 @@ Everything else has a twin rendering the identical DOM.
 | `<meteo-current-conditions>` | The instrument dial with lull and gust flanks | `thresholds`, `unit`. Calm hides the needle; an unavailable station greys the dial, reason in words |
 | `<meteo-wind-history-chart>` | Lull-gust band + graded mean over served history, with a persistent compass-letter row and Avg row above/below every vane | `plot-height`; `window-hours` slices the trailing N hours of the SAME points, no new fetch; `compare-offset-days` (`1\|2\|3`) overlays a prior day's trace shifted onto today's own x-axis, absent when history doesn't reach back that far; `thresholds` (guide labels print your declared numbers), `unit`. The full inspector: pointer preview, click pins by timestamp, touch never previews. Renders nothing without the `history` capability; with it but under two points, the no-history words |
 | `<meteo-trend-chart>` | Temperature (°C) or sea-level pressure (hPa) over history | `series="temperature\|pressure"` required. Null gaps break the trace, never interpolated; a series under two measured points says "not measured". No `unit`: the units are the series' own. Nothing without `history` |
-| `<meteo-wind-rose>` | Direction shares as petals, percentages not speeds | `sector-count` (default 16), `thresholds`; `points` / `favorableDirections` properties ([the judgment ring](#the-roses-judgment-ring)). No `unit`. With neither `points` nor station history, the no-history words |
-| `<meteo-daily-pattern>` | A typical day: every point bucketed by time-of-day and vector-averaged, with the persistent compass-letter and Avg rows (Avg dashes for a slot nothing ever fell into) and a coverage caption | `slot-minutes` (default 180), `utc-offset-minutes` (default 0 — pass the station's fixed local offset), `plot-height`, `thresholds`, `unit`; `points` property to aggregate your own slice |
+| `<meteo-wind-rose>` | Direction shares as petals, percentages not speeds | `sector-count` (default 16), `thresholds`, `favorable-directions` ([the judgment ring](#favorable-directions)); `points` property. No `unit`. With neither `points` nor station history, the no-history words |
+| `<meteo-daily-pattern>` | A typical day: every point bucketed by time-of-day and vector-averaged, with the persistent compass-letter and Avg rows (Avg dashes for a slot nothing ever fell into) and a coverage caption | `slot-minutes` (default 180), `utc-offset-minutes` (default 0 — pass the station's fixed local offset), `plot-height`, `thresholds`, `unit`, `favorable-directions` (tints each vane by its verdict); `points` property to aggregate your own slice |
+| `<meteo-favorable-share>` | One stat: the share of non-calm history from a favorable direction | `favorable-directions`; `points` property. Renders nothing at all without arcs; a calm-only history notes calm instead of inventing 0% |
 | `<meteo-station-table>` | One row per station; unavailable rows keep their geometry, reason in words | `unit`; `stations` property (defaults to the ambient feed's), `stationMeta` property: `(station) => string \| Node \| null`, the sub-label under each name (default: the source attribution) |
 | `<meteo-station-strip>` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness | `unit`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line |
 | `<meteo-air-matrix>` | Humidity through lightning behind a live disclosure | `stations` property (defaults to the ambient feed's). Columns only for `conditions`-capable stations; the open/closed disclosure state is the element's own |
@@ -157,20 +158,29 @@ reserved for a dead vane on a blowing reading); shown speeds convert to the
 display unit while the wire value rides the `<data>` element's `value`
 attribute in m/s, unrounded.
 
-### The rose's judgment ring
+### Favorable directions
 
-Set the `favorableDirections` property to draw a thin judgment ring outside
-the rose's grid:
+Favorable arcs are a judgment parameter with no default, resolved by the
+same omitted/value/null trichotomy as `thresholds`: set them once on the
+provider and every direction-bearing tag inherits, set them on one tag to
+override, set the property to `null` to opt one tag out. The
+`favorable-directions` attribute takes the same JSON on any of those tags
+(`"none"` opts out); the `favorableDirections` property carries the parsed
+array:
 
 ```js
-document.querySelector("meteo-wind-rose").favorableDirections =
+document.querySelector("meteo-station-feed").favorableDirections =
   [{ fromDeg: 260, toDeg: 340 }]; // degrees FROM; sectors may wrap through north
 ```
 
-Favourable arcs paint in `--meteo-wind-favorable`, the remainder in
-`--meteo-wind-unfavorable`
+The rose and the dial draw a thin judgment ring; the history chart and
+daily pattern tint each vane by its own direction; `<meteo-direction>`
+tints its text and speaks the verdict; `<meteo-favorable-share>` states the
+share outright. Favourable arcs paint in `--meteo-wind-favorable`, the
+remainder in `--meteo-wind-unfavorable`
 ([the tokens are yours](/docs/station/theming/#token-reference)). The ring
-judges direction, the petals report distribution; the two never mix.
+judges direction, the petals report distribution; the two never mix — and
+calm never wears a verdict, because calm has no direction to judge.
 
 ## Composing the station card
 

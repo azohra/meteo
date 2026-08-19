@@ -1,6 +1,12 @@
 import { DIAL_SIZE } from "../../index.js";
 import { dialScene } from "../../scene/index.js";
-import type { SpeedThresholds, SpeedUnit, Station, StationStrings } from "../../index.js";
+import type {
+  FavorableDirection,
+  SpeedThresholds,
+  SpeedUnit,
+  Station,
+  StationStrings,
+} from "../../index.js";
 import { numberAttribute } from "../lib/attributes.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { hs } from "../lib/h.js";
@@ -10,15 +16,25 @@ let bezelCounter = 0;
 export function dialSvg(options: {
   station: Station;
   thresholds: SpeedThresholds | undefined;
+  favorableDirections?: FavorableDirection[] | undefined;
   unit: SpeedUnit;
   words: StationStrings;
   size?: number;
   calmWord?: boolean;
 }): SVGElement {
-  const { station, thresholds, unit, words, size = DIAL_SIZE, calmWord = true } = options;
+  const {
+    station,
+    thresholds,
+    favorableDirections,
+    unit,
+    words,
+    size = DIAL_SIZE,
+    calmWord = true,
+  } = options;
   const scene = dialScene({
     bezelId: `meteo-bezel-e${++bezelCounter}`,
     calmWord,
+    favorableDirections,
     size,
     station,
     thresholds,
@@ -65,6 +81,17 @@ export function dialSvg(options: {
       cy: scene.ring.cy,
       r: scene.ring.r,
     }),
+    scene.verdictRing != null
+      ? [
+          hs("circle", {
+            class: scene.verdictRing.unfavorable.className,
+            cx: scene.verdictRing.unfavorable.cx,
+            cy: scene.verdictRing.unfavorable.cy,
+            r: scene.verdictRing.unfavorable.r,
+          }),
+          scene.verdictRing.favorable.map((arc) => hs("path", { class: arc.className, d: arc.d })),
+        ]
+      : null,
     scene.arc != null && hs("path", { class: scene.arc.className, d: scene.arc.d }),
     scene.ticks.map((tick) =>
       hs("line", { class: tick.className, x1: tick.x1, x2: tick.x2, y1: tick.y1, y2: tick.y2 }),
@@ -144,6 +171,7 @@ export function dialSvg(options: {
 
 export class DialElement extends MeteoStationElement {
   static readonly observedAttributes = [
+    "favorable-directions",
     "no-calm-word",
     "received-at-ms",
     "served-at",
@@ -155,11 +183,12 @@ export class DialElement extends MeteoStationElement {
 
   protected override render(): void {
     const station = this.requiredStation("meteo-dial");
-    const { thresholds, unit, words } = this.display();
+    const { favorableDirections, thresholds, unit, words } = this.display();
     this.replaceChildren(
       dialSvg({
         station,
         thresholds,
+        favorableDirections,
         unit,
         words,
         size: numberAttribute(this.getAttribute("size")) ?? DIAL_SIZE,

@@ -7,7 +7,13 @@ import {
   dailyPatternSource,
   measuredChartWidth,
 } from "../../scene/index.js";
-import type { HistoryPoint, SpeedThresholds, SpeedUnit, StationStrings } from "../../index.js";
+import type {
+  FavorableDirection,
+  HistoryPoint,
+  SpeedThresholds,
+  SpeedUnit,
+  StationStrings,
+} from "../../index.js";
 import { numberAttribute } from "../lib/attributes.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { h, hs } from "../lib/h.js";
@@ -16,6 +22,7 @@ let hatchCounter = 0;
 
 export class DailyPatternElement extends MeteoStationElement {
   static readonly observedAttributes = [
+    "favorable-directions",
     "plot-height",
     "slot-minutes",
     "station-id",
@@ -55,7 +62,7 @@ export class DailyPatternElement extends MeteoStationElement {
             this.getAttribute("station-id") ?? undefined,
           ) ?? undefined)
         : undefined);
-    const { thresholds, unit, words } = this.display();
+    const { favorableDirections, thresholds, unit, words } = this.display();
     const { source, periodMinutes } = dailyPatternSource(this.#points, station);
 
     const gate = dailyPatternGate(source, words);
@@ -76,6 +83,7 @@ export class DailyPatternElement extends MeteoStationElement {
       source,
       periodMinutes,
       thresholds,
+      favorableDirections,
       unit,
       words,
       this.#width,
@@ -105,12 +113,14 @@ export class DailyPatternElement extends MeteoStationElement {
     points: HistoryPoint[],
     periodMinutes: number | null,
     thresholds: SpeedThresholds | undefined,
+    favorableDirections: FavorableDirection[] | undefined,
     unit: SpeedUnit,
     words: StationStrings,
     width: number,
     stationName: string | undefined,
   ): void {
     const scene = dailyPatternScene({
+      favorableDirections,
       hatchId: `meteo-daily-pattern-hatch-e${++hatchCounter}`,
       periodMinutes,
       plotHeight: numberAttribute(this.getAttribute("plot-height")),

@@ -15,7 +15,7 @@ import {
   sampleStripScene,
   togglePinnedAt,
 } from "../../scene/index.js";
-import type { LiveSamples, SpeedUnit } from "../../index.js";
+import type { FavorableDirection, LiveSamples, SpeedUnit } from "../../index.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
 import { useMeasuredChartWidth } from "../hooks/useMeasuredChartWidth.js";
 import { Readout } from "./Readout.js";
@@ -29,6 +29,7 @@ export function WindSampleStrip({
   samples,
   stationName,
   unit: unitProp,
+  favorableDirections: favorableDirectionsProp,
   plotHeight,
   strings: stringsProp,
   formatTime: formatTimeProp,
@@ -36,14 +37,16 @@ export function WindSampleStrip({
   samples: LiveSamples | null | undefined;
   stationName: string;
   unit?: SpeedUnit;
+  favorableDirections?: FavorableDirection[] | null;
   plotHeight?: number;
   strings?: StationStringOverrides;
   formatTime?: FormatTime;
 }) {
   const context = useStationFeedContext();
-  const { formatTime, unit, words } = resolveDisplay(context, {
+  const { favorableDirections, formatTime, unit, words } = resolveDisplay(context, {
     formatTime: formatTimeProp,
     strings: stringsProp,
+    favorableDirections: favorableDirectionsProp,
     unit: unitProp,
   });
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -62,6 +65,7 @@ export function WindSampleStrip({
     <div className={SAMPLE_STRIP_CLASS} ref={wrapRef}>
       {width != null && (
         <MeasuredStrip
+          favorableDirections={favorableDirections}
           formatTime={formatTime}
           plotHeight={plotHeight}
           samples={gate.samples}
@@ -76,6 +80,7 @@ export function WindSampleStrip({
 }
 
 function MeasuredStrip({
+  favorableDirections,
   formatTime,
   plotHeight,
   samples,
@@ -84,6 +89,7 @@ function MeasuredStrip({
   width,
   words,
 }: {
+  favorableDirections: FavorableDirection[] | undefined;
   formatTime: FormatTime;
   plotHeight: number | undefined;
   samples: LiveSamples;
@@ -96,6 +102,7 @@ function MeasuredStrip({
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const scene = sampleStripScene({
+    favorableDirections,
     formatTime,
     plotHeight,
     samples,

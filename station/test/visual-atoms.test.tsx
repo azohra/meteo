@@ -38,6 +38,22 @@ describe("Dial", () => {
     expect(container.querySelector(".meteo-wind-dial-unit")?.textContent).toBe("kn");
   });
 
+  it("draws no verdict ring without favorableDirections", () => {
+    const { container } = render(<Dial station={okStation()} />);
+    expect(container.querySelector(".meteo-wind-dial-ring-favorable")).toBeNull();
+    expect(container.querySelector(".meteo-wind-dial-ring-unfavorable")).toBeNull();
+  });
+
+  it("rings favorable arcs over the unfavorable remainder at the bezel radius", () => {
+    const { container } = render(
+      <Dial favorableDirections={[{ fromDeg: 260, toDeg: 340 }]} station={okStation()} />,
+    );
+    expect(container.querySelector("circle.meteo-wind-dial-ring-unfavorable")).not.toBeNull();
+    const arcs = container.querySelectorAll("path.meteo-wind-dial-ring-favorable");
+    expect(arcs.length).toBe(1);
+    expect(arcs[0]?.getAttribute("d")).toContain("A 70 70 0 0 1");
+  });
+
   it("grades the speed arc into the reading's band when thresholds are given", () => {
     const { container } = render(
       <Dial station={okStation()} thresholds={{ unit: "kmh", values: [12, 20] }} />,

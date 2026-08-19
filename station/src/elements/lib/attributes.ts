@@ -1,5 +1,6 @@
 import { SPEED_UNITS } from "../../derive.js";
 import type { SpeedThresholds, SpeedUnit } from "../../derive.js";
+import type { FavorableDirection } from "../../instruments.js";
 
 export function numberAttribute(value: string | null): number | undefined {
   if (value == null || value.trim() === "") return undefined;
@@ -33,6 +34,33 @@ export function parseThresholdsAttribute(value: string | null): SpeedThresholds 
   console.warn(
     `meteo: invalid thresholds attribute ${JSON.stringify(value)} — expected ` +
       `'{"unit":"kmh","values":[12,20,28]}' or "none"; treating as absent.`,
+  );
+  return undefined;
+}
+
+export function parseArcsAttribute(value: string | null): FavorableDirection[] | null | undefined {
+  if (value == null) return undefined;
+  if (value.trim() === "none") return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (
+      Array.isArray(parsed) &&
+      parsed.every(
+        (arc) =>
+          typeof arc === "object" &&
+          arc != null &&
+          typeof (arc as { fromDeg?: unknown }).fromDeg === "number" &&
+          Number.isFinite((arc as { fromDeg: number }).fromDeg) &&
+          typeof (arc as { toDeg?: unknown }).toDeg === "number" &&
+          Number.isFinite((arc as { toDeg: number }).toDeg),
+      )
+    ) {
+      return parsed as FavorableDirection[];
+    }
+  } catch {}
+  console.warn(
+    `meteo: invalid favorable-directions attribute ${JSON.stringify(value)} — expected ` +
+      `'[{"fromDeg":260,"toDeg":340}]' or "none"; treating as absent.`,
   );
   return undefined;
 }

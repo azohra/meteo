@@ -63,9 +63,11 @@ test.describe("the docs component gallery exhibits the custom-elements binding",
     await expect(page.locator("#ways-output")).toContainText("calmFraction");
     expect(await page.locator("#ways-rose .meteo-wind-rose-petal").count()).toBeGreaterThan(0);
 
-    // The roses draw petals; the favorable ring rides Launch Ridge only.
+    // The roses draw petals; the favorable ring rides Launch Ridge only,
+    // and the share stat beside it states the verdict as a percentage.
     expect(await page.locator("#roses-ridge .meteo-wind-rose-petal").count()).toBeGreaterThan(0);
     expect(await page.locator("#season-rose .meteo-wind-rose-petal").count()).toBeGreaterThan(0);
+    await expect(page.locator("#roses meteo-favorable-share .meteo-favorable-share-value")).toContainText("%");
 
     // Trends: temperature and pressure both draw for Launch Ridge.
     await expect(page.locator("#trends meteo-trend-chart .meteo-trend-svg")).toHaveCount(2);

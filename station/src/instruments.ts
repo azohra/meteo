@@ -39,6 +39,18 @@ export function dialNeedlePoints(fromDeg: number): string {
   return `${dialAt(tip)} ${dialAt(left)} ${dialAt(right)}`;
 }
 
+/* The dial's verdict ring rides the bezel radius, mirroring the rose's:
+ * a favorable arc painted over the full unfavorable circle. */
+export function dialRingArcPath(sector: FavorableDirection): string {
+  const from = normalizeDegrees(sector.fromDeg);
+  const span = normalizeDegrees(sector.toDeg - sector.fromDeg);
+  const start = dialPolar(from, DIAL_RING_RADIUS);
+  const end = dialPolar(from + span, DIAL_RING_RADIUS);
+  return `M ${dialAt(start)} A ${DIAL_RING_RADIUS} ${DIAL_RING_RADIUS} 0 ${
+    span > 180 ? 1 : 0
+  } 1 ${dialAt(end)}`;
+}
+
 export function dialSpeedArcPath(fraction: number): string {
   const sweepDeg = Math.min(359.9, Math.max(0, fraction) * 360);
   const start = dialPolar(0, DIAL_RING_RADIUS);

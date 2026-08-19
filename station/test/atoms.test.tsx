@@ -162,6 +162,31 @@ describe("Direction", () => {
     );
   });
 
+  it("wears the verdict class and speaks it only when arcs judge the bearing", () => {
+    /* okStation reads from 312°; the first arc holds it, the second does not. */
+    const favorable = render(
+      <Direction favorableDirections={[{ fromDeg: 260, toDeg: 340 }]} station={okStation()} />,
+    );
+    const good = favorable.container.querySelector(".meteo-direction");
+    expect(good?.getAttribute("class")).toBe("meteo-direction meteo-direction-favorable");
+    expect(good?.getAttribute("aria-label")).toContain(defaultStrings.aria.favorable);
+
+    const unfavorable = render(
+      <Direction favorableDirections={[{ fromDeg: 80, toDeg: 120 }]} station={okStation()} />,
+    );
+    expect(unfavorable.container.querySelector(".meteo-direction")?.getAttribute("class")).toBe(
+      "meteo-direction meteo-direction-unfavorable",
+    );
+
+    /* Calm never wears a verdict — there is no direction to judge. */
+    const calm = render(
+      <Direction favorableDirections={[{ fromDeg: 260, toDeg: 340 }]} station={calmStation()} />,
+    );
+    expect(calm.container.querySelector(".meteo-direction")?.getAttribute("class")).toBe(
+      "meteo-direction",
+    );
+  });
+
   it("dashes a blowing reading with a dead vane and an unavailable station alike", () => {
     const deadVane = okStation({ reading: { ...okStation().reading, windDirectionDeg: null } });
     const { container } = render(

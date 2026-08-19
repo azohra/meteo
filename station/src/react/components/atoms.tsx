@@ -10,7 +10,7 @@ import {
   temperatureAtomScene,
   updatedAtScene,
 } from "../../scene/index.js";
-import type { SpeedUnit, Station } from "../../index.js";
+import type { FavorableDirection, SpeedUnit, Station } from "../../index.js";
 import type { SpeedKind } from "../../format.js";
 import type { ValueAtomScene } from "../../scene/index.js";
 import { DirectionCell } from "../lib/cells.js";
@@ -95,10 +95,18 @@ export function Pressure({ station: stationProp, stationId, strings: stringsProp
   return <ValueAtom scene={pressureAtomScene(station, words)} />;
 }
 
-export function Direction({ station: stationProp, stationId, strings: stringsProp }: AtomProps) {
+export function Direction({
+  station: stationProp,
+  stationId,
+  strings: stringsProp,
+  favorableDirections: favorableDirectionsProp,
+}: AtomProps & { favorableDirections?: FavorableDirection[] | null }) {
   const { context, station } = useResolvedStation("Direction", stationProp, stationId);
-  const { words } = resolveDisplay(context, { strings: stringsProp });
-  const scene = directionAtomScene(station, words);
+  const { favorableDirections, words } = resolveDisplay(context, {
+    strings: stringsProp,
+    favorableDirections: favorableDirectionsProp,
+  });
+  const scene = directionAtomScene(station, words, favorableDirections);
   if (scene.cell == null) {
     return <span className={scene.className}>{scene.dashText}</span>;
   }

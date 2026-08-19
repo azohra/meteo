@@ -132,7 +132,7 @@ it.
 | `--meteo-wind-mean` | The mean trace when ungraded |
 | `--meteo-wind-vane` | Vane glyphs in the direction row |
 | `--meteo-wind-compare` | The day-over-day compare overlay trace |
-| `--meteo-wind-favorable` / `--meteo-wind-unfavorable` | The rose's judgment ring |
+| `--meteo-wind-favorable` / `--meteo-wind-unfavorable` | The judgment verdicts: the rose's and dial's rings, vane tints, the direction fragment, the favorable-share stat |
 
 ## Speed bands and your palette
 

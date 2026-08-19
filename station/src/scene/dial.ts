@@ -16,9 +16,11 @@ import {
   DIAL_TICK_INNER,
   dialNeedlePoints,
   dialPolar,
+  dialRingArcPath,
   dialScaleMaxMps,
   dialSpeedArcPath,
 } from "../instruments.js";
+import type { FavorableDirection } from "../instruments.js";
 import type { StationStrings } from "../strings.js";
 import type { SceneText } from "./wind-plot.js";
 
@@ -36,6 +38,10 @@ export type DialScene = {
   face: DialCircle;
   bezel: DialCircle & { fill: string };
   ring: DialCircle;
+  verdictRing: {
+    unfavorable: DialCircle;
+    favorable: Array<{ key: string; className: string; d: string }>;
+  } | null;
   arc: { className: string; d: string } | null;
   ticks: Array<{ key: number; className: string; x1: number; x2: number; y1: number; y2: number }>;
   letters: Array<{
@@ -60,13 +66,14 @@ export type DialScene = {
 export function dialScene(input: {
   bezelId: string;
   calmWord: boolean;
+  favorableDirections?: FavorableDirection[] | undefined;
   size: number;
   station: Station;
   thresholds: SpeedThresholds | undefined;
   unit: SpeedUnit;
   words: StationStrings;
 }): DialScene {
-  const { bezelId, calmWord, size, station, thresholds, unit, words } = input;
+  const { bezelId, calmWord, favorableDirections, size, station, thresholds, unit, words } = input;
   const shown = (windAvgMps: number) => roundSpeed(windAvgMps, unit);
   const unitLabel = words.speedUnits[unit];
   const reading = station.status === "ok" ? station.reading : null;
@@ -126,6 +133,22 @@ export function dialScene(input: {
       cy: DIAL_CENTRE,
       r: DIAL_RING_RADIUS,
     },
+    verdictRing:
+      favorableDirections != null && favorableDirections.length > 0
+        ? {
+            unfavorable: {
+              className: "meteo-wind-dial-ring-unfavorable",
+              cx: DIAL_CENTRE,
+              cy: DIAL_CENTRE,
+              r: DIAL_RING_RADIUS,
+            },
+            favorable: favorableDirections.map((sector) => ({
+              key: `${sector.fromDeg}-${sector.toDeg}`,
+              className: "meteo-wind-dial-ring-favorable",
+              d: dialRingArcPath(sector),
+            })),
+          }
+        : null,
     arc:
       reading != null && arcFraction > 0
         ? {

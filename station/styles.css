@@ -158,6 +158,44 @@
   color: var(--meteo-muted, #62717f);
 }
 
+/* Verdict-tinted direction fragments, only when the consumer supplied
+ * favorable arcs. */
+.meteo-direction-favorable {
+  color: var(--meteo-wind-favorable, #2e9e63);
+}
+
+.meteo-direction-unfavorable {
+  color: var(--meteo-wind-unfavorable, #c98a80);
+}
+
+/* The favorable-share stat: one caption-grade label and one number, sized
+ * to sit beside the summary cells. Hidden entirely without arcs; the -na
+ * note carries the words when there is nothing to judge. */
+.meteo-favorable-share {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--meteo-ink, #17232e);
+}
+
+.meteo-favorable-share-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--meteo-muted, #62717f);
+}
+
+.meteo-favorable-share-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 600;
+}
+
+.meteo-favorable-share-na {
+  font-family: var(--meteo-font, ui-sans-serif, system-ui, sans-serif);
+  font-size: 0.82rem;
+  color: var(--meteo-muted, #62717f);
+}
+
 /* A timestamp is context, not a reading — it speaks in the muted voice. */
 .meteo-updated {
   color: var(--meteo-muted, #62717f);
@@ -249,6 +287,22 @@
   fill: none;
   stroke: var(--meteo-border, #dbe2e9);
   stroke-width: 1.5;
+}
+
+/* The dial's judgment ring, the rose's treatment on the bezel radius:
+ * favorable arcs paint over the unfavorable circle. */
+.meteo-wind-dial-ring-unfavorable {
+  fill: none;
+  stroke: var(--meteo-wind-unfavorable, #c98a80);
+  stroke-width: 3;
+  opacity: 0.55;
+}
+
+.meteo-wind-dial-ring-favorable {
+  fill: none;
+  stroke: var(--meteo-wind-favorable, #2e9e63);
+  stroke-width: 3;
+  stroke-linecap: butt;
 }
 
 /* The speed arc: the current reading's share of the dial scale, wearing the
@@ -537,6 +591,16 @@
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Verdict-tinted vanes, drawn only when the consumer supplied favorable
+ * arcs; a calm cell never wears one. */
+.meteo-wind-vane-favorable {
+  stroke: var(--meteo-wind-favorable, #2e9e63);
+}
+
+.meteo-wind-vane-unfavorable {
+  stroke: var(--meteo-wind-unfavorable, #c98a80);
 }
 
 /* The persistent compass letter above every vane, and the persistent Avg

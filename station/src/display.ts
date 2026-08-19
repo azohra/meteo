@@ -1,5 +1,6 @@
 import type { Station, StationFeed } from "./contract.js";
 import type { SpeedThresholds, SpeedUnit } from "./derive.js";
+import type { FavorableDirection } from "./instruments.js";
 import { defaultFormatTime, mergeStringOverrides, resolveStrings } from "./strings.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "./strings.js";
 
@@ -8,6 +9,7 @@ export type DisplayDefaults = {
   unit?: SpeedUnit | undefined;
   formatTime?: FormatTime | undefined;
   thresholds?: SpeedThresholds | undefined;
+  favorableDirections?: FavorableDirection[] | undefined;
 };
 
 export type DisplayProps = {
@@ -15,6 +17,7 @@ export type DisplayProps = {
   unit?: SpeedUnit | undefined;
   formatTime?: FormatTime | undefined;
   thresholds?: SpeedThresholds | null | undefined;
+  favorableDirections?: FavorableDirection[] | null | undefined;
 };
 
 export type ResolvedDisplay = {
@@ -23,6 +26,7 @@ export type ResolvedDisplay = {
   unit: SpeedUnit;
   formatTime: FormatTime;
   thresholds: SpeedThresholds | undefined;
+  favorableDirections: FavorableDirection[] | undefined;
 };
 
 export function resolveDisplay(
@@ -37,6 +41,13 @@ export function resolveDisplay(
     formatTime: props.formatTime ?? defaults?.formatTime ?? defaultFormatTime,
     thresholds:
       props.thresholds === undefined ? defaults?.thresholds : (props.thresholds ?? undefined),
+    /* The same trichotomy as thresholds: undefined inherits the ambient
+     * arcs, a value overrides them, null opts out. A judgment parameter —
+     * no arc list ships as a default. */
+    favorableDirections:
+      props.favorableDirections === undefined
+        ? defaults?.favorableDirections
+        : (props.favorableDirections ?? undefined),
   };
 }
 

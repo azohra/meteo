@@ -12,7 +12,7 @@ export function WindRose({
   points,
   sectorCount = 16,
   thresholds: thresholdsProp,
-  favorableDirections,
+  favorableDirections: favorableDirectionsProp,
   strings: stringsProp,
 }: {
   station?: Station;
@@ -20,15 +20,16 @@ export function WindRose({
   points?: HistoryPoint[];
   sectorCount?: number;
   thresholds?: SpeedThresholds | null;
-  favorableDirections?: FavorableDirection[];
+  favorableDirections?: FavorableDirection[] | null;
   strings?: StationStringOverrides;
 }) {
   const context = useStationFeedContext();
   const station =
     stationProp ?? (points == null ? (resolveStation(context, stationId) ?? undefined) : undefined);
-  const { thresholds, words } = resolveDisplay(context, {
+  const { favorableDirections, thresholds, words } = resolveDisplay(context, {
     strings: stringsProp,
     thresholds: thresholdsProp,
+    favorableDirections: favorableDirectionsProp,
   });
   const source = windRoseSource(points, station);
   const gate = windRoseGate(source, words);

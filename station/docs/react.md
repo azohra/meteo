@@ -106,7 +106,8 @@ full map.
 | `WindSampleStrip` | The history chart's live sibling: the rolling sample window over the same frame, grid, compass-letter and avg rows, and edge-anchored ticks. Samples-only by design: pass `samples` (from `useStationLive`) and `stationName`; instants stay ungraded, a dropout breaks the trace, a one-sample run draws as a dot. `plotHeight` |
 | `TrendChart` | Temperature (°C) or sea-level pressure (hPa) over history. `series: "temperature" \| "pressure"`; null gaps break the trace, never interpolated. No `unit`: the units are the series' own |
 | `WindRose` | Direction shares. `station`/`stationId` or raw `points`, `sectorCount`, `thresholds`, `favorableDirections`. No `unit`: the rose shows percentages |
-| `DailyPattern` | A typical day: every point bucketed by time-of-day and vector-averaged, with a persistent compass-letter row and Avg row (dashed for a slot nothing ever fell into). `station`/`stationId` or raw `points`, `slotMinutes` (default 180), `utcOffsetMinutes`, `thresholds` |
+| `DailyPattern` | A typical day: every point bucketed by time-of-day and vector-averaged, with a persistent compass-letter row and Avg row (dashed for a slot nothing ever fell into). `station`/`stationId` or raw `points`, `slotMinutes` (default 180), `utcOffsetMinutes`, `thresholds`, `favorableDirections` |
+| `FavorableShare` | One stat: the share of non-calm history from a favorable direction. `station`/`stationId` or raw `points`, `favorableDirections`. Renders nothing at all without arcs; a calm-only history notes calm instead of inventing 0% |
 | `StationTable` | One row per `stations` entry; unavailable rows keep their geometry. `servedAt`, `receivedAtMs`, `stationMeta`, the sub-label under each name (default: the source attribution; render the sampling window, a distance, anything the station itself can say) |
 | `StationStrip` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness. `station`/`stationId`, `servedAt`, `receivedAtMs`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line, reason in words |
 | `AirMatrix` | Humidity → lightning behind a live disclosure; columns only for conditions-capable `stations` |
@@ -137,12 +138,23 @@ dot-access across an RSC client boundary); rendering one outside
 </StationCard> {/* no instrument: the station table above already states the reading */}
 ```
 
-### The rose's judgment ring
+### Favorable directions
 
 `favorableDirections={[{ fromDeg: 260, toDeg: 340 }]}` (degrees FROM; sectors
-may wrap through north) draws a thin ring outside the rose's grid: favourable
-arcs in `--meteo-wind-favorable`, the remainder in `--meteo-wind-unfavorable`. The ring
-judges direction, the petals report distribution; the two never mix.
+may wrap through north — `fromDeg > toDeg` spans the north crossing) is a
+judgment parameter with no default, resolved by the same
+omitted/value/null trichotomy as `thresholds`: set it once on
+`StationFeedProvider` and every direction-bearing surface inherits it, pass
+it on one component to override, pass `null` to opt one component out.
+
+Where the verdict shows: the rose and the dial draw a thin judgment ring
+(favourable arcs in `--meteo-wind-favorable`, the remainder in
+`--meteo-wind-unfavorable`); the history chart, daily pattern, and sample
+strip tint each vane by its own direction; the `Direction` fragment tints
+its text and speaks the verdict; `FavorableShare` states the share outright.
+The ring judges direction, the petals report distribution; the two never
+mix — and calm never wears a verdict, because calm has no direction to
+judge.
 
 ## Primitives
 

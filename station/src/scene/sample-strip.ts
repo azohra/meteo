@@ -4,6 +4,7 @@ import type { SpeedUnit } from "../derive.js";
 import { roundSpeed } from "../format.js";
 import { sampleRuns, samplePoints, sampleScales, thinSampleVanes } from "../samples.js";
 import type { ChartFrame, ChartScales } from "../geometry.js";
+import type { FavorableDirection } from "../instruments.js";
 import { EM_DASH } from "../strings.js";
 import type { FormatTime, StationStrings } from "../strings.js";
 import type { ReadoutPart } from "./chart.js";
@@ -88,6 +89,7 @@ export type SampleStripScene = {
 };
 
 export function sampleStripScene(input: {
+  favorableDirections?: FavorableDirection[] | undefined;
   formatTime: FormatTime;
   plotHeight: number | undefined;
   samples: LiveSamples;
@@ -144,7 +146,13 @@ export function sampleStripScene(input: {
     ),
     calmNote: points.every((sample) => isCalm(sample.windMps)) ? calmNoteText(frame, words) : null,
     rowLabels: windRowLabels(frame, words),
-    vanes: vaneCells(vanes, frame, scales, (vane) => String(shown(vane.windAvgMps))),
+    vanes: vaneCells(
+      vanes,
+      frame,
+      scales,
+      (vane) => String(shown(vane.windAvgMps)),
+      input.favorableDirections,
+    ),
     ticks: vaneTickTexts(vanes, frame, scales, (timeMs) => formatTime(new Date(timeMs))),
     hit: {
       className: "meteo-hit",

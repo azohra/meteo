@@ -1,6 +1,8 @@
+import { inDirectionArcs } from "@azohra/meteo.core";
 import type { HistoryPoint } from "../contract.js";
 import { compassDirection, speedToMps } from "../derive.js";
 import type { SpeedThresholds, SpeedUnit } from "../derive.js";
+import type { FavorableDirection } from "../instruments.js";
 import {
   CHART_WIDE_PLOT_HEIGHT,
   CHART_WIDE_PLOT_MIN_WIDTH,
@@ -279,7 +281,16 @@ export function vaneCells(
   frame: ChartFrame,
   scales: ChartScales,
   valueText: (vane: Vane) => string,
+  favorableDirections?: ReadonlyArray<FavorableDirection>,
 ): VaneCell[] {
+  /* Verdict classes appear only when the consumer supplied arcs; a calm
+   * vane never carries one — calm has no direction to judge. */
+  const verdict = (directionDeg: number) =>
+    favorableDirections == null || favorableDirections.length === 0
+      ? ""
+      : inDirectionArcs(directionDeg, favorableDirections)
+        ? " meteo-wind-vane-favorable"
+        : " meteo-wind-vane-unfavorable";
   return vanes.map((vane) => ({
     key: vane.midMs,
     mark:
@@ -296,7 +307,7 @@ export function vaneCells(
           }
         : {
             kind: "vane" as const,
-            className: "meteo-wind-vane",
+            className: `meteo-wind-vane${verdict(vane.windDirectionDeg)}`,
             d: vanePath(scales.xAtMs(vane.midMs), frame.vaneRow, vane.windDirectionDeg),
           },
     label: {

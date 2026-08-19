@@ -13,6 +13,7 @@ import {
 } from "../geometry.js";
 import type { ChartFrame, ChartScales } from "../geometry.js";
 import { EM_DASH } from "../strings.js";
+import type { FavorableDirection } from "../instruments.js";
 import type { FormatTime, StationStrings } from "../strings.js";
 import type { ReadoutPart, TickAnchor } from "./chart.js";
 import {
@@ -123,6 +124,7 @@ export type WindChartScene = {
 
 export function windChartScene(input: {
   compareOffsetDays: number | undefined;
+  favorableDirections?: FavorableDirection[] | undefined;
   formatTime: FormatTime;
   hatchId: string;
   history: History;
@@ -216,7 +218,13 @@ export function windChartScene(input: {
     mean: gradedMeanTrace(points, scales, boundsMps),
     calmNote: isCalmHistory(points) ? calmNoteText(frame, words) : null,
     rowLabels: windRowLabels(frame, words),
-    vanes: vaneCells(vanes, frame, scales, (vane) => String(shown(vane.windAvgMps))),
+    vanes: vaneCells(
+      vanes,
+      frame,
+      scales,
+      (vane) => String(shown(vane.windAvgMps)),
+      input.favorableDirections,
+    ),
     ticks: vaneTickTexts(vanes, frame, scales, (timeMs) => formatTime(new Date(timeMs))),
     hit: {
       className: "meteo-hit",

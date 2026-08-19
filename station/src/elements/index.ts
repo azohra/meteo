@@ -12,6 +12,7 @@ import { AirMatrixElement } from "./elements/AirMatrixElement.js";
 import { CurrentConditionsElement } from "./elements/CurrentConditionsElement.js";
 import { DailyPatternElement } from "./elements/DailyPatternElement.js";
 import { DialElement } from "./elements/DialElement.js";
+import { FavorableShareElement } from "./elements/FavorableShareElement.js";
 import { FreshnessBadgeElement } from "./elements/FreshnessBadgeElement.js";
 import { SparklineElement } from "./elements/SparklineElement.js";
 import { StationFeedElement } from "./elements/StationFeedElement.js";
@@ -43,6 +44,7 @@ export { AirMatrixElement } from "./elements/AirMatrixElement.js";
 export { CurrentConditionsElement } from "./elements/CurrentConditionsElement.js";
 export { DailyPatternElement } from "./elements/DailyPatternElement.js";
 export { DialElement } from "./elements/DialElement.js";
+export { FavorableShareElement } from "./elements/FavorableShareElement.js";
 export { FreshnessBadgeElement } from "./elements/FreshnessBadgeElement.js";
 export { SparklineElement } from "./elements/SparklineElement.js";
 export { StationFeedElement } from "./elements/StationFeedElement.js";
@@ -73,6 +75,7 @@ export const meteoElementTags = {
   "meteo-daily-pattern": DailyPatternElement,
   "meteo-dial": DialElement,
   "meteo-direction": DirectionElement,
+  "meteo-favorable-share": FavorableShareElement,
   "meteo-freshness-badge": FreshnessBadgeElement,
   "meteo-gust": GustElement,
   "meteo-lull": LullElement,

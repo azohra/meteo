@@ -6,6 +6,7 @@ import {
   stationFreshnessThresholds,
 } from "../../index.js";
 import type {
+  FavorableDirection,
   FormatTime,
   FreshnessStatus,
   ResolvedDisplay,
@@ -15,7 +16,12 @@ import type {
 } from "../../index.js";
 import { ELEMENTS_AMBIENT_HINT, STATION_FEED_CONTEXT_KEY } from "./ambient.js";
 import type { AmbientStationFeed } from "./ambient.js";
-import { numberAttribute, parseThresholdsAttribute, unitAttribute } from "./attributes.js";
+import {
+  numberAttribute,
+  parseArcsAttribute,
+  parseThresholdsAttribute,
+  unitAttribute,
+} from "./attributes.js";
 import { requestContext } from "./context.js";
 import type { ContextProvision } from "./context.js";
 import { subscribeTicker } from "../../client/index.js";
@@ -96,6 +102,8 @@ export abstract class MeteoStationElement extends MeteoElement {
   #formatTime: FormatTime | undefined;
   #thresholds: SpeedThresholds | null | undefined = undefined;
   #thresholdsSet = false;
+  #favorableDirections: FavorableDirection[] | null | undefined = undefined;
+  #favorableDirectionsSet = false;
   #servedAt: string | null | undefined = undefined;
   #receivedAtMs: number | null | undefined = undefined;
 
@@ -106,6 +114,7 @@ export abstract class MeteoStationElement extends MeteoElement {
       "strings",
       "formatTime",
       "thresholds",
+      "favorableDirections",
       "servedAt",
       "receivedAtMs",
     ]) {
@@ -146,6 +155,15 @@ export abstract class MeteoStationElement extends MeteoElement {
     this.requestRender();
   }
 
+  get favorableDirections(): FavorableDirection[] | null | undefined {
+    return this.#favorableDirections;
+  }
+  set favorableDirections(value: FavorableDirection[] | null | undefined) {
+    this.#favorableDirections = value;
+    this.#favorableDirectionsSet = value !== undefined;
+    this.requestRender();
+  }
+
   protected display(): ResolvedDisplay {
     return resolveDisplay(this.ambient(), {
       strings: this.#strings,
@@ -154,6 +172,9 @@ export abstract class MeteoStationElement extends MeteoElement {
       thresholds: this.#thresholdsSet
         ? this.#thresholds
         : parseThresholdsAttribute(this.getAttribute("thresholds")),
+      favorableDirections: this.#favorableDirectionsSet
+        ? this.#favorableDirections
+        : parseArcsAttribute(this.getAttribute("favorable-directions")),
     });
   }
 

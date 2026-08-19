@@ -10,6 +10,7 @@ import {
   windChartScene,
 } from "../../scene/index.js";
 import type {
+  FavorableDirection,
   FormatTime,
   History,
   SpeedThresholds,
@@ -35,6 +36,7 @@ function readoutSpan(parts: ReadoutPart[]): HTMLElement {
 export class WindHistoryChartElement extends MeteoStationElement {
   static readonly observedAttributes = [
     "compare-offset-days",
+    "favorable-directions",
     "plot-height",
     "station-id",
     "thresholds",
@@ -58,7 +60,7 @@ export class WindHistoryChartElement extends MeteoStationElement {
 
   protected override render(): void {
     const station = this.requiredStation("meteo-wind-history-chart");
-    const { formatTime, thresholds, unit, words } = this.display();
+    const { favorableDirections, formatTime, thresholds, unit, words } = this.display();
 
     const gate = windChartGate(station, words);
     if (gate.kind !== "draw") {
@@ -81,6 +83,7 @@ export class WindHistoryChartElement extends MeteoStationElement {
       wrap,
       gate.history,
       thresholds,
+      favorableDirections,
       unit,
       words,
       formatTime,
@@ -110,6 +113,7 @@ export class WindHistoryChartElement extends MeteoStationElement {
     wrap: HTMLElement,
     history: History,
     thresholds: SpeedThresholds | undefined,
+    favorableDirections: FavorableDirection[] | undefined,
     unit: SpeedUnit,
     words: StationStrings,
     formatTime: FormatTime,
@@ -118,6 +122,7 @@ export class WindHistoryChartElement extends MeteoStationElement {
   ): void {
     const scene = windChartScene({
       compareOffsetDays: numberAttribute(this.getAttribute("compare-offset-days")),
+      favorableDirections,
       formatTime,
       hatchId: `meteo-hatch-e${++hatchCounter}`,
       history,

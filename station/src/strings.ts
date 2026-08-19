@@ -30,6 +30,8 @@ export type StationStrings = {
   elevation: (metres: number) => string;
   percentCalm: (percent: number) => string;
   percentShare: (percent: number) => string;
+  favorableLabel: string;
+  percentFavorable: (percent: number) => string;
   dailyPatternSamples: (sampleCount: number) => string;
   dailyPatternCoverage: (sampleCount: number, expectedCount: number) => string;
   compassSpoken: Record<CompassPoint, string>;
@@ -92,6 +94,9 @@ export type StationStrings = {
     dailyPattern: (stationName: string) => string;
     dailyPatternGeneric: string;
     direction: (spoken: string, deg: number) => string;
+    favorable: string;
+    unfavorable: string;
+    favorableShare: (stationName: string) => string;
     readout: (stationName: string) => string;
     rose: (stationName: string) => string;
     roseFavorable: (sectors: string) => string;
@@ -130,6 +135,8 @@ export const defaultStrings: StationStrings = {
   elevation: (metres) => `${metres} m`,
   percentCalm: (percent) => `${percent}% calm`,
   percentShare: (percent) => `${percent}%`,
+  favorableLabel: "Favorable",
+  percentFavorable: (percent) => `${percent}% favorable`,
   dailyPatternSamples: (sampleCount) => `${sampleCount} samples`,
   dailyPatternCoverage: (sampleCount, expectedCount) =>
     `${sampleCount} samples · ${Math.round((sampleCount / Math.max(1, expectedCount)) * 100)}%`,
@@ -227,6 +234,10 @@ export const defaultStrings: StationStrings = {
       `Typical day at ${stationName}, averaged across the full history`,
     dailyPatternGeneric: "Typical day, averaged across the full history",
     direction: (spoken, deg) => `from ${spoken}, ${deg} degrees`,
+    favorable: "a favorable direction",
+    unfavorable: "an unfavorable direction",
+    favorableShare: (stationName) =>
+      `Share of the non-calm wind at ${stationName} from a favorable direction`,
     readout: (stationName) => `Inspected reading at ${stationName}`,
     rose: (stationName) => `Wind direction distribution at ${stationName}`,
     roseFavorable: (sectors) => `The outer ring marks favorable directions: from ${sectors}.`,

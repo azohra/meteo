@@ -1,3 +1,4 @@
+import { inDirectionArcs } from "@azohra/meteo.core";
 import type { Station } from "../contract.js";
 import { compassDirection, isCalm, thresholdsToMps } from "../derive.js";
 import type { SpeedThresholds, SpeedUnit } from "../derive.js";
@@ -10,6 +11,7 @@ import {
 } from "../format.js";
 import type { SpeedKind } from "../format.js";
 import { speedBand } from "../geometry.js";
+import type { FavorableDirection } from "../instruments.js";
 import { EM_DASH } from "../strings.js";
 import type { FormatTime, StationStrings } from "../strings.js";
 
@@ -79,19 +81,38 @@ export type DirectionAtomScene = {
   dashText: string;
 };
 
-export function directionAtomScene(station: Station, words: StationStrings): DirectionAtomScene {
+export function directionAtomScene(
+  station: Station,
+  words: StationStrings,
+  favorableDirections?: ReadonlyArray<FavorableDirection>,
+): DirectionAtomScene {
   const reading = station.status === "ok" ? station.reading : null;
   if (reading == null) {
     return { className: "meteo-direction", ariaLabel: undefined, cell: null, dashText: EM_DASH };
   }
   const bearingDeg = isCalm(reading.windAvgMps) ? null : reading.windDirectionDeg;
   const point = bearingDeg == null ? null : compassDirection(bearingDeg);
+  /* The verdict class appears only when the consumer supplied arcs, and
+   * never on calm — calm has no direction to judge. */
+  const verdict =
+    bearingDeg == null || favorableDirections == null || favorableDirections.length === 0
+      ? null
+      : inDirectionArcs(bearingDeg, favorableDirections);
   return {
-    className: "meteo-direction",
+    className:
+      verdict == null
+        ? "meteo-direction"
+        : verdict
+          ? "meteo-direction meteo-direction-favorable"
+          : "meteo-direction meteo-direction-unfavorable",
     ariaLabel:
       point == null || bearingDeg == null
         ? undefined
-        : words.aria.direction(words.compassSpoken[point], Math.round(bearingDeg)),
+        : verdict == null
+          ? words.aria.direction(words.compassSpoken[point], Math.round(bearingDeg))
+          : `${words.aria.direction(words.compassSpoken[point], Math.round(bearingDeg))} ${
+              verdict ? words.aria.favorable : words.aria.unfavorable
+            }`,
     cell: { windAvgMps: reading.windAvgMps, windDirectionDeg: reading.windDirectionDeg },
     dashText: EM_DASH,
   };

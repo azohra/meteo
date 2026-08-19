@@ -16,7 +16,7 @@ import {
   windChartGate,
   windChartScene,
 } from "../../scene/index.js";
-import type { History, SpeedUnit, Station } from "../../index.js";
+import type { FavorableDirection, History, SpeedUnit, Station } from "../../index.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
 import { useMeasuredChartWidth } from "../hooks/useMeasuredChartWidth.js";
@@ -27,6 +27,7 @@ export function WindHistoryChart({
   station: stationProp,
   stationId,
   thresholds: thresholdsProp,
+  favorableDirections: favorableDirectionsProp,
   unit: unitProp,
   plotHeight,
   windowHours,
@@ -37,6 +38,7 @@ export function WindHistoryChart({
   station?: Station;
   stationId?: string;
   thresholds?: SpeedThresholds | null;
+  favorableDirections?: FavorableDirection[] | null;
   unit?: SpeedUnit;
   plotHeight?: number;
   windowHours?: number;
@@ -50,10 +52,11 @@ export function WindHistoryChart({
     "station",
     stationProp ?? resolveStation(context, stationId),
   );
-  const { formatTime, thresholds, unit, words } = resolveDisplay(context, {
+  const { favorableDirections, formatTime, thresholds, unit, words } = resolveDisplay(context, {
     formatTime: formatTimeProp,
     strings: stringsProp,
     thresholds: thresholdsProp,
+    favorableDirections: favorableDirectionsProp,
     unit: unitProp,
   });
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -74,6 +77,7 @@ export function WindHistoryChart({
       {width != null && (
         <MeasuredChart
           compareOffsetDays={compareOffsetDays}
+          favorableDirections={favorableDirections}
           formatTime={formatTime}
           history={gate.history}
           plotHeight={plotHeight}
@@ -91,6 +95,7 @@ export function WindHistoryChart({
 
 function MeasuredChart({
   compareOffsetDays,
+  favorableDirections,
   formatTime,
   history,
   plotHeight,
@@ -102,6 +107,7 @@ function MeasuredChart({
   words,
 }: {
   compareOffsetDays: 1 | 2 | 3 | undefined;
+  favorableDirections: FavorableDirection[] | undefined;
   formatTime: FormatTime;
   history: History;
   plotHeight: number | undefined;
@@ -118,6 +124,7 @@ function MeasuredChart({
 
   const scene = windChartScene({
     compareOffsetDays,
+    favorableDirections,
     formatTime,
     hatchId,
     history,

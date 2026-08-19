@@ -8,7 +8,7 @@ import {
 import type { SpeedUnit, Station, StationFeed } from "../../index.js";
 import { localeFormatTime } from "../../index.js";
 import type { FormatTime, StationStringOverrides } from "../../index.js";
-import type { SpeedThresholds } from "../../index.js";
+import type { FavorableDirection, SpeedThresholds } from "../../index.js";
 
 export type StationFeedContextValue = {
   feed: StationFeed | null;
@@ -17,6 +17,7 @@ export type StationFeedContextValue = {
   unit: SpeedUnit | undefined;
   formatTime: FormatTime | undefined;
   thresholds: SpeedThresholds | undefined;
+  favorableDirections: FavorableDirection[] | undefined;
 };
 
 const StationFeedContext = createContext<StationFeedContextValue | null>(null);
@@ -28,6 +29,7 @@ export function StationFeedProvider({
   unit,
   formatTime,
   thresholds,
+  favorableDirections,
   locale,
   children,
 }: {
@@ -37,13 +39,22 @@ export function StationFeedProvider({
   unit?: SpeedUnit;
   formatTime?: FormatTime;
   thresholds?: SpeedThresholds;
+  favorableDirections?: FavorableDirection[];
   locale?: string;
   children?: ReactNode;
 }) {
   const resolvedFormatTime = formatTime ?? (locale == null ? undefined : localeFormatTime(locale));
   const value = useMemo<StationFeedContextValue>(
-    () => ({ feed, receivedAtMs, strings, unit, formatTime: resolvedFormatTime, thresholds }),
-    [feed, receivedAtMs, strings, unit, resolvedFormatTime, thresholds],
+    () => ({
+      feed,
+      receivedAtMs,
+      strings,
+      unit,
+      formatTime: resolvedFormatTime,
+      thresholds,
+      favorableDirections,
+    }),
+    [feed, receivedAtMs, strings, unit, resolvedFormatTime, thresholds, favorableDirections],
   );
   return <StationFeedContext.Provider value={value}>{children}</StationFeedContext.Provider>;
 }

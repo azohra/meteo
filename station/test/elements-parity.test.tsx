@@ -11,6 +11,7 @@ import {
   DailyPattern,
   Dial,
   Direction,
+  FavorableShare,
   FreshnessBadge,
   Gust,
   Lull,
@@ -186,6 +187,50 @@ describe("parity: visual atoms", () => {
     expectParity(<Dial station={downStation()} />, "meteo-dial", (el) => {
       el.station = downStation();
     });
+    const favorable = [{ fromDeg: 260, toDeg: 340 }];
+    expectParity(
+      <Dial favorableDirections={favorable} station={okStation()} />,
+      "meteo-dial",
+      (el) => {
+        el.station = okStation();
+        el.favorableDirections = favorable;
+      },
+    );
+  });
+
+  it("FavorableShare — share, calm note, hidden without arcs; attribute equals property", () => {
+    const favorable = [{ fromDeg: 260, toDeg: 340 }];
+    expectParity(
+      <FavorableShare favorableDirections={favorable} points={makePoints(12)} />,
+      "meteo-favorable-share",
+      (el) => {
+        el.points = makePoints(12);
+        el.setAttribute("favorable-directions", JSON.stringify(favorable));
+      },
+    );
+    const calm = makePoints(6, (point) => ({
+      ...point,
+      windAvgMps: 0.2,
+      windDirectionDeg: null,
+    }));
+    expectParity(
+      <FavorableShare favorableDirections={favorable} points={calm} />,
+      "meteo-favorable-share",
+      (el) => {
+        el.points = calm;
+        el.favorableDirections = favorable;
+      },
+    );
+    /* Without arcs both bindings render nothing at all. */
+    const { reactDom, elementDom } = renderBoth(
+      <FavorableShare points={makePoints(12)} />,
+      "meteo-favorable-share",
+      (el) => {
+        el.points = makePoints(12);
+      },
+    );
+    expect(reactDom).toBe("");
+    expect(elementDom).toBe("");
   });
 
   it("Sparkline — plain, banded, band off, gaps, no history", () => {
@@ -640,6 +685,18 @@ describe("parity: charts (fallback width, initial render)", () => {
     );
     expect(reactDom).toBe(elementDom);
     expect(reactDom).toContain(defaultStrings.noHistory);
+  });
+
+  it("DailyPattern — favorable arcs tint the vane row identically in both bindings", () => {
+    const favorable = [{ fromDeg: 260, toDeg: 340 }];
+    expectParity(
+      <DailyPattern favorableDirections={favorable} points={makePoints(20)} />,
+      "meteo-daily-pattern",
+      (el) => {
+        el.points = makePoints(20);
+        el.favorableDirections = favorable;
+      },
+    );
   });
 
   it("DailyPattern — the persistent Avg row dashes a genuinely void slot rather than a fabricated zero", () => {

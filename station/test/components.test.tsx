@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   AirMatrix,
   CurrentConditions,
+  FavorableShare,
   StationTable,
   StationFeedProvider,
   StationStrip,
@@ -252,6 +253,66 @@ describe("WindRose", () => {
     expect(calm?.tagName).toBe("P");
     expect(calm?.textContent).toBe(defaultStrings.percentCalm(50));
     expect(container.querySelector(".meteo-wind-rose-ring-label")?.textContent).toMatch(/^\d+%$/);
+  });
+});
+
+describe("FavorableShare", () => {
+  const arcs = [{ fromDeg: 260, toDeg: 340 }];
+
+  it("renders nothing at all without arcs — no arcs, no verdict surface", () => {
+    const { container } = render(<FavorableShare points={makePoints(12)} />);
+    expect(container.innerHTML).toBe("");
+  });
+
+  it("states the share of non-calm wind inside the arcs", () => {
+    /* Default points all read from 315°, inside the arc: 100%. */
+    const all = render(<FavorableShare favorableDirections={arcs} points={makePoints(12)} />);
+    expect(all.container.querySelector(".meteo-favorable-share-value")?.textContent).toBe("100%");
+    expect(all.container.querySelector(".meteo-favorable-share-label")?.textContent).toBe(
+      defaultStrings.favorableLabel,
+    );
+
+    /* Half the non-calm points swing out of the arc: 50%, calm excluded. */
+    const mixed = makePoints(12, (point, index) =>
+      index < 4
+        ? { ...point, windAvgMps: 0.2, windDirectionDeg: null }
+        : { ...point, windDirectionDeg: index % 2 === 0 ? 315 : 90 },
+    );
+    const half = render(<FavorableShare favorableDirections={arcs} points={mixed} />);
+    expect(half.container.querySelector(".meteo-favorable-share-value")?.textContent).toBe("50%");
+  });
+
+  it("notes calm instead of inventing a share when nothing non-calm was measured", () => {
+    const calm = makePoints(6, (point) => ({
+      ...point,
+      windAvgMps: 0.2,
+      windDirectionDeg: null,
+    }));
+    const { container } = render(<FavorableShare favorableDirections={arcs} points={calm} />);
+    const note = container.querySelector(".meteo-favorable-share-na");
+    expect(note?.textContent).toBe(defaultStrings.calm);
+    expect(container.querySelector(".meteo-favorable-share-value")).toBeNull();
+  });
+
+  it("inherits ambient arcs from the provider, and a null prop opts out", () => {
+    const feed = feedFixture([okStation()]);
+    const inherited = render(
+      <StationFeedProvider favorableDirections={arcs} feed={feed} receivedAtMs={NOW_MS}>
+        <WindRose stationId={okStation().id} />
+        <FavorableShare stationId={okStation().id} />
+      </StationFeedProvider>,
+    );
+    expect(inherited.container.querySelector(".meteo-wind-rose-ring-favorable")).not.toBeNull();
+    expect(inherited.container.querySelector(".meteo-favorable-share-value")).not.toBeNull();
+
+    const optedOut = render(
+      <StationFeedProvider favorableDirections={arcs} feed={feed} receivedAtMs={NOW_MS}>
+        <WindRose favorableDirections={null} stationId={okStation().id} />
+        <FavorableShare favorableDirections={null} stationId={okStation().id} />
+      </StationFeedProvider>,
+    );
+    expect(optedOut.container.querySelector(".meteo-wind-rose-ring-favorable")).toBeNull();
+    expect(optedOut.container.querySelector(".meteo-favorable-share")).toBeNull();
   });
 });
 

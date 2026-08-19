@@ -74,12 +74,12 @@ export class PressureElement extends MeteoStationElement {
 }
 
 export class DirectionElement extends MeteoStationElement {
-  static readonly observedAttributes = ["station-id"];
+  static readonly observedAttributes = ["favorable-directions", "station-id"];
 
   protected override render(): void {
     const station = this.requiredStation("meteo-direction");
-    const { words } = this.display();
-    const scene = directionAtomScene(station, words);
+    const { favorableDirections, words } = this.display();
+    const scene = directionAtomScene(station, words, favorableDirections);
     if (scene.cell == null) {
       this.replaceChildren(h("span", { class: scene.className }, scene.dashText));
       return;

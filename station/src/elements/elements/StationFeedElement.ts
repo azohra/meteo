@@ -2,6 +2,7 @@ import { createStationFeedStore, createStationStore } from "../../client/index.j
 import type { PollError, StationStore } from "../../client/index.js";
 import { localeFormatTime } from "../../index.js";
 import type {
+  FavorableDirection,
   FormatTime,
   SpeedThresholds,
   StationFeed,
@@ -9,7 +10,12 @@ import type {
 } from "../../index.js";
 import { STATION_FEED_CONTEXT_KEY } from "../lib/ambient.js";
 import type { AmbientStationFeed } from "../lib/ambient.js";
-import { numberAttribute, parseThresholdsAttribute, unitAttribute } from "../lib/attributes.js";
+import {
+  numberAttribute,
+  parseArcsAttribute,
+  parseThresholdsAttribute,
+  unitAttribute,
+} from "../lib/attributes.js";
 import { MeteoElement } from "../lib/base.js";
 import { provideContext } from "../lib/context.js";
 
@@ -27,6 +33,7 @@ export class StationFeedElement extends MeteoElement {
     "locale",
     "paused",
     "poll-seconds",
+    "favorable-directions",
     "src",
     "station",
     "thresholds",
@@ -38,6 +45,7 @@ export class StationFeedElement extends MeteoElement {
   #strings: StationStringOverrides | undefined;
   #formatTime: FormatTime | undefined;
   #thresholds: SpeedThresholds | undefined;
+  #favorableDirections: FavorableDirection[] | undefined;
   #fetchInit: RequestInit | undefined;
   #store: FeedLikeStore | null = null;
   #storeKey: string | null = null;
@@ -54,6 +62,7 @@ export class StationFeedElement extends MeteoElement {
       "strings",
       "formatTime",
       "thresholds",
+      "favorableDirections",
       "fetchInit",
     ]) {
       this.upgradeProperty(name);
@@ -71,6 +80,10 @@ export class StationFeedElement extends MeteoElement {
       formatTime: this.#formatTime ?? (locale != null ? localeFormatTime(locale) : undefined),
       thresholds:
         this.#thresholds ?? parseThresholdsAttribute(this.getAttribute("thresholds")) ?? undefined,
+      favorableDirections:
+        this.#favorableDirections ??
+        parseArcsAttribute(this.getAttribute("favorable-directions")) ??
+        undefined,
     };
   }
 
@@ -115,6 +128,14 @@ export class StationFeedElement extends MeteoElement {
   }
   set thresholds(value: SpeedThresholds | undefined) {
     this.#thresholds = value;
+    this.#notify();
+  }
+
+  get favorableDirections(): FavorableDirection[] | undefined {
+    return this.#favorableDirections;
+  }
+  set favorableDirections(value: FavorableDirection[] | undefined) {
+    this.#favorableDirections = value;
     this.#notify();
   }
 

@@ -13,7 +13,7 @@ import {
   dailyPatternSource,
   measuredChartWidth,
 } from "../../scene/index.js";
-import type { HistoryPoint, SpeedUnit, Station } from "../../index.js";
+import type { FavorableDirection, HistoryPoint, SpeedUnit, Station } from "../../index.js";
 import type { StationStringOverrides, StationStrings } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
 import { resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
@@ -26,6 +26,7 @@ export function DailyPattern({
   slotMinutes = DAILY_PATTERN_DEFAULT_SLOT_MINUTES,
   utcOffsetMinutes = 0,
   thresholds: thresholdsProp,
+  favorableDirections: favorableDirectionsProp,
   unit: unitProp,
   plotHeight,
   strings: stringsProp,
@@ -36,6 +37,7 @@ export function DailyPattern({
   slotMinutes?: number;
   utcOffsetMinutes?: number;
   thresholds?: SpeedThresholds | null;
+  favorableDirections?: FavorableDirection[] | null;
   unit?: SpeedUnit;
   plotHeight?: number;
   strings?: StationStringOverrides;
@@ -43,9 +45,10 @@ export function DailyPattern({
   const context = useStationFeedContext();
   const station =
     stationProp ?? (points == null ? (resolveStation(context, stationId) ?? undefined) : undefined);
-  const { thresholds, unit, words } = resolveDisplay(context, {
+  const { favorableDirections, thresholds, unit, words } = resolveDisplay(context, {
     strings: stringsProp,
     thresholds: thresholdsProp,
+    favorableDirections: favorableDirectionsProp,
     unit: unitProp,
   });
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -81,6 +84,7 @@ export function DailyPattern({
     <div className={DAILY_PATTERN_CLASS} ref={wrapRef}>
       {width != null && (
         <MeasuredDailyPattern
+          favorableDirections={favorableDirections}
           periodMinutes={periodMinutes}
           plotHeight={plotHeight}
           points={source}
@@ -98,6 +102,7 @@ export function DailyPattern({
 }
 
 function MeasuredDailyPattern({
+  favorableDirections,
   periodMinutes,
   plotHeight,
   points,
@@ -109,6 +114,7 @@ function MeasuredDailyPattern({
   width,
   words,
 }: {
+  favorableDirections: FavorableDirection[] | undefined;
   periodMinutes: number | null;
   plotHeight: number | undefined;
   points: HistoryPoint[];
@@ -123,6 +129,7 @@ function MeasuredDailyPattern({
   const hatchId = `meteo-daily-pattern-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const scene = dailyPatternScene({
+    favorableDirections,
     hatchId,
     periodMinutes,
     plotHeight,

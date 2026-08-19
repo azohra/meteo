@@ -1,19 +1,23 @@
 import { resolveStation } from "../../index.js";
 import { windRoseGate, windRoseScene, windRoseSource } from "../../scene/index.js";
-import type { FavorableDirection, HistoryPoint } from "../../index.js";
+import type { HistoryPoint } from "../../index.js";
 import { numberAttribute } from "../lib/attributes.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { h, hs } from "../lib/h.js";
 
 export class WindRoseElement extends MeteoStationElement {
-  static readonly observedAttributes = ["sector-count", "station-id", "thresholds"];
+  static readonly observedAttributes = [
+    "favorable-directions",
+    "sector-count",
+    "station-id",
+    "thresholds",
+  ];
 
   #points: HistoryPoint[] | undefined;
-  #favorableDirections: FavorableDirection[] | undefined;
 
   constructor() {
     super();
-    for (const name of ["points", "favorableDirections"]) this.upgradeProperty(name);
+    for (const name of ["points"]) this.upgradeProperty(name);
   }
 
   get points(): HistoryPoint[] | undefined {
@@ -21,14 +25,6 @@ export class WindRoseElement extends MeteoStationElement {
   }
   set points(value: HistoryPoint[] | undefined) {
     this.#points = value;
-    this.requestRender();
-  }
-
-  get favorableDirections(): FavorableDirection[] | undefined {
-    return this.#favorableDirections;
-  }
-  set favorableDirections(value: FavorableDirection[] | undefined) {
-    this.#favorableDirections = value;
     this.requestRender();
   }
 
@@ -41,7 +37,7 @@ export class WindRoseElement extends MeteoStationElement {
             this.getAttribute("station-id") ?? undefined,
           ) ?? undefined)
         : undefined);
-    const { thresholds, words } = this.display();
+    const { favorableDirections, thresholds, words } = this.display();
     const source = windRoseSource(this.#points, station);
     const gate = windRoseGate(source, words);
     if (gate.kind === "note") {
@@ -50,7 +46,7 @@ export class WindRoseElement extends MeteoStationElement {
     }
 
     const scene = windRoseScene({
-      favorableDirections: this.#favorableDirections,
+      favorableDirections,
       sectorCount: numberAttribute(this.getAttribute("sector-count")) ?? 16,
       source,
       stationName: station?.name,

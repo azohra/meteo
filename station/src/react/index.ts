@@ -12,6 +12,7 @@ export {
 } from "./components/atoms.js";
 export { CurrentConditions } from "./components/CurrentConditions.js";
 export { Dial } from "./components/Dial.js";
+export { FavorableShare } from "./components/FavorableShare.js";
 export { FreshnessBadge } from "./components/FreshnessBadge.js";
 export { Sparkline } from "./components/Sparkline.js";
 export { StationTable } from "./components/StationTable.js";

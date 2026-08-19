@@ -4,6 +4,7 @@ export * from "./card.js";
 export * from "./chart.js";
 export * from "./current.js";
 export * from "./dial.js";
+export * from "./favorable-share.js";
 export * from "./glyphs.js";
 export * from "./daily-pattern.js";
 export * from "./rose.js";
