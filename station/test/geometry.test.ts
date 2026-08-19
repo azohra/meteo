@@ -7,8 +7,10 @@ import {
   compareTracePoints,
   compareWindow,
   dailyPattern,
+  favorableShare,
   filterByMonth,
   filterByTimeOfDay,
+  historyCoverage,
   historyMeanDirectionDeg,
   thinVanes,
   windowPoints,
@@ -150,6 +152,65 @@ describe("dailyPattern", () => {
   it("stays finite over a long, mixed history", () => {
     const slots = dailyPattern(makePoints(500));
     expect(slots.reduce((total, slot) => total + slot.sampleCount, 0)).toBe(500);
+  });
+});
+
+describe("favorableShare", () => {
+  const arcs = [{ fromDeg: 260, toDeg: 340 }];
+
+  it("counts only non-calm points against the arcs", () => {
+    const points = [
+      point({ windDirectionDeg: 315 }),
+      point({ windDirectionDeg: 90 }),
+      point({ windAvgMps: 0, windDirectionDeg: null }),
+    ];
+    expect(favorableShare(points, arcs)).toBeCloseTo(0.5, 12);
+  });
+
+  it("returns null when nothing non-calm was measured", () => {
+    expect(favorableShare([], arcs)).toBeNull();
+    expect(favorableShare([point({ windAvgMps: 0, windDirectionDeg: null })], arcs)).toBeNull();
+  });
+
+  it("honours an arc wrapping through north", () => {
+    const wrap = [{ fromDeg: 315, toDeg: 45 }];
+    expect(favorableShare([point({ windDirectionDeg: 10 })], wrap)).toBe(1);
+    expect(favorableShare([point({ windDirectionDeg: 180 })], wrap)).toBe(0);
+  });
+});
+
+describe("historyCoverage", () => {
+  it("judges against the requested window, so a leading dropout lowers the ratio", () => {
+    const from = BASE_MS;
+    const to = BASE_MS + 60 * MINUTE_MS;
+    /* Six 10-minute records expected; only the last three arrived. */
+    const points = [3, 4, 5].map((index) =>
+      point({ observedAt: iso(BASE_MS + index * 10 * MINUTE_MS) }),
+    );
+    expect(historyCoverage(points, 10, from, to)).toEqual({
+      actualCount: 3,
+      expectedCount: 6,
+      ratio: 0.5,
+    });
+  });
+
+  it("excludes points outside the window, end exclusive", () => {
+    const from = BASE_MS;
+    const to = BASE_MS + 60 * MINUTE_MS;
+    const points = [
+      point({ observedAt: iso(BASE_MS - 10 * MINUTE_MS) }),
+      point({ observedAt: iso(BASE_MS) }),
+      point({ observedAt: iso(to) }),
+    ];
+    expect(historyCoverage(points, 10, from, to).actualCount).toBe(1);
+  });
+
+  it("reports zero expected for a window shorter than one period", () => {
+    expect(historyCoverage([], 60, BASE_MS, BASE_MS + MINUTE_MS)).toEqual({
+      actualCount: 0,
+      expectedCount: 0,
+      ratio: 0,
+    });
   });
 });
 

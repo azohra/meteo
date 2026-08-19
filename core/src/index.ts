@@ -5,6 +5,7 @@ export {
   normalizeDegrees,
   radiansToDegrees,
 } from "./angles.js";
+export { directionArcSpanDeg, inDirectionArcs, type DirectionArc } from "./arcs.js";
 export {
   componentsToWind,
   meanDirectionDeg,

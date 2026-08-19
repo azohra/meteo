@@ -1,3 +1,4 @@
+import type { DirectionArc } from "@azohra/meteo.core";
 import type { ModelCapabilities, ObservationDocument, SmokeDocument } from "../contract.js";
 import type { FieldNode } from "./field.js";
 
@@ -142,11 +143,8 @@ export interface MeteogramOptions {
   selection?: { hourIndex: number; altitudeM?: number | null } | null;
 }
 
-/** One acceptable launch-wind arc, meteorological FROM bearings in degrees; `fromDeg > toDeg` wraps through north ({ fromDeg: 315, toDeg: 45 } spans NW through NE). */
-export interface LaunchWindowArc {
-  fromDeg: number;
-  toDeg: number;
-}
+/** One acceptable launch-wind arc, meteorological FROM bearings in degrees; `fromDeg > toDeg` wraps through north ({ fromDeg: 315, toDeg: 45 } spans NW through NE). The shape is core's `DirectionArc`. */
+export type LaunchWindowArc = DirectionArc;
 
 /** One hour's surface-wind verdict against the consumer's launch windows, drawn in the marker row above the hour labels. */
 export interface WindWindowMark {

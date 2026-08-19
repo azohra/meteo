@@ -1,3 +1,4 @@
+import { inDirectionArcs } from "@azohra/meteo.core";
 import { type ObservationDocument, type SiteForecast } from "../contract.js";
 import {
   cosSolarZenith,
@@ -262,23 +263,6 @@ function omegaNodes(hour: ResolvedHour): FieldNode[] {
   return hour.levels
     .filter((level) => level.verticalVelocityPaS !== null)
     .map((level) => ({ altitudeM: level.heightM, value: level.verticalVelocityPaS as number }));
-}
-
-function normalizeDeg(value: number): number {
-  return ((value % 360) + 360) % 360;
-}
-
-/** Whether a meteorological FROM bearing falls inside any arc; an arc whose fromDeg exceeds its toDeg wraps through north. */
-function inLaunchWindow(
-  directionDeg: number,
-  arcs: ReadonlyArray<{ fromDeg: number; toDeg: number }>,
-): boolean {
-  const direction = normalizeDeg(directionDeg);
-  return arcs.some((arc) => {
-    const from = normalizeDeg(arc.fromDeg);
-    const to = normalizeDeg(arc.toDeg);
-    return from <= to ? direction >= from && direction <= to : direction >= from || direction <= to;
-  });
 }
 
 function verticalCrossing(
@@ -1032,7 +1016,7 @@ export function buildMeteogramScene(
           (hour, index): WindWindowMark => ({
             hourIndex: index,
             x: xCenter(index),
-            inWindow: inLaunchWindow(hour.surface.windDirectionDeg, launchWindows),
+            inWindow: inDirectionArcs(hour.surface.windDirectionDeg, launchWindows),
           }),
         ),
       }

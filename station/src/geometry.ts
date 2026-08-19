@@ -1,8 +1,10 @@
 import type { History, HistoryPoint } from "./contract.js";
 import {
   componentsToWind,
+  inDirectionArcs,
   meanDirectionDeg as meanOfDirections,
   windToComponents,
+  type DirectionArc,
 } from "@azohra/meteo.core";
 import { CALM_THRESHOLD_MPS, KMH_PER_MPS, isCalm, normalizeDegrees, radians } from "./derive.js";
 
@@ -406,6 +408,51 @@ export function filterByTimeOfDay(
       ? minute >= fromMinute || minute < toMinute
       : minute >= fromMinute && minute < toMinute;
   });
+}
+
+/** The share of non-calm history blowing from inside the consumer's arcs;
+ * null when nothing non-calm was measured — absence over a fabricated zero. */
+export function favorableShare(
+  points: ReadonlyArray<HistoryPoint>,
+  arcs: ReadonlyArray<DirectionArc>,
+): number | null {
+  let blowing = 0;
+  let favorable = 0;
+  for (const point of points) {
+    if (isCalm(point.windAvgMps) || point.windDirectionDeg == null) continue;
+    blowing += 1;
+    if (inDirectionArcs(point.windDirectionDeg, arcs)) favorable += 1;
+  }
+  return blowing === 0 ? null : favorable / blowing;
+}
+
+export type HistoryCoverage = {
+  actualCount: number;
+  expectedCount: number;
+  ratio: number;
+};
+
+/** Coverage of a requested window: points held against the count the period
+ * implies for [fromMs, toMs). Expected comes from the request, never from the
+ * first-to-last point span, so leading and trailing dropouts lower the ratio
+ * instead of hiding. */
+export function historyCoverage(
+  points: ReadonlyArray<HistoryPoint>,
+  periodMinutes: number,
+  fromMs: number,
+  toMs: number,
+): HistoryCoverage {
+  const expectedCount = Math.max(0, Math.floor((toMs - fromMs) / (periodMinutes * 60_000)));
+  let actualCount = 0;
+  for (const point of points) {
+    const observedMs = Date.parse(point.observedAt);
+    if (observedMs >= fromMs && observedMs < toMs) actualCount += 1;
+  }
+  return {
+    actualCount,
+    expectedCount,
+    ratio: expectedCount === 0 ? 0 : actualCount / expectedCount,
+  };
 }
 
 export const HISTORY_GAP_TOLERANCE_FACTOR = 2.5;

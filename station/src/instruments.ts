@@ -1,3 +1,4 @@
+import type { DirectionArc } from "@azohra/meteo.core";
 import type { HistoryPoint } from "./contract.js";
 import { COMPASS_POINTS, KMH_PER_MPS, normalizeDegrees, radians, speedToMps } from "./derive.js";
 import type { SpeedUnit } from "./derive.js";
@@ -101,10 +102,8 @@ export function rosePetalPath(bearingDeg: number, radius: number, halfWidthDeg: 
   ].join(" ");
 }
 
-export type FavorableDirection = {
-  fromDeg: number;
-  toDeg: number;
-};
+/** The rose ring's arc input; the shape is core's `DirectionArc`. */
+export type FavorableDirection = DirectionArc;
 
 export function roseRingArcPath(sector: FavorableDirection): string {
   const from = normalizeDegrees(sector.fromDeg);

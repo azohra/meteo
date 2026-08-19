@@ -72,3 +72,30 @@ Speeds compute in m/s; km/h is a display conversion:
   conversions.
 - `normalizeDegrees(degrees)`: wraps any degree value, including negative
   values, into `[0, 360)`.
+
+## Direction arcs
+
+An arc of acceptable from-directions — a station's favorable sectors, a
+launch's wind window — is one shape platform-wide, defined by
+[`arcs.ts`](https://github.com/azohra/meteo/blob/main/core/src/arcs.ts):
+
+- `DirectionArc`: `{ fromDeg, toDeg }`, meteorological FROM bearings in
+  degrees clockwise from north. `fromDeg > toDeg` wraps through north, and
+  both boundaries are inclusive. `fromDeg === toDeg` reads as a single
+  bearing, not a full circle.
+- `inDirectionArcs(directionDeg, arcs)`: whether a bearing falls inside any
+  arc of the list; an empty list holds nothing.
+- `directionArcSpanDeg(arc)`: the arc's clockwise span in `[0, 360)`.
+
+```ts
+import { inDirectionArcs } from "@azohra/meteo.core";
+
+// A NW-through-NE window wraps through north:
+const window = [{ fromDeg: 315, toDeg: 45 }];
+inDirectionArcs(0, window); // true — due north sits inside the wrap
+inDirectionArcs(180, window); // false
+```
+
+Arcs are a judgment parameter wherever they gate a drawing or a verdict:
+no package supplies a default list, and a consumer that passes none gets
+no marks drawn rather than somebody else's opinion.
