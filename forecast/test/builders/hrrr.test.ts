@@ -11,23 +11,7 @@ import {
   parseIdx,
   type IdxRecord,
 } from "@azohra/meteo.grib";
-import {
-  FETCH_CONCURRENCY,
-  FORECAST_HOURS,
-  LAMBERT_CONE,
-  LAMBERT_ORIENTATION_DEG,
-  MAX_NEAREST_KM,
-  OMEGA_LEVELS,
-  OPTIONAL_SURFACE_FIELDS,
-  PRESSURE_LEVELS,
-  SEMANTICS,
-  SLUG,
-  SMOKE_FIELDS,
-  buildHrrr,
-  buildProfiles,
-  fileUrl,
-  type HrrrWire,
-} from "../../src/builders/hrrr.js";
+import { HRRR, buildNoaa, buildProfiles, type NoaaWire } from "../../src/builders/noaa.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { splitMembers } from "../../src/history.js";
 import { windFromUv, type GridPointValue, type SampleSite } from "../../src/providers/noaa.js";
@@ -45,10 +29,10 @@ const fixtureIdx = (name: string): IdxRecord[] =>
   );
 
 const earthWind = (uGrid: number, vGrid: number, longitude: number): [number, number] =>
-  lambertEarthWind(uGrid, vGrid, longitude, LAMBERT_ORIENTATION_DEG, LAMBERT_CONE);
+  lambertEarthWind(uGrid, vGrid, longitude, HRRR.lambert!.orientationDeg, HRRR.lambert!.cone);
 
 const gridRotationDeg = (longitude: number): number =>
-  lambertGridRotationDeg(longitude, LAMBERT_ORIENTATION_DEG, LAMBERT_CONE);
+  lambertGridRotationDeg(longitude, HRRR.lambert!.orientationDeg, HRRR.lambert!.cone);
 
 describe("the Lambert grid rotation", () => {
   it("applies no rotation on the orientation meridian", () => {
@@ -86,7 +70,7 @@ describe("the .idx fixture proofs", () => {
     // GUST, CAPE/CIN (surface-based), HPBL, and the three sigma-layer cloud
     // fractions all live in the one wrfprs file the builder already reads.
     const records = wrfprs();
-    for (const [variable, level] of Object.values(OPTIONAL_SURFACE_FIELDS)) {
+    for (const [variable, level] of Object.values(HRRR.optionalSurfaceFields)) {
       findRecord(records, variable, level, "24 hour fcst");
     }
   });
@@ -95,7 +79,7 @@ describe("the .idx fixture proofs", () => {
     // HRRRv4's prognostic smoke: MASSDEN (8 m AGL), COLMD and AOTK (entire
     // atmosphere) all live in the one wrfprs file the builder already reads.
     const records = wrfprs();
-    for (const [variable, level] of Object.values(SMOKE_FIELDS)) {
+    for (const [variable, level] of Object.values(HRRR.smokeFields!)) {
       findRecord(records, variable, level, "24 hour fcst");
     }
   });
@@ -103,8 +87,8 @@ describe("the .idx fixture proofs", () => {
   it("VVEL exists at every curated level in the wrfprs index", () => {
     // wrfprs carries omega (VVEL, Pa/s, instantaneous) at all nine curated levels.
     const records = wrfprs();
-    expect(OMEGA_LEVELS).toBe(PRESSURE_LEVELS);
-    for (const pressureHpa of OMEGA_LEVELS) {
+    expect(HRRR.verticalVelocity.levels).toBe(HRRR.pressureLevels);
+    for (const pressureHpa of HRRR.verticalVelocity.levels) {
       findRecord(records, "VVEL", `${pressureHpa} mb`, "24 hour fcst");
     }
   });
@@ -130,7 +114,7 @@ it("models.json matches the HRRR builder configuration", () => {
   // 2022, WAF, §2d), so the fluxes — and everything derived from them —
   // are already smoke-aware: the catalogue and the documents both say so.
   expect(capabilities["smoke"]).toBe("radiativelyCoupled");
-  expect(SEMANTICS).toEqual({
+  expect(HRRR.semantics).toEqual({
     gust: "instant",
     precipitation: "instantRate",
     smoke: "radiativelyCoupled",
@@ -142,7 +126,7 @@ it("models.json matches the HRRR builder configuration", () => {
   expect(capabilities["cloudProfile"]).toBe(false); // wrfprs has no per-level TCDC
   // HRRR publishes its own omega (Pa/s, instantaneous) at every curated level.
   expect(capabilities["verticalVelocity"]).toBe("omega");
-  expect(capabilities["verticalVelocityLevels"]).toEqual([...OMEGA_LEVELS]);
+  expect(capabilities["verticalVelocityLevels"]).toEqual([...HRRR.verticalVelocity.levels]);
 });
 
 const SITE: SampleSite & { timeZone: string } = {
@@ -192,7 +176,7 @@ function fakeIndex(forecastHour: number): IdxRecord[] {
   if (forecastHour !== 2) {
     rows.push(["AOTK", "entire atmosphere (considered as a single layer)"]);
   }
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of HRRR.pressureLevels) {
     for (const variable of ["TMP", "DPT", "HGT", "UGRD", "VGRD"]) {
       rows.push([variable, `${level} mb`]);
     }
@@ -230,7 +214,7 @@ function fakeValue(variable: string, level: string): number {
   return 25.0; // cloud covers, the fluxes, and the remaining science fields
 }
 
-function fakeWire(): HrrrWire {
+function fakeWire(): NoaaWire {
   return {
     fetchIndex: async (url) => {
       const forecastHour = Number.parseInt(/wrfprsf(\d+)\.grib2\.idx$/.exec(url)![1]!, 10);
@@ -267,6 +251,7 @@ interface PublishedProfile {
 
 it("buildProfiles publishes omega and smoke and tolerates their absence", async () => {
   const result = await buildProfiles(
+    HRRR,
     { date: "20260807", hour: "12" },
     "2026-08-07T12:00:00Z",
     [SITE as never],
@@ -295,27 +280,27 @@ it("buildProfiles publishes omega and smoke and tolerates their absence", async 
   // Every curated level carries the sampled omega verbatim: Pa/s in,
   // Pa/s out, no unit conversion anywhere in the flow.
   expect(first!.levels.map((level) => level.pressureHpa)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => b - a),
+    [...HRRR.pressureLevels].sort((a, b) => b - a),
   );
   expect(first!.levels.every((level) => level.verticalVelocityPaS === OMEGA_PA_S)).toBe(true);
   // The hour whose 700 mb VVEL record is absent still publishes the level,
   // complete in its required fields, without the optional one.
   const byPressure = new Map(second!.levels.map((level) => [level.pressureHpa, level]));
   expect([...byPressure.keys()].sort((a, b) => a - b)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => a - b),
+    [...HRRR.pressureLevels].sort((a, b) => a - b),
   );
   expect(byPressure.get(700)).not.toHaveProperty("verticalVelocityPaS");
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of HRRR.pressureLevels) {
     if (level === 700) continue;
     expect(byPressure.get(level)!.verticalVelocityPaS).toBe(OMEGA_PA_S);
   }
 });
 
 it("the fetch pool cap and domain guard hold their catalogued values", () => {
-  expect(FETCH_CONCURRENCY).toBe(10);
-  expect(MAX_NEAREST_KM).toBe(5.0);
-  expect(FORECAST_HOURS).toBe(48);
-  expect(fileUrl("20260807", "12", 6)).toBe(
+  expect(HRRR.fetchConcurrency).toBe(10);
+  expect(HRRR.maxNearestKm).toBe(5.0);
+  expect(HRRR.forecastHours).toHaveLength(48);
+  expect(HRRR.fileUrl("", "20260807", "12", 6)).toBe(
     "https://noaa-hrrr-bdp-pds.s3.amazonaws.com/hrrr.20260807/conus/hrrr.t12z.wrfprsf06.grib2",
   );
 });
@@ -350,11 +335,11 @@ describe("buildHrrr", () => {
   it("skips a run the dataset already publishes", async () => {
     scratch = mkdtempSync(join(tmpdir(), "hrrr-test-"));
     const sitesPath = writeSites(scratch);
-    const manifest = { model: SLUG, referenceTime: "2026-08-07T12:00:00Z", generatedAt: "x" };
+    const manifest = { model: HRRR.slug, referenceTime: "2026-08-07T12:00:00Z", generatedAt: "x" };
     const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
     const lines: string[] = [];
 
-    const built = await buildHrrr({
+    const built = await buildNoaa(HRRR, {
       sitesPath,
       outputRoot: join(scratch, "data"),
       referenceTime: "2026-08-07T12:00:00Z",
@@ -372,10 +357,10 @@ describe("buildHrrr", () => {
     const sitesPath = writeSites(scratch);
 
     // Only the synoptic cycles run to 48 h — an off-cycle pin is refused.
-    await expect(buildHrrr({ sitesPath, referenceTime: "2026-08-07T13:00:00Z" })).rejects.toThrow(
-      /not a HRRR cycle/,
-    );
-    await expect(buildHrrr({ sitesPath, referenceTime: "20260807T12Z" })).rejects.toThrow(
+    await expect(
+      buildNoaa(HRRR, { sitesPath, referenceTime: "2026-08-07T13:00:00Z" }),
+    ).rejects.toThrow(/not a HRRR cycle/);
+    await expect(buildNoaa(HRRR, { sitesPath, referenceTime: "20260807T12Z" })).rejects.toThrow(
       /not a HRRR cycle stamp/,
     );
   });
@@ -388,7 +373,7 @@ describe("buildHrrr", () => {
     // history seed for the site's month reads 404.
     const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
-    const built = await buildHrrr({
+    const built = await buildNoaa(HRRR, {
       sitesPath,
       outputRoot,
       referenceTime: "2026-08-07T12:00:00Z",
@@ -401,7 +386,7 @@ describe("buildHrrr", () => {
 
     expect(built).toBe(true);
     const document = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "sites", "boulder.json"), "utf-8"),
+      readFileSync(join(outputRoot, HRRR.slug, "sites", "boulder.json"), "utf-8"),
     ) as {
       schemaVersion: number;
       model: string;
@@ -412,7 +397,7 @@ describe("buildHrrr", () => {
         smoke?: Record<string, number>;
       }>;
     };
-    expect(document.model).toBe(SLUG);
+    expect(document.model).toBe(HRRR.slug);
     expect(document.run).toEqual({
       referenceTime: "2026-08-07T12:00:00Z",
       generatedAt: "2026-08-07T18:30:00Z",
@@ -430,12 +415,12 @@ describe("buildHrrr", () => {
     expect(document.hours[1]).not.toHaveProperty("smoke");
 
     const manifest = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "manifest.json"), "utf-8"),
+      readFileSync(join(outputRoot, HRRR.slug, "manifest.json"), "utf-8"),
     ) as Record<string, unknown>;
     expect(manifest["firstForecastHour"]).toBe(1);
     expect(manifest["forecastHours"]).toBe(2);
     expect(manifest["lastForecastHour"]).toBe(2);
-    expect(manifest["model"]).toBe(SLUG);
+    expect(manifest["model"]).toBe(HRRR.slug);
     expect(manifest["referenceTime"]).toBe("2026-08-07T12:00:00Z");
     expect(manifest["schemaVersion"]).toBe(1);
     expect(manifest["sites"]).toEqual([{ name: "Boulder", slug: "boulder" }]);
@@ -448,14 +433,19 @@ describe("buildHrrr", () => {
 
     // One run appended as one independent gzip member, one JSON line —
     // and the line IS the site document.
-    const archive = readFileSync(join(outputRoot, SLUG, "history", "boulder", "2026-08.jsonl.gz"));
+    const archive = readFileSync(
+      join(outputRoot, HRRR.slug, "history", "boulder", "2026-08.jsonl.gz"),
+    );
     const members = splitMembers(archive);
     expect(members).toHaveLength(1);
     expect(members[0]!.lines).toHaveLength(1);
     expect(JSON.parse(members[0]!.lines[0]!)).toEqual(document);
 
     const index = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "history", "boulder", "2026-08.index.json"), "utf-8"),
+      readFileSync(
+        join(outputRoot, HRRR.slug, "history", "boulder", "2026-08.index.json"),
+        "utf-8",
+      ),
     ) as { members: Array<{ referenceTime: string; generatedAt: string; lines: number }> };
     expect(index.members).toHaveLength(1);
     expect(index.members[0]!.referenceTime).toBe("2026-08-07T12:00:00Z");

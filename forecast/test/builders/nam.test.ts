@@ -12,18 +12,11 @@ import {
 } from "@azohra/meteo.grib";
 import {
   CLOUD_LAYER_FIELDS,
-  FETCH_CONCURRENCY,
-  OMEGA_LEVELS,
-  OPTIONAL_SURFACE_FIELDS,
-  PRESSURE_LEVELS,
-  PRODUCTS,
-  SEMANTICS,
+  NAM_PRODUCTS,
   buildProfiles,
-  completionUrls,
-  fileUrl,
   precipFetches,
-  type NamWire,
-} from "../../src/builders/nam.js";
+  type NoaaWire,
+} from "../../src/builders/noaa.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { windFromUv, type GridPointValue, type SampleSite } from "../../src/providers/noaa.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
@@ -31,8 +24,8 @@ import { useCleanWireEnv } from "../helpers/wire.js";
 
 useCleanWireEnv();
 
-const NEST = PRODUCTS["nam-conus-nest"]!;
-const PARENT = PRODUCTS["nam"]!;
+const NEST = NAM_PRODUCTS["nam-conus-nest"]!;
+const PARENT = NAM_PRODUCTS["nam"]!;
 
 const fixtureIdx = (name: string): IdxRecord[] =>
   parseIdx(
@@ -64,11 +57,11 @@ describe("the published schedules", () => {
     // The parent needs the awip12 cloud companion through the horizon too;
     // the nest's clouds live in its own file.
     const bucket = "https://noaa-nam-pds.s3.amazonaws.com/nam.20260807";
-    expect(completionUrls(PARENT, "20260807", "12")).toEqual([
+    expect(PARENT.completionUrls("20260807", "12")).toEqual([
       `${bucket}/nam.t12z.awphys84.tm00.grib2.idx`,
       `${bucket}/nam.t12z.awip1284.tm00.grib2.idx`,
     ]);
-    expect(completionUrls(NEST, "20260807", "06")).toEqual([
+    expect(NEST.completionUrls("20260807", "06")).toEqual([
       `${bucket}/nam.t06z.conusnest.hiresf60.tm00.grib2.idx`,
     ]);
   });
@@ -211,15 +204,21 @@ it("the tail record exists and the running bucket sits beside it", () => {
 
 describe("the per-product Lambert rotations", () => {
   it("applies no rotation on each product's own orientation meridian", () => {
-    expect(lambertGridRotationDeg(262.5, NEST.lambertOrientationDeg, NEST.lambertCone)).toBe(0);
-    expect(lambertGridRotationDeg(265.0, PARENT.lambertOrientationDeg, PARENT.lambertCone)).toBe(0);
+    expect(lambertGridRotationDeg(262.5, NEST.lambert!.orientationDeg, NEST.lambert!.cone)).toBe(0);
+    expect(
+      lambertGridRotationDeg(265.0, PARENT.lambert!.orientationDeg, PARENT.lambert!.cone),
+    ).toBe(0);
   });
 
   it("nest rotation matches HRRR and the parent differs", () => {
     // The nest shares HRRR's projection: sin(38.5°) × (242.3 − 262.5) ≈ −12.6°.
     // The parent's cone is sin(25°) about LoV 265°: sin(25°) × (242.3 − 265) ≈ −9.6°.
-    const nest = lambertGridRotationDeg(242.3, NEST.lambertOrientationDeg, NEST.lambertCone);
-    const parent = lambertGridRotationDeg(242.3, PARENT.lambertOrientationDeg, PARENT.lambertCone);
+    const nest = lambertGridRotationDeg(242.3, NEST.lambert!.orientationDeg, NEST.lambert!.cone);
+    const parent = lambertGridRotationDeg(
+      242.3,
+      PARENT.lambert!.orientationDeg,
+      PARENT.lambert!.cone,
+    );
     expect(nest).toBeCloseTo(-12.575, 3);
     expect(parent).toBeCloseTo(-9.593, 3);
   });
@@ -229,13 +228,13 @@ describe("the per-product Lambert rotations", () => {
       0.0,
       10.0,
       242.3,
-      PARENT.lambertOrientationDeg,
-      PARENT.lambertCone,
+      PARENT.lambert!.orientationDeg,
+      PARENT.lambert!.cone,
     );
     const [speed, direction] = windFromUv(uEarth, vEarth);
     expect(speed).toBeCloseTo(10.0, 9);
     expect(direction).toBeCloseTo(
-      180 + lambertGridRotationDeg(242.3, PARENT.lambertOrientationDeg, PARENT.lambertCone),
+      180 + lambertGridRotationDeg(242.3, PARENT.lambert!.orientationDeg, PARENT.lambert!.cone),
       9,
     );
   });
@@ -245,8 +244,8 @@ describe("the per-product Lambert rotations", () => {
       -7.3,
       2.1,
       250.0,
-      NEST.lambertOrientationDeg,
-      NEST.lambertCone,
+      NEST.lambert!.orientationDeg,
+      NEST.lambert!.cone,
     );
     expect(Math.hypot(uEarth, vEarth)).toBeCloseTo(Math.hypot(-7.3, 2.1), 9);
   });
@@ -303,7 +302,7 @@ describe("the .idx record inventory", () => {
       findRecord(records, "HGT", "surface", "24 hour fcst");
       findRecord(records, "TMP", "2 m above ground", "24 hour fcst");
       findRecord(records, "DPT", "2 m above ground", "24 hour fcst");
-      for (const [variable, level] of Object.values(OPTIONAL_SURFACE_FIELDS)) {
+      for (const [variable, level] of Object.values(PARENT.optionalSurfaceFields)) {
         findRecord(records, variable, level, "24 hour fcst");
       }
     }
@@ -330,8 +329,8 @@ describe("the .idx record inventory", () => {
       findRecord(awip12, variable, level, "24 hour fcst");
       expect(() => findRecord(parent, variable, level, "24 hour fcst")).toThrow(MissingRecordError);
     }
-    expect(NEST.cloudFileToken).toBeNull();
-    expect(PARENT.cloudFileToken).toBe("awip12");
+    expect(NEST.cloudLayerToken).toBeUndefined();
+    expect(PARENT.cloudLayerToken).toBe("awip12");
   });
 
   it("level moisture comes from RH because level dewpoint is incomplete", () => {
@@ -339,7 +338,7 @@ describe("the .idx record inventory", () => {
     // RH is present at all nine curated levels on both.
     const parent = parentRecords();
     const nest = nestRecords();
-    for (const pressureHpa of PRESSURE_LEVELS) {
+    for (const pressureHpa of PARENT.pressureLevels) {
       findRecord(parent, "RH", `${pressureHpa} mb`, "24 hour fcst");
       findRecord(nest, "RH", `${pressureHpa} mb`, "24 hour fcst");
     }
@@ -349,8 +348,8 @@ describe("the .idx record inventory", () => {
   it("omega exists at every curated level in both products", () => {
     const parent = parentRecords();
     const nest = nestRecords();
-    expect(OMEGA_LEVELS).toBe(PRESSURE_LEVELS);
-    for (const pressureHpa of OMEGA_LEVELS) {
+    expect(PARENT.verticalVelocity.levels).toBe(PARENT.pressureLevels);
+    for (const pressureHpa of PARENT.verticalVelocity.levels) {
       findRecord(parent, "VVEL", `${pressureHpa} mb`, "24 hour fcst");
       findRecord(nest, "VVEL", `${pressureHpa} mb`, "24 hour fcst");
     }
@@ -375,7 +374,7 @@ describe.each(["nam", "nam-conus-nest"])("models.json matches the %s configurati
       }>;
     };
     const entry = catalogue.models.find((model) => model.slug === slug)!;
-    const product = PRODUCTS[slug]!;
+    const product = NAM_PRODUCTS[slug]!;
 
     expect(entry.horizonHours).toBe(product.forecastHours[product.forecastHours.length - 1]);
     expect(entry.sunset).toEqual({ date: "2026-10-06", successor: "rrfs" });
@@ -385,16 +384,16 @@ describe.each(["nam", "nam-conus-nest"])("models.json matches the %s configurati
     // Bucketed APCP differenced per step ÷ window → a window-mean rate, and
     // the documents' own semantics block says the same for both products.
     expect(capabilities["precipitation"]).toBe("windowMeanRate");
-    expect(SEMANTICS).toEqual({ gust: "instant", precipitation: "windowMeanRate" });
+    expect(PARENT.semantics).toEqual({ gust: "instant", precipitation: "windowMeanRate" });
     expect(capabilities["cape"]).toBe(true);
     expect(capabilities["cin"]).toBe(true);
     expect(capabilities["pblHeight"]).toBe(true);
     expect(capabilities["cloudLayers"]).toBe(true); // via awip12 for the parent
     expect(capabilities["cloudProfile"]).toBe(false); // no per-level TCDC
-    expect(capabilities["pressureLevels"]).toEqual([...PRESSURE_LEVELS]);
+    expect(capabilities["pressureLevels"]).toEqual([...PARENT.pressureLevels]);
     expect(capabilities["verticalVelocity"]).toBe("omega");
-    expect(capabilities["verticalVelocityLevels"]).toEqual([...OMEGA_LEVELS]);
-    const optional = Object.keys(OPTIONAL_SURFACE_FIELDS);
+    expect(capabilities["verticalVelocityLevels"]).toEqual([...PARENT.verticalVelocity.levels]);
+    const optional = Object.keys(PARENT.optionalSurfaceFields);
     for (const field of ["windGustMps", "capeJkg", "cinJkg", "pblHeightM"]) {
       expect(optional).toContain(field);
     }
@@ -402,13 +401,13 @@ describe.each(["nam", "nam-conus-nest"])("models.json matches the %s configurati
 });
 
 it("the fetch pool cap holds its catalogued value and URLs match the bucket grammar", () => {
-  expect(FETCH_CONCURRENCY).toBe(14);
+  expect(PARENT.fetchConcurrency).toBe(14);
   expect(NEST.maxNearestKm).toBe(5.0);
   expect(PARENT.maxNearestKm).toBe(15.0);
-  expect(fileUrl("awphys", "20260807", "12", 6)).toBe(
+  expect(PARENT.fileUrl("awphys", "20260807", "12", 6)).toBe(
     "https://noaa-nam-pds.s3.amazonaws.com/nam.20260807/nam.t12z.awphys06.tm00.grib2",
   );
-  expect(fileUrl("conusnest.hiresf", "20260807", "00", 60)).toBe(
+  expect(NEST.fileUrl("conusnest.hiresf", "20260807", "00", 60)).toBe(
     "https://noaa-nam-pds.s3.amazonaws.com/nam.20260807/nam.t00z.conusnest.hiresf60.tm00.grib2",
   );
 });
@@ -467,7 +466,7 @@ function fakeParentIndex(forecastHour: number): IdxRecord[] {
   push("CIN", "surface");
   push("HPBL", "surface");
   push("APCP", "surface", `0-${forecastHour} hour acc fcst`);
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of PARENT.pressureLevels) {
     for (const variable of ["TMP", "RH", "HGT"]) {
       push(variable, `${level} mb`);
     }
@@ -511,7 +510,7 @@ function fakeValue(variable: string, level: string, forecast: string): number {
   return 25.0; // cloud cover, the fluxes, and the remaining science fields
 }
 
-function fakeWire(): NamWire {
+function fakeWire(): NoaaWire {
   const sample = (
     variable: string,
     level: string,
@@ -596,17 +595,17 @@ it("buildProfiles differences the running bucket, pairs the winds, and routes cl
   // Every curated level carries the sampled omega verbatim: Pa/s in,
   // Pa/s out, no unit conversion anywhere in the flow.
   expect(first!.levels.map((level) => level.pressureHpa)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => b - a),
+    [...PARENT.pressureLevels].sort((a, b) => b - a),
   );
   expect(first!.levels.every((level) => level.verticalVelocityPaS === OMEGA_PA_S)).toBe(true);
   // The hour whose 700 mb VVEL record is absent still publishes the level,
   // complete in its required fields, without the optional one.
   const byPressure = new Map(second!.levels.map((level) => [level.pressureHpa, level]));
   expect([...byPressure.keys()].sort((a, b) => a - b)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => a - b),
+    [...PARENT.pressureLevels].sort((a, b) => a - b),
   );
   expect(byPressure.get(700)).not.toHaveProperty("verticalVelocityPaS");
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of PARENT.pressureLevels) {
     if (level === 700) continue;
     expect(byPressure.get(level)!.verticalVelocityPaS).toBe(OMEGA_PA_S);
   }

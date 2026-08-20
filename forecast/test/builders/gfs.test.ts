@@ -5,21 +5,14 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { MissingRecordError, findRecord, parseIdx, type IdxRecord } from "@azohra/meteo.grib";
 import {
-  FETCH_CONCURRENCY,
-  MAX_NEAREST_KM,
-  OMEGA_LEVELS,
-  OPTIONAL_SURFACE_FIELDS,
-  PRESSURE_LEVELS,
-  SEMANTICS,
-  SLUG,
-  buildGfs,
+  GFS,
+  buildNoaa,
   buildProfiles,
   deaveraged,
   differenced,
-  fileUrl,
   windowStart,
-  type GfsWire,
-} from "../../src/builders/gfs.js";
+  type NoaaWire,
+} from "../../src/builders/noaa.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { dewPointDepression } from "../../src/moisture.js";
 import type { GridPointValue, SampleSite } from "../../src/providers/noaa.js";
@@ -87,7 +80,7 @@ describe("the .idx fixture proofs", () => {
     // The builder's default forecast token must land on the instant record.
     const records = f024();
 
-    for (const [fieldName, [variable, level]] of Object.entries(OPTIONAL_SURFACE_FIELDS)) {
+    for (const [fieldName, [variable, level]] of Object.entries(GFS.optionalSurfaceFields)) {
       const record = findRecord(records, variable, level, "24 hour fcst");
       expect(record.forecast, fieldName).toBe("24 hour fcst");
     }
@@ -98,7 +91,7 @@ describe("the .idx fixture proofs", () => {
 
   it("GFS carries a cloud profile at every curated level", () => {
     const records = f024();
-    for (const pressureHpa of PRESSURE_LEVELS) {
+    for (const pressureHpa of GFS.pressureLevels) {
       findRecord(records, "TCDC", `${pressureHpa} mb`, "24 hour fcst");
     }
   });
@@ -108,8 +101,8 @@ describe("the .idx fixture proofs", () => {
     // levels — verified against the live feed on 2026-08-08 at anl, f001,
     // f024, f240 and f384: no late-horizon thinning.
     const records = f024();
-    expect(OMEGA_LEVELS).toBe(PRESSURE_LEVELS);
-    for (const pressureHpa of OMEGA_LEVELS) {
+    expect(GFS.verticalVelocity.levels).toBe(GFS.pressureLevels);
+    for (const pressureHpa of GFS.verticalVelocity.levels) {
       findRecord(records, "VVEL", `${pressureHpa} mb`, "24 hour fcst");
     }
   });
@@ -135,13 +128,13 @@ it("models.json matches the GFS builder configuration", () => {
   // APCP mm over the 3 h window ÷ 3 → a window-mean rate, and the
   // documents' own semantics block says the same.
   expect(capabilities["precipitation"]).toBe("windowMeanRate");
-  expect(SEMANTICS).toEqual({ gust: "instant", precipitation: "windowMeanRate" });
+  expect(GFS.semantics).toEqual({ gust: "instant", precipitation: "windowMeanRate" });
   expect(capabilities["cape"]).toBe(true);
   expect(capabilities["cin"]).toBe(true);
   expect(capabilities["pblHeight"]).toBe(true);
   expect(capabilities["cloudLayers"]).toBe(true);
   expect(capabilities["cloudProfile"]).toBe(true); // the only model with one
-  const optional = Object.keys(OPTIONAL_SURFACE_FIELDS);
+  const optional = Object.keys(GFS.optionalSurfaceFields);
   for (const field of ["windGustMps", "capeJkg", "cinJkg", "pblHeightM"]) {
     expect(optional).toContain(field);
   }
@@ -150,7 +143,7 @@ it("models.json matches the GFS builder configuration", () => {
   }
   // GFS publishes its own omega (Pa/s, instantaneous) at every curated level.
   expect(capabilities["verticalVelocity"]).toBe("omega");
-  expect(capabilities["verticalVelocityLevels"]).toEqual([...OMEGA_LEVELS]);
+  expect(capabilities["verticalVelocityLevels"]).toEqual([...GFS.verticalVelocity.levels]);
 });
 
 describe("the inverse Magnus derivation the pressure levels ride", () => {
@@ -204,7 +197,7 @@ function fakeIndex(forecastHour: number): IdxRecord[] {
     ["SHTFL", "surface", `${window} ave fcst`],
     ["APCP", "surface", `${window} acc fcst`],
   ];
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of GFS.pressureLevels) {
     for (const variable of ["TMP", "RH", "HGT", "UGRD", "VGRD", "TCDC"]) {
       rows.push([variable, `${level} mb`, forecast]);
     }
@@ -237,7 +230,7 @@ function fakeValue(variable: string, level: string, forecast: string): number {
   return 25.0; // cloud covers and the fluxes
 }
 
-function fakeWire(): GfsWire {
+function fakeWire(): NoaaWire {
   return {
     fetchIndex: async (url) => {
       const forecastHour = Number.parseInt(/f(\d{3})\.idx$/.exec(url)![1]!, 10);
@@ -274,6 +267,7 @@ interface PublishedProfile {
 
 it("buildProfiles publishes omega and tolerates its absence", async () => {
   const result = await buildProfiles(
+    GFS,
     { date: "20260807", hour: "12" },
     "2026-08-07T12:00:00Z",
     [SITE as never],
@@ -292,26 +286,26 @@ it("buildProfiles publishes omega and tolerates its absence", async () => {
   // Every curated level carries the sampled omega verbatim: Pa/s in,
   // Pa/s out, no unit conversion anywhere in the flow.
   expect(first!.levels.map((level) => level.pressureHpa)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => b - a),
+    [...GFS.pressureLevels].sort((a, b) => b - a),
   );
   expect(first!.levels.every((level) => level.verticalVelocityPaS === OMEGA_PA_S)).toBe(true);
   // The step whose 700 mb VVEL record is absent still publishes the level,
   // complete in its required fields, without the optional one.
   const byPressure = new Map(second!.levels.map((level) => [level.pressureHpa, level]));
   expect([...byPressure.keys()].sort((a, b) => a - b)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => a - b),
+    [...GFS.pressureLevels].sort((a, b) => a - b),
   );
   expect(byPressure.get(700)).not.toHaveProperty("verticalVelocityPaS");
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of GFS.pressureLevels) {
     if (level === 700) continue;
     expect(byPressure.get(level)!.verticalVelocityPaS).toBe(OMEGA_PA_S);
   }
 });
 
 it("the fetch pool cap and domain guard hold their catalogued values", () => {
-  expect(FETCH_CONCURRENCY).toBe(10);
-  expect(MAX_NEAREST_KM).toBe(30.0);
-  expect(fileUrl("20260807", "12", 6)).toBe(
+  expect(GFS.fetchConcurrency).toBe(10);
+  expect(GFS.maxNearestKm).toBe(30.0);
+  expect(GFS.fileUrl("", "20260807", "12", 6)).toBe(
     "https://noaa-gfs-bdp-pds.s3.amazonaws.com/gfs.20260807/12/atmos/gfs.t12z.pgrb2.0p25.f006",
   );
 });
@@ -346,11 +340,11 @@ describe("buildGfs", () => {
   it("skips a run the dataset already publishes", async () => {
     scratch = mkdtempSync(join(tmpdir(), "gfs-test-"));
     const sitesPath = writeSites(scratch);
-    const manifest = { model: SLUG, referenceTime: "2026-08-07T12:00:00Z", generatedAt: "x" };
+    const manifest = { model: GFS.slug, referenceTime: "2026-08-07T12:00:00Z", generatedAt: "x" };
     const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
     const lines: string[] = [];
 
-    const built = await buildGfs({
+    const built = await buildNoaa(GFS, {
       sitesPath,
       outputRoot: join(scratch, "data"),
       referenceTime: "2026-08-07T12:00:00Z",
@@ -367,10 +361,10 @@ describe("buildGfs", () => {
     scratch = mkdtempSync(join(tmpdir(), "gfs-test-"));
     const sitesPath = writeSites(scratch);
 
-    await expect(buildGfs({ sitesPath, referenceTime: "2026-08-07T13:00:00Z" })).rejects.toThrow(
-      /not a GFS cycle/,
-    );
-    await expect(buildGfs({ sitesPath, referenceTime: "20260807T12Z" })).rejects.toThrow(
+    await expect(
+      buildNoaa(GFS, { sitesPath, referenceTime: "2026-08-07T13:00:00Z" }),
+    ).rejects.toThrow(/not a GFS cycle/);
+    await expect(buildNoaa(GFS, { sitesPath, referenceTime: "20260807T12Z" })).rejects.toThrow(
       /not a GFS cycle stamp/,
     );
   });
@@ -383,7 +377,7 @@ describe("buildGfs", () => {
     // history seed for the site's month reads 404.
     const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
-    const built = await buildGfs({
+    const built = await buildNoaa(GFS, {
       sitesPath,
       outputRoot,
       referenceTime: "2026-08-07T12:00:00Z",
@@ -396,7 +390,7 @@ describe("buildGfs", () => {
 
     expect(built).toBe(true);
     const document = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "sites", "boulder.json"), "utf-8"),
+      readFileSync(join(outputRoot, GFS.slug, "sites", "boulder.json"), "utf-8"),
     ) as {
       schemaVersion: number;
       model: string;
@@ -404,7 +398,7 @@ describe("buildGfs", () => {
       site: { id: string; modelElevationM: number };
       hours: Array<{ surface: { seaLevelPressureHpa: number; precipitationMmHr: number } }>;
     };
-    expect(document.model).toBe(SLUG);
+    expect(document.model).toBe(GFS.slug);
     expect(document.run).toEqual({
       referenceTime: "2026-08-07T12:00:00Z",
       generatedAt: "2026-08-07T18:30:00Z",
@@ -420,12 +414,12 @@ describe("buildGfs", () => {
     expect(document.hours[1]!.surface.precipitationMmHr).toBe(1);
 
     const manifest = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "manifest.json"), "utf-8"),
+      readFileSync(join(outputRoot, GFS.slug, "manifest.json"), "utf-8"),
     ) as Record<string, unknown>;
     expect(manifest["firstForecastHour"]).toBe(3);
     expect(manifest["forecastHours"]).toBe(2);
     expect(manifest["lastForecastHour"]).toBe(6);
-    expect(manifest["model"]).toBe(SLUG);
+    expect(manifest["model"]).toBe(GFS.slug);
     expect(manifest["referenceTime"]).toBe("2026-08-07T12:00:00Z");
     expect(manifest["schemaVersion"]).toBe(1);
     expect(manifest["sites"]).toEqual([{ name: "Boulder", slug: "boulder" }]);
@@ -438,14 +432,16 @@ describe("buildGfs", () => {
 
     // One run appended as one independent gzip member, one JSON line —
     // and the line IS the site document.
-    const archive = readFileSync(join(outputRoot, SLUG, "history", "boulder", "2026-08.jsonl.gz"));
+    const archive = readFileSync(
+      join(outputRoot, GFS.slug, "history", "boulder", "2026-08.jsonl.gz"),
+    );
     const members = splitMembers(archive);
     expect(members).toHaveLength(1);
     expect(members[0]!.lines).toHaveLength(1);
     expect(JSON.parse(members[0]!.lines[0]!)).toEqual(document);
 
     const index = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "history", "boulder", "2026-08.index.json"), "utf-8"),
+      readFileSync(join(outputRoot, GFS.slug, "history", "boulder", "2026-08.index.json"), "utf-8"),
     ) as { members: Array<{ referenceTime: string; generatedAt: string; lines: number }> };
     expect(index.members).toHaveLength(1);
     expect(index.members[0]!.referenceTime).toBe("2026-08-07T12:00:00Z");
@@ -462,7 +458,7 @@ describe("buildGfs", () => {
       const dataset = stubFetch(
         history === false ? [{ status: 404 }] : [{ status: 404 }, { status: 404 }],
       );
-      const built = await buildGfs({
+      const built = await buildNoaa(GFS, {
         sitesPath,
         outputRoot: join(tmp, root),
         referenceTime: "2026-08-07T12:00:00Z",
@@ -483,18 +479,18 @@ describe("buildGfs", () => {
 
     // Off: no archive, no sidecar index — and no seed read even left the
     // process (the already-published gate was the only dataset request).
-    expect(existsSync(join(tmp, "off", SLUG, "history"))).toBe(false);
+    expect(existsSync(join(tmp, "off", GFS.slug, "history"))).toBe(false);
     expect(off.requests).toHaveLength(1);
 
     // The site documents are identical across all three choices…
-    const site = (root: string) => readFileSync(join(tmp, root, SLUG, "sites", "boulder.json"));
+    const site = (root: string) => readFileSync(join(tmp, root, GFS.slug, "sites", "boulder.json"));
     expect(site("on").equals(site("default"))).toBe(true);
     expect(site("off").equals(site("default"))).toBe(true);
 
     // …an explicit --history run is byte-identical to the default,
     // archives and sidecars included…
     const history = (root: string, name: string) =>
-      readFileSync(join(tmp, root, SLUG, "history", "boulder", name));
+      readFileSync(join(tmp, root, GFS.slug, "history", "boulder", name));
     expect(history("on", "2026-08.jsonl.gz").equals(history("default", "2026-08.jsonl.gz"))).toBe(
       true,
     );
@@ -506,7 +502,7 @@ describe("buildGfs", () => {
     // wall-clock stamp are the only fields that vary run to run).
     const manifest = (root: string) => {
       const parsed = JSON.parse(
-        readFileSync(join(tmp, root, SLUG, "manifest.json"), "utf-8"),
+        readFileSync(join(tmp, root, GFS.slug, "manifest.json"), "utf-8"),
       ) as Record<string, unknown>;
       delete parsed["stats"];
       delete parsed["generatedAt"];

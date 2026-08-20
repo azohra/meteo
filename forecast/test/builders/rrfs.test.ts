@@ -6,24 +6,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import { MissingRecordError, findRecord, parseIdx, type IdxRecord } from "@azohra/meteo.grib";
 import {
   DEFAULT_BASE_URL,
-  FETCH_CONCURRENCY,
-  FORECAST_HOURS,
-  MAX_NEAREST_KM,
-  OPTIONAL_SURFACE_FIELDS,
-  PRESSURE_LEVELS,
-  RUN_HOURS,
-  SEMANTICS,
-  SLUG,
-  SMOKE_FIELDS,
+  RRFS,
   SMOKE_QUALIFIER,
-  SURFACE_FIELDS,
-  VERTICAL_VELOCITY_LEVELS,
+  buildNoaa,
   buildProfiles,
-  buildRrfs,
-  fileUrl,
   omegaFromGeometricW,
-  type RrfsWire,
-} from "../../src/builders/rrfs.js";
+  type NoaaWire,
+} from "../../src/builders/noaa.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { splitMembers } from "../../src/history.js";
 import type { GridPointValue, SampleSite } from "../../src/providers/noaa.js";
@@ -47,7 +36,7 @@ describe("the .idx fixture proofs", () => {
   it("the full curated band exists in prslev, dew point included", () => {
     // Unlike NAM, RRFS publishes DPT at every band level — no RH conversion.
     const records = prslev();
-    for (const pressureHpa of PRESSURE_LEVELS) {
+    for (const pressureHpa of RRFS.pressureLevels) {
       for (const variable of ["TMP", "DPT", "HGT", "UGRD", "VGRD"]) {
         findRecord(records, variable, `${pressureHpa} mb`, "12 hour fcst");
       }
@@ -56,8 +45,8 @@ describe("the .idx fixture proofs", () => {
 
   it("vertical velocity is DZDT at every curated level — VVEL does not exist", () => {
     const records = prslev();
-    expect(VERTICAL_VELOCITY_LEVELS).toBe(PRESSURE_LEVELS);
-    for (const pressureHpa of VERTICAL_VELOCITY_LEVELS) {
+    expect(RRFS.verticalVelocity.levels).toBe(RRFS.pressureLevels);
+    for (const pressureHpa of RRFS.verticalVelocity.levels) {
       findRecord(records, "DZDT", `${pressureHpa} mb`, "12 hour fcst");
       expect(() => findRecord(records, "VVEL", `${pressureHpa} mb`, "12 hour fcst")).toThrow(
         MissingRecordError,
@@ -67,10 +56,10 @@ describe("the .idx fixture proofs", () => {
 
   it("every surface and science record exists in the 2dfld companion", () => {
     const records = surface();
-    for (const [variable, level] of Object.values(SURFACE_FIELDS)) {
+    for (const [variable, level] of Object.values(RRFS.surfaceFields)) {
       findRecord(records, variable, level, "12 hour fcst");
     }
-    for (const [variable, level] of Object.values(OPTIONAL_SURFACE_FIELDS)) {
+    for (const [variable, level] of Object.values(RRFS.optionalSurfaceFields)) {
       findRecord(records, variable, level, "12 hour fcst");
     }
     findRecord(records, "TMP", "2 m above ground", "12 hour fcst");
@@ -98,7 +87,7 @@ describe("the .idx fixture proofs", () => {
 
   it("the smoke block's records exist and the qualifier separates smoke from dust", () => {
     const records = surface();
-    for (const [variable, level, qualifier] of Object.values(SMOKE_FIELDS)) {
+    for (const [variable, level, qualifier] of Object.values(RRFS.smokeFields!)) {
       findRecord(records, variable, level, "12 hour fcst", qualifier);
     }
     // The same variable/level/forecast triple names the dust tracer too —
@@ -158,12 +147,12 @@ it("models.json matches the RRFS builder configuration", () => {
       capabilities: Record<string, unknown>;
     }>;
   };
-  const entry = catalogue.models.find((model) => model.slug === SLUG)!;
+  const entry = catalogue.models.find((model) => model.slug === RRFS.slug)!;
 
-  expect(entry.horizonHours).toBe(FORECAST_HOURS);
+  expect(entry.horizonHours).toBe(RRFS.forecastHours[RRFS.forecastHours.length - 1]);
   // Only the synoptic cycles publish the isobaric files the profile needs.
   expect(entry.runIntervalHours).toBe(6);
-  expect(RUN_HOURS).toEqual(["18", "12", "06", "00"]);
+  expect(RRFS.runHours).toEqual(["18", "12", "06", "00"]);
   // Unproven against a production tick: experimental until the operational
   // feed lands and a real scheduled run survives.
   expect(entry.experimental).toBe(true);
@@ -172,7 +161,7 @@ it("models.json matches the RRFS builder configuration", () => {
   // RRFS-SD's aerosol direct feedback attenuates the model's own radiation
   // (Li et al. 2025, GRL), so derived quantities are already smoke-aware.
   expect(entry.capabilities["smoke"]).toBe("radiativelyCoupled");
-  expect(SEMANTICS).toEqual({
+  expect(RRFS.semantics).toEqual({
     gust: "instant",
     precipitation: "windowMeanRate",
     smoke: "radiativelyCoupled",
@@ -185,13 +174,13 @@ it("models.json matches the RRFS builder configuration", () => {
   // RRFS publishes geometric w (DZDT), converted at build — declared so
   // consumers can label converted values differently from native omega.
   expect(entry.capabilities["verticalVelocity"]).toBe("fromGeometricW");
-  expect(entry.capabilities["verticalVelocityLevels"]).toEqual([...VERTICAL_VELOCITY_LEVELS]);
-  expect(entry.capabilities["pressureLevels"]).toEqual([...PRESSURE_LEVELS]);
+  expect(entry.capabilities["verticalVelocityLevels"]).toEqual([...RRFS.verticalVelocity.levels]);
+  expect(entry.capabilities["pressureLevels"]).toEqual([...RRFS.pressureLevels]);
 
   // Both retiring NAM entries name this builder's slug as their successor.
   for (const slug of ["nam", "nam-conus-nest"]) {
     const nam = catalogue.models.find((model) => model.slug === slug)!;
-    expect(nam.sunset?.successor, slug).toBe(SLUG);
+    expect(nam.sunset?.successor, slug).toBe(RRFS.slug);
   }
 });
 
@@ -263,7 +252,7 @@ function fakeIndex(fileToken: string, forecastHour: number): IdxRecord[] {
       rows.push(["AOTK", "entire atmosphere (considered as a single layer)", forecast, ""]);
     }
   } else {
-    for (const level of PRESSURE_LEVELS) {
+    for (const level of RRFS.pressureLevels) {
       for (const variable of ["TMP", "DPT", "HGT", "UGRD", "VGRD"]) {
         rows.push([variable, `${level} mb`, forecast]);
       }
@@ -308,7 +297,7 @@ function fakeValue(variable: string, level: string, qualifier: string): number {
   return 25.0; // cloud covers, the fluxes, and the remaining science fields
 }
 
-function fakeWire(): RrfsWire {
+function fakeWire(): NoaaWire {
   return {
     fetchIndex: async (url) => {
       const match = /rrfs\.t\d{2}z\.(prslev|2dfld)\.3km\.f(\d{3})\.conus\.grib2\.idx$/.exec(url)!;
@@ -345,6 +334,7 @@ interface PublishedProfile {
 
 it("buildProfiles converts DZDT to omega, publishes smoke by species, and tolerates absence", async () => {
   const result = await buildProfiles(
+    RRFS,
     { date: "20260813", hour: "12" },
     "2026-08-13T12:00:00Z",
     [SITE as never],
@@ -374,7 +364,7 @@ it("buildProfiles converts DZDT to omega, publishes smoke by species, and tolera
   // Every level publishes ω = −ρgw computed from its own pressure and
   // temperature — deeper levels are denser, so |ω| grows with pressure.
   expect(first!.levels.map((level) => level.pressureHpa)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => b - a),
+    [...RRFS.pressureLevels].sort((a, b) => b - a),
   );
   for (const level of first!.levels) {
     expect(level.verticalVelocityPaS).toBeCloseTo(
@@ -386,10 +376,10 @@ it("buildProfiles converts DZDT to omega, publishes smoke by species, and tolera
   // complete in its required fields, without the optional one.
   const byPressure = new Map(second!.levels.map((level) => [level.pressureHpa, level]));
   expect([...byPressure.keys()].sort((a, b) => a - b)).toEqual(
-    [...PRESSURE_LEVELS].sort((a, b) => a - b),
+    [...RRFS.pressureLevels].sort((a, b) => a - b),
   );
   expect(byPressure.get(700)).not.toHaveProperty("verticalVelocityPaS");
-  for (const level of PRESSURE_LEVELS) {
+  for (const level of RRFS.pressureLevels) {
     if (level === 700) continue;
     expect(byPressure.get(level)!.verticalVelocityPaS).toBeCloseTo(
       omegaFromGeometricW(GEOMETRIC_W_MPS, level, LEVEL_TMP_K),
@@ -400,20 +390,20 @@ it("buildProfiles converts DZDT to omega, publishes smoke by species, and tolera
 
 describe("the transport shape", () => {
   it("the fetch pool cap and domain guard hold their catalogued values", () => {
-    expect(FETCH_CONCURRENCY).toBe(10);
-    expect(MAX_NEAREST_KM).toBe(5.0);
-    expect(FORECAST_HOURS).toBe(84);
-    expect(fileUrl("prslev", "20260813", "12", 6)).toBe(
+    expect(RRFS.fetchConcurrency).toBe(10);
+    expect(RRFS.maxNearestKm).toBe(5.0);
+    expect(RRFS.forecastHours).toHaveLength(84);
+    expect(RRFS.fileUrl("prslev", "20260813", "12", 6)).toBe(
       `${DEFAULT_BASE_URL}/rrfs.20260813/12/rrfs.t12z.prslev.3km.f006.conus.grib2`,
     );
-    expect(fileUrl("2dfld", "20260813", "06", 84)).toBe(
+    expect(RRFS.fileUrl("2dfld", "20260813", "06", 84)).toBe(
       `${DEFAULT_BASE_URL}/rrfs.20260813/06/rrfs.t06z.2dfld.3km.f084.conus.grib2`,
     );
   });
 
   it("METEO_RRFS_BASE re-points the transport at the para/prod prefix without a release", () => {
     process.env["METEO_RRFS_BASE"] = "https://noaa-rrfs-pds.s3.amazonaws.com/rrfs/v1.0/";
-    expect(fileUrl("prslev", "20261006", "12", 1)).toBe(
+    expect(RRFS.fileUrl("prslev", "20261006", "12", 1)).toBe(
       "https://noaa-rrfs-pds.s3.amazonaws.com/rrfs/v1.0/rrfs.20261006/12/rrfs.t12z.prslev.3km.f001.conus.grib2",
     );
   });
@@ -449,11 +439,11 @@ describe("buildRrfs", () => {
   it("skips a run the dataset already publishes", async () => {
     scratch = mkdtempSync(join(tmpdir(), "rrfs-test-"));
     const sitesPath = writeSites(scratch);
-    const manifest = { model: SLUG, referenceTime: "2026-08-13T12:00:00Z", generatedAt: "x" };
+    const manifest = { model: RRFS.slug, referenceTime: "2026-08-13T12:00:00Z", generatedAt: "x" };
     const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
     const lines: string[] = [];
 
-    const built = await buildRrfs({
+    const built = await buildNoaa(RRFS, {
       sitesPath,
       outputRoot: join(scratch, "data"),
       referenceTime: "2026-08-13T12:00:00Z",
@@ -471,10 +461,10 @@ describe("buildRrfs", () => {
     const sitesPath = writeSites(scratch);
 
     // The other hourly cycles publish no isobaric files — a 13Z pin is refused.
-    await expect(buildRrfs({ sitesPath, referenceTime: "2026-08-13T13:00:00Z" })).rejects.toThrow(
-      /not a RRFS cycle/,
-    );
-    await expect(buildRrfs({ sitesPath, referenceTime: "20260813T12Z" })).rejects.toThrow(
+    await expect(
+      buildNoaa(RRFS, { sitesPath, referenceTime: "2026-08-13T13:00:00Z" }),
+    ).rejects.toThrow(/not a RRFS cycle/);
+    await expect(buildNoaa(RRFS, { sitesPath, referenceTime: "20260813T12Z" })).rejects.toThrow(
       /not a RRFS cycle stamp/,
     );
   });
@@ -487,7 +477,7 @@ describe("buildRrfs", () => {
     // history seed for the site's month reads 404.
     const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
-    const built = await buildRrfs({
+    const built = await buildNoaa(RRFS, {
       sitesPath,
       outputRoot,
       referenceTime: "2026-08-13T12:00:00Z",
@@ -500,7 +490,7 @@ describe("buildRrfs", () => {
 
     expect(built).toBe(true);
     const document = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "sites", "boulder.json"), "utf-8"),
+      readFileSync(join(outputRoot, RRFS.slug, "sites", "boulder.json"), "utf-8"),
     ) as {
       schemaVersion: number;
       model: string;
@@ -511,7 +501,7 @@ describe("buildRrfs", () => {
         smoke?: Record<string, number>;
       }>;
     };
-    expect(document.model).toBe(SLUG);
+    expect(document.model).toBe(RRFS.slug);
     expect(document.run).toEqual({
       referenceTime: "2026-08-13T12:00:00Z",
       generatedAt: "2026-08-13T18:30:00Z",
@@ -529,12 +519,12 @@ describe("buildRrfs", () => {
     expect(document.hours[1]).not.toHaveProperty("smoke");
 
     const manifest = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "manifest.json"), "utf-8"),
+      readFileSync(join(outputRoot, RRFS.slug, "manifest.json"), "utf-8"),
     ) as Record<string, unknown>;
     expect(manifest["firstForecastHour"]).toBe(1);
     expect(manifest["forecastHours"]).toBe(2);
     expect(manifest["lastForecastHour"]).toBe(2);
-    expect(manifest["model"]).toBe(SLUG);
+    expect(manifest["model"]).toBe(RRFS.slug);
     expect(manifest["referenceTime"]).toBe("2026-08-13T12:00:00Z");
     expect(manifest["schemaVersion"]).toBe(1);
     expect(manifest["sites"]).toEqual([{ name: "Boulder", slug: "boulder" }]);
@@ -547,14 +537,19 @@ describe("buildRrfs", () => {
 
     // One run appended as one independent gzip member, one JSON line —
     // and the line IS the site document.
-    const archive = readFileSync(join(outputRoot, SLUG, "history", "boulder", "2026-08.jsonl.gz"));
+    const archive = readFileSync(
+      join(outputRoot, RRFS.slug, "history", "boulder", "2026-08.jsonl.gz"),
+    );
     const members = splitMembers(archive);
     expect(members).toHaveLength(1);
     expect(members[0]!.lines).toHaveLength(1);
     expect(JSON.parse(members[0]!.lines[0]!)).toEqual(document);
 
     const index = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "history", "boulder", "2026-08.index.json"), "utf-8"),
+      readFileSync(
+        join(outputRoot, RRFS.slug, "history", "boulder", "2026-08.index.json"),
+        "utf-8",
+      ),
     ) as { members: Array<{ referenceTime: string; generatedAt: string; lines: number }> };
     expect(index.members).toHaveLength(1);
     expect(index.members[0]!.referenceTime).toBe("2026-08-13T12:00:00Z");

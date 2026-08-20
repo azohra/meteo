@@ -46,9 +46,18 @@ export const BUILDERS: ReadonlyMap<string, RegisteredBuilder> = new Map<string, 
   ],
   [
     "hrrr-conus",
-    async (options) => (await import("./hrrr.js")).buildHrrr(forwardedOptions(options)),
+    async (options) => {
+      const noaa = await import("./noaa.js");
+      return noaa.buildNoaa(noaa.HRRR, forwardedOptions(options));
+    },
   ],
-  ["rrfs", async (options) => (await import("./rrfs.js")).buildRrfs(forwardedOptions(options))],
+  [
+    "rrfs",
+    async (options) => {
+      const noaa = await import("./noaa.js");
+      return noaa.buildNoaa(noaa.RRFS, forwardedOptions(options));
+    },
+  ],
   [
     "rdps",
     async (options) => {
@@ -63,19 +72,25 @@ export const BUILDERS: ReadonlyMap<string, RegisteredBuilder> = new Map<string, 
       return eccc.buildEccc(eccc.GDPS, forwardedOptions(options));
     },
   ],
-  ["gfs", async (options) => (await import("./gfs.js")).buildGfs(forwardedOptions(options))],
+  [
+    "gfs",
+    async (options) => {
+      const noaa = await import("./noaa.js");
+      return noaa.buildNoaa(noaa.GFS, forwardedOptions(options));
+    },
+  ],
   [
     "nam",
     async (options) => {
-      const nam = await import("./nam.js");
-      return nam.buildNam(nam.PRODUCTS["nam"]!, forwardedOptions(options));
+      const noaa = await import("./noaa.js");
+      return noaa.buildNoaa(noaa.NAM_PRODUCTS["nam"]!, forwardedOptions(options));
     },
   ],
   [
     "nam-conus-nest",
     async (options) => {
-      const nam = await import("./nam.js");
-      return nam.buildNam(nam.PRODUCTS["nam-conus-nest"]!, forwardedOptions(options));
+      const noaa = await import("./noaa.js");
+      return noaa.buildNoaa(noaa.NAM_PRODUCTS["nam-conus-nest"]!, forwardedOptions(options));
     },
   ],
   [
