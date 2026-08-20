@@ -1,3 +1,4 @@
+import { kmhToMps } from "@azohra/meteo.core";
 import type { HistoryPoint, StationMeta } from "./contract.js";
 import type { SpeedThresholds } from "./derive.js";
 
@@ -47,7 +48,7 @@ export const wobble = (seed: number): number =>
 
 const round1 = (value: number): number => Math.round(value * 10) / 10;
 const round2 = (value: number): number => Math.round(value * 100) / 100;
-const mps = (kmh: number): number => round2(kmh / 3.6);
+const mps = (kmh: number): number => round2(kmhToMps(kmh));
 const normalizeDeg = (deg: number): number => ((deg % 360) + 360) % 360;
 
 function seasonPhase(dateUtc: Date): number {

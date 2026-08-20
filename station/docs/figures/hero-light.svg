@@ -38,7 +38,7 @@ text{font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sa
 .meteo-wind-threshold-label.meteo-band-3{fill:#e2662c}
 .meteo-wind-threshold-label.meteo-band-4{fill:#c22727}
 .meteo-wind-guide{stroke:#e5eaef;stroke-width:1;stroke-dasharray:1 4}
-.meteo-wind-band{fill:undefined;stroke:none}
+.meteo-wind-band{fill:rgba(15, 116, 144, 0.22);stroke:none}
 .meteo-wind-mean-segment{fill:none;stroke-width:3.5;stroke-linecap:round}
 .meteo-wind-mean-segment.meteo-band-0{stroke:#56a2cc}
 .meteo-wind-mean-segment.meteo-band-1{stroke:#2e9e63}
@@ -48,7 +48,7 @@ text{font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sa
 .meteo-wind-row-label{font-size:9px;letter-spacing:0.08em}
 .meteo-wind-vane-label{font-size:9px}
 .meteo-wind-vane-value{font-size:9px}
-.meteo-wind-vane{fill:none;stroke:undefined;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.meteo-wind-vane{fill:none;stroke:#3b4a58;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .meteo-wind-gap-hatch{stroke:rgba(98, 113, 127, 0.5);stroke-width:1.25}
 .meteo-wind-rose-grid{fill:none;stroke:#e5eaef;stroke-width:1}
 .meteo-wind-rose-tick{stroke:#62717f;stroke-width:1;opacity:0.35}

@@ -129,13 +129,13 @@ ${perBand(".meteo-wind-threshold", "stroke")}
 .meteo-wind-threshold-label{font-size:9px;font-weight:650}
 ${perBand(".meteo-wind-threshold-label", "fill")}
 .meteo-wind-guide{stroke:${t.grid};stroke-width:1;stroke-dasharray:1 4}
-.meteo-wind-band{fill:${t["band-fill"]};stroke:none}
+.meteo-wind-band{fill:${t["wind-band-fill"]};stroke:none}
 .meteo-wind-mean-segment{fill:none;stroke-width:3.5;stroke-linecap:round}
 ${perBand(".meteo-wind-mean-segment", "stroke")}
 .meteo-wind-row-label{font-size:9px;letter-spacing:0.08em}
 .meteo-wind-vane-label{font-size:9px}
 .meteo-wind-vane-value{font-size:9px}
-.meteo-wind-vane{fill:none;stroke:${t.vane};stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.meteo-wind-vane{fill:none;stroke:${t["wind-vane"]};stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .meteo-wind-gap-hatch{stroke:${t.gap};stroke-width:1.25}
 .meteo-wind-rose-grid{fill:none;stroke:${t.grid};stroke-width:1}
 .meteo-wind-rose-tick{stroke:${t.muted};stroke-width:1;opacity:0.35}
