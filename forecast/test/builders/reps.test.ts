@@ -6,9 +6,11 @@ import type { DecodeJ2k, J2kSamples } from "@azohra/meteo.grib";
 import {
   FETCH_CONCURRENCY,
   FORECAST_HOURS,
+  LAST_FORECAST_HOUR,
   MEMBER_COUNT,
   PERTURBATION_NUMBERS,
   PRESSURE_LEVELS,
+  RUN_HOURS,
   SEMANTICS,
   SLUG,
   STEP_HOURS,
@@ -22,6 +24,7 @@ import {
   sampleScalarMembers,
   sampleWindMembers,
 } from "../../src/builders/reps.js";
+import { packagedModelsPath } from "../../src/catalogue.js";
 import { circularMedian, percentile, type MemberProfile } from "../../src/ensemble.js";
 import { splitMembers } from "../../src/history.js";
 import { dewPointDepression } from "../../src/moisture.js";
@@ -849,9 +852,9 @@ describe("buildReps", () => {
     writeFileSync(sitesPath, JSON.stringify({ schemaVersion: 2, sites: [SITE] }));
     const outputRoot = join(scratch, "data");
     const files = e2eFiles();
-    // A pinned run skips the manifest gate; only the history seed reads
-    // the dataset — 404, absence.
-    const dataset = stubFetch([{ status: 404 }]);
+    // The dataset answers twice: the already-published gate's manifest
+    // read (404 — nothing published), then the history seed (404, absence).
+    const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
     const built = await buildReps({
       sitesPath,
@@ -919,9 +922,11 @@ describe("buildReps", () => {
     writeFileSync(sitesPath, JSON.stringify({ schemaVersion: 2, sites: [SITE] }));
     const files = e2eFiles();
     const build = async (root: string, history?: boolean) => {
-      // A pinned run skips the manifest gate; only a history-publishing
-      // run seeds the site's month (the single 404).
-      const dataset = stubFetch(history === false ? [] : [{ status: 404 }]);
+      // Every run pays the already-published gate's manifest read; a
+      // history-publishing run also seeds the site's month.
+      const dataset = stubFetch(
+        history === false ? [{ status: 404 }] : [{ status: 404 }, { status: 404 }],
+      );
       const built = await buildReps({
         sitesPath,
         outputRoot: join(tmp, root),
@@ -946,9 +951,10 @@ describe("buildReps", () => {
     await build("on", true);
     const off = await build("off", false);
 
-    // Off: no archive, no sidecar — and no seed read left the process.
+    // Off: no archive, no sidecar — the gate's manifest read is the only
+    // request that left the process.
     expect(existsSync(join(tmp, "off", SLUG, "history"))).toBe(false);
-    expect(off.requests).toHaveLength(0);
+    expect(off.requests).toHaveLength(1);
 
     // The ensemble documents are identical across all three choices…
     const site = (root: string) => readFileSync(join(tmp, root, SLUG, "sites", "dundee.json"));
@@ -978,4 +984,65 @@ describe("buildReps", () => {
     expect(manifest("off")).toEqual(manifest("default"));
     expect(manifest("on")).toEqual(manifest("default"));
   });
+
+  it("skips a pinned run the dataset already publishes", async () => {
+    scratch = mkdtempSync(join(tmpdir(), "reps-test-"));
+    const sitesPath = join(scratch, "sites.json");
+    writeFileSync(sitesPath, JSON.stringify({ schemaVersion: 2, sites: [SITE] }));
+    const manifest = { model: SLUG, referenceTime: "2026-08-07T00:00:00Z" };
+    const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
+    const lines: string[] = [];
+
+    const built = await buildReps({
+      sitesPath,
+      outputRoot: join(scratch, "data"),
+      referenceTime: "2026-08-07T00:00:00Z",
+      dataset: { fetch: dataset.fetch },
+      fetchBytes: async (url) => {
+        throw new Error(`unscripted URL ${url}`);
+      },
+      log: (line) => lines.push(line),
+    });
+
+    expect(built).toBe(false);
+    expect(lines).toEqual(["REPS run 2026-08-07T00:00:00Z is already published."]);
+  });
+});
+
+const catalogue = JSON.parse(readFileSync(packagedModelsPath(), "utf-8")) as {
+  models: Array<{
+    slug: string;
+    kind?: string;
+    stepHours: number;
+    horizonHours: number;
+    runIntervalHours: number;
+    capabilities: Record<string, unknown>;
+  }>;
+};
+
+it("models.json matches the builder configuration", () => {
+  const entry = catalogue.models.find((model) => model.slug === SLUG)!;
+  expect(entry.kind).toBe("ensemble");
+  expect(entry.stepHours).toBe(STEP_HOURS);
+  expect(entry.horizonHours).toBe(LAST_FORECAST_HOUR);
+  expect(entry.runIntervalHours).toBe(24 / RUN_HOURS.length);
+  const capabilities = entry.capabilities;
+  const published = SURFACE_SCALARS as readonly string[];
+  expect(capabilities["levels"]).toBe(true);
+  expect(capabilities["pressureLevels"]).toEqual([...PRESSURE_LEVELS]);
+  // REPS publishes neither CAPE nor CIN; the aggregate carries neither.
+  expect(capabilities["cape"]).toBe(published.includes("capeJkg"));
+  expect(capabilities["cin"]).toBe(published.includes("cinJkg"));
+  expect(capabilities["heatFluxes"]).toBe(
+    published.includes("sensibleHeatFluxWm2") && published.includes("latentHeatFluxWm2"),
+  );
+  // The REPS feed publishes no gust, omega, PBL, cloud structure, or smoke.
+  expect(capabilities["gust"]).toBe(false);
+  expect(capabilities["verticalVelocity"]).toBe(false);
+  expect(capabilities["pblHeight"]).toBe(false);
+  expect(capabilities["cloudLayers"]).toBe(false);
+  expect(capabilities["cloudProfile"]).toBe(false);
+  expect(capabilities["smoke"]).toBe(false);
+  // The transport semantics mirror the catalogue's precipitation token.
+  expect(capabilities["precipitation"]).toBe(SEMANTICS.precipitation);
 });

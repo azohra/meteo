@@ -1,17 +1,25 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { DecodeJ2k, J2kSamples } from "@azohra/meteo.grib";
 import {
   CAPE_SENTINEL,
   FETCH_CONCURRENCY,
   FORECAST_HOURS,
+  LAST_FORECAST_HOUR,
   MEMBER_COUNT,
   PERTURBATION_NUMBERS,
   PRESSURE_LEVELS,
+  RUN_HOURS,
+  SEMANTICS,
+  SLUG,
   SURFACE_SCALARS,
   TERRAIN_DAM_TO_M,
   WIND_LEVEL_TOKENS,
   aggregateHours,
   buildDocuments,
+  buildGeps,
   fileUrl,
   forecastHoursFromSteps,
   previousScheduledHour,
@@ -19,18 +27,17 @@ import {
   sampleScalarMembers,
   sampleWindMembers,
 } from "../../src/builders/geps.js";
+import { packagedModelsPath } from "../../src/catalogue.js";
 import { circularMedian, percentile, type MemberProfile } from "../../src/ensemble.js";
 import { dewPointDepression } from "../../src/moisture.js";
 import { maskSentinel } from "../../src/sentinel.js";
 import type { Site } from "../../src/sites.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
-import { useCleanWireEnv } from "../helpers/wire.js";
+import { stubFetch, useCleanWireEnv } from "../helpers/wire.js";
 
 useCleanWireEnv();
 
 const DUNDEE = { latitude: 49.291977, longitude: -117.183569 };
-// The fixture site carries no timeZone; the catalogue type requires one,
-// and the published GEPS document echoes none either way.
 const SITE: Site = {
   slug: "dundee",
   name: "Dundee",
@@ -805,8 +812,8 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   const document = result.documents[0]!;
   // 145.0 decametres in the file → 1450 m published.
   expect(document.site["modelElevationM"] as number).toBeCloseTo(1450.0, 3);
-  // The GEPS site block carries no timezone echo (unlike REPS).
-  expect(document.site).not.toHaveProperty("timeZone");
+  // The catalogue's timezone echo rides on the ensemble document.
+  expect(document.site["timeZone"]).toBe("America/Vancouver");
   // Ensemble envelope: the member count in run, the transport semantics
   // (no gust key — GEPS publishes none) between site and hours.
   expect(document.run.members).toBe(21);
@@ -998,4 +1005,69 @@ it("a datum above any Earth terrain fails loudly", () => {
   expect(() =>
     requirePlausibleModelElevation({ 0: { dundee: 9500.0 } }, { 0: { dundee: 32845.0 } }, [SITE]),
   ).toThrow(/higher than any Earth terrain/);
+});
+
+const catalogue = JSON.parse(readFileSync(packagedModelsPath(), "utf-8")) as {
+  models: Array<{
+    slug: string;
+    kind?: string;
+    stepHours: number;
+    horizonHours: number;
+    runIntervalHours: number;
+    capabilities: Record<string, unknown>;
+  }>;
+};
+
+it("models.json matches the builder configuration", () => {
+  const entry = catalogue.models.find((model) => model.slug === SLUG)!;
+  expect(entry.kind).toBe("ensemble");
+  expect(entry.stepHours).toBe(FORECAST_HOURS[0]);
+  expect(entry.horizonHours).toBe(LAST_FORECAST_HOUR);
+  expect(entry.runIntervalHours).toBe(24 / RUN_HOURS.length);
+  const capabilities = entry.capabilities;
+  const published = SURFACE_SCALARS as readonly string[];
+  expect(capabilities["levels"]).toBe(true);
+  expect(capabilities["pressureLevels"]).toEqual([...PRESSURE_LEVELS]);
+  // The aggregate publishes CAPE and CIN exactly when the catalogue says so.
+  expect(capabilities["cape"]).toBe(published.includes("capeJkg"));
+  expect(capabilities["cin"]).toBe(published.includes("cinJkg"));
+  expect(capabilities["heatFluxes"]).toBe(
+    published.includes("sensibleHeatFluxWm2") && published.includes("latentHeatFluxWm2"),
+  );
+  // The GEPS feed publishes no gust, omega, PBL, cloud structure, or smoke.
+  expect(capabilities["gust"]).toBe(false);
+  expect(capabilities["verticalVelocity"]).toBe(false);
+  expect(capabilities["pblHeight"]).toBe(false);
+  expect(capabilities["cloudLayers"]).toBe(false);
+  expect(capabilities["cloudProfile"]).toBe(false);
+  expect(capabilities["smoke"]).toBe(false);
+  // The transport semantics mirror the catalogue's precipitation token.
+  expect(capabilities["precipitation"]).toBe(SEMANTICS.precipitation);
+});
+
+it("skips a pinned run the dataset already publishes", async () => {
+  const scratch = mkdtempSync(join(tmpdir(), "geps-test-"));
+  try {
+    const sitesPath = join(scratch, "sites.json");
+    writeFileSync(sitesPath, JSON.stringify({ schemaVersion: 2, sites: [SITE] }));
+    const manifest = { model: SLUG, referenceTime: "2026-08-07T00:00:00Z" };
+    const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
+    const lines: string[] = [];
+
+    const built = await buildGeps({
+      sitesPath,
+      outputRoot: join(scratch, "data"),
+      referenceTime: "2026-08-07T00:00:00Z",
+      dataset: { fetch: dataset.fetch },
+      fetchBytes: async (url) => {
+        throw new Error(`unscripted URL ${url}`);
+      },
+      log: (line) => lines.push(line),
+    });
+
+    expect(built).toBe(false);
+    expect(lines).toEqual(["GEPS run 2026-08-07T00:00:00Z is already published."]);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });

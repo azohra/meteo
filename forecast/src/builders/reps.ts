@@ -701,10 +701,10 @@ export async function buildReps(options: RepsBuildOptions): Promise<boolean> {
       return false;
     }
     referenceTime = probed;
-    if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
-      log(`REPS run ${referenceTime} is already published.`);
-      return false;
-    }
+  }
+  if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
+    log(`REPS run ${referenceTime} is already published.`);
+    return false;
   }
 
   const cap = options.maxSteps ?? envMaxSteps();

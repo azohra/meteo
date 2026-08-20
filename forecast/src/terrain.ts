@@ -167,7 +167,8 @@ export function mPerDegLon(latitude: number): number {
   return 111_320.0 * Math.cos(latitude * (Math.PI / 180));
 }
 
-// Divide by π/180; multiplying by 180/π can differ in the last ulp.
+// x/(π/180) and x*(180/π) can differ in the last ulp; the committed
+// terrain analyses pin this spelling.
 const degrees = (x: number): number => x / (Math.PI / 180);
 
 export function bilinear(

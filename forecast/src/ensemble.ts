@@ -47,7 +47,8 @@ export function circularMedian(bearings: readonly number[]): number {
   if (bearings.length === 0) {
     throw new Error("circular median of no bearings");
   }
-  // Multiply by these constants; dividing by the inverse differs in the last ulp.
+  // Multiplying by these constants and dividing by their inverses can
+  // differ in the last ulp; published medians pin the multiply spelling.
   const degToRad = Math.PI / 180;
   const radToDeg = 180 / Math.PI;
   let east = 0;

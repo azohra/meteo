@@ -199,7 +199,8 @@ function sampleField(
 
 export function windFromUv(uMs: number, vMs: number): [speedMps: number, directionDeg: number] {
   const speed = Math.hypot(uMs, vMs);
-  // Multiply by 180/π; dividing by the inverse constant can differ in the last ulp.
+  // x*(180/π) and x/(π/180) can differ in the last ulp; published wind
+  // directions pin this spelling.
   const direction = (((Math.atan2(-uMs, -vMs) * (180 / Math.PI)) % 360) + 360) % 360;
   return [speed, direction];
 }

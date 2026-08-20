@@ -677,6 +677,7 @@ async function sampleDocuments(
         latitude: site.latitude,
         longitude: site.longitude,
         modelElevationM: terrain[0]![site.slug]!,
+        ...(site.timeZone ? { timeZone: site.timeZone } : {}),
       },
       semantics: SEMANTICS,
       hours: aggregateHours(memberProfiles),
@@ -747,7 +748,10 @@ export function aggregateHours(
 ): Array<Record<string, unknown>> {
   return aggregateMemberProfiles(memberProfiles, {
     surfaceScalars: SURFACE_SCALARS,
-    optionalSurfaceScalars: SURFACE_SCALARS,
+    // Only CAPE can be absent from a member surface: the -1.0 sentinel
+    // masks to a dropped key. Every other scalar is seeded per hour and a
+    // missing one is a builder bug the aggregator must refuse.
+    optionalSurfaceScalars: ["capeJkg"],
   });
 }
 
@@ -782,10 +786,10 @@ export async function buildGeps(options: GepsBuildOptions): Promise<boolean> {
       return false;
     }
     referenceTime = probed;
-    if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
-      log(`GEPS run ${referenceTime} is already published.`);
-      return false;
-    }
+  }
+  if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
+    log(`GEPS run ${referenceTime} is already published.`);
+    return false;
   }
 
   const cap = options.maxSteps ?? envMaxSteps();
