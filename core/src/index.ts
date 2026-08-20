@@ -1,4 +1,4 @@
-export { KMH_PER_MPS, kmhToMps, plausibleWindMps } from "./units.js";
+export { KMH_PER_MPS, kmhToMps, msToKmh, plausibleWindMps } from "./units.js";
 export {
   DEGREES_TO_RADIANS,
   degreesToRadians,

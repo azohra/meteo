@@ -85,7 +85,7 @@ function calculateEventMinutes(
   return 720 - 4 * (longitude + hourAngleDegrees) - equationOfTimeMinutes(julianCentury);
 }
 
-// Meeus polynomials here, not smoke.ts's Spencer series: Spencer is the
+// Meeus polynomials here, not a Spencer Fourier series: Spencer is the
 // cheap bulk per-hour form for transmittance ratios, where a quarter degree
 // of declination is invisible; at the horizon crossing the same error moves
 // a displayed event time by minutes.

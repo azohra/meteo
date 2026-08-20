@@ -196,10 +196,11 @@ function sampleField(
   return samples;
 }
 
+// Not core's componentsToWind: that spells the conversion x/(π/180) and
+// reports calm air as direction 0, either of which can move a published
+// value. This multiply spelling is what the goldens pin.
 export function windFromUv(uMs: number, vMs: number): [speedMps: number, directionDeg: number] {
   const speed = Math.hypot(uMs, vMs);
-  // x*(180/π) and x/(π/180) can differ in the last ulp; published wind
-  // directions pin this spelling.
   const direction = (((Math.atan2(-uMs, -vMs) * (180 / Math.PI)) % 360) + 360) % 360;
   return [speed, direction];
 }

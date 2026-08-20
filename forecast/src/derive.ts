@@ -1,4 +1,8 @@
-import { usableLiftTopM } from "@azohra/meteo.briefing/derive";
+import {
+  DRY_ADIABATIC_LAPSE_C_PER_M,
+  normalizeDegrees,
+  usableLiftTopM,
+} from "@azohra/meteo.briefing/derive";
 import {
   SITE_FORECAST_SCHEMA_VERSION,
   type ForecastHour,
@@ -9,9 +13,6 @@ import {
   type ForecastSurface,
   type SiteForecast,
 } from "@azohra/meteo.briefing/contract";
-
-const DRY_ADIABATIC_LAPSE_C_PER_M = 0.0098;
-const SINK_RATE_MPS = 1.0;
 
 // Matches the renderer's dense-cloud hatch threshold so the published cloud
 // base never sits above a layer the chart hatches.
@@ -117,7 +118,7 @@ function deriveHour(source: SourceHour, modelElevationM: number): ForecastHour {
       cloudBaseM,
       levels,
     },
-    SINK_RATE_MPS,
+    // usableLiftTopM's own published-contract default sink rate applies.
   );
 
   const surface: ForecastSurface = {
@@ -300,8 +301,4 @@ function clampAltitude(value: number, minimum: number): number {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
-}
-
-function normalizeDegrees(degrees: number): number {
-  return ((degrees % 360) + 360) % 360;
 }

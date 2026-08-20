@@ -19,7 +19,7 @@ import { TASK_CONCURRENCY, datamartBase, fetchBytes, lazyJ2kPool } from "../prov
 import type { DatasetOptions } from "../dataset.js";
 import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { aggregateMemberProfiles, type MemberProfile } from "../ensemble.js";
-import { dewPointDepression } from "../moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
 import { windFromUv } from "../providers/noaa.js";
 import { maskSentinel } from "../sentinel.js";
 import type { Site } from "../sites.js";
@@ -860,9 +860,9 @@ function deriveMemberProfile(
     const { levels: _levels, relativeHumidityPercent, capeJkg, ...rest } = hour;
     const source: Record<string, unknown> = {
       ...rest,
-      dewPointDepressionC: dewPointDepression(
+      dewPointDepressionC: dewPointDepressionC(
         hour["temperatureC"] as number,
-        relativeHumidityPercent as number,
+        dewPointC(hour["temperatureC"] as number, relativeHumidityPercent as number),
       ),
       levels: levels
         .map((level) => withDewPointDepression(level))

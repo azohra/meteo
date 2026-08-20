@@ -58,6 +58,9 @@ export function smokeHoursByValidAt(smoke: SmokeDocument): Map<string, SmokeDocu
 }
 
 /** Cosine of the solar zenith angle at a UTC instant and location — the slant-path input for smokeTransmittance; negative means the sun is below the horizon. */
+// Spencer (1971) Fourier form, deliberately not core's Meeus solar: bulk
+// per-hour transmittance tolerates a quarter degree of declination, and
+// the cheap form keeps the smoke loop out of the polynomial evaluations.
 export function cosSolarZenith(validAt: string, latitudeDeg: number, longitudeDeg: number): number {
   const date = new Date(validAt);
   const startOfYear = Date.UTC(date.getUTCFullYear(), 0, 1);

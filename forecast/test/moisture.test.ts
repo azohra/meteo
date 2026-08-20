@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { dewPointDepression } from "../src/moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
+
+// The builders derive dew-point depression through briefing's Magnus pair;
+// these pins hold that composition to the engine's Python derivation.
+const dewPointDepression = (temperatureC: number, rhPercent: number): number =>
+  dewPointDepressionC(temperatureC, dewPointC(temperatureC, rhPercent));
 
 describe("dewPointDepression", () => {
   it("matches the Python derivation on ordinary values", () => {

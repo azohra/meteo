@@ -1,4 +1,4 @@
-import { dewPointDepression } from "../moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
 
 export const KELVIN = 273.15;
 
@@ -80,7 +80,10 @@ export function withDewPointDepression(level: BuilderLevel): BuilderLevel {
   const { relativeHumidityPercent, ...rest } = level;
   return {
     ...rest,
-    dewPointDepressionC: dewPointDepression(level["temperatureC"]!, relativeHumidityPercent!),
+    dewPointDepressionC: dewPointDepressionC(
+      level["temperatureC"]!,
+      dewPointC(level["temperatureC"]!, relativeHumidityPercent!),
+    ),
   };
 }
 

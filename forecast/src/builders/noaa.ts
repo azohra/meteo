@@ -10,7 +10,7 @@ import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
 import type { DatasetOptions } from "../dataset.js";
 import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import type { ArchivableProfile } from "../history.js";
-import { dewPointDepression } from "../moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
 import {
   fetchIndex,
   fetchRecord,
@@ -486,7 +486,9 @@ export async function buildProfiles(
         pressureHpa,
         heightM: h,
         temperatureC: t - KELVIN,
-        dewPointDepressionC: model.levelDewPoint ? t - m : dewPointDepression(t - KELVIN, m),
+        dewPointDepressionC: model.levelDewPoint
+          ? t - m
+          : dewPointDepressionC(t - KELVIN, dewPointC(t - KELVIN, m)),
         windDirectionDeg: wind[1],
         windSpeedMps: wind[0],
       };

@@ -60,6 +60,7 @@ Speeds compute in m/s; km/h is a display conversion:
 
 - `KMH_PER_MPS`: the constant `3.6`.
 - `kmhToMps(value)`: divides by `KMH_PER_MPS`.
+- `msToKmh(value)`: multiplies by `KMH_PER_MPS`.
 - `plausibleWindMps(value, subject)`: returns the wind speed unchanged, or
   throws when it is outside the plausible 0–140 m/s range. The `subject`
   names the source in the error message, so a decoder or adapter that

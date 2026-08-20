@@ -167,8 +167,9 @@ export function mPerDegLon(latitude: number): number {
   return 111_320.0 * Math.cos(latitude * (Math.PI / 180));
 }
 
-// x/(π/180) and x*(180/π) can differ in the last ulp; the committed
-// terrain analyses pin this spelling.
+// The same divide spelling as core's radiansToDegrees (x*(180/π) can
+// differ in the last ulp); local because briefing/derive does not carry
+// the angle helpers and the committed terrain analyses pin the bytes.
 const degrees = (x: number): number => x / (Math.PI / 180);
 
 export function bilinear(

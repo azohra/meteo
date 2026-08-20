@@ -14,13 +14,17 @@ import {
   type NoaaWire,
 } from "../../src/builders/noaa.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
-import { dewPointDepression } from "../../src/moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
 import type { GridPointValue, SampleSite } from "../../src/providers/noaa.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
 import { splitMembers } from "../../src/history.js";
 import { stubFetch, useCleanWireEnv } from "../helpers/wire.js";
 
 useCleanWireEnv();
+
+// The builders derive depression through briefing's Magnus pair.
+const dewPointDepression = (temperatureC: number, rhPercent: number): number =>
+  dewPointDepressionC(temperatureC, dewPointC(temperatureC, rhPercent));
 
 const fixtureIdx = (name: string): IdxRecord[] =>
   parseIdx(

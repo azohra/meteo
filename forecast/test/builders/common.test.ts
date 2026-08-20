@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dewPointDepression } from "../../src/moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
 import { compactJson } from "../../src/publish.js";
 import {
   KELVIN,
@@ -15,6 +15,10 @@ import {
   validTime,
   withDewPointDepression,
 } from "../../src/builders/common.js";
+
+// The builders derive depression through briefing's Magnus pair.
+const dewPointDepression = (temperatureC: number, rhPercent: number): number =>
+  dewPointDepressionC(temperatureC, dewPointC(temperatureC, rhPercent));
 
 it("KELVIN is the 0 °C offset", () => {
   expect(KELVIN).toBe(273.15);

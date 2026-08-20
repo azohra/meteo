@@ -19,12 +19,16 @@ import {
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { circularMedian, percentile, type MemberProfile } from "../../src/ensemble.js";
 import { splitMembers } from "../../src/history.js";
-import { dewPointDepression } from "../../src/moisture.js";
+import { dewPointC, dewPointDepressionC } from "@azohra/meteo.briefing/derive";
 import type { Site } from "../../src/sites.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
 import { stubFetch, useCleanWireEnv } from "../helpers/wire.js";
 
 useCleanWireEnv();
+
+// The builders derive depression through briefing's Magnus pair.
+const dewPointDepression = (temperatureC: number, rhPercent: number): number =>
+  dewPointDepressionC(temperatureC, dewPointC(temperatureC, rhPercent));
 
 const DUNDEE = { latitude: 49.291977, longitude: -117.183569 };
 const SITE: Site = {

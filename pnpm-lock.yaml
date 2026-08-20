@@ -171,6 +171,9 @@ importers:
       '@azohra/meteo.core':
         specifier: workspace:*
         version: link:../core
+      '@azohra/meteo.forecast':
+        specifier: workspace:*
+        version: link:../forecast
       '@azohra/meteo.station':
         specifier: workspace:*
         version: link:../station

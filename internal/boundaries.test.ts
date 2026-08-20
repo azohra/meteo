@@ -295,6 +295,24 @@ describe("dependency direction (derived from the manifest)", () => {
       }
     }
   });
+
+  it("the site reaches the packages only through their names — no relative escapes into a workspace member", () => {
+    // Repo-level data directories (the scenarios/ registry) stay reachable
+    // relatively; package sources do not.
+    const memberDirectories = workspaceMemberDirectories().filter(
+      (directory) => directory !== "site",
+    );
+    for (const file of sourceFiles("site")) {
+      for (const specifier of importSpecifiers(file)) {
+        if (!specifier.startsWith(".")) continue;
+        const [target] = resolveRelative(file, specifier).split("/");
+        expect(
+          memberDirectories,
+          `${file} imports ${specifier} (reaches into a package)`,
+        ).not.toContain(target);
+      }
+    }
+  });
 });
 
 describe("external companions (derived from the manifest)", () => {

@@ -5,7 +5,7 @@ import {
   type ObservationModelEntry,
   type SmokeModelEntry,
 } from "@azohra/meteo.briefing/contract";
-import rawCatalogue from "../../../forecast/models.json";
+import rawCatalogue from "@azohra/meteo.forecast/models.json";
 
 const catalogue: ModelCatalogue = modelCatalogueSchema.parse(rawCatalogue);
 
