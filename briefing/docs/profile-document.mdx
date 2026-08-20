@@ -86,8 +86,8 @@ still carry an `altitudeM` field; current parsers ignore it.
 The optional `site.timeZone` is echoed from the
 site catalogue's required IANA zone, so new documents carry their own
 local-time context without a catalogue join. The field is optional because
-older stored profiles predate it; absence means the document predates the
-echo (never that the launch uses UTC) and requires a caller-owned timezone
+older stored profiles predate it; absence marks an older document
+(never that the launch uses UTC) and requires a caller-owned timezone
 choice. The
 [contract guide](/docs/briefing/contract/#site-timezone-propagation) lists
 each API's documented fallback behaviour.

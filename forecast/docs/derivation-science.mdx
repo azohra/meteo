@@ -9,7 +9,7 @@ import DerivationFlow from "../../site/src/components/docs/DerivationFlow.astro"
 
 Each weather model publishes atmospheric fields. One shared derivation turns an hourly vertical
 column into cloud base, thermal velocity, boundary-layer top, and usable
-lift: the stored derivations, baked into every published profile. The
+lift, all baked into every published profile. The
 renderer classifies stability from the same published column.
 The constants and fallback rules define the product.
 
@@ -79,7 +79,7 @@ The surface parcel cools at 0.0098 °C/m as it rises dry adiabatically. The code
 parcel is no longer warmer than the model environment, then intersects the parcel and environmental
 temperature lines inside that layer. The crossing is `boundaryLayerTopM`.
 
-If the parcel stays warmer than the entire available sounding, the top level is returned. That value is
+If the parcel stays warmer than the entire available sounding, the code returns the top level. That value is
 a column ceiling, not evidence that mixing stops there; the ensemble work records this
 kind of censoring explicitly.
 

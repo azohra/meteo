@@ -105,8 +105,8 @@ explains every mark on the chart using the committed
 
 `@azohra/meteo.station` reads live weather stations through one wire contract:
 vendor adapters normalize WindNerd, WeatherFlow Tempest, Campbell
-Scientific, and Ecowitt hardware into it, or your own, through
-`defineStationAdapter`. A mountable `Request → Response` handler serves the
+Scientific, and Ecowitt hardware into it; `defineStationAdapter`
+admits your own. A mountable `Request → Response` handler serves the
 whole inventory as a single feed, and hooks and components render it
 natively, in your design system, with no vendor iframe:
 
@@ -168,9 +168,9 @@ The [publisher documentation](https://meteo.azohra.com/docs/forecast/run-one-mod
 covers launch catalogues, output paths, smoke caps, full builds, and the
 history flag (`--history`, on by default), which appends month archives
 beside the current documents.
-Builders move real provider volume (per-model transports and transfer
-costs are recorded in the
-[feed reference](https://meteo.azohra.com/docs/forecast/forecast-model-feeds/))
+Builders move real provider volume (the
+[feed reference](https://meteo.azohra.com/docs/forecast/forecast-model-feeds/)
+records per-model transports and transfer costs)
 and must not run more often than their model publishes.
 
 An operator's pipeline is your own repository composing the engine; the platform ships

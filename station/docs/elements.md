@@ -178,7 +178,7 @@ because calm has no direction.
 With no authored content `<meteo-station-card>` renders the full
 default card; any authored child (an element, or non-whitespace text) means
 composition mode: your pieces move into the card and only they appear. The
-choice is read once, when the element first renders. The `compose`
+element reads the choice once, at first render. The `compose`
 attribute forces composition mode even with nothing inside — an empty card,
 never a surprise default — for markup generated child-by-child.
 
@@ -196,8 +196,8 @@ Each part accepts its own `thresholds`/`unit` attributes and
 
 ## Client rendering and server HTML
 
-Elements are client-rendered light DOM: there is no declarative shadow DOM
-and no hydration. Server HTML may contain the tags; they are inert until
+Elements are client-rendered light DOM: no declarative shadow DOM, no
+hydration. Server HTML may contain the tags; they are inert until
 `defineMeteoElements()` runs, then render themselves on upgrade, replacing
 any pre-existing children (usable as a static skeleton), except
 `<meteo-station-card>`, where authored children are the composition signal.

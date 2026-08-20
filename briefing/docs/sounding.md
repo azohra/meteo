@@ -19,7 +19,7 @@ a profile at all starts at
 
 This is a flyable-band profile, capped by the published column. The
 axes are linear height (metres MSL, floor at the model elevation) and
-linear temperature. It is not a skew-T: there is no skewed
+linear temperature. It is not a skew-T: it has no skewed
 temperature coordinate and no adiabat grid, because the input cannot
 honour one. A profile document carries only the levels its model
 publishes into the flyable band (the deterministic models in the

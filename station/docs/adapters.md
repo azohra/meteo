@@ -169,7 +169,7 @@ identity), never credentials or host-chosen labels:
 [Tempest keys exclude the token](/docs/station/adapters/tempest/#endpoint-and-the-token-free-cache-key),
 so a config carrying a wrong token can be served a payload another config's
 valid token warmed. Payloads are per-station, not per-credential, so that
-sharing is correct; but it means the default cache trusts every tenant in
+sharing is correct; but the default cache then trusts every tenant in
 the process. Multi-tenant hosts whose tenants must not share payloads, or
 must re-prove credentials per request, should inject a cache per tenant.
 

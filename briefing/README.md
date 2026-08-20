@@ -10,7 +10,7 @@ the visual tier of the same science.
 
 | Entry point | What it is |
 |---|---|
-| `@azohra/meteo.briefing` | The capability root: re-exports the contract: document types, zod schemas, and never-throw parse guards for every published document kind. |
+| `@azohra/meteo.briefing` | The capability root: the re-exported contract — document types, zod schemas, and never-throw parse guards for every published document kind. |
 | `@azohra/meteo.briefing/contract` | The contract itself: `SiteForecast`, the smoke/observation documents, manifests, catalogues, the runs index, and their parsers. |
 | `@azohra/meteo.briefing/derive` | Pure meteorological derivations of published values: lapse rates, the virtual-temperature parcel ascent and its thermal index, shear, usable-lift top at a chosen sink rate, moisture, smoke transmittance, projection, alignment, local-day helpers. |
 | `@azohra/meteo.briefing/analyze` | `analyzeForecast`: typed findings over one forecast (thermal window, cap timing, wind exceedance, smoke impact, and the rest of the closed vocabulary), plus the public `AnalysisFrame` for caller extensions. |

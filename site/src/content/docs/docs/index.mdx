@@ -42,13 +42,13 @@ into a pipeline of their own.
 
 ## Who owns each value
 
-The forecast engine owns the **stored derivations** — values that cannot be
-derived from the published profile alone, including
+The forecast engine owns the **stored derivations** — values the published
+profile alone cannot yield, including
 its boundary-layer, thermal-velocity, cloud-base, and usable-lift series. The briefing
 package owns the **pure derivations** — functions of the published document — and the reference
 renderer. Presentation
-parameters, such as timezone, windows, palette, overlays, and sink-rate choices exposed by the
-renderer, belong to the consumer.
+parameters belong to the consumer: timezone, windows, palette, overlays, and the sink-rate
+choices the renderer exposes.
 
 The parameterized `usableLiftTopM` is the explicit exception spanning that boundary. The
 implementation is the package's pure function; the engine imports it and stores its 1.0 m/s

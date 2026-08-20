@@ -194,7 +194,7 @@ only, and a high site's floor prunes the lower one), the scene draws no
 field and records why in `scene.suppressed`
 (`{ key: "verticalVelocity", reason }`). `buildKeySpec` reads only what
 was drawn, so a suppressed field never reaches the key. Two levels
-cannot outline a band, only imply one, so the scene draws nothing.
+cannot outline a band, only imply one.
 Without a capabilities declaration no gate applies, because the
 scene cannot know what the model publishes.
 

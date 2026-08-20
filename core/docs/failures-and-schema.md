@@ -53,7 +53,7 @@ are up to the consumer.
 
 "Closed" applies to what a transport may report, not to what a
 capability's wire may
-carry: a wire may extend the vocabulary with failures that are its own.
+carry: a wire may extend the vocabulary with its own failures.
 Station's `UNAVAILABLE_REASONS` is these four codes plus `not_configured`
 (a config verdict no upstream ever produced), as
 [its wire contract](/docs/station/wire-contract/) documents.

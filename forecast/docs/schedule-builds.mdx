@@ -42,10 +42,10 @@ UTC, catches each run once:
 ```
 
 Idempotency makes the timing forgiving rather than critical: a tick that
-fires before the run completes publishes nothing, and a tick that sees an
-already-published `referenceTime` exits without rewriting, so an extra
-tick per window (say, 30 minutes later) costs one cheap manifest read and
-covers a slow provider day. `deploy.sh` is whatever moves `--output` to
+fires before the run completes publishes nothing; a tick that sees an
+already-published `referenceTime` exits without rewriting. An extra
+tick per window (say, 30 minutes later) therefore costs one cheap
+manifest read and covers a slow provider day. `deploy.sh` is whatever moves `--output` to
 your hosting ([Publish static output](/docs/forecast/static-output/) shows
 the sync commands); run it only on a zero exit.
 

@@ -22,8 +22,8 @@ The reference lives in [`docs/`](docs/) and is served at
   provider bytes to published documents, and which module owns what.
 - [Meteogram derivations](docs/derivation-science.mdx): the equations,
   constants, and fallbacks behind every published derived quantity.
-- [Builder contract](docs/builder-contract.md): the eight invariants
-  every builder must honour. These are the binding rules.
+- [Builder contract](docs/builder-contract.md): the eight binding
+  invariants every builder must honour.
 - [Provider transports](docs/provider-transports.md): whole-file ECCC
   sampling, indexed NOAA byte ranges, whole-file GOES granules.
 

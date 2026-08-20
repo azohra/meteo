@@ -19,8 +19,8 @@ the server-side counterpart of
 
 ## Poll runs.json on your own cadence
 
-The dataset is static files, so there is no webhook to subscribe to and
-none is needed: the poll is the subscription. One fetch of `runs.json`
+The dataset is static files, so it offers no webhook and needs none:
+the poll is the subscription. One fetch of `runs.json`
 (the cross-model run index, regenerated wholesale at every publish) answers
 "what run is current for every model". `loadRuns({ fetch, baseUrl })`
 fetches it with the same discriminated miss semantics as every other
@@ -80,7 +80,7 @@ work list and is retried by the next tick, for free.
 
 A model's sites are separate files behind separate cache entries, so around
 a publish, per-site fetches can straddle two runs even when each
-manifest/document pair looks internally consistent on its own. `loadSiteSet`
+manifest/document pair looks consistent on its own. `loadSiteSet`
 exists for exactly this. It anchors on one fetch of the model's manifest
 as the commit point, requires every site document to carry that manifest's
 run, and retries once on a mid-publish mix; the
@@ -201,8 +201,8 @@ above should not pretend otherwise. A **baseline** feed is one your product
 cannot serve its purpose without; a **bonus** feed enriches the picture
 while it is there: a second opinion from another model, a smoke overlay,
 an observation series. The distinction matters because their failures mean
-different things: a baseline model gone stale is *your outage* (alert,
-escalate, apologize), while a bonus feed going quiet is weather, or a
+different things. A baseline model gone stale is *your outage* (alert,
+escalate, apologize); a bonus feed going quiet is weather, or a
 provider's bad day: say so in the product and keep serving
 everything else. One freshness grade should never take the whole product
 down with it.

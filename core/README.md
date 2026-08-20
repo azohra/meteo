@@ -7,7 +7,7 @@ every other `@azohra/*` meteorology package builds on.
 
 - **Forecasts**: the published site-forecast contract, pure derivations,
   analysis, comparison, history, transport, and the Meteogram presentation
-  tier → [`@azohra/meteo.briefing`](../forecast/README.md)
+  tier → [`@azohra/meteo.briefing`](../briefing/README.md)
 - **Live stations**: live weather-station reading, derivation, and display
   (client, server, React, and custom-element bindings) →
   [`@azohra/meteo.station`](../station/README.md)

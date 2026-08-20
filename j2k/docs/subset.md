@@ -3,13 +3,13 @@ title: "The subset"
 description: "The exact codestream shape @azohra/meteo.j2k decodes, measured from the feeds; everything outside it fails loudly with a named UnsupportedJ2kError."
 ---
 
-Every JPEG 2000 codestream the feeds ship — the twelve OpenJPEG-encoded
+The feeds ship two codestream lineages: the twelve OpenJPEG-encoded
 ECCC fields of the
 [twenty-message golden corpus](/docs/grib/correctness/) (GDPS, GEPS,
-HRDPS, RDPS, REPS, RAQDPS; the corpus's NOAA messages carry no JPEG 2000)
-plus the JasPer-encoded shape a live RDPS CAPE field
-surfaced the day this decoder went to production — falls inside this
-shape, and this decoder covers exactly it:
+HRDPS, RDPS, REPS, RAQDPS; the corpus's NOAA messages carry no JPEG 2000),
+and the JasPer-encoded shape a live RDPS CAPE field
+surfaced the day this decoder went to production. Every one falls inside
+this shape, and this decoder covers exactly it:
 
 - J2K Part 1 raw codestream (no JP2 container: GRIB embeds bare
   SOC..EOC)
@@ -50,9 +50,8 @@ resolution-major
 orders are accepted interchangeably, because with one layer and one
 component they emit the same resolution-then-precinct packet sequence;
 the position-major orders (PCRL/CPRL) are accepted only while every
-resolution has a single precinct, where all five orders coincide: with
-one precinct per resolution there is only one position to walk, so
-position-major and resolution-major emit the same packet sequence.
+resolution has a single precinct: with one position to walk, all five
+orders emit the same packet sequence.
 
 ## The JasPer story
 

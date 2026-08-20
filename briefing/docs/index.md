@@ -14,10 +14,10 @@ analysis, comparison, transport, history) needs no DOM and produces typed
 values and findings; what it reads is the published-document family
 (profiles, manifests, catalogues, smoke, observation, and site-context
 documents), each with its own reference page below. The **presentation
-tier** is three chart families — the [Meteogram](/docs/briefing/reading-a-meteogram/)
+tier** is three chart families: the [Meteogram](/docs/briefing/reading-a-meteogram/)
 (`/meteogram`), the single-hour [sounding](/docs/briefing/sounding/)
 (`/sounding`), and the [compare board](/docs/briefing/compare-board/)
-(`/compare-board`): a validated document becomes a serializable scene
+(`/compare-board`). A validated document becomes a serializable scene
 graph, and the scene becomes deterministic SVG. The package installs on its own
 (Node 22 or later; browsers and workers need no Node at all):
 

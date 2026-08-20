@@ -5,8 +5,8 @@ description: Load the append-only month archives with the member-splitting reade
 
 `@azohra/meteo.briefing/history` is documents through time, in two halves that feed each
 other: loaders that read the published
-[month archives](/docs/briefing/history-archives/) (the archive format this
-API reads) into deduped, chronological runs, and
+[month archives](/docs/briefing/history-archives/) into deduped,
+chronological runs, and
 `compareRuns`, which turns [`@azohra/meteo.briefing/compare`](/docs/briefing/compare/)'s
 member axis from "models at one instant" to "runs of one model" and states
 the convergence ladder: what each successive run said about the same local

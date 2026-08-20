@@ -29,7 +29,7 @@ The engine is the package. An operator's pipeline (the cron schedule,
 the site catalogue a deployment builds from, the bucket and its
 credentials) is the operator's own repository. The platform ships no
 production instance; the reference deployment lives with its
-operator. What the engine guarantees is the published surface: any
+operator. The engine guarantees the published surface: any
 operator's instance publishes the same versioned document shapes at the
 same stable paths, so everything on the read side works against any of
 them.
@@ -59,4 +59,4 @@ The engine's own reference:
 | [Model capabilities](/docs/forecast/model-capabilities/) | What each model's fields mean, and which absences are stated facts |
 | [Forecast model feeds](/docs/forecast/forecast-model-feeds/) | Dated provider facts: verified paths, schedules, fields, retention, transport, and licensing |
 | [Provider transports](/docs/forecast/provider-transports/) | Whole-file ECCC sampling, indexed NOAA byte ranges, whole-file GOES granules |
-| [Builder contract](/docs/forecast/builder-contract/) | For builder authors: the eight invariants every builder must honour |
+| [Builder contract](/docs/forecast/builder-contract/) | For builder authors: the eight binding invariants every builder must honour |

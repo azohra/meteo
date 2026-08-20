@@ -60,7 +60,7 @@ scenarios/
 
 The scenario runner discovers only
 `scenarios/definitions/*.json`. Files below `definitions/invalid/` are test
-fixtures. It resolves baseline paths from `scenarios/`, not from the definition
+fixtures. The runner resolves baseline paths from `scenarios/`, not from the definition
 file's directory or the process working directory.
 
 `catalog/` holds the three synthetic sites (`test-hill`, `test-ridge`, and
@@ -70,10 +70,10 @@ documents the logbook entry
 [The mountain the model sees](https://meteo.azohra.com/docs/forecast/the-mountain-the-model-sees/)
 reads its relief and land-cover figures from.
 
-`index.json` is a generated registry. Generation populates each entry with the
+`index.json` is a generated registry: each entry carries the
 definition's lesson metadata (including the `launch` a renderer should pass
-as `MeteogramOptions.launch`), generated output path or paths, and SHA-256
-output hash. A definition without generated output must not be advertised
+as `MeteogramOptions.launch`), the generated output path or paths, and the
+SHA-256 output hash. A definition without generated output must not be advertised
 through the index.
 
 ## Definition fields
@@ -81,7 +81,7 @@ through the index.
 Every definition has these required fields:
 
 - `id`, `title`, and `lesson` identify the recipe and the single relationship
-  it is meant to teach;
+  it teaches;
 - `kind` is `deterministic`, `ensemble`, or `comparison`;
 - `modelShape` selects a synthetic transport shape, not a named forecast model;
 - `timeZone` is an explicit IANA-style zone echoed into the generated
@@ -120,8 +120,8 @@ perturbations. `symmetric` perturbations are balanced ranks over the declared
 spread, `uniform` uses the spread as a bounded half-range, and `normal` uses it
 as the standard deviation. Correlation selects one draw for the whole column,
 for each scenario hour, for each pressure level, or for each individual source
-position. Every member source column is derived independently before the
-resulting profiles enter the production ensemble aggregator.
+position. The generator derives every member source column independently
+before the resulting profiles enter the production ensemble aggregator.
 
 A comparison declares two to four neutral variant ids; variant-specific
 transforms refer to those ids through `target`. Its output filenames include
@@ -151,7 +151,7 @@ bands, comparison targets not declared by the definition, and capability
 declarations that disagree with the resulting source shape.
 
 Transforms cannot name a `derived.*` field. Assertions may read derived fields
-because their job is to check the forecaster's result; they do not write values.
+because they check the forecaster's result; they do not write values.
 Assertions use explicit hour indices and, for pressure-level fields, an exact
 pressure or nearest-height selector. Presence assertions preserve the important
 difference between an absent field and a field whose value is zero.
@@ -166,9 +166,8 @@ suffix. A nearest-height selector positions ensemble levels by their median
 ## Baselines and attribution
 
 A `synthetic` baseline is authored input with no claim of observational or
-forecast provenance. It still uses the exact source shape accepted by
-`deriveSiteForecast()` so the synthetic path exercises production
-derivations.
+forecast provenance. It still uses the exact source shape `deriveSiteForecast()` accepts,
+so the synthetic path exercises production derivations.
 
 A `calibrated` baseline may be reconstructed from real provider output to keep
 synthetic magnitudes and vertical relationships credible. It is calibration

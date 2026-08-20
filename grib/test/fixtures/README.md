@@ -2,7 +2,7 @@
 
 Single-message GRIB2 files harvested from the live provider feeds the
 retired Python pipeline consumed, paired with ecCodes-derived expectation sidecars. The
-corpus exists to validate the TypeScript GRIB2 decoder against ecCodes
+corpus validates the TypeScript GRIB2 decoder against ecCodes
 (2.48.0): for every fixture, a decoder that reproduces the sidecar's
 `values.sha256` (the decoded array serialized as little-endian float64),
 statistics, samples, and nearest-gridpoint results is bit-for-bit compatible

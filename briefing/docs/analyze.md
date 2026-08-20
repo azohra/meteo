@@ -13,8 +13,8 @@ that cite hours carry the underlying values and UTC `validAt` instants in an
 ![A Meteogram with the thermalWindow finding computed by analyzeForecast overlaid as a highlighted band, and the day's other findings listed with their evidence values.](figures/analyze-findings.svg)
 
 Use `@azohra/meteo.briefing/derive` when you need quantities. Use `@azohra/meteo.briefing/analyze` when you
-need a statement that remains inspectable after the full profile is no longer
-in the immediate view or prompt.
+need a statement that remains inspectable after the full profile has left
+the view or prompt.
 
 [`@azohra/meteo.briefing/compare`](/docs/briefing/compare/) applies one analysis threshold
 set across multiple models and compares their findings.
@@ -413,7 +413,7 @@ their timings can be read. A mixed-cadence document also carries a
 `stepCadence` caveat naming its widest step.
 
 Every finding `day` uses the exported `LocalDayKey` string type. Compute scene
-day windows and analysis with the same timezone so midnight does not split one
+day windows and analysis with the same timezone so midnight never splits one
 local day across two keys.
 
 `resolveAnalyzeThresholds(overrides)` returns the complete threshold set used

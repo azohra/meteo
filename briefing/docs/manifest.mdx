@@ -59,7 +59,7 @@ The observation datasets (`goes18-dsr`, `goes18-aod`) publish a manifest
 variant: it keeps the identity and `stats` fields but carries
 `firstObservedAt`, `lastObservedAt`, and `observationCount` in place of the
 forecast-hour extent (its `referenceTime` equals `lastObservedAt`), so
-`parseForecastManifestJson` does not accept it; parse it with
+`parseForecastManifestJson` does not accept it. Parse it with
 `parseObservationManifestJson`, or with `parseManifestJson` when the
 dataset kind is unknown; the
 [observation document reference](/docs/briefing/observation-document/)

@@ -14,7 +14,7 @@ the same absence rules.
 It never rides the public station feed. Data usage and carrier identity are
 operational facts for the station's operator, so the loader returns a
 standalone document for the operator's own routes (an admin page, a
-health check) and the [wire contract](/docs/station/wire-contract/) is
+health check), leaving the [wire contract](/docs/station/wire-contract/)
 untouched.
 
 ## The contract
@@ -88,10 +88,10 @@ The options bag takes the standard
 response whose device id is not the one asked for.
 
 `GET https://dashboard.hologram.io/api/1/devices/<deviceId>`. Responses
-cache for 300 seconds by default (a trial value, caller-movable — Hologram
+cache for 300 seconds by default under the key
+`hologram/device/<deviceId>` (a trial value, caller-movable — Hologram
 devices report in hourly-ish sessions, so five minutes keeps an admin view
-current without leaning on the API) under the key
-`hologram/device/<deviceId>`. The API key is not part of the key:
+current without leaning on the API). The API key is not part of the key:
 credentials stay out of shared caches
 ([the cache trust model](/docs/station/adapters/#the-cache-trust-model)).
 

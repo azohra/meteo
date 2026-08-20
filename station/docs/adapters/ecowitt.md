@@ -27,7 +27,7 @@ rain, solar, and UV.
 | `hasBattery` | boolean, default `true` | Whether the outdoor array reports supply volts (the WS90 does); declares the battery capability. |
 | `latitude`, `longitude` | numbers, optional | Position claims carried on the wire; the `real_time` payload carries none. |
 | `timeZone` | IANA zone, optional | Carried on the wire for display; payload fields are epoch-stamped, so parsing does not need it. |
-| `pageUrl` | http(s) URL, optional | There is no public per-device URL to derive, so this is the only way a page link reaches the wire. |
+| `pageUrl` | http(s) URL, optional | Ecowitt offers no public per-device URL to derive a default from, so this field is the only way a page link reaches the wire. |
 
 ## Capabilities
 

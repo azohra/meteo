@@ -38,7 +38,7 @@ companion for those differences.
 ## Pressure, precipitation, cloud, and w\* use separate scales
 
 The strips share the time axis but use separate numeric scales. Every model carries the first four;
-a model that publishes the fields adds a CAPE strip, and models with layered cloud add a three-row
+a model that publishes CAPE adds a CAPE strip, and models with layered cloud add a three-row
 layer strip:
 
 | Strip | Measurement | Reading limit |
@@ -276,10 +276,10 @@ declares is in
 
 ## Add local evidence
 
-A Meteogram samples one model grid cell. Resolve rotor behind a spur, a launch cycle inside that cell,
-smoke suppressing surface heat, the break time of a capped CAPE column, precipitation phase, and an
-early valley-wind arrival with current observations, aviation forecasts, radar or satellite,
-forecast maps, and local site knowledge.
+A Meteogram samples one model grid cell. Use current observations, aviation forecasts, radar or
+satellite, forecast maps, and local site knowledge to resolve rotor behind a spur, a launch cycle
+inside that cell, smoke suppressing surface heat, the break time of a capped CAPE column,
+precipitation phase, and an early valley-wind arrival.
 
 A forecast is the model's statement, not a site assessment. Conditions at
 launch are measured by the pilot, and the launch decision is theirs.

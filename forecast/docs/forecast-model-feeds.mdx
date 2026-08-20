@@ -22,10 +22,10 @@ export const feedFacts = {
   "goes18-aod": { transport: "noaa-goes18, whole NetCDF granules", availability: "~3.3 min after scan end", cost: "—", verified: "2026-08-10" },
 };
 
-Every builder supplies the same surface fields, five fields on each pressure
-level (plus vertical velocity and per-level cloud fraction where the
-transport carries them) and model terrain elevation to the shared
-derivation. Feeds that publish them also supply the optional science
+Every builder supplies the shared derivation with the same surface
+fields, five fields on each pressure level (plus vertical velocity and
+per-level cloud fraction where the transport carries them), and model
+terrain elevation. Feeds that publish them also supply the optional science
 fields: 10 m gusts, surface-based CAPE and CIN, model boundary-layer
 height, and layered cloud. Each model's curated pressure-level set and
 science-field capabilities are declared in
@@ -220,9 +220,9 @@ ECCC's current system description of the Global Deterministic Prediction
 System (checked 2026-08-08) identifies it as a coupled atmosphere, ocean,
 and sea-ice forecast whose large-scale temperature and wind are spectrally
 nudged toward its GEML data-driven weather model, a material change in
-lineage under a familiar open-data contract. A ten-day Meteogram still has
-published sensible and latent heat fluxes rather than proxy surface
-heating.
+lineage under a familiar open-data contract. A ten-day Meteogram still
+draws on published sensible and latent heat fluxes rather than proxy
+surface heating.
 
 | Fact | Value |
 | --- | --- |

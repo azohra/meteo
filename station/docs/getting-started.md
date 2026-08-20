@@ -97,8 +97,8 @@ and a machine `reason`; the documents, field by field, are the
 [wire contract](/docs/station/wire-contract/), with committed annotated
 examples in `station/schema/`.
 
-Every field each vendor entry takes, and the quirks its adapter guards,
-is on that vendor's reference page:
+Each vendor's reference page lists every field its entry takes and the
+quirks its adapter guards:
 [WindNerd](/docs/station/adapters/windnerd/),
 [Tempest](/docs/station/adapters/tempest/),
 [Campbell](/docs/station/adapters/campbell/),

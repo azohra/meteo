@@ -110,7 +110,7 @@ document or null; they never throw.
   (`favorableDirections={declaredFavorableDirections(station) ?? ownArcs}`)
   so a vendor's opinion never becomes a judgment default. The optional
   `broadcastDelaySeconds` states the source's own live-playback delay.
-- The `recentSummaries` block (gated by the capability of the same name)
+- Gated by the capability of the same name, the `recentSummaries` block
   carries the source's own pre-digested rolling step windows: reused
   `HistoryPoint`s, oldest first, an empty step absent. A client cannot
   derive them itself, since the samples ring covers only ~10 minutes. The

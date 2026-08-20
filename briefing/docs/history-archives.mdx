@@ -4,8 +4,8 @@ description: Consume append-only monthly gzip archives of published profiles and
 ---
 
 Every dataset whose operator publishes with the default `--history`
-flag archives what it publishes to
-monthly gzip archives at one path shape:
+flag keeps monthly gzip archives of what it publishes, at one path
+shape:
 
 ```text
 <model>/history/<site>/<YYYY-MM>.jsonl.gz
@@ -34,8 +34,8 @@ history-only shape.
 ## Storage properties
 
 - One JSON line represents one model run for one site.
-- Appends are independent gzip members, so existing archive bytes do not need
-  to be rewritten.
+- Appends are independent gzip members and never rewrite existing
+  archive bytes.
 - Archives retain the run, site, semantics, hours, and derived values as
   published at that time.
 - Current catalogue values do not retroactively reinterpret an archived
@@ -58,9 +58,9 @@ One entry per gzip member, in archive order: `byteOffset`, `byteLength`,
 for a profile run, `firstObservedAt` / `lastObservedAt` for an
 observation batch. With it, a reader wanting "runs since T" or "the last
 N runs" Range-fetches only the members it needs instead of the whole
-month, provided the storage the operator publishes to serves `Range`
-requests, which object stores and CDNs commonly do; verify yours does
-before building a reader on it.
+month, provided the operator's storage serves `Range` requests. Object
+stores and CDNs commonly do; verify yours does before building a reader
+on it.
 
 The index is recomputed from the archive bytes after every append (a
 pure function of the file), and it is advisory, never authoritative:

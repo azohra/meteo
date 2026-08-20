@@ -41,8 +41,7 @@ Grid readers sample the nearest model point for every configured site and
 check distance. A distant result usually means an out-of-domain coordinate
 was clamped to the grid edge: `@azohra/meteo.grib`'s `nearestGridpoint`
 never throws; it clamps and reports the true great-circle
-distance so the builder owns the rejection. The builder must reject that
-sample. Model terrain elevation is a sampled model fact
+distance; rejecting that sample is the builder's job. Model terrain elevation is a sampled model fact
 (`site.modelElevationM`), distinct from the launch elevation, which the
 forecast engine measures into `site-context.json` and no builder ever writes into
 a document.

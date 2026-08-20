@@ -52,8 +52,8 @@ the corpus cannot be regenerated. In short: ECCC's Datamart keeps
 roughly one day of files, so every ECCC source URL expired within ~24 h
 of harvest and no harvester ships in this repository; and the site
 coordinates in the sidecars are a frozen copy of the
-catalog as it stood at harvest (2026-08-11), part of the golden data
-rather than a live catalog. The committed bytes are the ground truth;
+catalogue as it stood at harvest (2026-08-11), part of the golden data
+rather than a live catalogue. The committed bytes are the ground truth;
 the URLs are provenance only.
 
 `rdps-cape-sfc-jasper` sits beside the corpus rather than in it:

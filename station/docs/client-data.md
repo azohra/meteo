@@ -152,9 +152,9 @@ import {
 ```
 
 `compareWindow` requires coverage, not just presence: the matched
-span's own edges must land within one typical sample period (scaled by the
-same gap tolerance an outage is judged by) of the window asked for, or it
-returns `null` rather than drawing a two-point trace.
+span's own edges must land within one typical sample period of the window
+asked for — the period scaled by the same gap tolerance an outage is
+judged by — or it returns `null` rather than drawing a two-point trace.
 
 ## Browsing the archive — fetcher injection
 

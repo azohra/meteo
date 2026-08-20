@@ -19,7 +19,7 @@ normalizes the m/s series into
 | `id` | string, required | Your feed-local station id: what `?station=` and `primaryStationId` name. |
 | `name` | string, required | The display name carried on the wire. |
 | `stationKey` | string, required | The station's key on windnerd.net: a bare key (`bluff-launch`) or the station page URL (`https://windnerd.net/en/bluff-launch`); both normalize to the key. Sets the default `pageUrl`. |
-| `locationId` | positive integer, required | The numeric location id the records API is queried by. It is a different identifier from the station key. |
+| `locationId` | positive integer, required | The numeric location id the records API is queried by — a different identifier from the station key. |
 | `hasTemperature` | boolean, default `true` | Whether the station carries a thermometer. Declares the `temperature` capability; when `false`, temperature stays null even if the upstream sends values. |
 | `hasPressure` | boolean, default `false` | Whether the station carries a barometer. Declares the `conditions` capability and requires `elevationM`. |
 | `hasBattery` | boolean, default `false` | Whether the station reports battery voltage (OnSpot hardware does). Declares the `battery` capability; when `false`, telemetry stays null even if the upstream sends a voltage. |
@@ -119,7 +119,7 @@ standard offset rides the live `INIT` frame's location block as
 ### The location block enriches the meta
 
 The live `INIT` frame carries the spot's public metadata, and the adapter
-keeps it instead of discarding it: `dir_ranges` land on the wire as
+keeps it: `dir_ranges` land on the wire as
 [`declaredFavorableDirections`](/docs/station/wire-contract/#the-documents)
 (vendor-declared data a consumer may adopt; components never read it as a
 default), the

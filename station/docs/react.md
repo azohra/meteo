@@ -50,8 +50,8 @@ re-judged on the shared 30 s cadence.
 
 `useMeasuredChartWidth(ref)` measures a chart container before first
 paint and re-measures on resize. The width is null until a real one
-exists: a hidden container measures zero, and the hook stays held until
-it is shown. The fallback width (`CHART_FALLBACK_WIDTH` on the root)
+exists: a hidden container measures zero, and the hook stays null until
+the container is shown. The fallback width (`CHART_FALLBACK_WIDTH` on the root)
 applies only where ResizeObserver is missing. Frame a custom SVG at this measured pixel
 width; if a fixed viewBox is stretched by CSS, every label and stroke
 scales up with it.

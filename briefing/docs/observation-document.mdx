@@ -41,8 +41,8 @@ one-observation-per-line grammar rather than this document shape.
 
 ## Shape and units
 
-Measurements have no model initialization, so there is no `run` block:
-the `observed` block replaces it, carrying the window this document
+Measurements have no model initialization, so the `observed` block
+replaces the `run` block, carrying the window this document
 currently holds and the generation instant. The dataset manifest's
 `referenceTime` equals `lastObservedAt`, so the shared
 [freshness machinery](/docs/briefing/manifest/) reads it unchanged, though the

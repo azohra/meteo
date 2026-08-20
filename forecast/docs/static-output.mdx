@@ -90,8 +90,8 @@ the publication's commit point: nothing it references appears after it.
 Every object key comes from the reader contract's `documentPaths`.
 
 Cache lifetimes remain your deployment's choice (`--cache-live`,
-`--cache-closed-months`); the TRIAL defaults suit a 15-minute tick, and the one
-dataset fact behind them is that a closed month archive never changes
+`--cache-closed-months`); the TRIAL defaults suit a 15-minute tick. The
+one dataset fact behind them: a closed month archive never changes
 again, so your closed-months value may safely be immutable.
 
 After the manifest lands, `publish` reads it back and parses it with the

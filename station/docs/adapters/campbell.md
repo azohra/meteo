@@ -19,7 +19,7 @@ normalizes two of its tables into a
 | `id` | string, required | Your feed-local station id: what `?station=` and `primaryStationId` name. |
 | `name` | string, required | The display name carried on the wire. |
 | `baseUrl` | http(s) URL, required | The logger's web-service endpoint: the URL that answers `?command=DataQuery`. |
-| `source` | string, required | The data-source symbol tables are addressed under, e.g. `LOGGER01:Wind Station`. The segment after the colon must match the `station_name` the logger reports in table headers; it is verified on every response. |
+| `source` | string, required | The data-source symbol tables are addressed under, e.g. `LOGGER01:Wind Station`. The segment after the colon must match the `station_name` the logger reports in table headers; the adapter verifies the match on every response. |
 | `timeZone` | IANA zone, **required** | The zone the logger stamps records in. Optional for other vendors, required here: records arrive as naive local time with no offset. |
 | `currentTable` | string, default `"I3Sec"` | The fast wind table serving the current reading. |
 | `historyTable` | string, default `"I5Min"` | The aggregate table serving history, temperature, and wind chill. |
@@ -27,7 +27,7 @@ normalizes two of its tables into a
 | `historyPeriodMinutes` | positive number, default `5` | The history table's record interval, verified against the table header, and carried as `history.periodMinutes`. |
 | `currentCacheTtlSeconds` | number ≥ 3, default `15` | Cache TTL for the current table (history caches for 120 s). |
 | `latitude`, `longitude`, `elevationM` | numbers, optional | Position claims, carried on the wire. |
-| `pageUrl` | http(s) URL, optional | A public page for the station; there is no vendor default; omitted means null. |
+| `pageUrl` | http(s) URL, optional | A public page for the station; no vendor default; omitted means null. |
 
 ## Capabilities
 
