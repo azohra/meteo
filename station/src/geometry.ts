@@ -431,7 +431,7 @@ export function filterByTimeOfDay(
 }
 
 /** The share of non-calm history blowing from inside the consumer's arcs;
- * null when nothing non-calm was measured — absence over a fabricated zero. */
+ * null when nothing non-calm was measured. */
 export function favorableShare(
   points: ReadonlyArray<HistoryPoint>,
   arcs: ReadonlyArray<DirectionArc>,

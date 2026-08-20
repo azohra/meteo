@@ -9,6 +9,9 @@ export interface NearestGridpoint {
   distanceKm: number;
 }
 
+/* GRIB2 scanning modes (flag table 3.4): storage is row-major unless j
+ * points are consecutive (column-major), and alternative row scanning
+ * stores every second run reversed — boustrophedon order. */
 function storageIndex(grid: Grid, column: number, row: number): number {
   if (grid.jPointsAreConsecutive) {
     if (grid.alternativeRowScanning) {
@@ -107,6 +110,9 @@ function lambertGeometry(grid: LambertGrid, latitude: number, longitude: number)
   const phi1 = toRadians(grid.latin1);
   const phi2 = toRadians(grid.latin2);
   const lambda0 = toRadians(grid.loV);
+  /* Spherical Lambert conformal conic, north-pole aspect (Snyder 1987,
+   * eqs. 15-1..15-5). With coincident standard parallels the n ratio is
+   * 0/0; the tangent-cone value is sin(phi1). */
   const n =
     grid.latin1 === grid.latin2
       ? Math.sin(phi1)
@@ -118,6 +124,7 @@ function lambertGeometry(grid: LambertGrid, latitude: number, longitude: number)
 
   const forward = (lat: number, lon: number): { x: number; y: number } => {
     let dLambda = toRadians(lon) - lambda0;
+    // wrapped to [-PI, PI) so a query across the antimeridian stays local
     dLambda = ((((dLambda + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
     const theta = n * dLambda;
     const r = rho(lat);

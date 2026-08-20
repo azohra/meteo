@@ -312,7 +312,7 @@ export function climatologyCoverage(document: StationClimatology): ClimatologyCo
 
 /** The share of the filtered non-calm record blowing from inside the
  * consumer's arcs, judged at each sector's centre bearing; null when
- * nothing non-calm was recorded — absence over a fabricated zero. */
+ * nothing non-calm was recorded. */
 export function climatologyFavorableShare(
   document: StationClimatology,
   arcs: ReadonlyArray<DirectionArc>,
