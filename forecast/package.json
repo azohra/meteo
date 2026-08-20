@@ -1,6 +1,6 @@
 {
   "name": "@azohra/meteo.forecast",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Forecast engine: fetches provider bytes from ECCC Datamart and NOAA Open Data, samples gridpoints, derives site forecasts, and publishes the versioned JSON documents and history archives that @azohra/meteo.briefing reads.",
   "keywords": [
     "weather",

@@ -1,5 +1,11 @@
 # @azohra/meteo.core
 
+## 0.3.0
+
+### Minor Changes
+
+- c80493a: `msToKmh` moves to `@azohra/meteo.core` beside its inverse `kmhToMps`; `@azohra/meteo.briefing/derive` re-exports it unchanged, so briefing's public surface stays put.
+
 ## 0.2.0
 
 ### Minor Changes

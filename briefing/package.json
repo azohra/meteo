@@ -1,6 +1,6 @@
 {
   "name": "@azohra/meteo.briefing",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Reads, analyzes, and draws published site forecasts: the document contract, pure derivations, comparison, month-archive history and transport, and three renderer-independent scene graphs (Meteogram, single-hour sounding, compare board) with an SVG serializer.",
   "keywords": [
     "weather",

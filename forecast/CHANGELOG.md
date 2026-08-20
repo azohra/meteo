@@ -1,5 +1,26 @@
 # @azohra/meteo.forecast
 
+## 0.6.0
+
+### Minor Changes
+
+- 89e07a7: The scenario-index shape becomes a zod contract owned by the forecast package (`src/scenario/contract.ts`), exported at the new `@azohra/meteo.forecast/contract` subpath. `scenarios/index.schema.json` is now emitted from that contract by `pnpm schemas` and held by a byte-compare test, the generator validates and types the index through the contract instead of ajv over a hand-written schema, and the site's scenario registry reads `scenarios/index.json` through `parseScenarioIndex()` in place of its own hand parsers. The generated `scenarios/index.json` is byte-for-byte unchanged.
+
+### Patch Changes
+
+- cebc9c4: The GEPS and REPS builders — twins in all but their provider facts — merge into one ECCC ensemble engine, the way the deterministic trio already shares `DatamartModel`. An `EnsembleModel` descriptor now carries each model's grid kind, wind-component convention, file naming, cadence, flux treatment, CAPE/CIN presence, and terrain encoding; the sampling, aggregation, and publication machinery exists once. Published documents, manifests, and log lines are unchanged.
+- c80493a: The engine stops re-implementing shared vocabulary: dew-point depression now composes briefing's Magnus pair (`dewPointC` + `dewPointDepressionC`), `normalizeDegrees` and the dry-adiabatic lapse constant are imported from `@azohra/meteo.briefing/derive`, and the sink-rate default is no longer restated back into `usableLiftTopM`. Conversions whose published bytes pin a different floating-point spelling than core's (wind direction from components, the ensemble's circular median, terrain's radians-to-degrees) deliberately stay local, each with a comment naming the divergence. Published values are bit-identical.
+- f645451: GEPS and REPS join the fences the other builders already stand behind. The already-published gate now runs for pinned runs too, so `--reference-time` of a published run skips instead of rebuilding. GEPS documents gain the `site.timeZone` echo REPS already carried, and the GEPS aggregator once again refuses a member surface missing any required scalar — only CAPE, whose −1.0 sentinel masks to absence, is optional. Both builders gain the models.json contract test that binds catalogue claims to builder configuration.
+- d147363: The HRDPS West builder becomes a fourth `DatamartModel` descriptor on the shared ECCC engine instead of a near-copy of it. The descriptor carries the alpha-feed facts — URL grammar, published dew-point depression, PRATE instant-rate precipitation, per-field converts, uncapped nearest-gridpoint sampling — and the engine gained the optional fields those deltas need. Published output and log lines are unchanged.
+- 9941bd3: The HRRR, GFS, NAM, and RRFS builders — four copies of the same idx-record pipeline — merge into one NOAA engine driven by a `NoaaModel` descriptor. Each model's real facts stay declarative: file grammars and completion probes, field tables with converts, smoke speciation, DPT-vs-RH level moisture, VVEL-vs-DZDT vertical velocity, Lambert rotation, and per-model precipitation algebra as small strategy closures. Published documents, manifests, and log lines are unchanged.
+- afef2f7: Every run builder now hands its model-specific parts to one `publishRun` orchestrator that owns run resolution, the already-published gate, and the profile/history/manifest writes — the tail each builder previously open-coded. The Datamart wire machinery (`liveDatamartWire`, `sampleDatamartField`, the lazy J2K pool, `TASK_CONCURRENCY`) moved from the ECCC builder to `providers/datamart`, and one `transportBackoff` formula now backs every retry loop. `--max-steps` reaches all builders — GOES included — as a forwarded option; the internal `METEO_MAX_STEPS` bridge is gone. Log lines standardize on "downloads", pinned-cycle errors on one grammar. Published documents, manifests, and archives are byte-identical.
+- Updated dependencies [4ffcfdc]
+- Updated dependencies [c80493a]
+- Updated dependencies [938b27f]
+  - @azohra/meteo.briefing@0.6.2
+  - @azohra/meteo.core@0.3.0
+  - @azohra/meteo.grib@0.1.4
+
 ## 0.5.1
 
 ### Patch Changes

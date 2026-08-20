@@ -1,6 +1,6 @@
 {
   "name": "@azohra/meteo.station",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Live weather-station reading and display. A wire contract, provider adapters, a polling client, a Node server, and byte-identical React and custom-element display bindings.",
   "keywords": [
     "weather-station",
