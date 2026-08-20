@@ -13,6 +13,10 @@ import { isCalm, normalizeDegrees, pressureTendency, seaLevelPressureHpa } from 
 import { UpstreamError } from "@azohra/meteo.core";
 import type { DirectionArc } from "@azohra/meteo.core";
 import { sseEvents } from "../../sse.js";
+import {
+  WINDNERD_RECORD_PERIODS_MINUTES,
+  type WindnerdRecordPeriodMinutes,
+} from "../../windnerd.js";
 import { windnerdStationUrl, type WindnerdStationConfig } from "../config.js";
 import {
   defineStationAdapter,
@@ -31,10 +35,6 @@ import {
 export const WINDNERD_RECORDS_URL = "https://windnerd.net/api/records";
 const WINDNERD_LIVE_URL = "https://windnerd.net/api/live-url";
 const RECORD_PERIOD_MINUTES = 1;
-/* The vendor's full catalogue, verified against the live API 2026-08-19:
- * every other value (2, 3, 120, 240, 720, 1440 probed) returns 404. */
-export const WINDNERD_RECORD_PERIODS_MINUTES = [1, 5, 10, 15, 30, 60, 180, 360] as const;
-export type WindnerdRecordPeriodMinutes = (typeof WINDNERD_RECORD_PERIODS_MINUTES)[number];
 const CACHE_TTL_SECONDS = 60;
 const AGGREGATE_CACHE_TTL_SECONDS = 900;
 const LIVE_CACHE_TTL_SECONDS = 15;

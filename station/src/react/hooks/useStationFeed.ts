@@ -11,7 +11,7 @@ export function useStationFeed(
     pollSeconds?: number;
     enabled?: boolean;
     fetchInit?: RequestInit;
-    initialData?: { feed: StationFeed; servedAt?: string; receivedAtMs: number };
+    initialData?: { feed: StationFeed; receivedAtMs: number };
   } = {},
 ): {
   feed: StationFeed | null;

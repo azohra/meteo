@@ -3,7 +3,7 @@ import { useId } from "react";
 import { DIAL_SIZE, resolveDisplay } from "../../index.js";
 import { dialScene } from "../../scene/index.js";
 import type { FavorableDirection, SpeedThresholds, SpeedUnit, Station } from "../../index.js";
-import type { FormatTime, StationStringOverrides } from "../../index.js";
+import type { StationStringOverrides } from "../../index.js";
 import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 
 export function Dial({
@@ -24,7 +24,6 @@ export function Dial({
   size?: number;
   calmWord?: boolean;
   strings?: StationStringOverrides;
-  formatTime?: FormatTime;
 }) {
   const context = useStationFeedContext();
   const station = requireResolved(

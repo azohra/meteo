@@ -1,27 +1,28 @@
 import type { LiveSample, LiveSamples } from "./contract.js";
-import { meanDirectionDeg as meanOfDirections } from "@azohra/meteo.core";
-import { isCalm, KMH_PER_MPS } from "./derive.js";
 import {
   HISTORY_GAP_TOLERANCE_FACTOR,
   VANE_TARGET,
+  chartScalesOf,
+  meanDirectionDegOf,
+  thinVanesOf,
+  tracePointsOf,
   type ChartFrame,
   type ChartScaleOptions,
   type ChartScales,
   type Vane,
 } from "./geometry.js";
 
-/* Composition primitives over the 3-second sample window, returning the
- * same ChartScales and Vane shapes as the history chart so vanePath,
- * vaneTicks, and the frame helpers serve both. Samples are instants:
- * no band, and a dropout is a gap, never a zero. */
+/* Sample-typed bindings of the history chart's math (geometry.ts owns it),
+ * returning the same ChartScales and Vane shapes so vanePath, vaneTicks,
+ * and the frame helpers serve both. Samples are instants: no band, and a
+ * dropout is a gap, never a zero. */
+
+const speedOf = (sample: LiveSample) => sample.windMps;
+const directionOf = (sample: LiveSample) => sample.windDirectionDeg;
 
 /* One gap rule platform-wide: spacing beyond 2.5 sample intervals is a
  * dropout, the same tolerance the history chart holds records to. */
 export const SAMPLE_GAP_TOLERANCE_FACTOR = HISTORY_GAP_TOLERANCE_FACTOR;
-
-/* The history chart's axis defaults: 5 km/h steps, a 10 km/h floor. */
-const DEFAULT_NICE_STEP_MPS = 5 / KMH_PER_MPS;
-const DEFAULT_FLOOR_MPS = 10 / KMH_PER_MPS;
 
 /* Gap-split runs, oldest first. Rendering each run separately draws
  * outages as absence — the same honesty rule the wire states for the
@@ -47,81 +48,33 @@ export function sampleRuns(
 }
 
 /* History-chart scales from instantaneous speeds: top of scale is the
- * fastest sample, snapped up to a step with a floor so a calm window
- * still draws against a readable axis. Returns ChartScales. */
+ * fastest sample. */
 export function sampleScales(
   samples: LiveSamples,
   frame: ChartFrame,
   options: ChartScaleOptions = {},
 ): ChartScales {
-  const niceStepMps = options.niceStepMps ?? DEFAULT_NICE_STEP_MPS;
-  const floorMps = options.floorMps ?? DEFAULT_FLOOR_MPS;
-  const points = samples.points;
-  const first = points[0];
-  const startMs = first ? Date.parse(first.observedAt) : 0;
-  const last = points[points.length - 1];
-  const endMs = last ? Date.parse(last.observedAt) : startMs;
-  const durationMs = Math.max(1, endMs - startMs);
-  const top = points.reduce((max, sample) => Math.max(max, sample.windMps), 0);
-  const scaleMax = Math.max(floorMps, Math.ceil(top / niceStepMps) * niceStepMps);
-  const xAtMs = (ms: number) =>
-    frame.left + ((ms - startMs) / durationMs) * (frame.right - frame.left);
-  return {
-    startMs,
-    endMs,
-    durationMs,
-    scaleMax,
-    xAtMs,
-    xAt: (observedAt) => xAtMs(Date.parse(observedAt)),
-    yAt: (speedMps) =>
-      frame.plotBottom - (speedMps / scaleMax) * (frame.plotBottom - frame.plotTop),
-  };
+  return chartScalesOf(samples.points, frame, speedOf, options);
 }
 
 /* One polyline's points for one run — the sample counterpart of
  * averagePoints. */
 export function samplePoints(run: ReadonlyArray<LiveSample>, scales: ChartScales): string {
-  return run
-    .map(
-      (sample) =>
-        `${scales.xAt(sample.observedAt).toFixed(1)},${scales.yAt(sample.windMps).toFixed(1)}`,
-    )
-    .join(" ");
+  return tracePointsOf(run, scales, speedOf);
 }
 
-/* The circular mean over the samples that were blowing; an all-calm window
- * stays null. The sample counterpart of meanDirectionDeg. */
+/* The sample counterpart of meanDirectionDeg. */
 export function sampleMeanDirectionDeg(samples: ReadonlyArray<LiveSample>): number | null {
-  const blowing = samples.filter(
-    (sample) => !isCalm(sample.windMps) && sample.windDirectionDeg != null,
-  );
-  return meanOfDirections(blowing.map((sample) => sample.windDirectionDeg as number));
+  return meanDirectionDegOf(samples, speedOf, directionOf);
 }
 
-/* Thins the window to on-chart vanes, one per bucket of samples — the same
- * Vane shape the history chart thins to, so vanePath and vaneTicks draw
- * either. The vane's speed is the bucket's mean of instants; its bearing is
- * the circular mean of the blowing ones, null when the bucket was calm. */
+/* The sample counterpart of thinVanes: the same Vane shape the history
+ * chart thins to, so vanePath and vaneTicks draw either. */
 export function thinSampleVanes(
   samples: ReadonlyArray<LiveSample>,
   target: number = VANE_TARGET,
 ): Vane[] {
-  if (samples.length === 0) return [];
-  const step = Math.max(1, Math.round(samples.length / target));
-  return Array.from({ length: Math.ceil(samples.length / step) }, (_, index) => {
-    const startIndex = index * step;
-    const endIndex = startIndex + step;
-    const window = samples.slice(startIndex, endIndex);
-    const first = Date.parse((window[0] as LiveSample).observedAt);
-    const last = Date.parse((window[window.length - 1] as LiveSample).observedAt);
-    return {
-      windAvgMps: window.reduce((sum, sample) => sum + sample.windMps, 0) / window.length,
-      windDirectionDeg: sampleMeanDirectionDeg(window),
-      endIndex,
-      midMs: first + (last - first) / 2,
-      startIndex,
-    };
-  });
+  return thinVanesOf(samples, speedOf, directionOf, target);
 }
 
 export type SamplesSummary = {

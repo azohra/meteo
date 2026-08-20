@@ -24,6 +24,10 @@ export type StationLiveSnapshot = {
   station: Station | null;
   /* Rolling sample window, oldest first, deduplicated by observedAt. */
   samples: LiveSample[];
+  /* Seconds between samples, from the last frame that carried a samples
+   * block; null until one has — the wire owns the cadence, never a client
+   * default. */
+  sampleIntervalSeconds: number | null;
   /* The server clock of the last frame that carried one. */
   servedAt: string | null;
   receivedAtMs: number | null;
@@ -73,6 +77,7 @@ export function createStationLiveStore(
     status: "stopped",
     station: null,
     samples: [],
+    sampleIntervalSeconds: null,
     servedAt: null,
     receivedAtMs: null,
     error: null,
@@ -91,11 +96,12 @@ export function createStationLiveStore(
     switch (frame.type) {
       case "init": {
         current.attempt = 0;
-        const points = frame.station.status === "ok" ? (frame.station.samples?.points ?? []) : [];
+        const ring = frame.station.status === "ok" ? (frame.station.samples ?? null) : null;
         setSnapshot({
           status: "open",
           station: frame.station,
-          samples: mergeSamples(snapshot.samples, points, windowSeconds),
+          samples: mergeSamples(snapshot.samples, ring?.points ?? [], windowSeconds),
+          sampleIntervalSeconds: ring?.intervalSeconds ?? snapshot.sampleIntervalSeconds,
           servedAt: frame.servedAt,
           receivedAtMs: Date.now(),
           error: null,
@@ -107,6 +113,7 @@ export function createStationLiveStore(
           ...snapshot,
           status: "open",
           samples: mergeSamples(snapshot.samples, frame.samples.points, windowSeconds),
+          sampleIntervalSeconds: frame.samples.intervalSeconds,
           receivedAtMs: Date.now(),
           error: null,
         });
@@ -272,17 +279,19 @@ export function createStationLiveStore(
 }
 
 /* Shapes a live snapshot into the current document the fold understands,
- * with the rolling sample window standing in for the init frame's ring. */
+ * with the rolling sample window standing in for the init frame's ring.
+ * Without a wire-seen interval the station keeps its own samples block
+ * as-is — the cadence is never invented client-side. */
 export function liveSnapshotToCurrent(
-  live: Pick<StationLiveSnapshot, "station" | "servedAt" | "samples">,
+  live: Pick<StationLiveSnapshot, "station" | "servedAt" | "samples" | "sampleIntervalSeconds">,
 ): StationCurrent | null {
   if (live.station == null || live.servedAt == null) return null;
   const station =
-    live.station.status === "ok" && live.samples.length > 0
+    live.station.status === "ok" && live.samples.length > 0 && live.sampleIntervalSeconds != null
       ? {
           ...live.station,
           samples: {
-            intervalSeconds: live.station.samples?.intervalSeconds ?? 3,
+            intervalSeconds: live.sampleIntervalSeconds,
             points: live.samples,
           },
         }

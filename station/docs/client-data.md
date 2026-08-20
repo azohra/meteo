@@ -86,7 +86,9 @@ subscribes to the `/live` route and folds its
 `init` frame and refreshed in place by `reading` frames, its
 `recentSummaries` block replaced whole by `summaries` frames; `samples` is a
 rolling window (default 600 s), oldest first, deduplicated by `observedAt`;
-the overlap a reconnect's `init` replays folds away.
+the overlap a reconnect's `init` replays folds away. `sampleIntervalSeconds`
+is the cadence the last samples-bearing frame stated — `null` until one
+has; the client never invents it.
 
 The store owns the transport discipline:
 

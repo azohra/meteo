@@ -119,6 +119,7 @@ function liveCurrentLeg(
   });
   let lastLive: StationLiveSnapshot | null = null;
   let mapped: CurrentLegSnapshot = { data: null, error: null, receivedAtMs: null };
+  let running = false;
 
   const toCurrent = (live: StationLiveSnapshot): CurrentLegSnapshot => {
     const data = liveSnapshotToCurrent(live);
@@ -139,9 +140,18 @@ function liveCurrentLeg(
       return mapped;
     },
     subscribe: (listener) => liveStore.subscribe(listener),
-    start: () => liveStore.start(),
-    stop: () => liveStore.stop(),
+    start: () => {
+      running = true;
+      liveStore.start();
+    },
+    stop: () => {
+      running = false;
+      liveStore.stop();
+    },
+    /* Restart the stream for a fresh init frame — the poller legs' refresh
+     * analogue. Like theirs, a no-op while stopped. */
     refresh: () => {
+      if (!running) return;
       liveStore.stop();
       liveStore.start();
     },

@@ -1,5 +1,5 @@
 import type { Station } from "./contract.js";
-import { compassDirection, isCalm, periodSummary, speedFromMps } from "./derive.js";
+import { anchoredAgeMs, compassDirection, isCalm, periodSummary, speedFromMps } from "./derive.js";
 import type { CompassPoint, SpeedUnit } from "./derive.js";
 import { EM_DASH } from "./strings.js";
 import type { FormatTime, StationStrings } from "./strings.js";
@@ -64,17 +64,22 @@ export function relativeWords(ageMs: number, words: StationStrings): string {
   return words.updated.hoursAgo(Math.floor(ageMs / HOUR_MS));
 }
 
+/* Anchored when the anchor exists; without one the client clock is the
+ * only measure left — a different fact, kept here. */
 export function readingAgeMs(args: {
   observedAt: string;
   servedAt: string | null;
   receivedAtMs: number | null;
   nowMs: number;
 }): number {
-  const observedMs = Date.parse(args.observedAt);
   return args.servedAt != null && args.receivedAtMs != null
-    ? Math.max(0, Date.parse(args.servedAt) - observedMs) +
-        Math.max(0, args.nowMs - args.receivedAtMs)
-    : Math.max(0, args.nowMs - observedMs);
+    ? anchoredAgeMs({
+        observedAt: args.observedAt,
+        servedAt: args.servedAt,
+        receivedAtMs: args.receivedAtMs,
+        nowMs: args.nowMs,
+      })
+    : Math.max(0, args.nowMs - Date.parse(args.observedAt));
 }
 
 export function updatedAtText(

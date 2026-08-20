@@ -2,7 +2,6 @@ import { inDirectionArcs } from "@azohra/meteo.core";
 import type { RecentSummary, Station } from "../contract.js";
 import type { SpeedUnit } from "../derive.js";
 import { optionalSpeed, roundSpeed } from "../format.js";
-import { vectorMeanWind } from "../geometry.js";
 import type { FavorableDirection } from "../instruments.js";
 import type { StationStrings } from "../strings.js";
 
@@ -39,7 +38,6 @@ export type RecentSummaryPanel = {
   stats: Array<{ key: string; className: string; label: string; value: string }>;
   /** One small arrow per filled step, oldest first; a calm step is absent. */
   ghosts: Array<{ key: string; className: string; deg: number }>;
-  meanDirectionDeg: number | null;
 };
 
 export type RecentSummariesScene = {
@@ -68,7 +66,6 @@ export function recentSummariesScene(input: {
           : points.reduce((sum, point) => sum + point.windAvgMps, 0) / points.length;
       const gusts = points.map((point) => point.windGustMps).filter((gust) => gust != null);
       const lulls = points.map((point) => point.windLullMps).filter((lull) => lull != null);
-      const mean = vectorMeanWind(points);
       return {
         key: block.windowMinutes,
         className: "meteo-recent-summary",
@@ -112,7 +109,6 @@ export function recentSummariesScene(input: {
             },
           ];
         }),
-        meanDirectionDeg: mean.windDirectionDeg,
       };
     }),
   };

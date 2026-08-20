@@ -24,7 +24,6 @@ export {
   parseWindnerdRecentSummaries,
   parseWindnerdRecords,
   WINDNERD_LIVE_SAMPLE_INTERVAL_SECONDS,
-  WINDNERD_RECORD_PERIODS_MINUTES,
   windnerdEnrichedMeta,
   windnerdHistoryPoints,
   windnerdLiveReading,
@@ -35,9 +34,9 @@ export {
   type WindnerdLiveInit,
   type WindnerdLiveLocation,
   type WindnerdLiveSampleRecord,
-  type WindnerdRecordPeriodMinutes,
   type WindnerdRecords,
 } from "./adapters/windnerd.js";
+export { WINDNERD_RECORD_PERIODS_MINUTES, type WindnerdRecordPeriodMinutes } from "../windnerd.js";
 export {
   HOLOGRAM_API_BASE,
   TRIAL_HOLOGRAM_CACHE_TTL_SECONDS,

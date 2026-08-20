@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStationLiveStore, createStationStore } from "../src/client/index.js";
+import {
+  createStationLiveStore,
+  createStationStore,
+  liveSnapshotToCurrent,
+} from "../src/client/index.js";
 import type { StationLiveStore } from "../src/client/index.js";
 import type { LiveSample, StationLiveFrame } from "../src/index.js";
 import { BASE_MS, feedFixture, iso, okStation } from "./fixtures.js";
@@ -122,6 +126,28 @@ describe("createStationLiveStore", () => {
       iso(BASE_MS + 6_000),
     ]);
     expect(snapshot.samples[2]?.windMps).toBe(4.1);
+    store.stop();
+  });
+
+  it("carries the sample interval from the wire; absent until a frame states one", async () => {
+    const { connections, fetchMock } = connectionQueue();
+    vi.stubGlobal("fetch", fetchMock);
+    const store = createStationLiveStore("/wind", "test-station");
+    store.start();
+    await settle();
+    expect(store.getSnapshot().sampleIntervalSeconds).toBeNull();
+
+    connections[0]?.push(initFrame([samplePoint(0)]));
+    await settle();
+    expect(store.getSnapshot().sampleIntervalSeconds).toBe(3);
+
+    connections[0]?.push({
+      type: "samples",
+      stationId: "test-station",
+      samples: { intervalSeconds: 5, points: [samplePoint(6, 4.1)] },
+    });
+    await settle();
+    expect(store.getSnapshot().sampleIntervalSeconds).toBe(5);
     store.stop();
   });
 
@@ -262,6 +288,31 @@ describe("createStationLiveStore", () => {
     expect(store.getSnapshot().station).not.toBeNull();
     expect(connections[0]?.wasCancelled()).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("liveSnapshotToCurrent", () => {
+  it("stamps the wire-seen interval onto the rolling window", () => {
+    const current = liveSnapshotToCurrent({
+      station: { ...okStation(), history: null },
+      servedAt: iso(BASE_MS),
+      samples: [samplePoint(0)],
+      sampleIntervalSeconds: 5,
+    });
+    expect(current?.station.status === "ok" && current.station.samples).toEqual({
+      intervalSeconds: 5,
+      points: [samplePoint(0)],
+    });
+  });
+
+  it("never invents a cadence: with no interval ever seen the samples block stays absent", () => {
+    const current = liveSnapshotToCurrent({
+      station: { ...okStation(), history: null },
+      servedAt: iso(BASE_MS),
+      samples: [samplePoint(0)],
+      sampleIntervalSeconds: null,
+    });
+    expect(current?.station.status === "ok" && current.station.samples).toBeUndefined();
   });
 });
 

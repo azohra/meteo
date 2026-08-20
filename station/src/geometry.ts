@@ -72,12 +72,16 @@ export type ChartScaleOptions = {
   floorMps?: number;
 };
 
+/* Axis defaults: 5 km/h steps, a 10 km/h floor. */
 const DEFAULT_NICE_STEP_MPS = 5 / KMH_PER_MPS;
 const DEFAULT_FLOOR_MPS = 10 / KMH_PER_MPS;
 
-export function chartScales(
-  points: ReadonlyArray<HistoryPoint>,
+/* The chart math is written once over accessors; the history-typed forms
+ * here and the sample-typed forms in samples.ts are thin bindings. */
+export function chartScalesOf<P extends { observedAt: string }>(
+  points: ReadonlyArray<P>,
   frame: ChartFrame,
+  speedOf: (point: P) => number,
   options: ChartScaleOptions = {},
 ): ChartScales {
   const niceStepMps = options.niceStepMps ?? DEFAULT_NICE_STEP_MPS;
@@ -87,10 +91,7 @@ export function chartScales(
   const last = points[points.length - 1];
   const endMs = last ? Date.parse(last.observedAt) : startMs;
   const durationMs = Math.max(1, endMs - startMs);
-  const top = points.reduce(
-    (max, point) => Math.max(max, point.windGustMps ?? point.windAvgMps),
-    0,
-  );
+  const top = points.reduce((max, point) => Math.max(max, speedOf(point)), 0);
   const scaleMax = Math.max(floorMps, Math.ceil(top / niceStepMps) * niceStepMps);
   const xAtMs = (ms: number) =>
     frame.left + ((ms - startMs) / durationMs) * (frame.right - frame.left);
@@ -104,6 +105,16 @@ export function chartScales(
     yAt: (speedMps) =>
       frame.plotBottom - (speedMps / scaleMax) * (frame.plotBottom - frame.plotTop),
   };
+}
+
+/* Top of scale is the fastest gust, falling back to the mean where the
+ * record carries none. */
+export function chartScales(
+  points: ReadonlyArray<HistoryPoint>,
+  frame: ChartFrame,
+  options: ChartScaleOptions = {},
+): ChartScales {
+  return chartScalesOf(points, frame, (point) => point.windGustMps ?? point.windAvgMps, options);
 }
 
 export function valueScale(
@@ -151,17 +162,37 @@ export function bandPoints(
   return [...gust, ...lull].join(" ");
 }
 
-export function averagePoints(points: ReadonlyArray<HistoryPoint>, scales: ChartScales): string {
+export function tracePointsOf<P extends { observedAt: string }>(
+  points: ReadonlyArray<P>,
+  scales: ChartScales,
+  speedOf: (point: P) => number,
+): string {
   return points
-    .map((point) => coordinate(scales.xAt(point.observedAt), scales.yAt(point.windAvgMps)))
+    .map((point) => coordinate(scales.xAt(point.observedAt), scales.yAt(speedOf(point))))
     .join(" ");
 }
 
+export function averagePoints(points: ReadonlyArray<HistoryPoint>, scales: ChartScales): string {
+  return tracePointsOf(points, scales, (point) => point.windAvgMps);
+}
+
+/* The circular mean over the points that were blowing; an all-calm window
+ * stays null. */
+export function meanDirectionDegOf<P>(
+  points: ReadonlyArray<P>,
+  speedOf: (point: P) => number,
+  directionOf: (point: P) => number | null,
+): number | null {
+  const blowing = points.filter((point) => !isCalm(speedOf(point)) && directionOf(point) != null);
+  return meanOfDirections(blowing.map((point) => directionOf(point) as number));
+}
+
 export function meanDirectionDeg(points: ReadonlyArray<HistoryPoint>): number | null {
-  const blowing = points.filter(
-    (point) => !isCalm(point.windAvgMps) && point.windDirectionDeg != null,
+  return meanDirectionDegOf(
+    points,
+    (point) => point.windAvgMps,
+    (point) => point.windDirectionDeg,
   );
-  return meanOfDirections(blowing.map((point) => point.windDirectionDeg as number));
 }
 
 export type WindVector = { windDirectionDeg: number | null; speedMps: number };
@@ -191,8 +222,13 @@ export type Vane = {
   startIndex: number;
 };
 
-export function thinVanes(
-  points: ReadonlyArray<HistoryPoint>,
+/* Thins to on-chart vanes, one per bucket of points. The vane's speed is
+ * the bucket's mean; its bearing is the circular mean of the blowing ones,
+ * null when the bucket was calm. */
+export function thinVanesOf<P extends { observedAt: string }>(
+  points: ReadonlyArray<P>,
+  speedOf: (point: P) => number,
+  directionOf: (point: P) => number | null,
   target: number = VANE_TARGET,
 ): Vane[] {
   if (points.length === 0) return [];
@@ -201,16 +237,28 @@ export function thinVanes(
     const startIndex = index * step;
     const endIndex = startIndex + step;
     const window = points.slice(startIndex, endIndex);
-    const first = Date.parse((window[0] as HistoryPoint).observedAt);
-    const last = Date.parse((window[window.length - 1] as HistoryPoint).observedAt);
+    const first = Date.parse((window[0] as P).observedAt);
+    const last = Date.parse((window[window.length - 1] as P).observedAt);
     return {
-      windAvgMps: window.reduce((sum, point) => sum + point.windAvgMps, 0) / window.length,
-      windDirectionDeg: meanDirectionDeg(window),
+      windAvgMps: window.reduce((sum, point) => sum + speedOf(point), 0) / window.length,
+      windDirectionDeg: meanDirectionDegOf(window, speedOf, directionOf),
       endIndex,
       midMs: first + (last - first) / 2,
       startIndex,
     };
   });
+}
+
+export function thinVanes(
+  points: ReadonlyArray<HistoryPoint>,
+  target: number = VANE_TARGET,
+): Vane[] {
+  return thinVanesOf(
+    points,
+    (point) => point.windAvgMps,
+    (point) => point.windDirectionDeg,
+    target,
+  );
 }
 
 export function vanePath(

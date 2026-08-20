@@ -1,8 +1,9 @@
 import { historyEndpoint } from "../endpoints.js";
 import { parseStationHistoryJson } from "../contract.js";
 import type { StationHistory } from "../contract.js";
+import { WINDNERD_RECORD_PERIODS_MINUTES } from "../windnerd.js";
+import { REQUEST_TIMEOUT_MS } from "./poll.js";
 
-const REQUEST_TIMEOUT_MS = 15_000;
 /* LRU capacity for held windows. Craft parameter (TRIAL), caller-movable. */
 export const HISTORY_STORE_DEFAULT_MAX_WINDOWS = 32;
 
@@ -92,9 +93,10 @@ export function createStationHistoryStore(
 /* Paging math for a host-composed pager: the resolution ladder and
  * calendar-day arithmetic. The library ships no archive control surface. */
 
-/* Craft parameters (TRIAL), caller-movable. The default ladder is the
- * WindNerd record catalogue; the point target bounds one fetch. */
-export const ARCHIVE_DEFAULT_PERIODS_MINUTES = [1, 5, 10, 15, 30, 60, 180, 360] as const;
+/* The default ladder is the WindNerd record catalogue — the vendor home
+ * owns the values. The point target is a craft parameter (TRIAL),
+ * caller-movable; it bounds one fetch. */
+export const ARCHIVE_DEFAULT_PERIODS_MINUTES = WINDNERD_RECORD_PERIODS_MINUTES;
 export const ARCHIVE_TARGET_POINTS = 500;
 
 const DAY_MS = 86_400_000;

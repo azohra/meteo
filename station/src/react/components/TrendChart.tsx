@@ -1,26 +1,18 @@
 "use client";
-import {
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import { resolveDisplay } from "../../index.js";
 import { CHART_FALLBACK_WIDTH } from "../../geometry.js";
 import {
   TREND_CLASS,
-  activeChartIndex,
-  chartIndexAtClient,
   measuredChartWidth,
   readoutAriaLive,
-  togglePinnedAt,
   trendGate,
   trendScene,
 } from "../../scene/index.js";
 import type { History, Station } from "../../index.js";
 import type { TrendSeries } from "../../geometry.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
+import { usePinnedCursor } from "../lib/use-pinned-cursor.js";
 import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 
 export function TrendChart({
@@ -106,38 +98,15 @@ function MeasuredTrend({
   width: number;
   words: StationStrings;
 }) {
-  const [pinnedAt, setPinnedAt] = useState<string | null>(null);
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
-
   const scene = trendScene({ formatTime, history, series, stationName, width, words });
-  const { readout, cursor } = scene.inspect(activeChartIndex(scene.points, pinnedAt, previewIndex));
-
-  const indexAtPoint = (clientX: number, hit: SVGRectElement): number | null => {
-    const svg = hit.ownerSVGElement;
-    if (!svg) return null;
-    const bounds = svg.getBoundingClientRect();
-    return chartIndexAtClient(scene.points, scene.frame, scene.scales, clientX, bounds);
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<SVGRectElement>) => {
-    if (event.pointerType === "touch") return;
-    setPreviewIndex(indexAtPoint(event.clientX, event.currentTarget));
-  };
-
-  const handleClick = (event: ReactMouseEvent<SVGRectElement>) => {
-    const index = indexAtPoint(event.clientX, event.currentTarget);
-    if (index == null) return;
-    const observedAt = scene.points[index]?.observedAt;
-    if (observedAt == null) return;
-    setPinnedAt((current) => togglePinnedAt(current, observedAt));
-    setPreviewIndex(null);
-  };
+  const pinned = usePinnedCursor(scene);
+  const { readout, cursor } = scene.inspect(pinned.activeIndex);
 
   return (
     <>
       <output
         aria-label={scene.readout.ariaLabel}
-        aria-live={readoutAriaLive(previewIndex)}
+        aria-live={readoutAriaLive(pinned.previewIndex)}
         className={scene.readout.className}
       >
         <strong>{readout.strong}</strong>
@@ -210,9 +179,9 @@ function MeasuredTrend({
           className={scene.hit.className}
           fill={scene.hit.fill}
           height={scene.hit.height}
-          onClick={handleClick}
-          onPointerLeave={() => setPreviewIndex(null)}
-          onPointerMove={handlePointerMove}
+          onClick={pinned.handleClick}
+          onPointerLeave={pinned.handlePointerLeave}
+          onPointerMove={pinned.handlePointerMove}
           width={scene.hit.width}
           x={scene.hit.x}
           y={scene.hit.y}

@@ -2,11 +2,8 @@ import { requireResolved } from "../../index.js";
 import { CHART_FALLBACK_WIDTH } from "../../geometry.js";
 import {
   TREND_CLASS,
-  activeChartIndex,
-  chartIndexAtClient,
   measuredChartWidth,
   readoutAriaLive,
-  togglePinnedAt,
   trendGate,
   trendScene,
 } from "../../scene/index.js";
@@ -16,18 +13,22 @@ import type { TrendScene } from "../../scene/index.js";
 import { ELEMENTS_AMBIENT_HINT } from "../lib/ambient.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { h, hs } from "../lib/h.js";
+import { PinnedCursor } from "../lib/pinned-cursor.js";
 
 export class TrendChartElement extends MeteoStationElement {
   static readonly observedAttributes = ["series", "station-id"];
 
   #width: number | null = null;
   #observer: ResizeObserver | null = null;
-  #pinnedAt: string | null = null;
-  #previewIndex: number | null = null;
   #scene: TrendScene | null = null;
   #readout: HTMLElement | null = null;
   #svg: SVGElement | null = null;
   #hit: SVGElement | null = null;
+  readonly #cursor = new PinnedCursor({
+    scene: () => this.#scene,
+    svg: () => this.#svg,
+    onChange: () => this.#updateCursor(),
+  });
 
   protected override disconnected(): void {
     this.#observer?.disconnect();
@@ -105,12 +106,9 @@ export class TrendChartElement extends MeteoStationElement {
       class: scene.hit.className,
       fill: scene.hit.fill,
       height: scene.hit.height,
-      onclick: (event: Event) => this.#handleClick(event as MouseEvent),
-      onpointerleave: () => {
-        this.#previewIndex = null;
-        this.#updateCursor();
-      },
-      onpointermove: (event: Event) => this.#handlePointerMove(event as PointerEvent),
+      onclick: (event: Event) => this.#cursor.handleClick(event as MouseEvent),
+      onpointerleave: () => this.#cursor.handlePointerLeave(),
+      onpointermove: (event: Event) => this.#cursor.handlePointerMove(event as PointerEvent),
       width: scene.hit.width,
       x: scene.hit.x,
       y: scene.hit.y,
@@ -164,46 +162,15 @@ export class TrendChartElement extends MeteoStationElement {
     this.#updateCursor();
   }
 
-  #indexAtPoint(clientX: number): number | null {
-    const scene = this.#scene;
-    const svg = this.#svg;
-    if (scene == null || svg == null) return null;
-    return chartIndexAtClient(
-      scene.points,
-      scene.frame,
-      scene.scales,
-      clientX,
-      svg.getBoundingClientRect(),
-    );
-  }
-
-  #handlePointerMove(event: PointerEvent): void {
-    if (event.pointerType === "touch") return;
-    this.#previewIndex = this.#indexAtPoint(event.clientX);
-    this.#updateCursor();
-  }
-
-  #handleClick(event: MouseEvent): void {
-    const index = this.#indexAtPoint(event.clientX);
-    if (index == null) return;
-    const observedAt = this.#scene?.points[index]?.observedAt;
-    if (observedAt == null) return;
-    this.#pinnedAt = togglePinnedAt(this.#pinnedAt, observedAt);
-    this.#previewIndex = null;
-    this.#updateCursor();
-  }
-
   #updateCursor(): void {
     const scene = this.#scene;
     const readout = this.#readout;
     const svg = this.#svg;
     const hit = this.#hit;
     if (scene == null || readout == null || svg == null || hit == null) return;
-    const inspection = scene.inspect(
-      activeChartIndex(scene.points, this.#pinnedAt, this.#previewIndex),
-    );
+    const inspection = scene.inspect(this.#cursor.activeIndex());
 
-    readout.setAttribute("aria-live", readoutAriaLive(this.#previewIndex));
+    readout.setAttribute("aria-live", readoutAriaLive(this.#cursor.previewIndex));
     readout.replaceChildren(
       h("strong", null, inspection.readout.strong),
       h("span", null, inspection.readout.span),

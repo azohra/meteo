@@ -492,4 +492,39 @@ describe("useStationLive", () => {
     expect(currentCalls).toEqual([]);
     unmount();
   });
+
+  it("useStation live refresh restarts the stream for a fresh init frame", async () => {
+    const connections: ReturnType<typeof liveConnection>[] = [];
+    const liveSignals: Array<AbortSignal | undefined> = [];
+    const feedBody = JSON.stringify(feedFixture());
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes("/live")) {
+        liveSignals.push(init?.signal ?? undefined);
+        const connection = liveConnection();
+        connections.push(connection);
+        return connection.response;
+      }
+      return jsonResponse(feedBody) as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result, unmount } = renderHook(() =>
+      useStation("/wind", "test-station", { live: true, pollSeconds: 86_400 }),
+    );
+    await waitFor(() => expect(result.current.feed).not.toBeNull());
+    connections[0]?.push(liveInitFrame());
+    await waitFor(() =>
+      expect(
+        result.current.station?.status === "ok" && result.current.station.telemetry?.batteryVoltage,
+      ).toBe(4.15),
+    );
+
+    const liveCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => (url as string).includes("/live")).length;
+    expect(liveCalls()).toBe(1);
+    act(() => result.current.refresh());
+    await waitFor(() => expect(liveCalls()).toBe(2));
+    expect(liveSignals[0]?.aborted).toBe(true);
+    unmount();
+  });
 });

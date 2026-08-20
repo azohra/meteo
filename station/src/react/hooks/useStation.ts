@@ -1,12 +1,8 @@
 "use client";
-import { useCallback, useMemo } from "react";
-import { foldCurrent } from "../../index.js";
-import type { Station, StationFeed } from "../../index.js";
-import { liveSnapshotToCurrent } from "../../client/index.js";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { createStationStore } from "../../client/index.js";
 import type { PollError } from "../../client/index.js";
-import { useStationCurrent } from "./useStationCurrent.js";
-import { useStationFeed } from "./useStationFeed.js";
-import { useStationLive } from "./useStationLive.js";
+import type { Station, StationFeed } from "../../index.js";
 
 export function useStation(
   url: string,
@@ -30,60 +26,35 @@ export function useStation(
 } {
   const { pollSeconds, currentPollSeconds, enabled = true, fetchInit, initialData } = options;
   const live = options.live === true;
-  const feedResult = useStationFeed(url, {
-    ...(pollSeconds != null ? { pollSeconds } : {}),
-    enabled,
-    ...(fetchInit != null ? { fetchInit } : {}),
-    ...(initialData != null ? { initialData } : {}),
-  });
-  const currentResult = useStationCurrent(url, stationId, {
-    ...(currentPollSeconds != null ? { pollSeconds: currentPollSeconds } : {}),
-    enabled: enabled && !live,
-    ...(fetchInit != null ? { fetchInit } : {}),
-  });
-  const liveResult = useStationLive(url, stationId, {
-    enabled: enabled && live,
-    ...(fetchInit != null ? { fetchInit } : {}),
-  });
+  const fetchInitRef = useRef(fetchInit);
+  fetchInitRef.current = fetchInit;
+  const initialRef = useRef(initialData);
+  const mountUrlRef = useRef(url);
 
-  const liveCurrent = useMemo(
+  const store = useMemo(
     () =>
-      live
-        ? liveSnapshotToCurrent({
-            station: liveResult.station,
-            servedAt: liveResult.servedAt,
-            samples: liveResult.samples,
-          })
-        : null,
-    [live, liveResult.station, liveResult.servedAt, liveResult.samples],
+      createStationStore(url, stationId, {
+        ...(pollSeconds != null ? { pollSeconds } : {}),
+        ...(currentPollSeconds != null ? { currentPollSeconds } : {}),
+        fetchInit: () => fetchInitRef.current,
+        ...(url === mountUrlRef.current && initialRef.current != null
+          ? { initialData: initialRef.current }
+          : {}),
+        live,
+      }),
+    [url, stationId, pollSeconds, currentPollSeconds, live],
   );
-  const current = live ? liveCurrent : currentResult.current;
-  const currentReceivedAtMs = live
-    ? liveCurrent == null
-      ? null
-      : liveResult.receivedAtMs
-    : currentResult.receivedAtMs;
-  const currentError = live ? liveResult.error : currentResult.error;
-
-  const merged = useMemo(
-    () => foldCurrent(feedResult.feed, feedResult.receivedAtMs, current, currentReceivedAtMs),
-    [feedResult.feed, feedResult.receivedAtMs, current, currentReceivedAtMs],
-  );
-
-  const station = merged.feed?.stations.find((entry) => entry.id === stationId) ?? null;
-
-  const feedRefresh = feedResult.refresh;
-  const currentRefresh = currentResult.refresh;
-  const refresh = useCallback(() => {
-    feedRefresh();
-    currentRefresh();
-  }, [feedRefresh, currentRefresh]);
-
+  useEffect(() => {
+    if (!enabled) return;
+    store.start();
+    return () => store.stop();
+  }, [store, enabled]);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   return {
-    feed: merged.feed,
-    station,
-    receivedAtMs: merged.receivedAtMs,
-    error: feedResult.error ?? currentError,
-    refresh,
+    feed: snapshot.feed,
+    station: snapshot.station,
+    receivedAtMs: snapshot.receivedAtMs,
+    error: snapshot.error,
+    refresh: () => store.refresh(),
   };
 }

@@ -1,18 +1,9 @@
 "use client";
-import {
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import { useId, useRef } from "react";
 import { resolveDisplay } from "../../index.js";
 import {
   WIND_CHART_CLASS,
-  activeChartIndex,
-  chartIndexAtClient,
   readoutAriaLive,
-  togglePinnedAt,
   windChartGate,
   windChartScene,
 } from "../../scene/index.js";
@@ -20,6 +11,7 @@ import type { FavorableDirection, History, SpeedUnit, Station } from "../../inde
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
 import { useMeasuredChartWidth } from "../hooks/useMeasuredChartWidth.js";
+import { usePinnedCursor } from "../lib/use-pinned-cursor.js";
 import { Readout } from "./Readout.js";
 import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 
@@ -126,8 +118,6 @@ function MeasuredChart({
   words: StationStrings;
 }) {
   const hatchId = `meteo-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const [pinnedAt, setPinnedAt] = useState<string | null>(null);
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const scene = windChartScene({
     compareOffsetDays,
@@ -144,34 +134,14 @@ function MeasuredChart({
     windowHours,
     words,
   });
-  const { readout, cursor } = scene.inspect(activeChartIndex(scene.points, pinnedAt, previewIndex));
-
-  const indexAtPoint = (clientX: number, hit: SVGRectElement): number | null => {
-    const svg = hit.ownerSVGElement;
-    if (!svg) return null;
-    const bounds = svg.getBoundingClientRect();
-    return chartIndexAtClient(scene.points, scene.frame, scene.scales, clientX, bounds);
-  };
-
-  const handlePointerMove = (event: ReactPointerEvent<SVGRectElement>) => {
-    if (event.pointerType === "touch") return;
-    setPreviewIndex(indexAtPoint(event.clientX, event.currentTarget));
-  };
-
-  const handleClick = (event: ReactMouseEvent<SVGRectElement>) => {
-    const index = indexAtPoint(event.clientX, event.currentTarget);
-    if (index == null) return;
-    const observedAt = scene.points[index]?.observedAt;
-    if (observedAt == null) return;
-    setPinnedAt((current) => togglePinnedAt(current, observedAt));
-    setPreviewIndex(null);
-  };
+  const pinned = usePinnedCursor(scene);
+  const { readout, cursor } = scene.inspect(pinned.activeIndex);
 
   return (
     <>
       <Readout
         ariaLabel={scene.readout.ariaLabel}
-        ariaLive={readoutAriaLive(previewIndex)}
+        ariaLive={readoutAriaLive(pinned.previewIndex)}
         className={scene.readout.className}
         parts={readout.span}
         strong={readout.strong}
@@ -389,9 +359,9 @@ function MeasuredChart({
           className={scene.hit.className}
           fill={scene.hit.fill}
           height={scene.hit.height}
-          onClick={handleClick}
-          onPointerLeave={() => setPreviewIndex(null)}
-          onPointerMove={handlePointerMove}
+          onClick={pinned.handleClick}
+          onPointerLeave={pinned.handlePointerLeave}
+          onPointerMove={pinned.handlePointerMove}
           width={scene.hit.width}
           x={scene.hit.x}
           y={scene.hit.y}

@@ -12,11 +12,8 @@ import {
 import { loadCampbellStation } from "./adapters/campbell.js";
 import { loadEcowittStation } from "./adapters/ecowitt.js";
 import { loadTempestStation } from "./adapters/tempest.js";
-import {
-  loadWindnerdHistory,
-  loadWindnerdStation,
-  type WindnerdRecordPeriodMinutes,
-} from "./adapters/windnerd.js";
+import { loadWindnerdHistory, loadWindnerdStation } from "./adapters/windnerd.js";
+import type { WindnerdRecordPeriodMinutes } from "../windnerd.js";
 import { loadWindnerdClimatology } from "./adapters/windnerd-climatology.js";
 import { openWindnerdLive } from "./adapters/windnerd-live.js";
 import type { StationClimatology } from "../contract-climatology.js";

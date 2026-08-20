@@ -1,8 +1,7 @@
 import { parseStationClimatologyJson } from "../contract-climatology.js";
 import type { StationClimatology } from "../contract-climatology.js";
+import { REQUEST_TIMEOUT_MS } from "./poll.js";
 import type { PollError } from "./poll.js";
-
-const REQUEST_TIMEOUT_MS = 15_000;
 
 export type StationClimatologySnapshot = {
   document: StationClimatology | null;

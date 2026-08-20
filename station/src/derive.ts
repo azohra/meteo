@@ -270,6 +270,21 @@ export function stationFreshnessThresholds(
   };
 }
 
+/* The contract's anchor rule: a reading's age is its age at serve time plus
+ * the time since receipt, each clamped non-negative — the client's clock
+ * offset never enters, so a wrong client clock cannot age a live station. */
+export function anchoredAgeMs(input: {
+  observedAt: string;
+  servedAt: string;
+  receivedAtMs: number;
+  nowMs: number;
+}): number {
+  return (
+    Math.max(0, Date.parse(input.servedAt) - Date.parse(input.observedAt)) +
+    Math.max(0, input.nowMs - input.receivedAtMs)
+  );
+}
+
 export function freshness(
   input: {
     observedAt: string;
@@ -279,9 +294,7 @@ export function freshness(
   },
   thresholds: FreshnessThresholds = DEFAULT_FRESHNESS_THRESHOLDS,
 ): FreshnessStatus {
-  const ageAtServeMs = Date.parse(input.servedAt) - Date.parse(input.observedAt);
-  const sinceReceivedMs = Math.max(0, input.nowMs - input.receivedAtMs);
-  const ageMs = Math.max(0, ageAtServeMs) + sinceReceivedMs;
+  const ageMs = anchoredAgeMs(input);
   if (ageMs <= thresholds.currentForMs) return "live";
   if (ageMs <= thresholds.staleAfterMs) return "aging";
   return "stale";
