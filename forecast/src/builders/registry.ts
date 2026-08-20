@@ -31,7 +31,11 @@ function forwardedOptions(options: RegistryBuildOptions): {
 export const BUILDERS: ReadonlyMap<string, RegisteredBuilder> = new Map<string, RegisteredBuilder>([
   [
     "hrdps-west",
-    async (options) => (await import("./hrdps-west.js")).buildHrdpsWest(forwardedOptions(options)),
+    async (options) => {
+      const eccc = await import("./eccc.js");
+      const west = await import("./hrdps-west.js");
+      return eccc.buildEccc(west.HRDPS_WEST, forwardedOptions(options));
+    },
   ],
   [
     "hrdps-continental",

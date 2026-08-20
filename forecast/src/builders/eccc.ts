@@ -95,21 +95,38 @@ export function gdpsCapeHours(forecastHour: number): boolean {
 
 export interface DatamartModel {
   slug: string;
-  path: string;
-  filePrefix: string;
-  gridToken: string;
+  /** Log and error display name; defaults to the slug. */
+  label?: string;
+  /** The published-count noun in the final log line; defaults to "profiles". */
+  publishedNoun?: string;
+  // Either the WXO-DD grammar's three parts, or a whole-URL override for
+  // feeds outside that tree (the alpha Datamart).
+  path?: string;
+  filePrefix?: string;
+  gridToken?: string;
+  fileUrl?: (date: string, runHour: string, forecastHour: number, variable: string) => string;
   runHours: readonly string[];
   forecastHours: readonly number[];
-  surfaceVariables: Record<string, string>;
-  temperatureVariable: string;
-  dewPointVariable: string;
+  /** The run-completeness probe: this variable's last-hour file. */
+  probeVariable: string;
+  surfaceVariables: Record<string, readonly [variable: string, convert: (v: number) => number]>;
+  // Present as a pair when 2 m depression derives from T and Td; absent
+  // when the feed publishes DEPR directly (then DEPR rides
+  // surfaceVariables).
+  temperatureVariable?: string;
+  dewPointVariable?: string;
   pressureVariable: (fieldName: string, pressureHpa: number) => string;
   omegaLevels: readonly number[];
   terrainVariable: string;
-  maxNearestKm: number;
+  /** Where the terrain file lives: a fixed hour, or the first built slot for feeds with no hour-0 directory. */
+  terrainHour: number | "firstSlot";
+  /** Absent means no domain cap: the feed covers every catalogued site. */
+  maxNearestKm?: number;
   precipWindowVariable?: string;
   precipRunTotalVariable?: string;
   levelsForHour: (forecastHour: number) => readonly number[];
+  /** True for feeds that publish every level every hour, where a missing level file is a broken run, not thinning. */
+  missingLevelFileFatal?: boolean;
   gustMaxVariable?: string;
   gustInstantVariable?: string;
   capeVariable?: string;
@@ -119,8 +136,19 @@ export interface DatamartModel {
   pblVariable?: string;
 }
 
+export function modelLabel(model: DatamartModel): string {
+  return model.label ?? model.slug;
+}
+
 export function modelSemantics(model: DatamartModel): ForecastSemantics {
-  const semantics: ForecastSemantics = { precipitation: "windowMeanRate" };
+  // Precipitation semantics follow the transport: window or run-total
+  // accumulations publish a window-mean rate; a plain surface rate field
+  // (PRATE) is instantaneous.
+  const windowed =
+    model.precipWindowVariable !== undefined || model.precipRunTotalVariable !== undefined;
+  const semantics: ForecastSemantics = {
+    precipitation: windowed ? "windowMeanRate" : "instantRate",
+  };
   return model.gustMaxVariable ? { gust: "hourMax", ...semantics } : semantics;
 }
 
@@ -132,18 +160,20 @@ export const HRDPS: DatamartModel = {
   runHours: ["18", "12", "06", "00"],
   forecastHours: Array.from({ length: 48 }, (_, index) => index + 1),
   surfaceVariables: {
-    cloudCoverPercent: "TCDC_Sfc",
-    latentHeatFluxWm2: "LHTFL_Sfc",
-    seaLevelPressureHpa: "PRMSL_MSL",
-    sensibleHeatFluxWm2: "SHTFL_Sfc",
-    windDirectionDeg: "WDIR_AGL-10m",
-    windSpeedMps: "WIND_AGL-10m",
+    cloudCoverPercent: ["TCDC_Sfc", (v) => v],
+    latentHeatFluxWm2: ["LHTFL_Sfc", (v) => v],
+    seaLevelPressureHpa: ["PRMSL_MSL", (v) => v / 100.0],
+    sensibleHeatFluxWm2: ["SHTFL_Sfc", (v) => v],
+    windDirectionDeg: ["WDIR_AGL-10m", (v) => v],
+    windSpeedMps: ["WIND_AGL-10m", (v) => v],
   },
+  probeVariable: "TMP_AGL-2m",
   temperatureVariable: "TMP_AGL-2m",
   dewPointVariable: "DPT_AGL-2m",
   pressureVariable: oldStylePressureVariable,
   omegaLevels: [1000, 850, 700],
   terrainVariable: "HGT_Sfc",
+  terrainHour: 0,
   maxNearestKm: 5.0,
   precipWindowVariable: "APCP-Accum1h_Sfc",
   levelsForHour: allLevels,
@@ -163,18 +193,20 @@ export const RDPS: DatamartModel = {
   runHours: ["18", "12", "06", "00"],
   forecastHours: Array.from({ length: 84 }, (_, index) => index + 1),
   surfaceVariables: {
-    cloudCoverPercent: "TotalCloudCover_Sfc",
-    latentHeatFluxWm2: "LatentHeatNetFlux_Sfc",
-    seaLevelPressureHpa: "Pressure_MSL",
-    sensibleHeatFluxWm2: "SensibleHeatNetFlux_Sfc",
-    windDirectionDeg: "WindDir_AGL-10m",
-    windSpeedMps: "WindSpeed_AGL-10m",
+    cloudCoverPercent: ["TotalCloudCover_Sfc", (v) => v],
+    latentHeatFluxWm2: ["LatentHeatNetFlux_Sfc", (v) => v],
+    seaLevelPressureHpa: ["Pressure_MSL", (v) => v / 100.0],
+    sensibleHeatFluxWm2: ["SensibleHeatNetFlux_Sfc", (v) => v],
+    windDirectionDeg: ["WindDir_AGL-10m", (v) => v],
+    windSpeedMps: ["WindSpeed_AGL-10m", (v) => v],
   },
+  probeVariable: "AirTemp_AGL-2m",
   temperatureVariable: "AirTemp_AGL-2m",
   dewPointVariable: "DewPoint_AGL-2m",
   pressureVariable: englishPressureVariable,
   omegaLevels: [850, 700],
   terrainVariable: "GeopotentialHeight_Sfc",
+  terrainHour: 0,
   maxNearestKm: 15.0,
   precipWindowVariable: "Precip-Accum1h_Sfc",
   levelsForHour: allLevels,
@@ -195,18 +227,20 @@ export const GDPS: DatamartModel = {
   runHours: ["12", "00"],
   forecastHours: Array.from({ length: 80 }, (_, index) => (index + 1) * 3),
   surfaceVariables: {
-    cloudCoverPercent: "TotalCloudCover_Sfc",
-    latentHeatFluxWm2: "LatentHeatNetFlux_Sfc",
-    seaLevelPressureHpa: "Pressure_MSL",
-    sensibleHeatFluxWm2: "SensibleHeatNetFlux_Sfc",
-    windDirectionDeg: "WindDir_AGL-10m",
-    windSpeedMps: "WindSpeed_AGL-10m",
+    cloudCoverPercent: ["TotalCloudCover_Sfc", (v) => v],
+    latentHeatFluxWm2: ["LatentHeatNetFlux_Sfc", (v) => v],
+    seaLevelPressureHpa: ["Pressure_MSL", (v) => v / 100.0],
+    sensibleHeatFluxWm2: ["SensibleHeatNetFlux_Sfc", (v) => v],
+    windDirectionDeg: ["WindDir_AGL-10m", (v) => v],
+    windSpeedMps: ["WindSpeed_AGL-10m", (v) => v],
   },
+  probeVariable: "AirTemp_AGL-2m",
   temperatureVariable: "AirTemp_AGL-2m",
   dewPointVariable: "DewPoint_AGL-2m",
   pressureVariable: englishPressureVariable,
   omegaLevels: [850, 700, 600],
   terrainVariable: "GeopotentialHeight_Sfc",
+  terrainHour: 0,
   maxNearestKm: 25.0,
   precipRunTotalVariable: "Precip-Accum_Sfc",
   levelsForHour: gdpsLevels,
@@ -226,6 +260,9 @@ export function fileUrl(
   forecastHour: number,
   variable: string,
 ): string {
+  if (model.fileUrl !== undefined) {
+    return model.fileUrl(date, runHour, forecastHour, variable);
+  }
   const step = String(forecastHour).padStart(3, "0");
   const name = `${date}T${runHour}Z_${model.filePrefix}_${variable}_${model.gridToken}_PT${step}H.grib2`;
   return `${datamartBase()}/${date}/WXO-DD/${model.path}/${runHour}/${step}/${name}`;
@@ -250,7 +287,7 @@ export async function latestCompleteRun(
       if (dayOffset === 0 && Number.parseInt(hour, 10) > current.getUTCHours()) {
         continue;
       }
-      const probe = fileUrl(model, date, hour, lastHour, model.temperatureVariable);
+      const probe = fileUrl(model, date, hour, lastHour, model.probeVariable);
       if (await exists(probe, fetchImpl)) {
         return { date, hour };
       }
@@ -339,7 +376,9 @@ async function sampleProfiles(
     return wire.sampleSites(message, sites, model.maxNearestKm);
   };
 
-  const terrain = await sample(model.terrainVariable, 0);
+  const terrainHour =
+    model.terrainHour === "firstSlot" ? forecastSlots[0]!.forecastHour : model.terrainHour;
+  const terrain = await sample(model.terrainVariable, terrainHour);
   const modelElevationBySite: Record<string, number> = Object.fromEntries(
     sites.map((site) => [
       site.slug,
@@ -352,15 +391,12 @@ async function sampleProfiles(
   );
 
   const surfaceTask =
-    (hourIndex: number, fieldName: string, variable: string) => async (): Promise<void> => {
+    (hourIndex: number, fieldName: string, variable: string, convert: (v: number) => number) =>
+    async (): Promise<void> => {
       const values = await sample(variable, forecastSlots[hourIndex]!.forecastHour);
       for (const site of sites) {
         const hour = hoursBySite[site.slug]![hourIndex]!;
-        let value = requiredValue("Datamart", values[site.slug], fieldName, site);
-        if (fieldName === "seaLevelPressureHpa") {
-          value /= 100.0;
-        }
-        hour[fieldName] = value;
+        hour[fieldName] = convert(requiredValue("Datamart", values[site.slug], fieldName, site));
       }
     };
 
@@ -368,8 +404,8 @@ async function sampleProfiles(
   // depressions at 30 K.
   const temperatureTask = (hourIndex: number) => async (): Promise<void> => {
     const forecastHour = forecastSlots[hourIndex]!.forecastHour;
-    const temperature = await sample(model.temperatureVariable, forecastHour);
-    const dewPoint = await sample(model.dewPointVariable, forecastHour);
+    const temperature = await sample(model.temperatureVariable!, forecastHour);
+    const dewPoint = await sample(model.dewPointVariable!, forecastHour);
     for (const site of sites) {
       const slug = site.slug;
       const t = requiredValue("Datamart", temperature[slug], "temperatureC", site);
@@ -448,7 +484,7 @@ async function sampleProfiles(
         maxValue < instantValue - GUST_MAX_PACKING_SLACK_MS
       ) {
         throw new Error(
-          `Gust semantics broke for ${site.name} at PT${String(forecastHour).padStart(3, "0")}: ` +
+          `Gust semantics broke for ${site.name} at +${forecastHour} h: ` +
             `hour-max ${maxValue.toFixed(2)} m/s < instantaneous ${instantValue.toFixed(2)} m/s`,
         );
       }
@@ -514,7 +550,9 @@ async function sampleProfiles(
       try {
         values = await sample(model.pressureVariable(fieldName, pressureHpa), forecastHour);
       } catch (error) {
-        if (error instanceof NotFoundError) {
+        // WXO-DD feeds thin levels out by hour; a feed that declares its
+        // level files complete treats absence as a broken run instead.
+        if (error instanceof NotFoundError && model.missingLevelFileFatal !== true) {
           return;
         }
         throw error;
@@ -532,9 +570,12 @@ async function sampleProfiles(
 
   const tasksForHour = (hourIndex: number): Array<() => Promise<void>> => {
     const forecastHour = forecastSlots[hourIndex]!.forecastHour;
-    const tasks: Array<() => Promise<void>> = [temperatureTask(hourIndex)];
-    for (const [fieldName, variable] of Object.entries(model.surfaceVariables)) {
-      tasks.push(surfaceTask(hourIndex, fieldName, variable));
+    const tasks: Array<() => Promise<void>> = [];
+    if (model.temperatureVariable !== undefined && model.dewPointVariable !== undefined) {
+      tasks.push(temperatureTask(hourIndex));
+    }
+    for (const [fieldName, [variable, convert]] of Object.entries(model.surfaceVariables)) {
+      tasks.push(surfaceTask(hourIndex, fieldName, variable, convert));
     }
     if (model.precipWindowVariable !== undefined) {
       tasks.push(precipWindowTask(hourIndex));
@@ -627,8 +668,8 @@ export async function buildEccc(model: DatamartModel, options: EcccBuildOptions)
   return publishRun(
     {
       slug: model.slug,
-      label: model.slug,
-      publishedNoun: "profiles",
+      label: modelLabel(model),
+      publishedNoun: model.publishedNoun ?? "profiles",
       resolveRun: async () => {
         if (options.referenceTime !== undefined) {
           run = pinnedRun(model, options.referenceTime);
@@ -655,5 +696,5 @@ export async function buildEccc(model: DatamartModel, options: EcccBuildOptions)
 }
 
 export function pinnedRun(model: DatamartModel, referenceTime: string): DatamartRun {
-  return parseCycleStamp(referenceTime, model.runHours, model.slug);
+  return parseCycleStamp(referenceTime, model.runHours, modelLabel(model));
 }

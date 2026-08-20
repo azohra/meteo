@@ -38,10 +38,7 @@ import {
   sampleDatamartField,
   type DatamartWire,
 } from "../../src/providers/datamart.js";
-import {
-  FETCH_CONCURRENCY as HRDPS_WEST_FETCH_CONCURRENCY,
-  SEMANTICS as HRDPS_WEST_SEMANTICS,
-} from "../../src/builders/hrdps-west.js";
+import { SEMANTICS as HRDPS_WEST_SEMANTICS } from "../../src/builders/hrdps-west.js";
 import { FETCH_CONCURRENCY as RAQDPS_FETCH_CONCURRENCY } from "../../src/builders/raqdps.js";
 import { splitMembers } from "../../src/history.js";
 import { stubFetch, useCleanWireEnv } from "../helpers/wire.js";
@@ -292,9 +289,9 @@ it("Datamart builders share the per-host connection budget", () => {
   // One workflow job per Datamart host and sequential builders inside a
   // job make this constant the per-host connection ceiling — keep every
   // ECCC builder in this package on the same budget (the ensemble
-  // builders assert theirs beside their own configs).
+  // builders assert theirs beside their own configs). hrdps-west runs on
+  // this same engine, so it shares the budget by construction.
   expect(FETCH_CONCURRENCY).toBe(5);
-  expect(HRDPS_WEST_FETCH_CONCURRENCY).toBe(FETCH_CONCURRENCY);
   expect(RAQDPS_FETCH_CONCURRENCY).toBe(FETCH_CONCURRENCY);
 });
 
@@ -511,18 +508,20 @@ const TEST_MODEL: DatamartModel = {
   runHours: ["00"],
   forecastHours: [3, 6],
   surfaceVariables: {
-    cloudCoverPercent: "TotalCloudCover_Sfc",
-    latentHeatFluxWm2: "LatentHeatNetFlux_Sfc",
-    seaLevelPressureHpa: "Pressure_MSL",
-    sensibleHeatFluxWm2: "SensibleHeatNetFlux_Sfc",
-    windDirectionDeg: "WindDir_AGL-10m",
-    windSpeedMps: "WindSpeed_AGL-10m",
+    cloudCoverPercent: ["TotalCloudCover_Sfc", (v) => v],
+    latentHeatFluxWm2: ["LatentHeatNetFlux_Sfc", (v) => v],
+    seaLevelPressureHpa: ["Pressure_MSL", (v) => v / 100.0],
+    sensibleHeatFluxWm2: ["SensibleHeatNetFlux_Sfc", (v) => v],
+    windDirectionDeg: ["WindDir_AGL-10m", (v) => v],
+    windSpeedMps: ["WindSpeed_AGL-10m", (v) => v],
   },
+  probeVariable: "AirTemp_AGL-2m",
   temperatureVariable: "AirTemp_AGL-2m",
   dewPointVariable: "DewPoint_AGL-2m",
   pressureVariable: englishPressureVariable,
   omegaLevels: [850],
   terrainVariable: "GeopotentialHeight_Sfc",
+  terrainHour: 0,
   maxNearestKm: 15.0,
   precipRunTotalVariable: "Precip-Accum_Sfc",
   levelsForHour: () => [925, 850, 700, 600],

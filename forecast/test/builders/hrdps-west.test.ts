@@ -6,26 +6,22 @@ import { NotFoundError } from "../../src/providers/datamart.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
 import type { Site } from "../../src/sites.js";
 import { liveDatamartWire, type DatamartWire } from "../../src/providers/datamart.js";
+import { FETCH_CONCURRENCY } from "../../src/providers/datamart.js";
+import { buildProfiles, oldStylePressureVariable, pinnedRun } from "../../src/builders/eccc.js";
 import {
   BASE_URL,
   CAPE_SENTINEL,
   CAPE_VARIABLE,
-  FETCH_CONCURRENCY,
-  FORECAST_HOURS,
   GUST_INSTANT_VARIABLE,
   GUST_MAX_VARIABLE,
+  HRDPS_WEST,
   PBL_VARIABLE,
-  PRESSURE_FIELDS,
   PRESSURE_LEVELS,
-  RUN_HOURS,
   SEMANTICS,
   SLUG,
   SURFACE_FIELDS,
   TERRAIN_VARIABLE,
-  buildProfiles,
   fileUrl,
-  forecastHours,
-  pinnedRun,
 } from "../../src/builders/hrdps-west.js";
 import { useCleanWireEnv } from "../helpers/wire.js";
 
@@ -59,8 +55,8 @@ it("the alpha host ignores METEO_DATAMART_BASE by design", () => {
 });
 
 it("the static configuration matches the feed", () => {
-  expect(RUN_HOURS).toEqual(["12", "00"]);
-  expect(FORECAST_HOURS).toBe(48);
+  expect(HRDPS_WEST.runHours).toEqual(["12", "00"]);
+  expect(HRDPS_WEST.forecastHours).toHaveLength(48);
   expect(FETCH_CONCURRENCY).toBe(5); // the shared per-host Datamart budget
   expect(PRESSURE_LEVELS).toEqual([925, 900, 875, 850, 800, 750, 700, 650, 600]);
   expect(TERRAIN_VARIABLE).toBe("HGT_SFC_0");
@@ -84,15 +80,8 @@ it("models.json matches the builder configuration", () => {
   expect(entry.capabilities["pblHeight"]).toBe(true);
 });
 
-it("the schedule is the full 48 hours; caps apply at build time", () => {
-  // The step cap (options.maxSteps ?? METEO_MAX_STEPS) is applied once,
-  // inside the build — the schedule itself stays pure.
-  process.env["METEO_MAX_STEPS"] = "3";
-  try {
-    expect(forecastHours()).toEqual(Array.from({ length: 48 }, (_, index) => index + 1));
-  } finally {
-    delete process.env["METEO_MAX_STEPS"];
-  }
+it("the schedule is the full hourly 48; caps apply at build time", () => {
+  expect(HRDPS_WEST.forecastHours).toEqual(Array.from({ length: 48 }, (_, index) => index + 1));
 });
 
 const LEVEL_HEIGHTS: Record<number, number> = {
@@ -181,6 +170,7 @@ interface PublishedProfile {
 describe("buildProfiles", () => {
   it("publishes the converted series end-to-end", async () => {
     const result = await buildProfiles(
+      HRDPS_WEST,
       { date: "20260808", hour: "00" },
       "2026-08-08T00:00:00Z",
       [DUNDEE],
@@ -229,6 +219,7 @@ describe("buildProfiles", () => {
     store.delete(fileUrl("DEPR_ISBL_0600", "20260808", "00", 2));
     await expect(
       buildProfiles(
+        HRDPS_WEST,
         { date: "20260808", hour: "00" },
         "2026-08-08T00:00:00Z",
         [DUNDEE],
@@ -245,6 +236,7 @@ describe("buildProfiles", () => {
     }
     await expect(
       buildProfiles(
+        HRDPS_WEST,
         { date: "20260808", hour: "00" },
         "2026-08-08T00:00:00Z",
         [DUNDEE],
@@ -266,6 +258,7 @@ describe("buildProfiles", () => {
     store.delete(fileUrl(PBL_VARIABLE, "20260808", "00", 1));
 
     const result = await buildProfiles(
+      HRDPS_WEST,
       { date: "20260808", hour: "00" },
       "2026-08-08T00:00:00Z",
       [DUNDEE],
@@ -434,28 +427,24 @@ it("concurrent samples of one message decode it exactly once", async () => {
   }
 });
 
-it("surface and pressure tables carry the ported conversions", () => {
+it("surface tables carry the ported conversions; the column rides the old-style grammar", () => {
   expect(SURFACE_FIELDS["precipitationMm"]![0]).toBe("PRATE_SFC_0");
   expect(SURFACE_FIELDS["precipitationMm"]![1](0.001)).toBeCloseTo(3.6, 12); // ×3600
   expect(SURFACE_FIELDS["seaLevelPressureHpa"]![1](101300.0)).toBe(1013.0); // Pa → hPa
   expect(SURFACE_FIELDS["temperatureC"]![1](293.15)).toBeCloseTo(20.0, 9); // K → °C
-  expect(PRESSURE_FIELDS["temperatureC"]![1](283.15)).toBeCloseTo(10.0, 9);
-  expect(Object.keys(PRESSURE_FIELDS)).toEqual([
-    "dewPointDepressionC",
-    "heightM",
-    "temperatureC",
-    "windDirectionDeg",
-    "windSpeedMps",
-  ]); // no omega on this feed
+  // DEPR is published on levels directly — the old-style spellings apply.
+  expect(HRDPS_WEST.pressureVariable).toBe(oldStylePressureVariable);
+  expect(oldStylePressureVariable("dewPointDepressionC", 925)).toBe("DEPR_ISBL_0925");
+  expect(HRDPS_WEST.omegaLevels).toEqual([]); // no omega on this feed
 });
 
 describe("the pinned referenceTime", () => {
   it("resolves a valid cycle stamp", () => {
-    expect(pinnedRun("2026-08-08T12:00:00Z")).toEqual({ date: "20260808", hour: "12" });
+    expect(pinnedRun(HRDPS_WEST, "2026-08-08T12:00:00Z")).toEqual({ date: "20260808", hour: "12" });
   });
 
   it("rejects non-cycle stamps", () => {
-    expect(() => pinnedRun("2026-08-08T06:00:00Z")).toThrow(/not a HRDPS 1 km cycle/);
-    expect(() => pinnedRun("20260808T12Z")).toThrow(/cycle stamp/);
+    expect(() => pinnedRun(HRDPS_WEST, "2026-08-08T06:00:00Z")).toThrow(/not a HRDPS 1 km cycle/);
+    expect(() => pinnedRun(HRDPS_WEST, "20260808T12Z")).toThrow(/cycle stamp/);
   });
 });

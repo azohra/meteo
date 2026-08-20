@@ -61,14 +61,14 @@ parts to `publishRun`, which resolves the run, applies the
 already-published gate, and owns the profile, history, and manifest
 writes — a builder never open-codes them.
 
-A semantics declaration (invariant 6) is one verified line per builder,
-HRDPS West's, from `forecast/src/builders/hrdps-west.ts`:
-
-```ts
-import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
-
-export const SEMANTICS: ForecastSemantics = { gust: "hourMax", precipitation: "instantRate" };
-```
+A semantics declaration (invariant 6) follows from the model descriptor:
+`modelSemantics` in `forecast/src/builders/eccc.ts` reads the gust pairing
+and precipitation transport off the descriptor's fields, and each
+builder's contract test pins the result against `models.json` — HRDPS
+West's, for example, resolves to
+`{ gust: "hourMax", precipitation: "instantRate" }` because the
+descriptor names a gust-max variable and carries precipitation as a
+plain surface rate (PRATE) rather than an accumulation.
 
 ## What failure looks like
 
