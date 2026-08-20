@@ -20,6 +20,10 @@ import {
   validateSource,
 } from "../src/scenario/index.js";
 import { parseTaggedJson, pyDumps, untag, type TaggedValue } from "../src/scenario/json.js";
+import {
+  SCENARIO_INDEX_SCHEMA_PATH,
+  renderScenarioIndexSchema,
+} from "../src/internal/schema-artifacts.js";
 import { loadJson, ROOT, scenarioRepository, type Doc } from "./helpers/scenarios.js";
 
 const TEACHING_SCENARIOS = [
@@ -483,11 +487,15 @@ describe("scenario generation", () => {
   );
 });
 
-describe("scenario index schema validation", () => {
+describe("scenario index contract validation", () => {
+  it("emits scenarios/index.schema.json byte-identically — regenerate with pnpm schemas", () => {
+    const onDisk = readFileSync(join(ROOT, SCENARIO_INDEX_SCHEMA_PATH), "utf-8");
+    expect(onDisk).toBe(renderScenarioIndexSchema());
+  });
+
   it("accepts the committed index and rejects a shape-invalid one with Python's envelope", () => {
     validateScenarioIndex(
       loadJson(join(ROOT, "scenarios", "index.json")),
-      ROOT,
       "committed scenarios/index.json",
     );
 
@@ -501,7 +509,6 @@ describe("scenario index schema validation", () => {
     try {
       validateScenarioIndex(
         { schemaVersion: 2, scenarios: [{ id: "not enough fields" }] },
-        ROOT,
         "generated scenario index",
       );
     } catch (error) {
@@ -510,7 +517,7 @@ describe("scenario index schema validation", () => {
       message = (error as Error).message;
     }
     expect(message).toMatch(
-      /^generated scenario index does not satisfy scenarios\/index\.schema\.json:\n {2}/,
+      /^generated scenario index does not satisfy the scenario-index contract:\n {2}/,
     );
     expect(message).toContain("/schemaVersion");
     expect(message).toContain("/scenarios/0");
@@ -535,7 +542,7 @@ describe("scenario index schema validation", () => {
       message = (error as Error).message;
     }
     expect(message).toMatch(
-      /^committed scenarios\/index\.json does not satisfy scenarios\/index\.schema\.json:\n {2}/,
+      /^committed scenarios\/index\.json does not satisfy the scenario-index contract:\n {2}/,
     );
     expect(message).toContain("/schemaVersion");
   });

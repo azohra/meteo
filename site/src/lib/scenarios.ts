@@ -1,4 +1,11 @@
 import { siteForecastSchema, type SiteForecast } from "@azohra/meteo.briefing/contract";
+import {
+  parseScenarioIndex,
+  type ScenarioCapabilities,
+  type ScenarioIndexEntry,
+  type ScenarioKind,
+  type ScenarioLaunch,
+} from "@azohra/meteo.forecast/contract";
 import rawIndex from "../../../scenarios/index.json";
 
 if (typeof window !== "undefined") {
@@ -7,44 +14,7 @@ if (typeof window !== "undefined") {
   );
 }
 
-export type ScenarioKind = "deterministic" | "ensemble" | "comparison";
-
-export interface ScenarioCapabilities {
-  levels: boolean;
-  pressureLevels: number[];
-  verticalVelocity: false | "omega" | "fromGeometricW";
-  verticalVelocityLevels?: number[];
-  heatFluxes: boolean;
-  gust: false | "hourMax" | "instant";
-  cape: boolean;
-  cin: boolean;
-  pblHeight: boolean;
-  cloudLayers: boolean;
-  cloudProfile: boolean;
-}
-
-interface ScenarioOutputIndexEntry {
-  path: string;
-  sha256: string;
-  variant?: string;
-  title?: string;
-}
-
-export interface ScenarioLaunch {
-  elevationM: number;
-}
-
-interface ScenarioIndexEntry {
-  id: string;
-  title: string;
-  lesson: string;
-  kind: ScenarioKind;
-  modelShape: string;
-  timeZone: string;
-  launch: ScenarioLaunch;
-  capabilities: ScenarioCapabilities;
-  outputs: ScenarioOutputIndexEntry[];
-}
+export type { ScenarioCapabilities, ScenarioKind, ScenarioLaunch };
 
 export interface TeachingScenario {
   id: string;
@@ -60,6 +30,16 @@ export interface TeachingScenario {
   accessibilityDescription: string;
 }
 
+/* The two output shapes of the contract's kind union, widened to one:
+   deterministic and ensemble outputs never carry a variant, comparison
+   outputs always do — the registry only needs the optional view. */
+interface IndexedOutput {
+  path: string;
+  sha256: string;
+  variant?: string;
+  title?: string;
+}
+
 const rawProfileModules = import.meta.glob("../../../scenarios/generated/*.profile.json", {
   eager: true,
   import: "default",
@@ -67,139 +47,6 @@ const rawProfileModules = import.meta.glob("../../../scenarios/generated/*.profi
 
 function fail(message: string): never {
   throw new Error(`[scenarios] ${message}`);
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string" || value.trim() === "") fail(`${field} must be a non-empty string`);
-  return value;
-}
-
-function requireBoolean(value: unknown, field: string): boolean {
-  if (typeof value !== "boolean") fail(`${field} must be a boolean`);
-  return value;
-}
-
-function requireFiniteNumbers(value: unknown, field: string): number[] {
-  if (!Array.isArray(value) || value.some((item) => !Number.isFinite(item))) {
-    fail(`${field} must contain only finite numbers`);
-  }
-  return [...value] as number[];
-}
-
-function parseCapabilities(value: unknown, id: string): ScenarioCapabilities {
-  if (value === null || typeof value !== "object") fail(`${id}.capabilities must be an object`);
-  const candidate = value as Record<string, unknown>;
-  const verticalVelocity = candidate.verticalVelocity;
-  if (
-    verticalVelocity !== false &&
-    verticalVelocity !== "omega" &&
-    verticalVelocity !== "fromGeometricW"
-  ) {
-    fail(`${id}.capabilities.verticalVelocity has an unsupported value`);
-  }
-  const verticalVelocityLevels =
-    candidate.verticalVelocityLevels === undefined
-      ? undefined
-      : requireFiniteNumbers(
-          candidate.verticalVelocityLevels,
-          `${id}.capabilities.verticalVelocityLevels`,
-        );
-  if (verticalVelocity === false && verticalVelocityLevels !== undefined) {
-    fail(`${id}.capabilities.verticalVelocityLevels requires a vertical-velocity capability`);
-  }
-  if (verticalVelocity !== false && verticalVelocityLevels === undefined) {
-    fail(`${id}.capabilities.verticalVelocityLevels is required for ${verticalVelocity}`);
-  }
-  const gust = candidate.gust;
-  if (gust !== false && gust !== "hourMax" && gust !== "instant") {
-    fail(`${id}.capabilities.gust has an unsupported value`);
-  }
-  return {
-    levels: requireBoolean(candidate.levels, `${id}.capabilities.levels`),
-    pressureLevels: requireFiniteNumbers(
-      candidate.pressureLevels,
-      `${id}.capabilities.pressureLevels`,
-    ),
-    verticalVelocity,
-    verticalVelocityLevels,
-    heatFluxes: requireBoolean(candidate.heatFluxes, `${id}.capabilities.heatFluxes`),
-    gust,
-    cape: requireBoolean(candidate.cape, `${id}.capabilities.cape`),
-    cin: requireBoolean(candidate.cin, `${id}.capabilities.cin`),
-    pblHeight: requireBoolean(candidate.pblHeight, `${id}.capabilities.pblHeight`),
-    cloudLayers: requireBoolean(candidate.cloudLayers, `${id}.capabilities.cloudLayers`),
-    cloudProfile: requireBoolean(candidate.cloudProfile, `${id}.capabilities.cloudProfile`),
-  };
-}
-
-function parseLaunch(value: unknown, id: string): ScenarioLaunch {
-  if (value === null || typeof value !== "object") fail(`${id}.launch must be an object`);
-  const candidate = value as Record<string, unknown>;
-  if (!Number.isFinite(candidate.elevationM)) {
-    fail(`${id}.launch.elevationM must be a finite number`);
-  }
-  return { elevationM: candidate.elevationM as number };
-}
-
-function parseOutput(value: unknown, id: string, index: number): ScenarioOutputIndexEntry {
-  if (value === null || typeof value !== "object")
-    fail(`${id}.outputs[${index}] must be an object`);
-  const candidate = value as Record<string, unknown>;
-  const path = requireString(candidate.path, `${id}.outputs[${index}].path`);
-  if (
-    !/^generated\/[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)?\.profile\.json$/.test(
-      path,
-    )
-  ) {
-    fail(`${id}.outputs[${index}].path must name a generated profile`);
-  }
-  const sha256 = requireString(candidate.sha256, `${id}.outputs[${index}].sha256`);
-  if (!/^[a-f0-9]{64}$/.test(sha256))
-    fail(`${id}.outputs[${index}].sha256 must be lowercase SHA-256`);
-  const variant =
-    candidate.variant === undefined
-      ? undefined
-      : requireString(candidate.variant, `${id}.outputs[${index}].variant`);
-  const title =
-    candidate.title === undefined
-      ? undefined
-      : requireString(candidate.title, `${id}.outputs[${index}].title`);
-  return { path, sha256, variant, title };
-}
-
-function parseIndexEntry(value: unknown, index: number): ScenarioIndexEntry {
-  if (value === null || typeof value !== "object")
-    fail(`index.scenarios[${index}] must be an object`);
-  const candidate = value as Record<string, unknown>;
-  const id = requireString(candidate.id, `index.scenarios[${index}].id`);
-  const kind = candidate.kind;
-  if (kind !== "deterministic" && kind !== "ensemble" && kind !== "comparison") {
-    fail(`${id}.kind has an unsupported value`);
-  }
-  if (!Array.isArray(candidate.outputs) || candidate.outputs.length === 0) {
-    fail(`${id}.outputs must contain at least one profile`);
-  }
-  const outputs = candidate.outputs.map((output, outputIndex) =>
-    parseOutput(output, id, outputIndex),
-  );
-  if (kind === "comparison") {
-    if (outputs.length < 2 || outputs.some((output) => !output.variant || !output.title)) {
-      fail(`${id} comparison outputs require variant and title metadata`);
-    }
-  } else if (outputs.length !== 1 || outputs[0].variant !== undefined) {
-    fail(`${id} ${kind} scenario must have exactly one unvaried output`);
-  }
-  return {
-    id,
-    title: requireString(candidate.title, `${id}.title`),
-    lesson: requireString(candidate.lesson, `${id}.lesson`),
-    kind,
-    modelShape: requireString(candidate.modelShape, `${id}.modelShape`),
-    timeZone: requireString(candidate.timeZone, `${id}.timeZone`),
-    launch: parseLaunch(candidate.launch, id),
-    capabilities: parseCapabilities(candidate.capabilities, id),
-    outputs,
-  };
 }
 
 function profileModule(path: string): unknown {
@@ -213,7 +60,7 @@ function profileModule(path: string): unknown {
 
 function accessibilityDescription(
   entry: ScenarioIndexEntry,
-  output: ScenarioOutputIndexEntry,
+  output: IndexedOutput,
   profile: SiteForecast,
 ): string {
   const label = output.title ?? entry.title;
@@ -227,17 +74,19 @@ function accessibilityDescription(
 }
 
 function buildRegistry(): Map<string, TeachingScenario[]> {
-  const candidate = rawIndex as unknown as { schemaVersion?: unknown; scenarios?: unknown };
-  if (candidate.schemaVersion !== 1 || !Array.isArray(candidate.scenarios)) {
-    fail("index.json must contain schemaVersion 1 and a scenarios array");
-  }
-  const entries = candidate.scenarios.map(parseIndexEntry);
+  // The site is a reader like any other: the generated index comes in
+  // through the forecast package's contract guard (compare site-context.ts).
+  // Only what no schema can express stays here: duplicate detection across
+  // entries and the glob-module resolution of each generated profile.
+  const index =
+    parseScenarioIndex(rawIndex) ?? fail("index.json fails the scenario-index contract");
   const registry = new Map<string, TeachingScenario[]>();
   const outputPaths = new Set<string>();
-  for (const entry of entries) {
+  for (const entry of index.scenarios) {
     if (registry.has(entry.id)) fail(`duplicate scenario id ${entry.id}`);
     const variants = new Set<string>();
-    const scenarios = entry.outputs.map((output) => {
+    const outputs: readonly IndexedOutput[] = entry.outputs;
+    const scenarios = outputs.map((output) => {
       if (outputPaths.has(output.path)) fail(`duplicate generated profile path ${output.path}`);
       outputPaths.add(output.path);
       if (output.variant && variants.has(output.variant))

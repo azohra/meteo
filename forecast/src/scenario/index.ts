@@ -6,6 +6,12 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject, ValidateFunction } from "ajv/dist/2020.js";
 
 import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import type { ZodError } from "zod";
+import {
+  scenarioCapabilitiesSchema,
+  scenarioIndexSchema,
+  type ScenarioCapabilities,
+} from "./contract.js";
 import { deriveSiteForecast, type SourceProfile } from "../derive.js";
 import { aggregateMemberProfiles, type MemberProfile } from "../ensemble.js";
 import { packagedModelsPath } from "../catalogue.js";
@@ -35,7 +41,7 @@ import {
 type TaggedRecord = { [key: string]: TaggedValue };
 type PlainRecord = Record<string, unknown>;
 
-const SURFACE_OPTIONAL_CAPABILITIES: Record<string, string> = {
+const SURFACE_OPTIONAL_CAPABILITIES: Record<string, keyof ScenarioCapabilities> = {
   "surface.windGustMps": "gust",
   "surface.capeJkg": "cape",
   "surface.cinJkg": "cin",
@@ -248,19 +254,37 @@ function schemaErrorLines(errors: readonly ErrorObject[]): string[] {
   return [...unique].sort().slice(0, 12);
 }
 
-export function validateScenarioIndex(
-  index: unknown,
-  repositoryRoot: string,
-  source: string,
-): void {
-  const schemaPath = join(repositoryRoot, "scenarios", "index.schema.json");
-  const validate = validatorFor(schemaPath);
-  if (!validate(untag(index as TaggedValue))) {
-    const details = schemaErrorLines(validate.errors ?? []).join("\n  ");
+/* The scenario-index contract (contract.ts) is the authority here;
+   scenarios/index.schema.json is emitted FROM it by `pnpm schemas`. */
+function contractErrorLines(error: ZodError): string[] {
+  const unique = new Set<string>();
+  for (const issue of error.issues) {
+    unique.add(`/${issue.path.join("/")}: ${issue.message}`);
+  }
+  return [...unique].sort().slice(0, 12);
+}
+
+export function validateScenarioIndex(index: unknown, source: string): void {
+  const result = scenarioIndexSchema.safeParse(untag(index as TaggedValue));
+  if (!result.success) {
+    const details = contractErrorLines(result.error).join("\n  ");
     throw new ScenarioError(
-      `${source} does not satisfy scenarios/index.schema.json:\n  ${details}`,
+      `${source} does not satisfy the scenario-index contract:\n  ${details}`,
     );
   }
+}
+
+/** The definition's capability declaration, typed through the contract it is copied into verbatim. */
+function declaredCapabilities(definition: PlainRecord): ScenarioCapabilities {
+  const scenarioId = definition["id"] as string;
+  const result = scenarioCapabilitiesSchema.safeParse(definition["capabilities"]);
+  if (!result.success) {
+    const details = contractErrorLines(result.error).join("\n  ");
+    throw new ScenarioError(
+      `scenario ${scenarioId}: capabilities do not satisfy the scenario-index contract:\n  ${details}`,
+    );
+  }
+  return result.data;
 }
 
 export function validateDefinition(
@@ -289,18 +313,17 @@ export function validateDefinition(
     );
   }
 
-  const capabilities = plain["capabilities"] as PlainRecord;
+  const capabilities = declaredCapabilities(plain);
   const semantics = plain["semantics"] as PlainRecord;
-  const gustCapability = capabilities["gust"];
   const gustSemantics = semantics["gust"] ?? null;
-  const expectedGustSemantics = gustCapability !== false ? gustCapability : null;
+  const expectedGustSemantics = capabilities.gust !== false ? capabilities.gust : null;
   if (gustSemantics !== expectedGustSemantics) {
     throw new ScenarioError(
       `scenario ${scenarioId}: semantics.gust must exactly match capabilities.gust`,
     );
   }
 
-  const smokeCapability = capabilities["smoke"] ?? false;
+  const smokeCapability = capabilities.smoke ?? false;
   const smokeSemantics = semantics["smoke"] ?? null;
   const expectedSmokeSemantics = smokeCapability !== false ? smokeCapability : null;
   if (smokeSemantics !== expectedSmokeSemantics) {
@@ -896,16 +919,14 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
 
 function validateCapabilities(definition: PlainRecord, source: TaggedRecord): void {
   const scenarioId = definition["id"] as string;
-  const capabilities = definition["capabilities"] as PlainRecord;
+  const capabilities = declaredCapabilities(definition);
   const modelElevation = numberValue(source["modelElevationM"] as number | PyFloat);
   (source["hours"] as TaggedRecord[]).forEach((hour, hourIndex) => {
     const label = `scenario ${scenarioId} hour ${hourIndex} capability`;
     const retained = (hour["levels"] as TaggedRecord[]).filter(
       (level) => numberValue(level["heightM"] as number | PyFloat) > modelElevation + 20,
     );
-    const expectedPressures = (
-      capabilities["levels"] ? (capabilities["pressureLevels"] as number[]) : []
-    ).map(Number);
+    const expectedPressures = capabilities.levels ? capabilities.pressureLevels : [];
     const actualPressures = [...retained]
       .sort(
         (a, b) =>
@@ -921,7 +942,7 @@ function validateCapabilities(definition: PlainRecord, source: TaggedRecord): vo
         `${label}: declared pressureLevels [${expectedPressures.join(", ")}] do not match retained source levels [${actualPressures.join(", ")}]`,
       );
     }
-    if (!capabilities["heatFluxes"]) {
+    if (!capabilities.heatFluxes) {
       throw new ScenarioError(
         `${label}: derive_site_forecast requires heat-flux source fields; this shape cannot declare heatFluxes false`,
       );
@@ -936,28 +957,25 @@ function validateCapabilities(definition: PlainRecord, source: TaggedRecord): vo
       }
     }
     for (const field of CLOUD_LAYER_FIELDS) {
-      if (field in hour !== Boolean(capabilities["cloudLayers"])) {
+      if (field in hour !== capabilities.cloudLayers) {
         throw new ScenarioError(
           `${label}: ${field} presence does not match capabilities.cloudLayers`,
         );
       }
     }
-    if ("smoke" in hour !== ((capabilities["smoke"] ?? false) !== false)) {
+    if ("smoke" in hour !== ((capabilities.smoke ?? false) !== false)) {
       throw new ScenarioError(`${label}: smoke presence does not match capabilities.smoke`);
     }
-    const verticalExpected = new Set(
-      ((capabilities["verticalVelocityLevels"] ?? []) as number[]).map(Number),
-    );
+    const verticalExpected = new Set(capabilities.verticalVelocityLevels ?? []);
     for (const level of retained) {
       const pressureHpa = numberValue(level["pressureHpa"] as number | PyFloat);
-      const expected =
-        capabilities["verticalVelocity"] !== false && verticalExpected.has(pressureHpa);
+      const expected = capabilities.verticalVelocity !== false && verticalExpected.has(pressureHpa);
       if ("verticalVelocityPaS" in level !== expected) {
         throw new ScenarioError(
           `${label}: verticalVelocityPaS presence at ${pressureHpa} hPa does not match capabilities`,
         );
       }
-      if ("cloudFractionPercent" in level !== Boolean(capabilities["cloudProfile"])) {
+      if ("cloudFractionPercent" in level !== capabilities.cloudProfile) {
         throw new ScenarioError(
           `${label}: cloudFractionPercent presence at ${pressureHpa} hPa does not match capabilities.cloudProfile`,
         );
@@ -1420,11 +1438,11 @@ function generateDeterministicProfile(
 }
 
 function declaredOptionalSurfaceScalars(definition: PlainRecord): string[] {
-  const capabilities = definition["capabilities"] as PlainRecord;
+  const capabilities = declaredCapabilities(definition);
   const declared = Object.entries(SURFACE_OPTIONAL_CAPABILITIES)
     .filter(([, capability]) => capabilities[capability] !== false)
     .map(([path]) => path.slice(path.indexOf(".") + 1));
-  if (capabilities["cloudLayers"]) {
+  if (capabilities.cloudLayers) {
     declared.push(...CLOUD_LAYER_FIELDS);
   }
   return declared;
@@ -1637,7 +1655,7 @@ export function buildScenarioArtifacts(repositoryRoot: string): {
     schemaVersion: 1,
     scenarios: entries.map(({ entry }) => entry),
   };
-  validateScenarioIndex(index, repositoryRoot, "generated scenario index");
+  validateScenarioIndex(index, "generated scenario index");
   return { artifacts, indexPayload: jsonBytes(index) };
 }
 
@@ -1682,7 +1700,7 @@ export function checkScenarioRepository({ repositoryRoot }: ScenarioRepositoryOp
     committedIndexExists = false;
   }
   if (committedIndexExists) {
-    validateScenarioIndex(loadScenarioJson(indexPath), root, "committed scenarios/index.json");
+    validateScenarioIndex(loadScenarioJson(indexPath), "committed scenarios/index.json");
   }
   const generatedDir = join(root, "scenarios", "generated");
   const expected = new Map<string, Buffer>(

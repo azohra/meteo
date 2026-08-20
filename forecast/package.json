@@ -26,12 +26,17 @@
   },
   "files": [
     "dist",
+    "!dist/internal",
     "models.json"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./contract": {
+      "types": "./dist/scenario/contract.d.ts",
+      "default": "./dist/scenario/contract.js"
     },
     "./models.json": "./models.json",
     "./package.json": "./package.json"
@@ -43,12 +48,14 @@
   },
   "dependencies": {
     "@azohra/meteo.briefing": "workspace:*",
+    "@azohra/meteo.core": "workspace:*",
     "@azohra/meteo.grib": "workspace:*",
     "ajv": "^8.20.0",
     "aws4fetch": "^1.0.20",
     "geotiff": "^3.0.5",
     "h5wasm": "^0.10.3",
-    "proj4": "^2.21.0"
+    "proj4": "^2.21.0",
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

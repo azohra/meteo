@@ -17,15 +17,14 @@ const check = process.argv.includes("--check");
 const checkDir = check ? mkdtempSync(join(tmpdir(), "meteo-schemas-")) : null;
 const drift: string[] = [];
 
-function emit(capabilityDirectory: string, fileName: string, rendered: string): void {
-  const committedPath = join(repoRoot, capabilityDirectory, "schema", fileName);
-  const relative = `${capabilityDirectory}/schema/${fileName}`;
+function emit(relative: string, rendered: string): void {
+  const committedPath = join(repoRoot, relative);
   if (checkDir === null) {
     writeFileSync(committedPath, rendered);
     console.log(`wrote ${committedPath}`);
     return;
   }
-  const temporaryPath = join(checkDir, capabilityDirectory, fileName);
+  const temporaryPath = join(checkDir, relative);
   mkdirSync(dirname(temporaryPath), { recursive: true });
   writeFileSync(temporaryPath, rendered);
   const committed = existsSync(committedPath) ? readFileSync(committedPath, "utf-8") : null;
@@ -50,12 +49,29 @@ for (const capability of CAPABILITIES) {
   if (!check) mkdirSync(join(packageRoot, "schema"), { recursive: true });
 
   for (const artifact of table.schemaArtifacts ?? []) {
-    emit(capability.directory, artifact.fileName, renderSchemaArtifact(artifact));
+    emit(`${capability.directory}/schema/${artifact.fileName}`, renderSchemaArtifact(artifact));
   }
   for (const example of table.exampleArtifacts ?? []) {
     example.schema.parse(example.document);
-    emit(capability.directory, example.fileName, renderJsonArtifact(example.document));
+    emit(
+      `${capability.directory}/schema/${example.fileName}`,
+      renderJsonArtifact(example.document),
+    );
   }
+}
+
+/* The forecast engine's scenario-index contract emits beside the documents
+   it describes — scenarios/index.schema.json at the repository root, not a
+   package schema/ directory. */
+const forecastTablePath = join(repoRoot, "forecast", "dist", "internal", "schema-artifacts.js");
+if (existsSync(forecastTablePath)) {
+  const { SCENARIO_INDEX_SCHEMA_PATH, renderScenarioIndexSchema } = (await import(
+    forecastTablePath
+  )) as {
+    SCENARIO_INDEX_SCHEMA_PATH: string;
+    renderScenarioIndexSchema: () => string;
+  };
+  emit(SCENARIO_INDEX_SCHEMA_PATH, renderScenarioIndexSchema());
 }
 
 if (drift.length > 0) {

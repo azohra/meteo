@@ -94,6 +94,9 @@ importers:
       '@azohra/meteo.briefing':
         specifier: workspace:*
         version: link:../briefing
+      '@azohra/meteo.core':
+        specifier: workspace:*
+        version: link:../core
       '@azohra/meteo.grib':
         specifier: workspace:*
         version: link:../grib
@@ -112,6 +115,9 @@ importers:
       proj4:
         specifier: ^2.21.0
         version: 2.21.0(geotiff@3.0.5)
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^22.10.0

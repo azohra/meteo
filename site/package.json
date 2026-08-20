@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm run build:deps && astro dev",
     "build": "pnpm run build:deps && astro build",
-    "build:deps": "pnpm --dir ../core build && pnpm --dir ../briefing build && pnpm --dir ../station build",
+    "build:deps": "pnpm --dir ../core build && pnpm --dir ../briefing build && pnpm --dir ../station build && pnpm --dir ../forecast build",
     "preview": "astro preview",
     "check": "pnpm run build:deps && astro check",
     "test": "pnpm run build && pnpm run test:built",

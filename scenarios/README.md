@@ -55,7 +55,9 @@ scenarios/
 │   └── invalid/                rejection fixtures, never discovered as scenarios
 ├── baselines/                  source-shaped inputs and provenance records
 ├── generated/                  generated profile documents; do not hand-edit
-└── index.json                  generated public registry
+├── index.json                  generated public registry
+└── index.schema.json           emitted from the forecast package's
+                                scenario-index contract; do not hand-edit
 ```
 
 The scenario runner discovers only
@@ -74,7 +76,10 @@ reads its relief and land-cover figures from.
 definition's lesson metadata (including the `launch` a renderer should pass
 as `MeteogramOptions.launch`), the generated output path or paths, and the
 SHA-256 output hash. A definition without generated output must not be advertised
-through the index.
+through the index. Its shape is the zod scenario-index contract in
+`forecast/src/scenario/contract.ts`: the generator validates through it, the
+site's registry reads through its guard, and `pnpm schemas` emits it as the
+neighbouring `index.schema.json`.
 
 ## Definition fields
 
