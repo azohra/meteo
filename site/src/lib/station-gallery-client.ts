@@ -13,6 +13,7 @@
 import {
   METEOROLOGICAL_SEASON_MONTHS,
   accumulatedCells,
+  coveredSlotCountByYear,
   createClimatologyAccumulator,
   filterByMonth,
   filterByTimeOfDay,
@@ -194,14 +195,14 @@ export function initStationGallery(): void {
       utcOffsetMinutes: 0,
     });
     foldClimatologyPoints(accumulator, season);
-    const expectedCount =
+    const spanMs =
       season.length < 2
         ? 0
-        : Math.round(
-            (Date.parse((season[season.length - 1] as HistoryPoint).observedAt) -
-              Date.parse((season[0] as HistoryPoint).observedAt)) /
-              (180 * 60_000),
-          );
+        : Date.parse((season[season.length - 1] as HistoryPoint).observedAt) -
+          Date.parse((season[0] as HistoryPoint).observedAt);
+    /* expectedCount is in the fed 15-min period; the slot pair is in slots. */
+    const expectedCount = Math.round(spanMs / (15 * 60_000));
+    const expectedSlotCount = Math.round(spanMs / (180 * 60_000));
     const cube: StationClimatology = {
       schemaVersion: 1,
       servedAt: new Date().toISOString(),
@@ -210,7 +211,15 @@ export function initStationGallery(): void {
       slotMinutes: 180,
       thresholdsMps: thresholdsToMps(THRESHOLDS),
       utcOffsetMinutes: 0,
-      years: [{ year: 2026, sampleCount: season.length, expectedCount }],
+      years: [
+        {
+          year: 2026,
+          sampleCount: season.length,
+          expectedCount,
+          coveredSlotCount: coveredSlotCountByYear(accumulator).get(2026) ?? 0,
+          expectedSlotCount,
+        },
+      ],
       cells: accumulatedCells(accumulator),
     };
     if (climatologyRose) climatologyRose.document = cube;

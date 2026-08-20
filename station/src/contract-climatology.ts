@@ -59,6 +59,14 @@ export const climatologyYearSchema = z
         "window — the honesty denominator; a leading dropout lowers the " +
         "ratio instead of hiding.",
     ),
+    /* sampleCount/expectedCount are denominated in the producer's fed period;
+     * only this slot pair is period-independent, so only it earns a percent. */
+    coveredSlotCount: count
+      .nullish()
+      .describe("Distinct (day, slot) buckets holding at least one record."),
+    expectedSlotCount: count
+      .nullish()
+      .describe("Slots a gapless station would have covered over the window."),
   })
   .meta({ id: "ClimatologyYear" });
 export type ClimatologyYear = z.infer<typeof climatologyYearSchema>;

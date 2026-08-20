@@ -159,14 +159,20 @@ export function dailyPatternScene(input: {
   return dailyPatternSlotsScene({
     ...input,
     slots,
-    coverage: { totalSamples, expectedSamples },
+    coverage: {
+      totalSamples,
+      percent:
+        expectedSamples != null && expectedSamples > 0
+          ? Math.round((totalSamples / expectedSamples) * 100)
+          : null,
+    },
   });
 }
 
 /** The same scene from pre-aggregated slots — the climatology cube's road:
  * the caller owns the aggregation and the coverage words' inputs. */
 export function dailyPatternSlotsScene(input: {
-  coverage: { totalSamples: number; expectedSamples: number | null };
+  coverage: { totalSamples: number; percent: number | null };
   favorableDirections?: FavorableDirection[] | undefined;
   hatchId: string;
   plotHeight: number | undefined;
@@ -192,7 +198,7 @@ export function dailyPatternSlotsScene(input: {
   } = input;
   const shown = (speedMps: number) => roundSpeed(speedMps, unit);
   const synthetic = slots.map((slot) => slotPoint(slot, slotMinutes));
-  const { totalSamples, expectedSamples } = coverage;
+  const { totalSamples, percent } = coverage;
 
   const frame = stretchedChartFrame(width, plotHeight);
   const scales = displaySpeedScales(synthetic, frame, unit);
@@ -214,8 +220,8 @@ export function dailyPatternSlotsScene(input: {
     caption: {
       className: "meteo-daily-pattern-caption",
       text:
-        expectedSamples != null
-          ? words.dailyPatternCoverage(totalSamples, expectedSamples)
+        percent != null
+          ? words.dailyPatternCoverage(totalSamples, percent)
           : words.dailyPatternSamples(totalSamples),
     },
     svg: {

@@ -71,8 +71,8 @@ export function climatologyRoseScene(input: {
     key: "samples",
     className: "meteo-climatology-caption",
     text:
-      coverage != null && coverage.expectedCount > 0
-        ? words.dailyPatternCoverage(summary.sampleCount, coverage.expectedCount)
+      coverage != null && coverage.ratio != null
+        ? words.dailyPatternCoverage(summary.sampleCount, Math.round(coverage.ratio * 100))
         : words.dailyPatternSamples(summary.sampleCount),
   });
   return { className: CLIMATOLOGY_ROSE_CLASS, rose, captions };

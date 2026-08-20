@@ -36,14 +36,14 @@ afterEach(() => {
 });
 
 describe("TrendChart", () => {
-  it("draws one unbroken temperature trace with padded axis labels and 5 time ticks", () => {
+  it("draws one unbroken temperature trace with padded axis labels and width-fitted ticks", () => {
     const { container } = render(<TrendChart series="temperature" station={okStation()} />);
     expect(container.querySelectorAll("polyline.meteo-trend-line").length).toBe(1);
     const gridLabels = Array.from(container.querySelectorAll(".meteo-grid-label")).map(
       (label) => label.textContent,
     );
     expect(gridLabels).toEqual(["11", "12", "13"]);
-    expect(container.querySelectorAll(".meteo-tick").length).toBe(5);
+    expect(container.querySelectorAll(".meteo-tick").length).toBe(4);
     expect(container.querySelector(".meteo-trend-svg")?.getAttribute("aria-label")).toBe(
       defaultStrings.aria.trend(okStation().name, defaultStrings.trendTemperature),
     );

@@ -42,7 +42,15 @@ function document(points: HistoryPoint[] = seasonPoints()): StationClimatology {
     slotMinutes: 180,
     thresholdsMps: THRESHOLDS_MPS,
     utcOffsetMinutes: 0,
-    years: [{ year: 2026, sampleCount: points.length, expectedCount: points.length * 2 }],
+    years: [
+      {
+        year: 2026,
+        sampleCount: points.length,
+        expectedCount: points.length * 2,
+        coveredSlotCount: points.length,
+        expectedSlotCount: points.length * 2,
+      },
+    ],
     cells: accumulatedCells(accumulator),
   };
 }
@@ -67,7 +75,7 @@ describe("ClimatologyRose", () => {
     /* The unfiltered view carries samples · coverage; expected is twice the
      * samples, so 50%. */
     const caption = container.querySelector(".meteo-climatology-caption");
-    expect(caption?.textContent).toBe(defaultStrings.dailyPatternCoverage(240, 480));
+    expect(caption?.textContent).toBe(defaultStrings.dailyPatternCoverage(240, 50));
   });
 
   it("filters client-side and drops the coverage claim it can no longer vouch for", () => {
@@ -109,7 +117,7 @@ describe("ClimatologyDailyPattern", () => {
     const { container } = render(<ClimatologyDailyPattern document={document()} />);
     expect(container.querySelector(".meteo-climatology-daily-pattern")).not.toBeNull();
     expect(container.querySelector(".meteo-daily-pattern-caption")?.textContent).toBe(
-      defaultStrings.dailyPatternCoverage(240, 480),
+      defaultStrings.dailyPatternCoverage(240, 50),
     );
     expect(container.querySelector(".meteo-daily-pattern-svg")).not.toBeNull();
     expect(container.querySelectorAll(".meteo-wind-vane-label").length).toBeGreaterThan(0);

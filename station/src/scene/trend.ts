@@ -136,17 +136,21 @@ export function trendScene(input: {
     };
   });
 
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((fraction, index) => {
-    const timeMs = scales.startMs + fraction * scales.durationMs;
-    return {
-      key: index,
-      className: "meteo-tick",
-      anchor: tickAnchor(index, 4),
-      x: scales.xAtMs(timeMs),
-      y: frame.labelRow,
-      text: formatTime(new Date(timeMs)),
-    };
-  });
+  /* Floor 2 time labels (the ends), ceiling 5 — what the width seats. */
+  const tickCount = Math.max(2, Math.min(5, Math.floor((frame.right - frame.left) / 76)));
+  const ticks = Array.from({ length: tickCount }, (_, at) => at / (tickCount - 1)).map(
+    (fraction, index) => {
+      const timeMs = scales.startMs + fraction * scales.durationMs;
+      return {
+        key: index,
+        className: "meteo-tick",
+        anchor: tickAnchor(index, 4),
+        x: scales.xAtMs(timeMs),
+        y: frame.labelRow,
+        text: formatTime(new Date(timeMs)),
+      };
+    },
+  );
 
   return {
     frame,

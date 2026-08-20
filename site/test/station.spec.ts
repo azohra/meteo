@@ -362,3 +362,71 @@ test("the homepage exhibits a live station card and links to the gallery", async
   );
   expect(externalRequests, "the homepage attempted external network access").toEqual([]);
 });
+
+/* Phone gate: at 390px no section may collide text, overflow the column,
+   or bury its heading under sticky chrome after an anchor jump. */
+test.describe("the gallery holds at phone width", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test("no text collides, nothing overflows, anchors land clear", async ({ page, baseURL }) => {
+    await guardStaticBrowsing(page, baseURL!);
+    for (const id of SECTION_IDS) {
+      await page.goto(`${GALLERY}#${id}`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(250);
+
+      const audit = await page.evaluate((sectionId) => {
+        const section = document.getElementById(sectionId);
+        if (section == null) return { missing: true as const };
+        const boxes: Array<{ rect: DOMRect; text: string; el: Element }> = [];
+        const push = (el: Element) => {
+          const rect = el.getBoundingClientRect();
+          const text = (el.textContent ?? "").trim();
+          if (rect.width < 2 || rect.height < 2 || text === "") return;
+          boxes.push({ rect, text: text.slice(0, 24), el });
+        };
+        for (const t of section.querySelectorAll("svg text")) {
+          if (t.querySelector("tspan")) for (const span of t.querySelectorAll("tspan")) push(span);
+          else push(t);
+        }
+        for (const el of section.querySelectorAll("small, dt, dd, span, output, strong, button")) {
+          if (el.children.length === 0) push(el);
+        }
+        const collisions: Array<{ a: string; b: string }> = [];
+        for (let i = 0; i < boxes.length; i += 1) {
+          for (let j = i + 1; j < boxes.length; j += 1) {
+            const a = boxes[i]!;
+            const b = boxes[j]!;
+            if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+            const x = Math.min(a.rect.right, b.rect.right) - Math.max(a.rect.left, b.rect.left);
+            const y = Math.min(a.rect.bottom, b.rect.bottom) - Math.max(a.rect.top, b.rect.top);
+            if (x > 1.5 && y > 1.5) collisions.push({ a: a.text, b: b.text });
+          }
+        }
+        const heading = section.querySelector("h2");
+        const headingRect = heading?.getBoundingClientRect() ?? null;
+        const atPoint =
+          headingRect == null
+            ? null
+            : document.elementFromPoint(
+                headingRect.left + Math.min(20, headingRect.width / 2),
+                headingRect.top + headingRect.height / 2,
+              );
+        return {
+          missing: false as const,
+          collisions: collisions.slice(0, 6),
+          collisionCount: collisions.length,
+          hOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          headingClear: heading != null && atPoint != null && heading.contains(atPoint),
+        };
+      }, id);
+
+      expect(audit.missing, `#${id} exists`).toBe(false);
+      if (audit.missing) continue;
+      expect
+        .soft(audit.collisionCount, `#${id} text collisions: ${JSON.stringify(audit.collisions)}`)
+        .toBe(0);
+      expect.soft(audit.hOverflow, `#${id} horizontal overflow px`).toBeLessThanOrEqual(1);
+      expect.soft(audit.headingClear, `#${id} heading buried under sticky chrome`).toBe(true);
+    }
+  });
+});

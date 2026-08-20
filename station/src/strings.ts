@@ -37,7 +37,7 @@ export type StationStrings = {
   lastNightLowLabel: string;
   pressureDeltaLabel: (windowHours: number) => string;
   dailyPatternSamples: (sampleCount: number) => string;
-  dailyPatternCoverage: (sampleCount: number, expectedCount: number) => string;
+  dailyPatternCoverage: (sampleCount: number, coveragePercent: number) => string;
   compassSpoken: Record<CompassPoint, string>;
   updated: {
     justNow: string;
@@ -152,8 +152,8 @@ export const defaultStrings: StationStrings = {
   lastNightLowLabel: "Last night low",
   pressureDeltaLabel: (windowHours) => `Pressure ${windowHours} h`,
   dailyPatternSamples: (sampleCount) => `${sampleCount} samples`,
-  dailyPatternCoverage: (sampleCount, expectedCount) =>
-    `${sampleCount} samples · ${Math.round((sampleCount / Math.max(1, expectedCount)) * 100)}%`,
+  dailyPatternCoverage: (sampleCount, coveragePercent) =>
+    `${sampleCount} samples · ${coveragePercent}%`,
   compassSpoken: {
     N: "north",
     NNE: "north-northeast",

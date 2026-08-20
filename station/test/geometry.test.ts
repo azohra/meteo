@@ -16,6 +16,7 @@ import {
   windowPoints,
 } from "../src/index.js";
 import { stretchFrame, vectorMeanWind } from "../src/geometry.js";
+import { displaySpeedScales, stretchedChartFrame, vaneCells } from "../src/scene/index.js";
 import type { HistoryPoint } from "../src/index.js";
 import { BASE_MS, MINUTE_MS, iso, makePoints } from "./fixtures.js";
 
@@ -358,5 +359,22 @@ describe("chartFrame / stretchFrame: the persistent label and value rows", () =>
     expect(delta).toBe(20);
     expect(stretched.vaneLabelRow - frame.vaneLabelRow).toBe(delta);
     expect(stretched.valueRow - frame.valueRow).toBe(delta);
+  });
+});
+
+describe("vane label thinning", () => {
+  it("labels every vane at wide pitch and every Nth at narrow, newest always", () => {
+    const points = makePoints(18);
+    const frame = stretchedChartFrame(390, undefined);
+    const scales = displaySpeedScales(points, frame, "kmh");
+    const vanes = thinVanes(points);
+    const cells = vaneCells(vanes, frame, scales, () => "9");
+    const labeled = cells.filter((cell) => cell.label != null).length;
+    expect(labeled).toBeLessThan(cells.length);
+    expect(cells[cells.length - 1]?.label).not.toBeNull();
+
+    const wide = stretchedChartFrame(1200, undefined);
+    const wideCells = vaneCells(vanes, wide, displaySpeedScales(points, wide, "kmh"), () => "9");
+    expect(wideCells.every((cell) => cell.label != null && cell.value != null)).toBe(true);
   });
 });

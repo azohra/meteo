@@ -39,6 +39,8 @@ type MutableCell = {
 export type ClimatologyAccumulator = {
   readonly params: ClimatologyFoldParams;
   readonly cells: Map<string, MutableCell>;
+  /** Distinct (month, day, slot) buckets holding a record, per year. */
+  readonly coveredSlots: Map<number, Set<string>>;
 };
 
 export function createClimatologyAccumulator(
@@ -50,7 +52,7 @@ export function createClimatologyAccumulator(
   if (params.sectorCount < 4) {
     throw new Error(`climatology: sectorCount must be at least 4, got ${params.sectorCount}`);
   }
-  return { params, cells: new Map() };
+  return { params, cells: new Map(), coveredSlots: new Map() };
 }
 
 export function foldClimatologyPoints(
@@ -65,6 +67,13 @@ export function foldClimatologyPoints(
     const month = local.getUTCMonth() + 1;
     const minuteOfDay = local.getUTCHours() * 60 + local.getUTCMinutes();
     const slot = Math.floor(minuteOfDay / slotMinutes);
+    const year = local.getUTCFullYear();
+    let covered = accumulator.coveredSlots.get(year);
+    if (covered == null) {
+      covered = new Set();
+      accumulator.coveredSlots.set(year, covered);
+    }
+    covered.add(`${month}/${local.getUTCDate()}/${slot}`);
     const key = `${month}/${slot}`;
     let cell = accumulator.cells.get(key);
     if (cell == null) {
@@ -268,21 +277,37 @@ export function climatologyPattern(
 export type ClimatologyCoverage = {
   sampleCount: number;
   expectedCount: number;
-  ratio: number;
+  ratio: number | null;
 };
 
-/** The whole record's honesty figure, summed over the year ledger. */
+/** Per-year covered-slot counts, for producers writing the ledger. */
+export function coveredSlotCountByYear(accumulator: ClimatologyAccumulator): Map<number, number> {
+  return new Map(
+    [...accumulator.coveredSlots.entries()].map(([year, slots]) => [year, slots.size]),
+  );
+}
+
+/** Summed over the ledger. The ratio comes only from the slot pair and is
+ * null when any year lacks it — no percent beats a wrong-unit percent. */
 export function climatologyCoverage(document: StationClimatology): ClimatologyCoverage {
   let sampleCount = 0;
   let expectedCount = 0;
+  let coveredSlots = 0;
+  let expectedSlots = 0;
+  let slotsKnown = true;
   for (const year of document.years) {
     sampleCount += year.sampleCount;
     expectedCount += year.expectedCount;
+    if (year.coveredSlotCount == null || year.expectedSlotCount == null) slotsKnown = false;
+    else {
+      coveredSlots += year.coveredSlotCount;
+      expectedSlots += year.expectedSlotCount;
+    }
   }
   return {
     sampleCount,
     expectedCount,
-    ratio: expectedCount === 0 ? 0 : sampleCount / expectedCount,
+    ratio: slotsKnown && expectedSlots > 0 ? coveredSlots / expectedSlots : null,
   };
 }
 

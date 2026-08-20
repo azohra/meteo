@@ -331,3 +331,9 @@ site-search button[data-open-modal]:hover {
     break-inside: avoid;
   }
 }
+
+/* Stock Starlight leaves the sticky mobile TOC bar translucent; page text
+   ghosts through it while scrolling. Solid, like the bars around it. */
+mobile-starlight-toc nav {
+  background-color: var(--sl-color-bg);
+}

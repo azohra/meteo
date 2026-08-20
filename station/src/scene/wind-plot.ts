@@ -325,9 +325,15 @@ export function nightRects(
 export type VaneCell = {
   key: number;
   mark: { kind: "calm"; text: SceneText } | { kind: "vane"; className: string; d: string };
-  label: SceneText;
-  value: SceneText;
+  /** Null when the width cannot seat this vane's label; the arrow still draws. */
+  label: SceneText | null;
+  value: SceneText | null;
 };
+
+/* Px one label needs beside its neighbours (TRIAL, measured at shipped sizes). */
+const COMPASS_LABEL_PX = 30;
+const VALUE_LABEL_PX = 24;
+const TIME_LABEL_PX = 76;
 
 export function vaneCells(
   vanes: ReadonlyArray<Vane>,
@@ -344,7 +350,13 @@ export function vaneCells(
       : inDirectionArcs(directionDeg, favorableDirections)
         ? " meteo-wind-vane-favorable"
         : " meteo-wind-vane-unfavorable";
-  return vanes.map((vane) => ({
+  /* Below label pitch only every Nth vane is labeled; the newest always is. */
+  const pitch = vanes.length === 0 ? Infinity : (frame.right - frame.left) / vanes.length;
+  const step = (needPx: number) => Math.max(1, Math.ceil(needPx / pitch));
+  const labelStep = step(COMPASS_LABEL_PX);
+  const valueStep = step(VALUE_LABEL_PX);
+  const speaks = (index: number, every: number) => (vanes.length - 1 - index) % every === 0;
+  return vanes.map((vane, index) => ({
     key: vane.midMs,
     mark:
       vane.windDirectionDeg == null
@@ -363,20 +375,24 @@ export function vaneCells(
             className: `meteo-wind-vane${verdict(vane.windDirectionDeg)}`,
             d: vanePath(scales.xAtMs(vane.midMs), frame.vaneRow, vane.windDirectionDeg),
           },
-    label: {
-      className: "meteo-wind-vane-label",
-      anchor: "middle" as TickAnchor,
-      x: scales.xAtMs(vane.midMs),
-      y: frame.vaneLabelRow + 4,
-      text: vane.windDirectionDeg == null ? EM_DASH : compassDirection(vane.windDirectionDeg),
-    },
-    value: {
-      className: "meteo-wind-vane-value",
-      anchor: "middle" as TickAnchor,
-      x: scales.xAtMs(vane.midMs),
-      y: frame.valueRow + 4,
-      text: valueText(vane),
-    },
+    label: speaks(index, labelStep)
+      ? {
+          className: "meteo-wind-vane-label",
+          anchor: "middle" as TickAnchor,
+          x: scales.xAtMs(vane.midMs),
+          y: frame.vaneLabelRow + 4,
+          text: vane.windDirectionDeg == null ? EM_DASH : compassDirection(vane.windDirectionDeg),
+        }
+      : null,
+    value: speaks(index, valueStep)
+      ? {
+          className: "meteo-wind-vane-value",
+          anchor: "middle" as TickAnchor,
+          x: scales.xAtMs(vane.midMs),
+          y: frame.valueRow + 4,
+          text: valueText(vane),
+        }
+      : null,
   }));
 }
 
@@ -393,7 +409,7 @@ export function vaneTickTexts(
   y: number;
   text: string;
 }> {
-  const ticks = vaneTicks(vanes, scales);
+  const ticks = vaneTicks(vanes, scales, Math.floor((frame.right - frame.left) / TIME_LABEL_PX));
   return ticks.map(({ index, timeMs, x }) => ({
     key: index,
     className: "meteo-tick",

@@ -53,8 +53,7 @@ export function climatologyPatternScene(input: {
     slots,
     coverage: {
       totalSamples,
-      expectedSamples:
-        coverage != null && coverage.expectedCount > 0 ? coverage.expectedCount : null,
+      percent: coverage != null && coverage.ratio != null ? Math.round(coverage.ratio * 100) : null,
     },
   });
 }

@@ -277,17 +277,21 @@ export function dailyPatternSceneDom(scene: DailyPatternScene): {
           )
         : hs("path", { class: vane.mark.className, d: vane.mark.d }),
     ),
-    scene.vanes.map((vane) =>
-      hs(
-        "text",
-        {
-          class: vane.label.className,
-          "text-anchor": vane.label.anchor,
-          x: vane.label.x,
-          y: vane.label.y,
-        },
-        vane.label.text,
-      ),
+    scene.vanes.flatMap((vane) =>
+      vane.label == null
+        ? []
+        : [
+            hs(
+              "text",
+              {
+                class: vane.label.className,
+                "text-anchor": vane.label.anchor,
+                x: vane.label.x,
+                y: vane.label.y,
+              },
+              vane.label.text,
+            ),
+          ],
     ),
     hs(
       "text",
@@ -299,17 +303,21 @@ export function dailyPatternSceneDom(scene: DailyPatternScene): {
       },
       scene.rowLabels.avg.text,
     ),
-    scene.vanes.map((vane) =>
-      hs(
-        "text",
-        {
-          class: vane.value.className,
-          "text-anchor": vane.value.anchor,
-          x: vane.value.x,
-          y: vane.value.y,
-        },
-        vane.value.text,
-      ),
+    scene.vanes.flatMap((vane) =>
+      vane.value == null
+        ? []
+        : [
+            hs(
+              "text",
+              {
+                class: vane.value.className,
+                "text-anchor": vane.value.anchor,
+                x: vane.value.x,
+                y: vane.value.y,
+              },
+              vane.value.text,
+            ),
+          ],
     ),
     scene.ticks.map((tick) =>
       hs(

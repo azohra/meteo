@@ -39,13 +39,20 @@ const { sections } = Astro.props;
 <style>
   /* ---- the toolbar: section anchors left, the global controls right ---- */
   .station-toolbar {
-    position: sticky;
-    top: var(--header-h);
     z-index: 20;
     border-block: 1px solid var(--rule);
-    background: light-dark(rgba(238, 241, 245, 0.92), rgba(13, 19, 25, 0.92));
+    background: light-dark(rgba(238, 241, 245, 0.97), rgba(13, 19, 25, 0.97));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Sticky only where it keeps to one row; wrapped on a phone it would pin
+     a third of the viewport, so there it scrolls away. */
+  @media (min-width: 801px) {
+    .station-toolbar {
+      position: sticky;
+      top: var(--header-h);
+    }
   }
 
   .station-toolbar-inner {

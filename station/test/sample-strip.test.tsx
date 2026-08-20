@@ -55,7 +55,7 @@ describe("WindSampleStrip", () => {
     expect(container.querySelectorAll(".meteo-wind-vane-label").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(".meteo-wind-vane-value").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(".meteo-wind-row-label").length).toBe(2);
-    expect(container.querySelectorAll(".meteo-tick").length).toBe(5);
+    expect(container.querySelectorAll(".meteo-tick").length).toBe(4);
     expect(container.querySelector(".meteo-wind-band")).toBeNull();
     expect(container.querySelector(".meteo-wind-zone")).toBeNull();
   });
@@ -67,7 +67,7 @@ describe("WindSampleStrip", () => {
     );
     expect(anchors[0]).toBe("start");
     expect(anchors[anchors.length - 1]).toBe("end");
-    expect(anchors.slice(1, -1)).toEqual(["middle", "middle", "middle"]);
+    expect(anchors.slice(1, -1)).toEqual(["middle", "middle"]);
   });
 
   it("splits the trace at a dropout and draws a one-sample run as a dot", () => {

@@ -38,7 +38,7 @@ describe("WindHistoryChart", () => {
     expect(container.querySelector(".meteo-wind-mean-segment")).toBeNull();
     expect(container.querySelector(".meteo-wind-zone")).toBeNull();
     expect(container.querySelectorAll(".meteo-wind-vane").length).toBeGreaterThan(0);
-    expect(container.querySelectorAll(".meteo-tick").length).toBe(5);
+    expect(container.querySelectorAll(".meteo-tick").length).toBe(4);
   });
 
   it("grades the mean per segment, tints band zones, and labels threshold guides", () => {

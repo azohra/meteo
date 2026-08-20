@@ -1,6 +1,7 @@
 import {
   accumulatedCells,
   createClimatologyAccumulator,
+  coveredSlotCountByYear,
   foldClimatologyPoints,
 } from "../../climatology.js";
 import {
@@ -114,7 +115,13 @@ export async function loadWindnerdClimatology(
       year,
       sampleCount: points.length,
       expectedCount: Math.floor((to - from) / (CLIMATOLOGY_RECORD_PERIOD_MINUTES * 60_000)),
+      coveredSlotCount: 0 /* filled from the fold below */,
+      expectedSlotCount: Math.floor((to - from) / (slotMinutes * 60_000)),
     });
+  }
+  const coveredByYear = coveredSlotCountByYear(accumulator);
+  for (const ledger of years) {
+    ledger.coveredSlotCount = coveredByYear.get(ledger.year) ?? 0;
   }
 
   /* A leading year with nothing at all predates the station; it neither

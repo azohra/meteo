@@ -116,6 +116,7 @@ export type {
 export {
   accumulatedCells,
   climatologyCoverage,
+  coveredSlotCountByYear,
   climatologyFavorableShare,
   climatologyPattern,
   climatologyRose,

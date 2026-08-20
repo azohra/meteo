@@ -135,14 +135,32 @@ describe("cube honesty", () => {
   it("sums the year ledger into one coverage figure", () => {
     const document = buildDocument(seasonPoints());
     document.years = [
-      { year: 2025, sampleCount: 100, expectedCount: 400 },
-      { year: 2026, sampleCount: 200, expectedCount: 200 },
+      {
+        year: 2025,
+        sampleCount: 100,
+        expectedCount: 400,
+        coveredSlotCount: 90,
+        expectedSlotCount: 400,
+      },
+      {
+        year: 2026,
+        sampleCount: 200,
+        expectedCount: 200,
+        coveredSlotCount: 110,
+        expectedSlotCount: 0,
+      },
     ];
     expect(climatologyCoverage(document)).toEqual({
       sampleCount: 300,
       expectedCount: 600,
       ratio: 0.5,
     });
+  });
+
+  it("withholds the ratio when a ledger year lacks the slot pair", () => {
+    const document = buildDocument(seasonPoints());
+    document.years = [{ year: 2026, sampleCount: 200, expectedCount: 200 }];
+    expect(climatologyCoverage(document).ratio).toBeNull();
   });
 
   it("judges favorable share at sector centres and returns null with nothing non-calm", () => {

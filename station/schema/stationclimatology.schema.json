@@ -84,6 +84,32 @@
           "minimum": 0,
           "maximum": 9007199254740991,
           "description": "Records a gapless station would have produced over the requested window — the honesty denominator; a leading dropout lowers the ratio instead of hiding."
+        },
+        "coveredSlotCount": {
+          "description": "Distinct (day, slot) buckets holding at least one record.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expectedSlotCount": {
+          "description": "Slots a gapless station would have covered over the window.",
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [

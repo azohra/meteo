@@ -272,17 +272,20 @@ export function DailyPatternSceneView({ scene }: { scene: DailyPatternScene }) {
             <path className={vane.mark.className} d={vane.mark.d} key={vane.key} />
           ),
         )}
-        {scene.vanes.map((vane) => (
-          <text
-            className={vane.label.className}
-            key={`label-${vane.key}`}
-            textAnchor={vane.label.anchor}
-            x={vane.label.x}
-            y={vane.label.y}
-          >
-            {vane.label.text}
-          </text>
-        ))}
+        {scene.vanes.map(
+          (vane) =>
+            vane.label && (
+              <text
+                className={vane.label.className}
+                key={`label-${vane.key}`}
+                textAnchor={vane.label.anchor}
+                x={vane.label.x}
+                y={vane.label.y}
+              >
+                {vane.label.text}
+              </text>
+            ),
+        )}
         <text
           className={scene.rowLabels.avg.className}
           textAnchor={scene.rowLabels.avg.anchor}
@@ -291,17 +294,20 @@ export function DailyPatternSceneView({ scene }: { scene: DailyPatternScene }) {
         >
           {scene.rowLabels.avg.text}
         </text>
-        {scene.vanes.map((vane) => (
-          <text
-            className={vane.value.className}
-            key={`value-${vane.key}`}
-            textAnchor={vane.value.anchor}
-            x={vane.value.x}
-            y={vane.value.y}
-          >
-            {vane.value.text}
-          </text>
-        ))}
+        {scene.vanes.map(
+          (vane) =>
+            vane.value && (
+              <text
+                className={vane.value.className}
+                key={`value-${vane.key}`}
+                textAnchor={vane.value.anchor}
+                x={vane.value.x}
+                y={vane.value.y}
+              >
+                {vane.value.text}
+              </text>
+            ),
+        )}
         {scene.ticks.map((tick) => (
           <text
             className={tick.className}

@@ -238,9 +238,15 @@ export function vanePath(
 
 export type ChartTick = { index: number; timeMs: number; x: number };
 
-export function vaneTicks(vanes: ReadonlyArray<Vane>, scales: ChartScales): ChartTick[] {
+export function vaneTicks(
+  vanes: ReadonlyArray<Vane>,
+  scales: ChartScales,
+  labelCount = 5,
+): ChartTick[] {
   if (vanes.length === 0) return [];
-  return [0, 0.25, 0.5, 0.75, 1].map((fraction, index) => {
+  /* Floor 2 (the ends), ceiling 5; the caller passes what its width seats. */
+  const count = Math.max(2, Math.min(5, Math.floor(labelCount)));
+  return Array.from({ length: count }, (_, index) => index / (count - 1)).map((fraction, index) => {
     const vane = vanes[Math.round(fraction * (vanes.length - 1))] as Vane;
     return { index, timeMs: vane.midMs, x: scales.xAtMs(vane.midMs) };
   });
