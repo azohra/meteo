@@ -5,7 +5,7 @@ import {
   unavailableStation,
 } from "@azohra/meteo.station";
 import type { HistoryPoint, Reading, Station, StationFeed } from "@azohra/meteo.station";
-import { buildLongHistory, wobble } from "@azohra/meteo.station/fixtures";
+import { buildLongHistory, LAUNCH_RIDGE_META, wobble } from "@azohra/meteo.station/fixtures";
 
 const MINUTE_MS = 60_000;
 
@@ -59,17 +59,7 @@ function launchRidgeReading(nowMs: number): Reading {
 
 function launchRidge(nowMs: number): Station {
   return {
-    id: "launch-ridge",
-    name: "Launch Ridge",
-    sourceLabel: "WindNerd",
-    pageUrl: null,
-    latitude: 49.078,
-    longitude: -117.785,
-    timeZone: "America/Vancouver",
-    elevationM: 1245,
-    capabilities: { gustLull: true, temperature: true, conditions: false, history: true },
-    samplingWindowSeconds: 3,
-    recommendedPollSeconds: 5,
+    ...LAUNCH_RIDGE_META,
     status: "ok",
     reading: launchRidgeReading(nowMs),
     history: { periodMinutes: 1, points: launchRidgeHistory(nowMs) },

@@ -6,7 +6,9 @@
  * fact as the station capability's --meteo-* skin (surface, ink, muted,
  * border, accent, freshness, the band ramp) the values are identical —
  * one brand, stated twice only because the package must render with no
- * site present. Dark mode is depth, not tint: same hues, heavier shadow. */
+ * site present; each such line carries a `= --meteo-*` annotation and
+ * internal/palette-parity.test.ts holds it to the package value.
+ * Dark mode is depth, not tint: same hues, heavier shadow. */
 
 :root {
   color-scheme: light dark;
@@ -35,18 +37,18 @@
   --accent-strong: light-dark(#0b5b71, #7fd7ec);
   --accent-ink: light-dark(#ffffff, #0d1319); /* text on the accent */
 
-  /* ---- freshness / status: live, aging, stale (= --meteo-freshness-*) ---- */
-  --status-good: light-dark(#12813d, #34d399);
-  --status-warning: light-dark(#b45309, #fbbf24);
-  --status-serious: light-dark(#bb1d1d, #f87171);
+  /* ---- freshness / status: live, aging, stale ---- */
+  --status-good: light-dark(#12813d, #34d399); /* = --meteo-freshness-live */
+  --status-warning: light-dark(#b45309, #fbbf24); /* = --meteo-freshness-aging */
+  --status-serious: light-dark(#bb1d1d, #f87171); /* = --meteo-freshness-stale */
 
   /* ---- the grade: the five-band ramp every chart judges wind with,
-     and the platform's signature mark (= --meteo-band-0..4) ---- */
-  --band-0: light-dark(#56a2cc, #5fb2e0);
-  --band-1: light-dark(#2e9e63, #34d17b);
-  --band-2: light-dark(#d9a013, #eab308);
-  --band-3: light-dark(#e2662c, #f4732c);
-  --band-4: light-dark(#c22727, #ef4444);
+     and the platform's signature mark ---- */
+  --band-0: light-dark(#56a2cc, #5fb2e0); /* = --meteo-band-0 */
+  --band-1: light-dark(#2e9e63, #34d17b); /* = --meteo-band-1 */
+  --band-2: light-dark(#d9a013, #eab308); /* = --meteo-band-2 */
+  --band-3: light-dark(#e2662c, #f4732c); /* = --meteo-band-3 */
+  --band-4: light-dark(#c22727, #ef4444); /* = --meteo-band-4 */
   /* The ramp as one sweep — every "grade" signature (title underlines,
      .band-rule) paints this gradient instead of restating the five stops. */
   --band-gradient: linear-gradient(

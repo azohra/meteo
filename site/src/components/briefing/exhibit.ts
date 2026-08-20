@@ -17,6 +17,7 @@ import {
 import {
   compareAnalyses,
   compareForecasts,
+  type ComparisonFinding,
   type HeightSpreadFinding,
   type WindDirectionSpreadFinding,
   type WindowAgreementFinding,
@@ -220,6 +221,30 @@ export function findingRows(analysis: ForecastAnalysis): FindingRow[] {
    (internal/doc-figures/page-figures.mjs), keeping each member's own
    analysis. Nothing else about either document changes. */
 
+function timingPair() {
+  const earlier = scenarioById("model-timing-disagreement", "earlier");
+  const later = scenarioById("model-timing-disagreement", "later");
+  if (earlier.timeZone !== later.timeZone) fail("the timing pair no longer shares a timezone");
+  const relabeled = [
+    siteForecastSchema.parse({ ...earlier.profile, model: "earlier" }),
+    siteForecastSchema.parse({ ...later.profile, model: "later" }),
+  ];
+  return { earlier, later, relabeled };
+}
+
+function windowAgreementIn(
+  findings: readonly ComparisonFinding[],
+  message: string,
+  accept: (finding: WindowAgreementFinding) => boolean = () => true,
+): WindowAgreementFinding {
+  return (
+    findings.find(
+      (finding): finding is WindowAgreementFinding =>
+        finding.kind === "windowAgreement" && accept(finding),
+    ) ?? fail(message)
+  );
+}
+
 export interface TimingComparison {
   earlier: TeachingScenario;
   later: TeachingScenario;
@@ -232,20 +257,16 @@ export interface TimingComparison {
 }
 
 export function timingComparison(): TimingComparison {
-  const earlier = scenarioById("model-timing-disagreement", "earlier");
-  const later = scenarioById("model-timing-disagreement", "later");
-  if (earlier.timeZone !== later.timeZone) fail("the timing pair no longer shares a timezone");
-  const relabel = (scenario: TeachingScenario, model: string) =>
-    siteForecastSchema.parse({ ...scenario.profile, model });
-  const comparison = compareForecasts([relabel(earlier, "earlier"), relabel(later, "later")], {
+  const { earlier, later, relabeled } = timingPair();
+  const comparison = compareForecasts(relabeled, {
     timeZone: earlier.timeZone,
     launch: earlier.launch,
   });
 
-  const agreement =
-    comparison.findings.find(
-      (finding): finding is WindowAgreementFinding => finding.kind === "windowAgreement",
-    ) ?? fail("the timing pair emits no windowAgreement finding");
+  const agreement = windowAgreementIn(
+    comparison.findings,
+    "the timing pair emits no windowAgreement finding",
+  );
   if (agreement.voters !== 2 || agreement.unanimous !== true) {
     fail("the timing pair's windowAgreement is no longer a unanimous two-voter day");
   }
@@ -289,29 +310,20 @@ export interface TimingBoard {
 }
 
 export function timingBoard(): TimingBoard {
-  const earlier = scenarioById("model-timing-disagreement", "earlier");
-  const later = scenarioById("model-timing-disagreement", "later");
-  if (earlier.timeZone !== later.timeZone) fail("the timing pair no longer shares a timezone");
-  const relabel = (scenario: TeachingScenario, model: string) =>
-    siteForecastSchema.parse({ ...scenario.profile, model });
-  const analyses = [
-    analyzeForecast(relabel(earlier, "earlier"), {
+  const { earlier, later, relabeled } = timingPair();
+  const analyses = relabeled.map((profile) =>
+    analyzeForecast(profile, {
       timeZone: earlier.timeZone,
       launch: earlier.launch,
       windCeilings: DAY_WIND_CEILINGS,
     }),
-    analyzeForecast(relabel(later, "later"), {
-      timeZone: earlier.timeZone,
-      launch: earlier.launch,
-      windCeilings: DAY_WIND_CEILINGS,
-    }),
-  ];
+  );
   const comparison = compareAnalyses(analyses);
-  const agreement =
-    comparison.findings.find(
-      (finding): finding is WindowAgreementFinding =>
-        finding.kind === "windowAgreement" && finding.voters === 2,
-    ) ?? fail("the timing pair emits no two-voter day for the board");
+  const agreement = windowAgreementIn(
+    comparison.findings,
+    "the timing pair emits no two-voter day for the board",
+    (finding) => finding.voters === 2,
+  );
   const scene = buildCompareBoardScene(analyses, comparison, {
     dateKey: agreement.day,
     timeZone: earlier.timeZone,

@@ -1,8 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { mulberry32, smooth } from "../station/dist/fixtures.js";
+import { fileURLToPath } from "node:url";
+import { importDist } from "./lib/import-dist.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -11,19 +11,12 @@ const React = req("react");
 const { renderToStaticMarkup } = req("react-dom/server");
 const h = React.createElement;
 
-async function importDist(entryRelative) {
-  const entry = join(root, "station/dist", entryRelative);
-  try {
-    return await import(pathToFileURL(entry).href);
-  } catch (error) {
-    throw new Error(
-      `Cannot load station/dist/${entryRelative} — build first (pnpm build). ${error.message}`,
-    );
-  }
-}
-
-const core = await importDist("index.js");
-const { CurrentConditions } = await importDist("react/index.js");
+const core = await importDist(root, "station");
+const { CurrentConditions } = await importDist(root, "station/react");
+const { EXHIBIT_THRESHOLDS, LAUNCH_RIDGE_META, mulberry32, smooth } = await importDist(
+  root,
+  "station/fixtures",
+);
 const words = core.defaultStrings;
 
 const stylesCss = await readFile(join(root, "station/styles.css"), "utf8");
@@ -66,14 +59,30 @@ function resolveLightDark(value, arm) {
   }
 }
 
-function parseTokens(arm) {
+/* Every declaration in styles.css's token block, one arm of each
+   light-dark() resolved: [{ name: "--meteo-…", value }]. */
+function parseTokenBlock(arm) {
   const marker = ":where(.meteo-root) {";
   const start = stylesCss.indexOf(marker);
   if (start === -1) throw new Error(`styles.css: token block not found: ${marker}`);
   const block = stylesCss.slice(start, stylesCss.indexOf("\n}", start));
+  const tokens = [];
+  for (const match of block.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)) {
+    tokens.push({
+      name: match[1],
+      value: resolveLightDark(match[2].replace(/\s+/g, " ").trim(), arm),
+    });
+  }
+  return tokens;
+}
+
+/* The style block's projection: keys are token names with their first
+   `--meteo-` or `--wind-` prefix stripped. */
+function parseTokens(arm) {
   const tokens = {};
-  for (const match of block.matchAll(/--(?:meteo|wind)-([a-z0-9-]+):\s*([^;]+);/g)) {
-    tokens[match[1]] = resolveLightDark(match[2].replace(/\s+/g, " ").trim(), arm);
+  for (const { name, value } of parseTokenBlock(arm)) {
+    const short = name.match(/^--(?:meteo|wind)-([a-z0-9-]+)$/)?.[1];
+    if (short !== undefined) tokens[short] = value;
   }
   return tokens;
 }
@@ -166,8 +175,7 @@ ${bands
 const NOW_MS = Date.parse("2025-06-21T20:00:00Z");
 const TZ_OFFSET_MS = -7 * 3_600_000;
 const PERIOD_MINUTES = 5;
-const THRESHOLDS_DECLARED = { unit: "kmh", values: [12, 20, 28] };
-const THRESHOLDS = THRESHOLDS_DECLARED.values.map((kmh) => kmh / 3.6);
+const THRESHOLDS = EXHIBIT_THRESHOLDS.values.map((kmh) => kmh / 3.6);
 
 const iso = (ms) => new Date(ms).toISOString();
 const mps = (kmh) => Math.round((kmh / 3.6) * 100) / 100;
@@ -215,17 +223,10 @@ const READING = {
 };
 
 const STATION = {
-  id: "launch-ridge",
-  name: "Launch Ridge",
-  sourceLabel: "WindNerd",
-  pageUrl: null,
-  latitude: null,
-  longitude: null,
-  timeZone: "America/Vancouver",
-  elevationM: 1180,
-  capabilities: { gustLull: true, temperature: false, conditions: false, history: true },
-  samplingWindowSeconds: 3,
-  recommendedPollSeconds: 60,
+  ...LAUNCH_RIDGE_META,
+  /* Wind-only on purpose: the hero figure shows the dial-and-history face,
+     so temperature stays off here even though the live exhibit reports it. */
+  capabilities: { ...LAUNCH_RIDGE_META.capabilities, temperature: false },
   status: "ok",
   reading: READING,
   history: HISTORY,
@@ -413,7 +414,7 @@ function renderDial() {
       station: STATION,
       servedAt: iso(NOW_MS),
       receivedAtMs: NOW_MS,
-      thresholds: THRESHOLDS_DECLARED,
+      thresholds: EXHIBIT_THRESHOLDS,
     }),
   );
 }
@@ -505,24 +506,9 @@ function assertSelfContained(name, svg) {
    palette without copying a value into prose. Fixed literal colors on
    purpose: the figure depicts station's own palette, which never follows
    the website theme. */
-function parseFullTokens(arm) {
-  const marker = ":where(.meteo-root) {";
-  const start = stylesCss.indexOf(marker);
-  if (start === -1) throw new Error(`styles.css: token block not found: ${marker}`);
-  const block = stylesCss.slice(start, stylesCss.indexOf("\n}", start));
-  const tokens = [];
-  for (const match of block.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)) {
-    tokens.push({
-      name: match[1],
-      value: resolveLightDark(match[2].replace(/\s+/g, " ").trim(), arm),
-    });
-  }
-  return tokens;
-}
-
 function tokenMapSvg() {
-  const light = parseFullTokens("light");
-  const dark = new Map(parseFullTokens("dark").map((token) => [token.name, token.value]));
+  const light = parseTokenBlock("light");
+  const dark = new Map(parseTokenBlock("dark").map((token) => [token.name, token.value]));
   const isColor = (value) => /^#[0-9a-f]{3,8}$/i.test(value) || /^rgba?\(/.test(value);
 
   const groupOf = (name) => {

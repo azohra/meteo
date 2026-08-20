@@ -20,8 +20,9 @@ import {
   thresholdsToMps,
   windRose,
 } from "@azohra/meteo.station";
-import type { HistoryPoint, SpeedThresholds, StationClimatology } from "@azohra/meteo.station";
+import type { HistoryPoint, StationClimatology } from "@azohra/meteo.station";
 import { defineMeteoElements } from "@azohra/meteo.station/elements";
+import { EXHIBIT_THRESHOLDS } from "@azohra/meteo.station/fixtures";
 import type {
   BandChipElement,
   ClimatologyDailyPatternElement,
@@ -34,9 +35,8 @@ import type {
   WindHistoryChartElement,
   WindRoseElement,
 } from "@azohra/meteo.station/elements";
+import { tKey, tNum, tStr } from "./json-html";
 import { buildExhibitFeed, buildHistoryLabStation, buildSeason } from "./station-exhibit";
-
-const THRESHOLDS: SpeedThresholds = { unit: "kmh", values: [12, 20, 28] };
 
 export function initStationGallery(): void {
   const feed = document.querySelector<StationFeedElement>("#station-feed");
@@ -46,7 +46,6 @@ export function initStationGallery(): void {
     document.querySelector<CurrentConditionsElement>("#explicit-conditions");
 
   /* The instrument beside this terminal draws the same object it prints. */
-  const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const renderWire = (document_: ReturnType<typeof buildExhibitFeed>) => {
     if (!wireJson) return;
     const station = document_.stations[0];
@@ -62,12 +61,9 @@ export function initStationGallery(): void {
     if (reading.windLullMps != null) entries.push(["windLullMps", reading.windLullMps]);
     if (reading.temperatureC != null) entries.push(["temperatureC", reading.temperatureC]);
     const lines = entries.map(([key, value], index) => {
-      const printed =
-        typeof value === "string"
-          ? `<span class="t-str">"${escapeHtml(value)}"</span>`
-          : `<span class="t-num">${value}</span>`;
+      const printed = typeof value === "string" ? tStr(value) : tNum(value);
       const comma = index < entries.length - 1 ? "," : "";
-      return `  <span class="t-key">"${key}"</span>: ${printed}${comma}`;
+      return `  ${tKey(`"${key}"`)}: ${printed}${comma}`;
     });
     wireJson.innerHTML = `{\n${lines.join("\n")}\n}`;
   };
@@ -94,7 +90,7 @@ export function initStationGallery(): void {
       explicitConditions.receivedAtMs = now;
     }
   };
-  if (explicitConditions) explicitConditions.thresholds = THRESHOLDS;
+  if (explicitConditions) explicitConditions.thresholds = EXHIBIT_THRESHOLDS;
   publish();
 
   /* Settled history: the History Lab's four days are built once, not per
@@ -188,7 +184,7 @@ export function initStationGallery(): void {
     const accumulator = createClimatologyAccumulator({
       sectorCount: 16,
       slotMinutes: 180,
-      thresholdsMps: thresholdsToMps(THRESHOLDS),
+      thresholdsMps: thresholdsToMps(EXHIBIT_THRESHOLDS),
       utcOffsetMinutes: 0,
     });
     foldClimatologyPoints(accumulator, season);
@@ -206,7 +202,7 @@ export function initStationGallery(): void {
       stationId: "launch-ridge",
       sectorCount: 16,
       slotMinutes: 180,
-      thresholdsMps: thresholdsToMps(THRESHOLDS),
+      thresholdsMps: thresholdsToMps(EXHIBIT_THRESHOLDS),
       utcOffsetMinutes: 0,
       years: [
         {

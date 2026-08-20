@@ -2,11 +2,12 @@
 /* The commands are the README's verified forms (§ Install, § Run your
    own); the second panel is the exact command that captured the dataset
    shown above (site/public/data-sample/README.md § How it was generated).
-   The 48-hour horizon is read from the committed catalogue, not typed. */
-import models from "../../../public/data-sample/models.json";
+   The 48-hour horizon is read from the engine's live catalogue
+   (forecast/models.json via catalogue.ts) — the data-sample copy is a
+   captured run, kept for wire-shaped documents only. */
+import { modelBySlug } from "../../lib/catalogue";
 
-const hrdps = models.models.find((model) => model.slug === "hrdps-continental");
-const horizonHours = hrdps?.horizonHours ?? 48;
+const horizonHours = modelBySlug("hrdps-continental")?.horizonHours ?? 48;
 ---
 
 <section id="cli" class="fc-cli" aria-labelledby="cli-title">

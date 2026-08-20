@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
@@ -6,27 +5,12 @@ import { fileURLToPath } from "node:url";
 
 import { convertTextToPaths } from "./doc-figures/fonts.mjs";
 import { RASTER_TARGETS, TARGETS } from "./doc-figures/targets.mjs";
+import { importDist } from "./lib/import-dist.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-async function importPackage(subpath) {
-  const [head, ...rest] = subpath.split("/");
-  const packageDir = head === "core" ? join(root, "core") : join(root, head);
-  const dist = join(packageDir, "dist");
-  const flat = rest.length > 0 ? join(dist, `${rest.join("/")}.js`) : null;
-  const barrel = rest.length > 0 ? join(dist, ...rest, "index.js") : join(dist, "index.js");
-  try {
-    return await import(flat && existsSync(flat) ? flat : barrel);
-  } catch (error) {
-    throw new Error(
-      `Cannot load ${head}/dist/${rest.join("/") || "index"} — build the workspace first ` +
-        `(pnpm build). ${error.message}`,
-    );
-  }
-}
-
-const { parseSiteForecastJson } = await importPackage("briefing/contract");
-const { buildMeteogramScene, renderMeteogramSvg } = await importPackage("briefing/meteogram");
+const { parseSiteForecastJson } = await importDist(root, "briefing/contract");
+const { buildMeteogramScene, renderMeteogramSvg } = await importDist(root, "briefing/meteogram");
 
 const scenarioIndex = JSON.parse(await readFile(join(root, "scenarios/index.json"), "utf8"));
 
@@ -80,7 +64,14 @@ async function renderScene(id, { variant, idPrefix, ...options } = {}) {
   return { scene, svg: renderMeteogramSvg(scene, { idPrefix }), profile };
 }
 
-const composeContext = { renderChart, renderScene, loadProfile, scenarioMeta, importPackage, root };
+const composeContext = {
+  renderChart,
+  renderScene,
+  loadProfile,
+  scenarioMeta,
+  importPackage: (subpath) => importDist(root, subpath),
+  root,
+};
 
 async function composeTarget(target) {
   return convertTextToPaths(await target.compose(composeContext), { idPrefix: `${target.id}-` });

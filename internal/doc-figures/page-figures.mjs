@@ -8,6 +8,7 @@ import {
   CODE_BG,
   codeSegments,
   DISPLAY,
+  esc,
   HALO,
   INK,
   INK_MUTE,
@@ -74,8 +75,8 @@ function frame({ id, title, lesson, caption, units, description, bodyWidth, body
   const height = y + FRAME_MARGIN - 6;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${round(width)} ${round(height)}" role="img" aria-labelledby="${id}-title ${id}-description">
-  <title id="${id}-title">${escapeXml(title)}</title>
-  <desc id="${id}-description">${escapeXml(description)}</desc>
+  <title id="${id}-title">${esc(title)}</title>
+  <desc id="${id}-description">${esc(description)}</desc>
   ${paper(id, round(width), round(height), 14)}
   ${header.join("\n  ")}
   <g transform="translate(${FRAME_MARGIN} ${round(bodyTop)})">
@@ -84,14 +85,6 @@ function frame({ id, title, lesson, caption, units, description, bodyWidth, body
   ${footer.join("\n  ")}
 </svg>
 `;
-}
-
-function escapeXml(value) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function flowMarker(id) {
@@ -1121,7 +1114,7 @@ async function composeDeriveSinkRate(ctx) {
         `<circle cx="${round(point.x)}" cy="${round(point.y)}" r="3.2" fill="${SURFACE}" stroke="${ACCENT_STRONG}" stroke-width="1.8"/>`,
     )
     .join("\n  ")}
-  <text x="${round(peak.x)}" y="${round(peak.y - 10)}" text-anchor="middle" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="11" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${escapeXml(`usableLiftTopM(inputs, ${SINK_RATE_MS}) -> ${localeRound(peak.altitudeM)} m`)}</text>
+  <text x="${round(peak.x)}" y="${round(peak.y - 10)}" text-anchor="middle" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="11" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${esc(`usableLiftTopM(inputs, ${SINK_RATE_MS}) -> ${localeRound(peak.altitudeM)} m`)}</text>
   <path d="M0 ${round(legendTop - 4)} h26" stroke="${usableColour}" stroke-width="3"/>
   <path d="M40 ${round(legendTop - 4)} h26" stroke="${ACCENT_STRONG}" stroke-width="3" stroke-dasharray="6 4"/>
   ${wrapped(78, legendTop, legendLines, { font: MONO, size: 11, fill: INK }, 16)}`;
@@ -1224,7 +1217,7 @@ async function composeAnalyzeFindings(ctx) {
   <rect x="${round(bandLeft)}" y="${round(plotTop)}" width="${round(bandRight - bandLeft)}" height="20" fill="${ACCENT}" opacity="0.92"/>
   ${t((bandLeft + bandRight) / 2, plotTop + 14, `thermalWindow ${localTime(window.start.local)}–${localTime(window.end.local)}`, { font: MONO, size: 11, weight: 700, fill: ACCENT_INK, anchor: "middle" })}
   <circle cx="${round(peak.x)}" cy="${round(peak.y)}" r="5" fill="none" stroke="${ACCENT_STRONG}" stroke-width="2"/>
-  <text x="${round(peak.x)}" y="${round(peak.y - 10)}" text-anchor="middle" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="11" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${escapeXml(`peak ${localeRound(peakAboveLaunchM)} m above launch`)}</text>
+  <text x="${round(peak.x)}" y="${round(peak.y - 10)}" text-anchor="middle" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="11" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${esc(`peak ${localeRound(peakAboveLaunchM)} m above launch`)}</text>
   ${ledger.markup}`;
 
   return frame({
@@ -2787,7 +2780,7 @@ async function composeReliefPercentiles(ctx) {
       `<line x1="${x0 + 28}" y1="${round(launchY)}" x2="${x0 + panelW - 28}" y2="${round(launchY)}" stroke="${ACCENT_STRONG}" stroke-width="1.6" stroke-dasharray="6 4"/>`,
     );
     parts.push(
-      `<text x="${x0 + 24}" y="${round(launchY + 3)}" text-anchor="end" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="9" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${escapeXml("launch")}</text>`,
+      `<text x="${x0 + 24}" y="${round(launchY + 3)}" text-anchor="end" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="9" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${esc("launch")}</text>`,
     );
     parts.push(
       t(x0 + 16, plotTop + plotHeight + 34, "disc radius", { font: MONO, size: 9, fill: INK_MUTE }),

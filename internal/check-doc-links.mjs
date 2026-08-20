@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ignoredLine, stripFences, walk, workspaceReadmes } from "./lib/prose-files.mjs";
 
 /* Internal-link integrity for every reader-facing source: the docs
    collection (including the package-docs symlinks), the logbook, the
@@ -12,17 +13,6 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORE_MARKER = "meteo-doc-links: ignore";
-
-/* Stat-follow symlinks, exactly like check-doc-fences, so the committed
-   package-docs symlinks are descended. */
-function walk(dir, extensions, out) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
-    const full = join(dir, entry.name);
-    if (statSync(full).isDirectory()) walk(full, extensions, out);
-    else if (extensions.some((extension) => entry.name.endsWith(extension))) out.push(full);
-  }
-}
 
 /* ── Valid routes ────────────────────────────────────────────────────── */
 
@@ -74,10 +64,6 @@ const BUILD_EMITTED_PREFIXES = ["/schema/"];
 /* Matches the target of a Markdown link and any href attribute; both forms
    appear in .mdx and .astro sources. */
 const LINK_PATTERN = /\]\(([^)\s]+)\)|href=["']([^"']+)["']/g;
-
-function stripFences(text) {
-  return text.replace(/^```.*$[\s\S]*?^```\s*$/gm, "");
-}
 
 /* The github-slugger convention Starlight uses for heading anchors,
    approximated: drop punctuation, spaces become hyphens. */
@@ -135,14 +121,7 @@ function checkTarget(target, sourceFile) {
 const scanFiles = [...docFiles, ...logbookFiles];
 walk(join(repoRoot, "site", "src", "components"), [".astro", ".mdx"], scanFiles);
 walk(join(repoRoot, "site", "src", "layouts"), [".astro"], scanFiles);
-scanFiles.push(...pageFiles);
-for (const entry of readdirSync(repoRoot, { withFileTypes: true })) {
-  const readme = join(repoRoot, entry.name, "README.md");
-  if (entry.isDirectory() && !entry.name.startsWith(".") && existsSync(readme)) {
-    scanFiles.push(readme);
-  }
-}
-scanFiles.push(join(repoRoot, "README.md"));
+scanFiles.push(...pageFiles, ...workspaceReadmes(repoRoot));
 
 let failedFiles = 0;
 let checked = 0;
@@ -151,9 +130,7 @@ for (const file of scanFiles) {
   const lines = text.split("\n");
   const errors = [];
   for (let i = 0; i < lines.length; i += 1) {
-    if (lines[i].includes(IGNORE_MARKER) || (i > 0 && lines[i - 1].includes(IGNORE_MARKER))) {
-      continue;
-    }
+    if (ignoredLine(lines, i, IGNORE_MARKER)) continue;
     for (const match of lines[i].matchAll(LINK_PATTERN)) {
       const target = match[1] ?? match[2];
       checked += 1;

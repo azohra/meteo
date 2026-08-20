@@ -9,7 +9,8 @@ import { statSync } from "node:fs";
 import { publicDir } from "astro:config/server";
 import manifest from "../../../public/data-sample/hrdps-continental/manifest.json";
 import testHill from "../../../public/data-sample/hrdps-continental/sites/test-hill.json";
-import { formatBytes, renderJsonHtml } from "../../lib/forecast-exhibit";
+import { formatBytes } from "../../lib/forecast-exhibit";
+import { renderJsonHtml, tKey } from "../../lib/json-html";
 
 const sizeOf = (relative: string) => statSync(new URL(`data-sample/${relative}`, publicDir)).size;
 
@@ -106,7 +107,7 @@ const firstHour = hours[0];
 const lastHour = hours[hours.length - 1];
 const surfaceCount = Object.keys(lastHour.surface).length;
 const pressures = lastHour.levels.map((level) => level.pressureHpa);
-const key = (name: string) => `<span class="t-key">"${name}"</span>`;
+const key = (name: string) => tKey(`"${name}"`);
 const fold = (text: string) => `<span class="t-fold">… ${text} …</span>`;
 const excerptHtml = [
   "{",

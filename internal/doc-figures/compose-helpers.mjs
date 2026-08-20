@@ -1,17 +1,11 @@
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { importDist } from "../lib/import-dist.mjs";
 import { measureText } from "./fonts.mjs";
 
 const figuresRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const { TOKEN_DEFAULTS } = await import(join(figuresRoot, "briefing/dist/meteogram.js")).catch(
-  (error) => {
-    throw new Error(
-      `Cannot load briefing/dist/meteogram — build the workspace first ` +
-        `(pnpm build, or run via pnpm figures). ${error.message}`,
-    );
-  },
-);
+const { TOKEN_DEFAULTS } = await importDist(figuresRoot, "briefing/meteogram");
 
 /* Every ground, rule, and label ink below is emitted as a var() reference
    to one of the eight ancestor chrome tokens the site (and any downstream

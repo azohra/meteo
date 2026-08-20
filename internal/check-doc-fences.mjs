@@ -12,6 +12,7 @@ import {
 import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { walk } from "./lib/prose-files.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageDir = repoRoot;
@@ -20,17 +21,6 @@ const IGNORE_MARKER = "meteo-doc-fence: ignore";
 function fail(message) {
   console.error(`check-doc-fences: ${message}`);
   process.exit(2);
-}
-
-/* A Dirent reports isDirectory() === false for a symlinked directory, so the
-   walk stat-follows symlinks to descend the committed docs symlinks. */
-function walk(dir, out) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
-    const full = join(dir, entry.name);
-    if (statSync(full).isDirectory()) walk(full, out);
-    else if (/\.(md|mdx)$/.test(entry.name)) out.push(full);
-  }
 }
 
 async function packageHomes() {
@@ -56,8 +46,7 @@ async function packageHomes() {
 }
 
 function defaultDocFiles(homes) {
-  const files = [];
-  walk(join(repoRoot, "site", "src", "content", "docs", "docs"), files);
+  const files = walk(join(repoRoot, "site", "src", "content", "docs", "docs"), [".md", ".mdx"]);
   for (const directory of ["", ...homes.values()]) {
     const readme = join(repoRoot, directory, "README.md");
     if (existsSync(readme)) files.push(readme);
@@ -70,7 +59,7 @@ function docFilesFromArgs(args) {
   for (const arg of args) {
     const full = resolve(arg);
     if (!existsSync(full)) fail(`no such file or directory: ${arg}`);
-    if (statSync(full).isDirectory()) walk(full, files);
+    if (statSync(full).isDirectory()) walk(full, [".md", ".mdx"], files);
     else files.push(full);
   }
   return files;

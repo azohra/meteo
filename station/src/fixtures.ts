@@ -1,7 +1,28 @@
-import type { HistoryPoint } from "./contract.js";
+import type { HistoryPoint, StationMeta } from "./contract.js";
+import type { SpeedThresholds } from "./derive.js";
 
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
+
+/* The synthetic demo station's identity: the one home for the facts that
+   both the site's live exhibit (site/src/lib/station-exhibit.ts) and the
+   committed hero figure (internal/generate-station-assets.mjs) render. */
+export const LAUNCH_RIDGE_META: StationMeta = {
+  id: "launch-ridge",
+  name: "Launch Ridge",
+  sourceLabel: "WindNerd",
+  pageUrl: null,
+  latitude: 49.078,
+  longitude: -117.785,
+  timeZone: "America/Vancouver",
+  elevationM: 1245,
+  capabilities: { gustLull: true, temperature: true, conditions: false, history: true },
+  samplingWindowSeconds: 3,
+  recommendedPollSeconds: 5,
+};
+
+/** The wind grading the demo exhibits judge with. */
+export const EXHIBIT_THRESHOLDS: SpeedThresholds = { unit: "kmh", values: [12, 20, 28] };
 
 /** Deterministic PRNG (mulberry32). */
 export function mulberry32(seed: number): () => number {

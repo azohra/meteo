@@ -1,7 +1,8 @@
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { proseLines, renderedProseLines, walk } from "./lib/prose-files.mjs";
 
 /* Structural checks on the documentation: sidebar shape, labels,
    orphans, and prose conventions. */
@@ -183,22 +184,15 @@ for (const section of sidebar) {
 }
 
 /* ── orphans: every docs page is in the sidebar ─────────────────────── */
-function walkPages(dir, out) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === "figures" || entry.name.startsWith(".")) continue;
-    const full = join(dir, entry.name);
-    if (statSync(full).isDirectory()) walkPages(full, out);
-    else if (/\.mdx?$/.test(entry.name)) out.push(full);
-  }
-  return out;
-}
+/* Committed figures sit beside the pages; they are assets, not pages. */
+const walkPages = (dir) => walk(dir, [".md", ".mdx"], [], { skip: ["figures"] });
 
 const roots = [
   ["docs", join(repoRoot, "site", "src", "content", "docs", "docs")],
   ...Object.values(SECTIONS).map((dir) => [`docs/${dir}`, join(repoRoot, dir, "docs")]),
 ];
 for (const [slugRoot, dir] of roots) {
-  for (const file of walkPages(dir, [])) {
+  for (const file of walkPages(dir)) {
     const rel = relative(dir, file).replace(/\.mdx?$/, "");
     const slug = rel === "index" ? slugRoot : `${slugRoot}/${rel}`;
     /* Package docs are symlinked into the site tree; skip the mirror copies. */
@@ -213,98 +207,22 @@ for (const [slugRoot, dir] of roots) {
 }
 
 /* ── prose conventions: retired vocabulary, hand-typed versions ─────── */
-function proseLines(text) {
-  const out = [];
-  let inFence = false;
-  text.split("\n").forEach((line, index) => {
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      return;
-    }
-    if (!inFence) out.push([index + 1, line]);
-  });
-  return out;
-}
-
-/* Site components and pages are rendered prose too: the conventions hold
-   wherever a reader sees the words. Only what renders is checked — .astro
-   frontmatter script (between the leading --- pair), HTML and JS/CSS
-   comments, comment-only // lines, and fenced code are code, not prose. */
-function renderedProseLines(file, text) {
-  const lines = text.split("\n");
-  const out = [];
-  let start = 0;
-  if (file.endsWith(".astro") && lines[0]?.trim() === "---") {
-    start = 1;
-    while (start < lines.length && lines[start].trim() !== "---") start += 1;
-    start += 1;
-  }
-  let inFence = false;
-  /* null, or the closer of the comment a previous line left open. */
-  let openComment = null;
-  for (let index = start; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (openComment === null && /^\s*```/.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
-    let visible = "";
-    let pos = 0;
-    while (pos < line.length) {
-      if (openComment !== null) {
-        const end = line.indexOf(openComment, pos);
-        if (end === -1) {
-          pos = line.length;
-        } else {
-          pos = end + openComment.length;
-          openComment = null;
-        }
-        continue;
-      }
-      if (visible.trim() === "" && line.slice(pos).trimStart().startsWith("//")) break;
-      const html = line.indexOf("<!--", pos);
-      const block = line.indexOf("/*", pos);
-      const next = Math.min(html === -1 ? Infinity : html, block === -1 ? Infinity : block);
-      if (next === Infinity) {
-        visible += line.slice(pos);
-        break;
-      }
-      visible += line.slice(pos, next);
-      openComment = next === html ? "-->" : "*/";
-      pos = next + (next === html ? 4 : 2);
-    }
-    out.push([index + 1, visible]);
-  }
-  return out;
-}
-
 for (const [, dir] of roots.slice(1)) {
-  for (const file of walkPages(dir, [])) checkProse(file);
+  for (const file of walkPages(dir)) checkProse(file);
 }
-for (const file of walkPages(join(repoRoot, "site", "src", "content", "logbook"), [])) {
+for (const file of walkPages(join(repoRoot, "site", "src", "content", "logbook"))) {
   checkProse(file);
 }
-for (const file of walkPages(join(repoRoot, "site", "src", "content", "docs", "docs"), [])) {
+for (const file of walkPages(join(repoRoot, "site", "src", "content", "docs", "docs"))) {
   const rel = relative(join(repoRoot, "site", "src", "content", "docs", "docs"), file);
   if (!Object.values(SECTIONS).some((d) => rel.startsWith(`${d}/`) || rel === d)) checkProse(file);
-}
-
-function walkSiteFiles(dir, out) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith(".")) continue;
-    const full = join(dir, entry.name);
-    if (statSync(full).isDirectory()) walkSiteFiles(full, out);
-    else if (/\.(astro|mdx)$/.test(entry.name)) out.push(full);
-  }
-  return out;
 }
 
 for (const dir of [
   join(repoRoot, "site", "src", "components"),
   join(repoRoot, "site", "src", "pages"),
 ]) {
-  for (const file of walkSiteFiles(dir, [])) {
+  for (const file of walk(dir, [".astro", ".mdx"])) {
     checkProse(file, renderedProseLines);
   }
 }

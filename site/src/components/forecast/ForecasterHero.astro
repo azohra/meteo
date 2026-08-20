@@ -5,7 +5,8 @@
 import { statSync } from "node:fs";
 import { publicDir } from "astro:config/server";
 import runs from "../../../public/data-sample/runs.json";
-import { formatBytes, renderJsonHtml } from "../../lib/forecast-exhibit";
+import { formatBytes } from "../../lib/forecast-exhibit";
+import { renderJsonHtml } from "../../lib/json-html";
 
 const runsBytes = statSync(new URL("data-sample/runs.json", publicDir)).size;
 const runsHtml = renderJsonHtml(runs);

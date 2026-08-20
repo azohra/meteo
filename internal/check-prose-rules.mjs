@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ignoredLine, proseLines, walk, workspaceReadmes } from "./lib/prose-files.mjs";
 
 /* The mechanically checkable slice of the voice rules: unsupported praise
    ("easy", "seamless", "robust", …) fails here across every reader-facing
@@ -44,26 +45,11 @@ const ALLOWED_PHRASES = [/simple packing/i, /simple and complex/i, /grib2? simpl
 
 const CURLY_PATTERN = /[\u2018\u2019\u201C\u201D]/g;
 
-function walk(dir, extensions, out) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
-    const full = join(dir, entry.name);
-    if (statSync(full).isDirectory()) walk(full, extensions, out);
-    else if (extensions.some((extension) => entry.name.endsWith(extension))) out.push(full);
-  }
-}
-
 const files = [];
 walk(join(repoRoot, "site", "src", "content"), [".md", ".mdx"], files);
 walk(join(repoRoot, "site", "src", "components"), [".astro", ".mdx"], files);
 walk(join(repoRoot, "site", "src", "pages"), [".astro"], files);
-for (const entry of readdirSync(repoRoot, { withFileTypes: true })) {
-  const readme = join(repoRoot, entry.name, "README.md");
-  if (entry.isDirectory() && !entry.name.startsWith(".") && existsSync(readme)) {
-    files.push(readme);
-  }
-}
-files.push(join(repoRoot, "README.md"));
+files.push(...workspaceReadmes(repoRoot));
 
 const praiseFiles = new Set(files);
 for (const pkg of ["briefing", "core", "forecast", "grib", "j2k", "station"]) {
@@ -72,27 +58,20 @@ for (const pkg of ["briefing", "core", "forecast", "grib", "j2k", "station"]) {
 
 let failedFiles = 0;
 for (const file of files) {
-  const lines = readFileSync(file, "utf-8").split("\n");
+  const text = readFileSync(file, "utf-8");
+  const lines = text.split("\n");
   const errors = [];
-  let inFence = false;
-  for (let i = 0; i < lines.length; i += 1) {
-    if (/^\s*```/.test(lines[i])) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
-    if (lines[i].includes(IGNORE_MARKER) || (i > 0 && lines[i - 1].includes(IGNORE_MARKER))) {
-      continue;
-    }
-    for (const match of lines[i].matchAll(CURLY_PATTERN)) {
+  for (const [lineNumber, line] of proseLines(text)) {
+    if (ignoredLine(lines, lineNumber - 1, IGNORE_MARKER)) continue;
+    for (const match of line.matchAll(CURLY_PATTERN)) {
       errors.push(
-        `${relative(repoRoot, file)}:${i + 1}: "${match[0]}" — curly quote; straight quotes are the convention`,
+        `${relative(repoRoot, file)}:${lineNumber}: "${match[0]}" — curly quote; straight quotes are the convention`,
       );
     }
     if (!praiseFiles.has(file)) continue;
-    if (ALLOWED_PHRASES.some((phrase) => phrase.test(lines[i]))) continue;
-    for (const match of lines[i].matchAll(BANNED_PATTERN)) {
-      errors.push(`${relative(repoRoot, file)}:${i + 1}: "${match[0]}" — unsupported praise`);
+    if (ALLOWED_PHRASES.some((phrase) => phrase.test(line))) continue;
+    for (const match of line.matchAll(BANNED_PATTERN)) {
+      errors.push(`${relative(repoRoot, file)}:${lineNumber}: "${match[0]}" — unsupported praise`);
     }
   }
   if (errors.length > 0) {

@@ -1,17 +1,14 @@
 ---
 import { STABILITY_TOKEN_DEFAULTS } from "@azohra/meteo.briefing/meteogram";
 import type { LogbookEntry } from "../../lib/logbook";
-import { logbookThumbnailFor, type LogbookThumbnailKind } from "../../lib/logbook-thumbnails";
+
+type LogbookThumbnailKind = LogbookEntry["thumbnail"];
 
 interface Props {
-  entry: Pick<
-    LogbookEntry,
-    "number" | "title" | "section" | "kind" | "status" | "accent" | "thumbnail"
-  >;
+  entry: Pick<LogbookEntry, "number" | "title" | "accent" | "thumbnail">;
 }
 
 const { entry } = Astro.props;
-const thumbnail = logbookThumbnailFor(entry);
 const ramp = Object.values(STABILITY_TOKEN_DEFAULTS);
 const labels: Record<LogbookThumbnailKind, string> = {
   "lift-limits": "Three limits",
@@ -44,13 +41,13 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
 ---
 
 <div
-  class:list={["logbook-thumbnail", `accent-${thumbnail.accent}`]}
+  class:list={["logbook-thumbnail", `accent-${entry.accent}`]}
   role="img"
-  aria-label={`${thumbnail.title}. ${descriptions[thumbnail.visual]}`}
-  data-thumbnail-visual={thumbnail.visual}
+  aria-label={`${entry.title}. ${descriptions[entry.thumbnail]}`}
+  data-thumbnail-visual={entry.thumbnail}
 >
   <svg viewBox="0 0 320 164" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    {thumbnail.visual === "lift-limits" && (
+    {entry.thumbnail === "lift-limits" && (
       <g class="lift-visual">
         <text x="18" y="22" class="visual-title">ONE COLUMN · THREE LIMITS</text>
         <line x1="22" y1="124" x2="300" y2="124" class="axis" />
@@ -64,7 +61,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "validation-witnesses" && (
+    {entry.thumbnail === "validation-witnesses" && (
       <g class="validation-visual">
         <text x="18" y="22" class="visual-title">PARSED PAYLOAD</text>
         <text x="302" y="22" class="visual-title end">INDEPENDENT WITNESS</text>
@@ -83,7 +80,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "ensemble-ceiling" && (
+    {entry.thumbnail === "ensemble-ceiling" && (
       <g class="ensemble-visual">
         <text x="18" y="22" class="visual-title">SAME MEMBERS · MORE HEADROOM</text>
         <rect x="18" y="34" width="132" height="98" class="panel" />
@@ -101,7 +98,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "stability-contrast" && (
+    {entry.thumbnail === "stability-contrast" && (
       <g class="stability-visual">
         <text x="18" y="22" class="visual-title">EIGHT CLASSES · MEASURED BOUNDARIES</text>
         {ramp.map((color, index) => (
@@ -116,7 +113,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "model-succession" && (
+    {entry.thumbnail === "model-succession" && (
       <g class="lifecycle-visual">
         <text x="18" y="22" class="visual-title">TWO FEED LEGS · ONE SUCCESSOR</text>
         <rect x="18" y="38" width="82" height="32" class="model-box" />
@@ -134,7 +131,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "cloud-base-delta" && (
+    {entry.thumbnail === "cloud-base-delta" && (
       <g class="cloud-delta-visual">
         <text x="18" y="22" class="visual-title">A SMALL BASE SHIFT REVEALS A LOWER CROSSING</text>
         <line x1="24" y1="121" x2="298" y2="121" class="axis" />
@@ -151,7 +148,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "terrain-shear" && (
+    {entry.thumbnail === "terrain-shear" && (
       <g class="terrain-visual">
         <text x="18" y="22" class="visual-title">TWO WINDS · TWO CIRCULATIONS</text>
         <path d="M10 132 L10 91 L62 56 L116 110 L159 126 L205 102 L260 54 L310 87 L310 132 Z" class="terrain" />
@@ -169,7 +166,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "terrain-smoothing" && (
+    {entry.thumbnail === "terrain-smoothing" && (
       <g class="smoothing-visual">
         <text x="18" y="22" class="visual-title">ONE PLACE · TWO ELEVATIONS</text>
         <path d="M10 132 L10 98 L48 80 L86 44 L120 72 L152 60 L188 94 L228 76 L266 102 L310 90 L310 132 Z" class="terrain" />
@@ -183,7 +180,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "wire-report" && (
+    {entry.thumbnail === "wire-report" && (
       <g class="wire-report-visual">
         <text x="18" y="22" class="visual-title">ONE CYCLE · TWO HOSTS · ONE GATE</text>
         <text x="18" y="44" class="bar-label">HPFX</text>
@@ -201,7 +198,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "smoke-derate" && (
+    {entry.thumbnail === "smoke-derate" && (
       <g class="smoke-derate-visual">
         <text x="18" y="22" class="visual-title">τ = 2 · SCATTERED, NOT BLOCKED</text>
         <rect x="18" y="32" width="284" height="22" class="haze" />
@@ -218,7 +215,7 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
       </g>
     )}
 
-    {thumbnail.visual === "observed-sky" && (
+    {entry.thumbnail === "observed-sky" && (
       <g class="observed-sky-visual">
         <text x="18" y="22" class="visual-title">GOES-18 · FIRST LIVE DAY</text>
         <rect x="18" y="32" width="284" height="20" class="haze" />
@@ -238,8 +235,8 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   </svg>
 
   <div class="thumbnail-meta" aria-hidden="true">
-    <span>{thumbnail.number}</span>
-    <span>{labels[thumbnail.visual]}</span>
+    <span>{entry.number}</span>
+    <span>{labels[entry.thumbnail]}</span>
   </div>
 </div>
 

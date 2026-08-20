@@ -1,15 +1,11 @@
 ---
 /* The code panel's values and every row below interpolate the package's
    own output (exhibit.ts), so neither can drift from it. */
-import { escapeHtml } from "../../lib/forecast-exhibit";
+import { tKey as kw, tNum as num, tStr as str } from "../../lib/json-html";
 import { briefingDay, DAY_WIND_CEILINGS, findingRows } from "./exhibit";
 
 const { analysis } = briefingDay();
 const rows = findingRows(analysis);
-
-const kw = (text: string) => `<span class="t-key">${escapeHtml(text)}</span>`;
-const str = (text: string) => `<span class="t-str">"${escapeHtml(text)}"</span>`;
-const num = (value: number) => `<span class="t-num">${value}</span>`;
 
 const codeHtml = [
   `${kw("import")} { parseSiteForecastJson } ${kw("from")} ${str("@azohra/meteo.briefing/contract")};`,
