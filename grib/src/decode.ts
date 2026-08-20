@@ -43,19 +43,16 @@ export type DecodeJ2kSampled = (
   indices: Uint32Array,
 ) => Float64Array | Promise<Float64Array>;
 
-export interface DecodeOptions {
+interface DecodeOptionsFor<Decoder> {
   /** Required for DRT 5.40 fields; unused otherwise. */
-  decodeJ2k?: DecodeJ2k;
+  decodeJ2k?: Decoder;
   /** In-band substitute for missing points (default 9999). */
   missingValue?: number;
 }
 
-export interface DecodeOptionsAsync {
-  /** Required for DRT 5.40 fields; unused otherwise. */
-  decodeJ2k?: DecodeJ2kAsync;
-  /** In-band substitute for missing points (default 9999). */
-  missingValue?: number;
-}
+export type DecodeOptions = DecodeOptionsFor<DecodeJ2k>;
+
+export type DecodeOptionsAsync = DecodeOptionsFor<DecodeJ2kAsync>;
 
 export interface DecodedField {
   /** Full-grid values in storage order, missing points substituted. */
@@ -99,19 +96,33 @@ function packingHeader(section5: Uint8Array): PackingHeader {
   };
 }
 
+/** The packing header's scale factors as the exact-double coefficients
+ * every decode loop applies:
+ * `(X * binaryScale + referenceValue) * decimalScale`. */
+function scalingOf(section5: Uint8Array): {
+  referenceValue: number;
+  binaryScale: number;
+  decimalScale: number;
+} {
+  const { referenceValue, binaryScaleFactor, decimalScaleFactor } = packingHeader(section5);
+  return {
+    referenceValue,
+    binaryScale: codesPower(binaryScaleFactor, 2),
+    decimalScale: codesPower(-decimalScaleFactor, 10),
+  };
+}
+
 function unpackSimple(section5: Uint8Array, section7: Uint8Array, count: number): Float64Array {
-  const { referenceValue, binaryScaleFactor, decimalScaleFactor, bitsPerValue } =
-    packingHeader(section5);
+  const { bitsPerValue } = packingHeader(section5);
+  const { referenceValue, binaryScale, decimalScale } = scalingOf(section5);
   const values = new Float64Array(count);
   if (bitsPerValue === 0) {
     values.fill(referenceValue);
     return values;
   }
-  const binaryS = codesPower(binaryScaleFactor, 2);
-  const decimalS = codesPower(-decimalScaleFactor, 10);
   const reader = new BitReader(section7, 5 * 8);
   for (let i = 0; i < count; i++) {
-    values[i] = (reader.read(bitsPerValue) * binaryS + referenceValue) * decimalS;
+    values[i] = (reader.read(bitsPerValue) * binaryScale + referenceValue) * decimalScale;
   }
   return values;
 }
@@ -121,10 +132,9 @@ function unpackComplex(
   section7: Uint8Array,
   count: number,
   missingValue: number,
-  missing: Uint8Array,
+  codedMissing: Uint8Array,
 ): Float64Array {
-  const { referenceValue, binaryScaleFactor, decimalScaleFactor, bitsPerValue } =
-    packingHeader(section5);
+  const { referenceValue, bitsPerValue } = packingHeader(section5);
   const drt = u16(section5, 9);
   const groupSplitting = u8(section5, 21);
   const missingManagement = u8(section5, 22);
@@ -280,18 +290,16 @@ function unpackComplex(
     }
   }
 
-  const binaryS = codesPower(binaryScaleFactor, 2);
-  const decimalS = codesPower(-decimalScaleFactor, 10);
-  const values2 = values;
+  const { binaryScale, decimalScale } = scalingOf(section5);
   for (let i = 0; i < count; i++) {
     if (secVal[i] === CODED_MISSING) {
-      values2[i] = missingValue;
-      missing[i] = 1;
+      values[i] = missingValue;
+      codedMissing[i] = 1;
     } else {
-      values2[i] = (secVal[i]! * binaryS + referenceValue) * decimalS;
+      values[i] = (secVal[i]! * binaryScale + referenceValue) * decimalScale;
     }
   }
-  return values2;
+  return values;
 }
 
 function jpeg2000Payload(
@@ -310,23 +318,21 @@ function jpeg2000Payload(
   return { codestream: section7.subarray(5) };
 }
 
-function scaleJpeg2000(section5: Uint8Array, decoded: J2kSamples, count: number): Float64Array {
+function scaleJpeg2000(scaling: J2kScaling, decoded: J2kSamples): Float64Array {
   if (decoded.componentCount !== 1) {
     throw new Error(
       `GRIB JPEG 2000 codestream decoded to ${decoded.componentCount} components, expected 1`,
     );
   }
-  if (decoded.values.length !== count) {
+  if (decoded.values.length !== scaling.expectedCount) {
     throw new Error(
-      `GRIB JPEG 2000 codestream decoded to ${decoded.values.length} samples but section 5 declares ${count}`,
+      `GRIB JPEG 2000 codestream decoded to ${decoded.values.length} samples but section 5 declares ${scaling.expectedCount}`,
     );
   }
-  const { referenceValue, binaryScaleFactor, decimalScaleFactor } = packingHeader(section5);
-  const values = new Float64Array(count);
-  const binaryS = codesPower(binaryScaleFactor, 2);
-  const decimalS = codesPower(-decimalScaleFactor, 10);
-  for (let i = 0; i < count; i++) {
-    values[i] = (decoded.values[i]! * binaryS + referenceValue) * decimalS;
+  const values = new Float64Array(scaling.expectedCount);
+  for (let i = 0; i < values.length; i++) {
+    values[i] =
+      (decoded.values[i]! * scaling.binaryScale + scaling.referenceValue) * scaling.decimalScale;
   }
   return values;
 }
@@ -335,16 +341,26 @@ const NO_DECODER_MESSAGE =
   "GRIB field is JPEG 2000 packed (DRT 5.40) and no DecodeJ2k was injected; " +
   "in Node, wire createNodeJ2kDecoder() or createNodeJ2kDecoderPool() from @azohra/meteo.grib/j2k-node";
 
-function unpackJpeg2000(
-  section5: Uint8Array,
-  section7: Uint8Array,
-  count: number,
-  decodeJ2k: DecodeJ2k | undefined,
-): Float64Array {
-  const payload = jpeg2000Payload(section5, section7, count);
-  if (payload.constant !== undefined) return payload.constant;
+function requireDecoder<Decoder>(decodeJ2k: Decoder | undefined): Decoder {
   if (decodeJ2k === undefined) throw new Error(NO_DECODER_MESSAGE);
-  return scaleJpeg2000(section5, decodeJ2k(payload.codestream), count);
+  return decodeJ2k;
+}
+
+function j2kScalingOf(section5: Uint8Array, expectedCount: number): J2kScaling {
+  return { ...scalingOf(section5), expectedCount };
+}
+
+/** GRIB2 bitmap indicator (section 6, octet 6); 255 means no bitmap. */
+function bitmapIndicatorOf(field: GribField): number {
+  return field.section6 === undefined ? 255 : u8(field.section6, 5);
+}
+
+function requireFullCoverage(codedCount: number, gridPoints: number): void {
+  if (codedCount !== gridPoints) {
+    throw new Error(
+      `GRIB field has no bitmap but codes ${codedCount} of ${gridPoints} grid points`,
+    );
+  }
 }
 
 function fieldLayout(field: GribField): { codedCount: number; drt: number; gridPoints: number } {
@@ -365,34 +381,76 @@ function unsupportedTemplate(drt: number): Error {
   );
 }
 
+/** A DRT 5.40 field waiting on a codestream decoder: hand `codestream` to
+ * one, then resolve the coded values via scaleJpeg2000 with `scaling`. */
+interface J2kJob {
+  codestream: Uint8Array;
+  scaling: J2kScaling;
+}
+
+type UnpackedField =
+  | {
+      gridPoints: number;
+      coded: Float64Array;
+      codedMissing: Uint8Array | undefined;
+      j2k?: undefined;
+    }
+  | { gridPoints: number; j2k: J2kJob; coded?: undefined; codedMissing?: undefined };
+
+/**
+ * The one decode core: unpacks every template in place except a DRT 5.40
+ * codestream, which comes back as a J2kJob so the sync and async entry
+ * points differ only in how they run the injected decoder.
+ */
+function unpackField(field: GribField, missingValue: number): UnpackedField {
+  const { codedCount, drt, gridPoints } = fieldLayout(field);
+  const section5 = field.section5;
+  switch (drt) {
+    case 0:
+      return {
+        gridPoints,
+        coded: unpackSimple(section5, field.section7, codedCount),
+        codedMissing: undefined,
+      };
+    case 2:
+    case 3: {
+      const codedMissing = new Uint8Array(codedCount);
+      const coded = unpackComplex(section5, field.section7, codedCount, missingValue, codedMissing);
+      return { gridPoints, coded, codedMissing };
+    }
+    case 40: {
+      const payload = jpeg2000Payload(section5, field.section7, codedCount);
+      if (payload.constant !== undefined) {
+        return { gridPoints, coded: payload.constant, codedMissing: undefined };
+      }
+      return {
+        gridPoints,
+        j2k: {
+          codestream: payload.codestream,
+          scaling: j2kScalingOf(section5, codedCount),
+        },
+      };
+    }
+    default:
+      throw unsupportedTemplate(drt);
+  }
+}
+
 /**
  * Decodes one field's values to the full grid, expanding any section 6
  * bitmap with `missingValue` substituted.
  */
 export function decodeFieldValues(field: GribField, options: DecodeOptions = {}): DecodedField {
   const missingValue = options.missingValue ?? ECCODES_MISSING_VALUE;
-  const { codedCount, drt, gridPoints } = fieldLayout(field);
-  const section5 = field.section5;
-
-  let codedMissing: Uint8Array | undefined;
-  let coded: Float64Array;
-  switch (drt) {
-    case 0:
-      coded = unpackSimple(section5, field.section7, codedCount);
-      break;
-    case 2:
-    case 3:
-      codedMissing = new Uint8Array(codedCount);
-      coded = unpackComplex(section5, field.section7, codedCount, missingValue, codedMissing);
-      break;
-    case 40:
-      coded = unpackJpeg2000(section5, field.section7, codedCount, options.decodeJ2k);
-      break;
-    default:
-      throw unsupportedTemplate(drt);
-  }
-
-  return assembleField(field, gridPoints, coded, codedMissing, missingValue);
+  const unpacked = unpackField(field, missingValue);
+  const coded =
+    unpacked.j2k === undefined
+      ? unpacked.coded
+      : scaleJpeg2000(
+          unpacked.j2k.scaling,
+          requireDecoder(options.decodeJ2k)(unpacked.j2k.codestream),
+        );
+  return assembleField(field, unpacked.gridPoints, coded, unpacked.codedMissing, missingValue);
 }
 
 /**
@@ -405,35 +463,15 @@ export async function decodeFieldValuesAsync(
   options: DecodeOptionsAsync = {},
 ): Promise<DecodedField> {
   const missingValue = options.missingValue ?? ECCODES_MISSING_VALUE;
-  const { codedCount, drt, gridPoints } = fieldLayout(field);
-  const section5 = field.section5;
-
-  let codedMissing: Uint8Array | undefined;
-  let coded: Float64Array;
-  switch (drt) {
-    case 0:
-      coded = unpackSimple(section5, field.section7, codedCount);
-      break;
-    case 2:
-    case 3:
-      codedMissing = new Uint8Array(codedCount);
-      coded = unpackComplex(section5, field.section7, codedCount, missingValue, codedMissing);
-      break;
-    case 40: {
-      const payload = jpeg2000Payload(section5, field.section7, codedCount);
-      if (payload.constant !== undefined) {
-        coded = payload.constant;
-      } else {
-        if (options.decodeJ2k === undefined) throw new Error(NO_DECODER_MESSAGE);
-        coded = scaleJpeg2000(section5, await options.decodeJ2k(payload.codestream), codedCount);
-      }
-      break;
-    }
-    default:
-      throw unsupportedTemplate(drt);
-  }
-
-  return assembleField(field, gridPoints, coded, codedMissing, missingValue);
+  const unpacked = unpackField(field, missingValue);
+  const coded =
+    unpacked.j2k === undefined
+      ? unpacked.coded
+      : scaleJpeg2000(
+          unpacked.j2k.scaling,
+          await requireDecoder(options.decodeJ2k)(unpacked.j2k.codestream),
+        );
+  return assembleField(field, unpacked.gridPoints, coded, unpacked.codedMissing, missingValue);
 }
 
 /** What sampleFieldValuesAsync returns: the decoded values at the
@@ -469,29 +507,16 @@ export async function sampleFieldValuesAsync(
       throw new Error(`sample index ${index} is outside the ${gridPoints}-point grid`);
     }
   }
-  const bitmapIndicator = field.section6 === undefined ? 255 : u8(field.section6, 5);
-  if (drt === 40 && bitmapIndicator === 255 && options.decodeJ2kSampled !== undefined) {
-    if (codedCount !== gridPoints) {
-      throw new Error(
-        `GRIB field has no bitmap but codes ${codedCount} of ${gridPoints} grid points`,
-      );
-    }
-    const section5 = field.section5;
-    const payload = jpeg2000Payload(section5, field.section7, codedCount);
+  if (drt === 40 && bitmapIndicatorOf(field) === 255 && options.decodeJ2kSampled !== undefined) {
+    requireFullCoverage(codedCount, gridPoints);
+    const payload = jpeg2000Payload(field.section5, field.section7, codedCount);
     let values: Float64Array;
     if (payload.constant !== undefined) {
       values = new Float64Array(indices.length).fill(payload.constant[0] ?? 0);
     } else {
-      const { referenceValue, binaryScaleFactor, decimalScaleFactor } = packingHeader(section5);
-      const scaling: J2kScaling = {
-        referenceValue,
-        binaryScale: codesPower(binaryScaleFactor, 2),
-        decimalScale: codesPower(-decimalScaleFactor, 10),
-        expectedCount: codedCount,
-      };
       values = await options.decodeJ2kSampled(
         payload.codestream,
-        scaling,
+        j2kScalingOf(field.section5, codedCount),
         indices instanceof Uint32Array ? indices : Uint32Array.from(indices),
       );
     }
@@ -519,13 +544,8 @@ function assembleField(
   codedMissing: Uint8Array | undefined,
   missingValue: number,
 ): DecodedField {
-  const bitmapIndicator = field.section6 === undefined ? 255 : u8(field.section6, 5);
-  if (bitmapIndicator === 255) {
-    if (coded.length !== gridPoints) {
-      throw new Error(
-        `GRIB field has no bitmap but codes ${coded.length} of ${gridPoints} grid points`,
-      );
-    }
+  if (bitmapIndicatorOf(field) === 255) {
+    requireFullCoverage(coded.length, gridPoints);
     let missingCount = 0;
     if (codedMissing !== undefined) {
       for (let i = 0; i < codedMissing.length; i++) missingCount += codedMissing[i]!;

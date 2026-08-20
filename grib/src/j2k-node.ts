@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 import { planDecode } from "@azohra/meteo.j2k";
 import type { CodeblockTask } from "@azohra/meteo.j2k";
-import type { DecodeJ2k, J2kSamples, J2kScaling } from "./decode.js";
-import { DEFAULT_J2K_CODEC, J2K_WORKER_TAG, createRawJ2kDecoder } from "./j2k-worker.js";
+import type { J2kSamples, J2kScaling } from "./decode.js";
+import { DEFAULT_J2K_CODEC, J2K_WORKER_TAG } from "./j2k-worker.js";
 import type {
   J2kCodec,
   J2kSampleSpec,
@@ -13,18 +13,13 @@ import type {
   J2kWorkerRequest,
   J2kWorkerRequestBody,
   J2kWorkerResponse,
-  RawJ2kDecoderOptions,
 } from "./j2k-worker.js";
 
 export type { J2kCodec, RawJ2kDecoderOptions } from "./j2k-worker.js";
 
-/**
- * Instantiates the selected codec and returns a synchronous DecodeJ2k
- * ready to pass to decodeFieldValues.
- */
-export async function createNodeJ2kDecoder(options: RawJ2kDecoderOptions = {}): Promise<DecodeJ2k> {
-  return createRawJ2kDecoder(options);
-}
+/** This subpath's name for createRawJ2kDecoder — the same DecodeJ2k, ready
+ * to pass to decodeFieldValues. */
+export { createRawJ2kDecoder as createNodeJ2kDecoder } from "./j2k-worker.js";
 
 export interface J2kDecoderPoolOptions {
   /** Worker count; default min(availableParallelism(), 8), at least 1. */

@@ -139,7 +139,7 @@ function bandRect(
   };
 }
 
-export function resolutionLadder(header: CodestreamHeader): ResolutionInfo[] {
+function resolutionLadder(header: CodestreamHeader): ResolutionInfo[] {
   const n = header.decompositionLevels;
   const resolutions: ResolutionInfo[] = [];
   for (let r = 0; r <= n; r++) {

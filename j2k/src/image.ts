@@ -16,6 +16,19 @@ export interface J2kDecodeResult {
   componentCount: 1;
 }
 
+/** The DC level shift and clamp bounds of a sample depth — shared so
+ * decodeRegionFromPlan's outputs stay bit-identical with decodeJ2k's. */
+export function sampleRange(
+  bitsPerSample: number,
+  isSigned: boolean,
+): { shift: number; min: number; max: number } {
+  return {
+    shift: isSigned ? 0 : 1 << (bitsPerSample - 1),
+    min: isSigned ? -(1 << (bitsPerSample - 1)) : 0,
+    max: (isSigned ? 1 << (bitsPerSample - 1) : 1 << bitsPerSample) - 1,
+  };
+}
+
 /**
  * Finishes an assembled tile in place: inverse wavelet over the level
  * ladder, then DC level shift and range clamp.
@@ -27,9 +40,7 @@ export function finishTile(
   isSigned: boolean,
 ): void {
   inverseDwt53(tile, resolutions);
-  const shift = isSigned ? 0 : 1 << (bitsPerSample - 1);
-  const min = isSigned ? -(1 << (bitsPerSample - 1)) : 0;
-  const max = (isSigned ? 1 << (bitsPerSample - 1) : 1 << bitsPerSample) - 1;
+  const { shift, min, max } = sampleRange(bitsPerSample, isSigned);
   for (let i = 0; i < tile.length; i++) {
     const v = tile[i]! + shift;
     tile[i] = v < min ? min : v > max ? max : v;

@@ -66,6 +66,38 @@ function u32(data: Uint8Array, offset: number): number {
   return u16(data, offset) * 0x10000 + u16(data, offset + 2);
 }
 
+function requireSocThenSiz(cs: Uint8Array): void {
+  if (cs.length < 4 || u16(cs, 0) !== SOC) {
+    throw new J2kFormatError("does not start with an SOC marker (not a raw codestream)");
+  }
+  if (u16(cs, 2) !== SIZ) {
+    throw new J2kFormatError("SIZ does not directly follow SOC");
+  }
+}
+
+/** The SIZ facts a caller can read without decoding. */
+export interface SizPrecision {
+  bitsPerSample: number;
+  isSigned: boolean;
+  componentCount: number;
+}
+
+/**
+ * Cheap header probe: reads sample precision, signedness, and component
+ * count from the SIZ marker segment with no subset checks and no decoding.
+ * Throws J2kFormatError unless the buffer opens SOC then SIZ, as every raw
+ * codestream does.
+ */
+export function probeSiz(cs: Uint8Array): SizPrecision {
+  requireSocThenSiz(cs);
+  const ssiz = u8(cs, 42);
+  return {
+    bitsPerSample: (ssiz & 0x7f) + 1,
+    isSigned: (ssiz & 0x80) !== 0,
+    componentCount: u16(cs, 40),
+  };
+}
+
 interface SizInfo {
   x0: number;
   y0: number;
@@ -263,12 +295,7 @@ function parseQcc(cs: Uint8Array, at: number, length: number, levels: number): Q
  * UnsupportedJ2kError or J2kFormatError.
  */
 export function parseCodestream(cs: Uint8Array): CodestreamHeader {
-  if (cs.length < 4 || u16(cs, 0) !== SOC) {
-    throw new J2kFormatError("does not start with an SOC marker (not a raw codestream)");
-  }
-  if (u16(cs, 2) !== SIZ) {
-    throw new J2kFormatError("SIZ does not directly follow SOC");
-  }
+  requireSocThenSiz(cs);
 
   let siz: SizInfo | undefined;
   let cod: CodInfo | undefined;

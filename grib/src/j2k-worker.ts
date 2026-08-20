@@ -7,6 +7,7 @@ import {
   finishTile,
   placeCodeblock,
   planDecode,
+  probeSiz,
 } from "@azohra/meteo.j2k";
 import type { CodeblockTask, ResolutionInfo } from "@azohra/meteo.j2k";
 import type { DecodeJ2k } from "./decode.js";
@@ -50,26 +51,6 @@ type CornerstoneFactory = (overrides?: {
   print?: (text: string) => void;
   printErr?: (text: string) => void;
 }) => Promise<{ J2KDecoder: new () => CornerstoneDecoder }>;
-
-function sizPrecision(codestream: Uint8Array): {
-  bitsPerSample: number;
-  isSigned: boolean;
-  componentCount: number;
-} {
-  if (codestream[0] !== 0xff || codestream[1] !== 0x4f) {
-    throw new Error("JPEG 2000 payload does not start with an SOC marker (not a raw codestream)");
-  }
-  if (codestream[2] !== 0xff || codestream[3] !== 0x51) {
-    throw new Error("JPEG 2000 codestream does not carry SIZ directly after SOC");
-  }
-  const componentCount = codestream[40]! * 0x100 + codestream[41]!;
-  const ssiz = codestream[42]!;
-  return {
-    bitsPerSample: (ssiz & 0x7f) + 1,
-    isSigned: (ssiz & 0x80) !== 0,
-    componentCount,
-  };
-}
 
 function decodeWithCornerstone(
   decoder: CornerstoneDecoder,
@@ -131,18 +112,7 @@ export async function createRawJ2kDecoder(options: RawJ2kDecoderOptions = {}): P
   const cornerstoneDecoder = new cornerstone.J2KDecoder();
 
   return (codestream) => {
-    const { bitsPerSample, componentCount } = sizPrecision(codestream);
-    if (componentCount !== 1) {
-      throw new Error(
-        `JPEG 2000 codestream has ${componentCount} components; GRIB 5.40 carries exactly 1`,
-      );
-    }
-    if (bitsPerSample > 31) {
-      throw new Error(
-        `JPEG 2000 codestream has ${bitsPerSample} bits per sample; the int32 carrier holds at most 31`,
-      );
-    }
-    if (bitsPerSample <= 16) {
+    if (probeSiz(codestream).bitsPerSample <= 16) {
       return decodeWithCornerstone(cornerstoneDecoder, codestream);
     }
     // The WASM codec clamps its output to uint16, so deeper samples always
@@ -284,7 +254,7 @@ export function decodeSampled(
   codec: J2kCodec,
   decode: DecodeJ2k,
 ): Float64Array {
-  if (codec === "wasm" && sizPrecision(codestream).bitsPerSample <= 16) {
+  if (codec === "wasm" && probeSiz(codestream).bitsPerSample <= 16) {
     return scaleAndGather(decode(codestream), spec);
   }
   return decodeSampledRegion(codestream, spec);

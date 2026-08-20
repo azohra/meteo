@@ -1,5 +1,13 @@
 import type { Grid, LambertGrid, LatLonGrid, RotatedLatLonGrid } from "./grid.js";
-import { fromRotated, greatCircleDistanceKm, toRadians, toDegrees, toRotated } from "./sphere.js";
+import {
+  fromRotated,
+  greatCircleDistanceKm,
+  toRadians,
+  toDegrees,
+  toRotated,
+  wrapSigned,
+} from "./sphere.js";
+import { lambertConeConstant } from "./wind.js";
 
 export interface NearestGridpoint {
   /** Index into the full decoded values array (storage order). */
@@ -108,24 +116,17 @@ function lambertGeometry(grid: LambertGrid, latitude: number, longitude: number)
   }
   const radius = grid.earthRadiusM;
   const phi1 = toRadians(grid.latin1);
-  const phi2 = toRadians(grid.latin2);
   const lambda0 = toRadians(grid.loV);
   /* Spherical Lambert conformal conic, north-pole aspect (Snyder 1987,
-   * eqs. 15-1..15-5). With coincident standard parallels the n ratio is
-   * 0/0; the tangent-cone value is sin(phi1). */
-  const n =
-    grid.latin1 === grid.latin2
-      ? Math.sin(phi1)
-      : Math.log(Math.cos(phi1) / Math.cos(phi2)) /
-        Math.log(Math.tan(Math.PI / 4 + phi2 / 2) / Math.tan(Math.PI / 4 + phi1 / 2));
+   * eqs. 15-1..15-5). */
+  const n = lambertConeConstant(grid.latin1, grid.latin2);
   const f = (Math.cos(phi1) * Math.tan(Math.PI / 4 + phi1 / 2) ** n) / n;
   const rho = (lat: number) => (radius * f) / Math.tan(Math.PI / 4 + toRadians(lat) / 2) ** n;
   const rho0 = rho(grid.laD);
 
   const forward = (lat: number, lon: number): { x: number; y: number } => {
-    let dLambda = toRadians(lon) - lambda0;
     // wrapped to [-PI, PI) so a query across the antimeridian stays local
-    dLambda = ((((dLambda + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
+    const dLambda = wrapSigned(toRadians(lon) - lambda0, Math.PI);
     const theta = n * dLambda;
     const r = rho(lat);
     return { x: r * Math.sin(theta), y: rho0 - r * Math.cos(theta) };

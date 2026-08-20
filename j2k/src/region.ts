@@ -32,6 +32,7 @@
  * once.
  */
 import { lift } from "./dwt.js";
+import { sampleRange } from "./image.js";
 import type { CodeblockTask, ResolutionInfo } from "./packets.js";
 import type { DecodePlan } from "./parallel.js";
 import { decodeCodeblockTask, planDecode } from "./parallel.js";
@@ -579,9 +580,7 @@ export function decodeRegionFromPlan(
   reconstruct(regionPlan, resolutions);
 
   const finest = resolutions.length - 1;
-  const shift = header.isSigned ? 0 : 1 << (header.bitsPerSample - 1);
-  const min = header.isSigned ? -(1 << (header.bitsPerSample - 1)) : 0;
-  const max = (header.isSigned ? 1 << (header.bitsPerSample - 1) : 1 << header.bitsPerSample) - 1;
+  const { shift, min, max } = sampleRange(header.bitsPerSample, header.isSigned);
   const values = new Int32Array(indices.length);
   for (let i = 0; i < indices.length; i++) {
     let raw: number;

@@ -1,8 +1,8 @@
 export { decodeJ2k, finishTile } from "./image.js";
 export type { J2kDecodeResult } from "./image.js";
 
-export { parseCodestream } from "./codestream.js";
-export type { CodestreamHeader } from "./codestream.js";
+export { parseCodestream, probeSiz } from "./codestream.js";
+export type { CodestreamHeader, SizPrecision } from "./codestream.js";
 
 export { planDecode, decodeCodeblockTask, placeCodeblock } from "./parallel.js";
 export type { DecodePlan } from "./parallel.js";

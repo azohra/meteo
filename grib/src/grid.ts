@@ -1,4 +1,4 @@
-import { float32be, i8sm, i32sm, u8, u16, u32 } from "./bytes.js";
+import { allOnes, float32be, i8sm, i32sm, u8, u16, u32 } from "./bytes.js";
 
 /** Scanning-mode and storage facts shared by all supported templates. */
 export interface GridBase {
@@ -113,7 +113,7 @@ function scanningFlags(scanningMode: number) {
 function requireDefaultAngleUnit(section3: Uint8Array): void {
   const basicAngle = u32(section3, 38);
   const subdivisions = u32(section3, 42);
-  const missing = 0xffffffff;
+  const missing = allOnes(32);
   const defaulted = (value: number) => value === 0 || value === missing;
   if (!defaulted(basicAngle) || !defaulted(subdivisions)) {
     throw new Error(
@@ -124,7 +124,7 @@ function requireDefaultAngleUnit(section3: Uint8Array): void {
 }
 
 function requireIncrement(value: number, name: string): number {
-  if (value === 0xffffffff || value === 0) {
+  if (value === allOnes(32) || value === 0) {
     throw new Error(`GRIB grid carries no ${name}; O(1) lookup needs explicit increments`);
   }
   return value;

@@ -8,6 +8,13 @@ export function toDegrees(radians: number): number {
   return (radians * 180) / Math.PI;
 }
 
+/** Wraps an angle to its signed principal range [-halfPeriod, halfPeriod),
+ * whatever the unit: pass 180 for degrees, Math.PI for radians. */
+export function wrapSigned(value: number, halfPeriod: number): number {
+  const period = 2 * halfPeriod;
+  return ((((value + halfPeriod) % period) + period) % period) - halfPeriod;
+}
+
 export function unitVector(latRad: number, lonRad: number): Vec3 {
   return [
     Math.cos(latRad) * Math.cos(lonRad),

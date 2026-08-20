@@ -1,4 +1,11 @@
-import { eastNorth, rotateToEarth, rotateToGrid, toRadians, unitVector } from "./sphere.js";
+import {
+  eastNorth,
+  rotateToEarth,
+  rotateToGrid,
+  toRadians,
+  unitVector,
+  wrapSigned,
+} from "./sphere.js";
 import type { Vec3 } from "./sphere.js";
 
 /**
@@ -60,8 +67,7 @@ export function lambertGridRotationDeg(
   orientationDeg: number,
   cone: number,
 ): number {
-  const delta = ((((longitude - orientationDeg + 180) % 360) + 360) % 360) - 180;
-  return cone * delta;
+  return cone * wrapSigned(longitude - orientationDeg, 180);
 }
 
 /** True east/north wind from grid-relative components on a Lambert grid. */
