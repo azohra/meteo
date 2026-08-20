@@ -74,8 +74,14 @@ export const BUILDERS: ReadonlyMap<string, RegisteredBuilder> = new Map<string, 
       return nam.buildNam(nam.PRODUCTS["nam-conus-nest"]!, forwardedOptions(options));
     },
   ],
-  ["reps", async (options) => (await import("./reps.js")).buildReps(forwardedOptions(options))],
-  ["geps", async (options) => (await import("./geps.js")).buildGeps(forwardedOptions(options))],
+  [
+    "reps",
+    async (options) => (await import("./eccc-ensemble.js")).buildReps(forwardedOptions(options)),
+  ],
+  [
+    "geps",
+    async (options) => (await import("./eccc-ensemble.js")).buildGeps(forwardedOptions(options)),
+  ],
   [
     "raqdps",
     async (options) => (await import("./raqdps.js")).buildRaqdps(forwardedOptions(options)),

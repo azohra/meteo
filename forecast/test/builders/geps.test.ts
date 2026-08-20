@@ -4,28 +4,19 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { DecodeJ2k, J2kSamples } from "@azohra/meteo.grib";
 import {
-  CAPE_SENTINEL,
   FETCH_CONCURRENCY,
-  FORECAST_HOURS,
-  LAST_FORECAST_HOUR,
+  GEPS,
   MEMBER_COUNT,
   PERTURBATION_NUMBERS,
   PRESSURE_LEVELS,
-  RUN_HOURS,
   SEMANTICS,
-  SLUG,
-  SURFACE_SCALARS,
-  TERRAIN_DAM_TO_M,
-  WIND_LEVEL_TOKENS,
   aggregateHours,
   buildDocuments,
   buildGeps,
-  fileUrl,
-  previousScheduledHour,
   requirePlausibleModelElevation,
   sampleScalarMembers,
   sampleWindMembers,
-} from "../../src/builders/geps.js";
+} from "../../src/builders/eccc-ensemble.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { circularMedian, percentile, type MemberProfile } from "../../src/ensemble.js";
 import { dewPointDepression } from "../../src/moisture.js";
@@ -282,7 +273,7 @@ it("the circular median crosses the wrap", () => {
 
 it("Datamart URLs follow the old CMC naming scheme", () => {
   // GEPS raw never migrated to the new MSC filename scheme.
-  expect(fileUrl("CAPE_SFC_0", "20260808", "00", 24)).toBe(
+  expect(GEPS.fileUrl("CAPE_SFC_0", "20260808", "00", 24)).toBe(
     "https://dd.weather.gc.ca/20260808/WXO-DD/ensemble/geps/grib2/raw/00/024/" +
       "CMC_geps-raw_CAPE_SFC_0_latlon0p5x0p5_2026080800_P024_allmbrs.grib2",
   );
@@ -290,36 +281,36 @@ it("Datamart URLs follow the old CMC naming scheme", () => {
 
 it("Datamart URLs honour the base override", () => {
   process.env["METEO_DATAMART_BASE"] = "https://hpfx.collab.science.gc.ca";
-  expect(fileUrl("CAPE_SFC_0", "20260808", "00", 24)).toMatch(
+  expect(GEPS.fileUrl("CAPE_SFC_0", "20260808", "00", 24)).toMatch(
     /^https:\/\/hpfx\.collab\.science\.gc\.ca\/20260808\/WXO-DD\/ensemble\/geps\//,
   );
 });
 
 it("every published level has a wind file token", () => {
-  expect(WIND_LEVEL_TOKENS["ISBL_1000"]).toBe(1000);
-  expect(WIND_LEVEL_TOKENS["TGL_10m"]).toBeNull();
+  expect(GEPS.windLevelTokens["ISBL_1000"]).toBe(1000);
+  expect(GEPS.windLevelTokens["TGL_10m"]).toBeNull();
   expect(
-    Object.keys(WIND_LEVEL_TOKENS)
+    Object.keys(GEPS.windLevelTokens)
       .filter((token) => token !== "TGL_10m")
       .sort(),
   ).toEqual(PRESSURE_LEVELS.map((level) => `ISBL_${String(level).padStart(4, "0")}`).sort());
 });
 
 it("the schedule is three-hourly to 192 then six-hourly to 384", () => {
-  expect(FORECAST_HOURS[0]).toBe(3); // hour 000 has no fluxes or precipitation
-  expect(FORECAST_HOURS).not.toContain(0);
-  expect(FORECAST_HOURS).toContain(192);
-  expect(FORECAST_HOURS).not.toContain(195); // the 3-hourly cadence ends at 192
-  expect(FORECAST_HOURS).toContain(198);
-  expect(FORECAST_HOURS[FORECAST_HOURS.length - 1]).toBe(384);
-  expect(FORECAST_HOURS).toHaveLength(96);
+  expect(GEPS.forecastHours[0]).toBe(3); // hour 000 has no fluxes or precipitation
+  expect(GEPS.forecastHours).not.toContain(0);
+  expect(GEPS.forecastHours).toContain(192);
+  expect(GEPS.forecastHours).not.toContain(195); // the 3-hourly cadence ends at 192
+  expect(GEPS.forecastHours).toContain(198);
+  expect(GEPS.forecastHours[GEPS.forecastHours.length - 1]).toBe(384);
+  expect(GEPS.forecastHours).toHaveLength(96);
 });
 
 it("the accumulation window start follows the cadence change", () => {
-  expect(previousScheduledHour(24)).toBe(21);
-  expect(previousScheduledHour(192)).toBe(189);
-  expect(previousScheduledHour(198)).toBe(192); // 6-hourly window across the seam
-  expect(previousScheduledHour(384)).toBe(378);
+  expect(GEPS.previousScheduledHour(24)).toBe(21);
+  expect(GEPS.previousScheduledHour(192)).toBe(189);
+  expect(GEPS.previousScheduledHour(198)).toBe(192); // 6-hourly window across the seam
+  expect(GEPS.previousScheduledHour(384)).toBe(378);
 });
 
 it("the fetch pool cap holds its documented value", () => {
@@ -331,20 +322,21 @@ it("the fetch pool cap holds its documented value", () => {
 // no sentinel at all.
 
 it("the CAPE sentinel is minus one, masked to absence", () => {
-  expect(maskSentinel(-1.0, CAPE_SENTINEL)).toBeNull();
+  expect(maskSentinel(-1.0, GEPS.capeSentinel!)).toBeNull();
   // GRIB packing can smear the sentinel; the shared tolerance covers it.
-  expect(maskSentinel(-0.7, CAPE_SENTINEL)).toBeNull();
+  expect(maskSentinel(-0.7, GEPS.capeSentinel!)).toBeNull();
 });
 
 it("legitimate CAPE values survive the mask", () => {
-  expect(maskSentinel(0.0, CAPE_SENTINEL)).toBe(0.0); // zero CAPE is a measurement
-  expect(maskSentinel(9399.0, CAPE_SENTINEL)).toBe(9399.0); // observed member value
-  expect(maskSentinel(9999.0, CAPE_SENTINEL)).toBe(9999.0); // not a GEPS sentinel
+  expect(maskSentinel(0.0, GEPS.capeSentinel!)).toBe(0.0); // zero CAPE is a measurement
+  expect(maskSentinel(9399.0, GEPS.capeSentinel!)).toBe(9399.0); // observed member value
+  expect(maskSentinel(9999.0, GEPS.capeSentinel!)).toBe(9999.0); // not a GEPS sentinel
 });
 
 describe("all-members sampling", () => {
   it("scalar members are keyed by GRIB perturbationNumber", async () => {
     const members = await sampleScalarMembers(
+      GEPS,
       ensembleFile((member) => 100.0 + member),
       [SITE],
       "test field",
@@ -365,25 +357,32 @@ describe("all-members sampling", () => {
       members: PERTURBATION_NUMBERS.filter((member) => member !== 7),
     });
 
-    await expect(sampleScalarMembers(short, [SITE], "test field", noJ2k)).rejects.toThrow(
+    await expect(sampleScalarMembers(GEPS, short, [SITE], "test field", noJ2k)).rejects.toThrow(
       /expected 0–20/,
     );
   });
 
   it("a scalar file off the regular grid fails loudly", async () => {
     await expect(
-      sampleScalarMembers(ensembleMessage(0, 1.0, { regular: false }), [SITE], "test field", noJ2k),
+      sampleScalarMembers(
+        GEPS,
+        ensembleMessage(0, 1.0, { regular: false }),
+        [SITE],
+        "test field",
+        noJ2k,
+      ),
     ).rejects.toThrow(/regular 0.5° grid/);
   });
 
   it("wind members sample without any rotation", async () => {
     const members = await sampleWindMembers(
+      GEPS,
       ensembleFile((member) => 2.0 + member),
       [SITE],
       noJ2k,
     );
 
-    expect(members[3]!["dundee"]).toBeCloseTo(5.0, 3);
+    expect(members[3]!.values["dundee"]).toBeCloseTo(5.0, 3);
   });
 
   it("grid-relative wind components fail loudly", async () => {
@@ -391,6 +390,7 @@ describe("all-members sampling", () => {
     // that starts rotating must not silently skew every bearing.
     await expect(
       sampleWindMembers(
+        GEPS,
         ensembleFile(() => 1.0, { uvRelative: 1 }),
         [SITE],
         noJ2k,
@@ -429,6 +429,7 @@ describe("all-members sampling", () => {
     };
 
     const members = await sampleScalarMembers(
+      GEPS,
       ensembleFile(() => 0.0, { jpeg2000: true }),
       [SITE, erie], // two sites, still one decode per message
       "test field",
@@ -526,7 +527,7 @@ interface AggregatedHour {
 }
 
 function aggregateOne(...hours: Array<Record<string, unknown>>): AggregatedHour {
-  const aggregated = aggregateHours(profiles(...hours));
+  const aggregated = aggregateHours(GEPS, profiles(...hours));
   expect(aggregated).toHaveLength(1);
   return aggregated[0] as unknown as AggregatedHour;
 }
@@ -541,8 +542,8 @@ describe("aggregation", () => {
     expect((hour.surface["capeJkg"] as Block).members).toBe(1);
     expect((hour.surface["capeJkg"] as Block).p50).toBe(800.0);
     expect((hour.surface["cinJkg"] as Block).members).toBe(2); // CIN has no sentinel
-    expect(SURFACE_SCALARS).toContain("capeJkg");
-    expect(SURFACE_SCALARS).toContain("cinJkg");
+    expect(GEPS.surfaceScalars).toContain("capeJkg");
+    expect(GEPS.surfaceScalars).toContain("cinJkg");
   });
 
   it("an hour no member computed publishes null CAPE percentiles", () => {
@@ -595,6 +596,7 @@ describe("aggregation", () => {
 it("a small document serializes deterministically", async () => {
   const { compactJson, roundDocument } = await import("../../src/publish.js");
   const hours = aggregateHours(
+    GEPS,
     profiles(
       memberHour({ levels: [memberLevel(500, 5720.0)] }),
       memberHour({
@@ -757,15 +759,15 @@ function e2eFiles(
   terrain: (m: number) => number = E2E_SURFACE["HGT_SFC_0"]!,
 ): Map<string, Uint8Array> {
   const files = new Map<string, Uint8Array>();
-  files.set(fileUrl("HGT_SFC_0", "20260807", "00", 0), ensembleFile(terrain));
+  files.set(GEPS.fileUrl("HGT_SFC_0", "20260807", "00", 0), ensembleFile(terrain));
   // The model's own PT000 surface pressure, the barometric cross-check on
   // the terrain: 853 hPa implies ~1452 m.
   files.set(
-    fileUrl("PRES_SFC_0", "20260807", "00", 0),
+    GEPS.fileUrl("PRES_SFC_0", "20260807", "00", 0),
     ensembleFile(() => 85300.0),
   );
   for (const name of e2eHourFields()) {
-    files.set(fileUrl(name, "20260807", "00", 3), e2eFile(name, 3));
+    files.set(GEPS.fileUrl(name, "20260807", "00", 3), e2eFile(name, 3));
   }
   return files;
 }
@@ -786,6 +788,7 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   const fetched: string[] = [];
 
   const result = await buildDocuments(
+    GEPS,
     "2026-08-07T00:00:00Z",
     [{ forecastHour: 3, validAt: "2026-08-07T03:00:00Z" }],
     [SITE],
@@ -798,7 +801,10 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   // pressure that cross-checks it.
   expect([...fetched].sort()).toEqual([...files.keys()].sort());
   expect(fetched.filter((url) => url.includes("_P000_")).sort()).toEqual(
-    [fileUrl("HGT_SFC_0", "20260807", "00", 0), fileUrl("PRES_SFC_0", "20260807", "00", 0)].sort(),
+    [
+      GEPS.fileUrl("HGT_SFC_0", "20260807", "00", 0),
+      GEPS.fileUrl("PRES_SFC_0", "20260807", "00", 0),
+    ].sort(),
   );
 
   expect(result.documents).toHaveLength(1);
@@ -879,13 +885,19 @@ it("a six-hourly tail step differences accumulations across its own window", asy
     APCP_SFC_0: () => 5.0,
   };
   const files = new Map<string, Uint8Array>();
-  files.set(fileUrl("HGT_SFC_0", "20260807", "00", 0), ensembleFile(E2E_SURFACE["HGT_SFC_0"]!));
   files.set(
-    fileUrl("PRES_SFC_0", "20260807", "00", 0),
+    GEPS.fileUrl("HGT_SFC_0", "20260807", "00", 0),
+    ensembleFile(E2E_SURFACE["HGT_SFC_0"]!),
+  );
+  files.set(
+    GEPS.fileUrl("PRES_SFC_0", "20260807", "00", 0),
     ensembleFile(() => 85300.0),
   );
   for (const [name, accumulated] of Object.entries(baseline)) {
-    files.set(fileUrl(name, "20260807", "00", 192), ensembleFile(accumulated, { accumHours: 192 }));
+    files.set(
+      GEPS.fileUrl(name, "20260807", "00", 192),
+      ensembleFile(accumulated, { accumHours: 192 }),
+    );
   }
   for (const name of e2eHourFields()) {
     const inBaseline = baseline[name];
@@ -900,11 +912,12 @@ it("a six-hourly tail step differences accumulations across its own window", asy
             { accumHours: 198 },
           )
         : e2eFile(name, 198);
-    files.set(fileUrl(name, "20260807", "00", 198), content);
+    files.set(GEPS.fileUrl(name, "20260807", "00", 198), content);
   }
   const fetched: string[] = [];
 
   const result = await buildDocuments(
+    GEPS,
     "2026-08-07T00:00:00Z",
     [{ forecastHour: 198, validAt: "2026-08-15T06:00:00Z" }],
     [SITE],
@@ -931,12 +944,13 @@ it("a six-hourly tail step differences accumulations across its own window", asy
 const DUNDEE_PRESSURE = { 0: { dundee: 84586.0 } };
 
 it("surface orography decametres publish as metres", async () => {
-  expect(TERRAIN_DAM_TO_M).toBe(10.0);
+  expect(GEPS.terrainToM).toBe(10.0);
   // 153.6 is a live control-member decametre reading at Dundee; the
   // pre-fix builder published it verbatim as 153.6 m.
   const files = e2eFiles(() => 153.6);
 
   const result = await buildDocuments(
+    GEPS,
     "2026-08-07T00:00:00Z",
     [{ forecastHour: 3, validAt: "2026-08-07T03:00:00Z" }],
     [SITE],
@@ -1012,13 +1026,13 @@ const catalogue = JSON.parse(readFileSync(packagedModelsPath(), "utf-8")) as {
 };
 
 it("models.json matches the builder configuration", () => {
-  const entry = catalogue.models.find((model) => model.slug === SLUG)!;
+  const entry = catalogue.models.find((model) => model.slug === GEPS.slug)!;
   expect(entry.kind).toBe("ensemble");
-  expect(entry.stepHours).toBe(FORECAST_HOURS[0]);
-  expect(entry.horizonHours).toBe(LAST_FORECAST_HOUR);
-  expect(entry.runIntervalHours).toBe(24 / RUN_HOURS.length);
+  expect(entry.stepHours).toBe(GEPS.forecastHours[0]);
+  expect(entry.horizonHours).toBe(GEPS.lastForecastHour);
+  expect(entry.runIntervalHours).toBe(24 / GEPS.runHours.length);
   const capabilities = entry.capabilities;
-  const published = SURFACE_SCALARS as readonly string[];
+  const published = GEPS.surfaceScalars as readonly string[];
   expect(capabilities["levels"]).toBe(true);
   expect(capabilities["pressureLevels"]).toEqual([...PRESSURE_LEVELS]);
   // The aggregate publishes CAPE and CIN exactly when the catalogue says so.
@@ -1043,7 +1057,7 @@ it("skips a pinned run the dataset already publishes", async () => {
   try {
     const sitesPath = join(scratch, "sites.json");
     writeFileSync(sitesPath, JSON.stringify({ schemaVersion: 2, sites: [SITE] }));
-    const manifest = { model: SLUG, referenceTime: "2026-08-07T00:00:00Z" };
+    const manifest = { model: GEPS.slug, referenceTime: "2026-08-07T00:00:00Z" };
     const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
     const lines: string[] = [];
 

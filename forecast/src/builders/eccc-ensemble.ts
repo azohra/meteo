@@ -1,5 +1,6 @@
 import {
   ECCODES_MISSING_VALUE,
+  earthWind,
   nearestGridpoint,
   parseFields,
   parseGrid,
@@ -14,7 +15,7 @@ import {
   SITE_FORECAST_SCHEMA_VERSION,
   type ForecastSemantics,
 } from "@azohra/meteo.briefing/contract";
-import { datamartBase, fetchBytes } from "../providers/datamart.js";
+import { TASK_CONCURRENCY, datamartBase, fetchBytes, lazyJ2kPool } from "../providers/datamart.js";
 import type { DatasetOptions } from "../dataset.js";
 import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { aggregateMemberProfiles, type MemberProfile } from "../ensemble.js";
@@ -24,6 +25,7 @@ import { maskSentinel } from "../sentinel.js";
 import type { Site } from "../sites.js";
 import {
   DownloadCounters,
+  concurrencyLimit,
   exists,
   keepAliveFetch,
   type TransportFetch,
@@ -33,14 +35,11 @@ import {
   memberRequiredValue,
   profileInstant,
   runConcurrent,
+  runReferenceTime,
   validTime,
   withDewPointDepression,
 } from "./common.js";
-import { TASK_CONCURRENCY, lazyJ2kPool } from "../providers/datamart.js";
-import { concurrencyLimit } from "../providers/transport.js";
 import { publishRun } from "./publication.js";
-
-export const SLUG = "geps";
 
 export const SEMANTICS: ForecastSemantics = { precipitation: "windowMeanRate" };
 
@@ -49,68 +48,15 @@ export const PERTURBATION_NUMBERS: readonly number[] = Array.from(
   { length: MEMBER_COUNT },
   (_unused, member) => member,
 );
-export const RUN_HOURS = ["12", "00"] as const;
-export const LAST_FORECAST_HOUR = 384;
-export const FORECAST_HOURS: readonly number[] = [
-  ...Array.from({ length: 64 }, (_unused, index) => 3 * (index + 1)),
-  ...Array.from({ length: 32 }, (_unused, index) => 198 + 6 * index),
-];
 
 export const FETCH_CONCURRENCY = 5;
 
-export const CAPE_SENTINEL = -1.0;
-
-export const SURFACE_FIELDS: Record<
-  string,
-  [variableLevel: string, convert: (v: number) => number]
-> = {
-  cloudCoverPercent: ["TCDC_SFC_0", (v) => v],
-  seaLevelPressureHpa: ["PRMSL_MSL_0", (v) => v / 100.0],
-  relativeHumidityPercent: ["RH_TGL_2m", (v) => v],
-  temperatureC: ["TMP_TGL_2m", (v) => v - KELVIN],
-};
-export const CAPE_VARIABLE = "CAPE_SFC_0";
-export const CIN_VARIABLE = "CIN_SFC_0";
-export const FLUX_ACCUMULATION_VARIABLES: Record<string, string> = {
-  sensibleHeatFluxWm2: "SHTFL_SFC_0",
-  latentHeatFluxWm2: "LHTFL_SFC_0",
-};
-export const PRECIP_ACCUMULATION_VARIABLE = "APCP_SFC_0";
-export const TERRAIN_VARIABLE = "HGT_SFC_0";
-export const TERRAIN_DAM_TO_M = 10.0;
-export const SURFACE_PRESSURE_VARIABLE = "PRES_SFC_0";
-export const TERRAIN_CEILING_M = 9000.0;
-export const STANDARD_SEA_LEVEL_PA = 101325.0;
-export const BAROMETRIC_SCALE_HEIGHT_M = 8434.0;
-export const TERRAIN_PRESSURE_TOLERANCE_M = 1000.0;
 export const PRESSURE_FIELDS: Record<string, [variable: string, convert: (v: number) => number]> = {
   heightM: ["HGT", (v) => v],
   relativeHumidityPercent: ["RH", (v) => v],
   temperatureC: ["TMP", (v) => v - KELVIN],
 };
 export const PRESSURE_LEVELS = [1000, 925, 850, 700, 500] as const;
-
-// Level token → pressureHpa; null marks the 10 m surface wind.
-export const WIND_LEVEL_TOKENS: Record<string, number | null> = {
-  TGL_10m: null,
-  ...Object.fromEntries(
-    PRESSURE_LEVELS.map((level) => [`ISBL_${String(level).padStart(4, "0")}`, level]),
-  ),
-};
-
-export const SURFACE_SCALARS = [
-  "seaLevelPressureHpa",
-  "temperatureC",
-  "dewPointC",
-  "windSpeedMps",
-  "windDirectionDeg",
-  "cloudCoverPercent",
-  "precipitationMmHr",
-  "sensibleHeatFluxWm2",
-  "latentHeatFluxWm2",
-  "capeJkg",
-  "cinJkg",
-] as const;
 
 const LEVEL_FIELDS = [
   "pressureHpa",
@@ -121,47 +67,14 @@ const LEVEL_FIELDS = [
   "windSpeedMps",
 ] as const;
 
-export function previousScheduledHour(forecastHour: number): number {
-  return forecastHour <= 192 ? forecastHour - 3 : forecastHour - 6;
-}
-
-export function fileUrl(
-  variableLevel: string,
-  date: string,
-  runHour: string,
-  forecastHour: number,
-): string {
-  const name =
-    `CMC_geps-raw_${variableLevel}_latlon0p5x0p5_` +
-    `${date}${runHour}_P${String(forecastHour).padStart(3, "0")}_allmbrs.grib2`;
-  return (
-    `${datamartBase()}/${date}/WXO-DD/ensemble/geps/grib2/raw/` +
-    `${runHour}/${String(forecastHour).padStart(3, "0")}/${name}`
-  );
-}
-
-export async function latestCompleteRun(
-  fetchImpl: TransportFetch = keepAliveFetch,
-  now: () => Date = () => new Date(),
-): Promise<string | null> {
-  const current = now();
-  for (const dayOffset of [0, 1]) {
-    const day = new Date(current.getTime() - dayOffset * 86_400_000);
-    const date = day.toISOString().slice(0, 10).replaceAll("-", "");
-    for (const hour of RUN_HOURS) {
-      if (dayOffset === 0 && Number.parseInt(hour, 10) > current.getUTCHours()) {
-        continue;
-      }
-      if (await exists(fileUrl("UGRD_TGL_10m", date, hour, LAST_FORECAST_HOUR), fetchImpl)) {
-        return `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T${hour}:00:00Z`;
-      }
-    }
-  }
-  return null;
-}
-
 /** Keyed by GRIB perturbationNumber (0 is the control member), then site slug. */
 export type MemberValues = Record<number, Record<string, number>>;
+
+export interface WindMemberSamples {
+  values: Record<string, number>;
+  southPoleLatitude?: number;
+  southPoleLongitude?: number;
+}
 
 export interface EnsembleSite {
   slug: string;
@@ -171,7 +84,242 @@ export interface EnsembleSite {
   timeZone?: string;
 }
 
+/** One ECCC all-members ensemble feed; the engine below is shared. */
+export interface EnsembleModel {
+  slug: string;
+  label: string;
+  runHours: readonly string[];
+  forecastHours: readonly number[];
+  lastForecastHour: number;
+  /** The variable whose final-hour file marks a run complete. */
+  probeVariable: string;
+  gridKind: "latlon" | "rotated";
+  /** Names the expected grid in wrong-grid errors. */
+  gridDescription: string;
+  /**
+   * "earthRelative" components sample straight through (a grid-relative
+   * flag fails loudly); "gridRelative" components rotate to earth via the
+   * grid's south pole.
+   */
+  windComponents: "earthRelative" | "gridRelative";
+  fileUrl(variableLevel: string, date: string, runHour: string, forecastHour: number): string;
+  surfaceFields: Record<string, [variableLevel: string, convert: (v: number) => number]>;
+  surfaceScalars: readonly string[];
+  /** See the GEPS descriptor: only a sentinel-masked scalar may be absent. */
+  optionalSurfaceScalars: readonly string[];
+  isobaricVariable(variable: string, pressureHpa: number): string;
+  /** Level token → pressureHpa; null marks the 10 m surface wind. */
+  windLevelTokens: Record<string, number | null>;
+  capeVariable?: string;
+  capeSentinel?: number;
+  cinVariable?: string;
+  /** Accumulated (run-total) heat fluxes, differenced per window. */
+  fluxAccumulationVariables?: Record<string, string>;
+  precipAccumulationVariable: string;
+  previousScheduledHour(forecastHour: number): number;
+  terrainVariable: string;
+  /** Factor from the feed's terrain unit to metres. */
+  terrainToM: number;
+  /** Extra terrain validation, given the scaled terrain and the fetcher. */
+  verifyTerrain?(
+    terrain: MemberValues,
+    fetchMembers: FetchMembers,
+    sites: readonly EnsembleSite[],
+  ): Promise<void>;
+}
+
+type FetchMembers = (
+  variableLevel: string,
+  forecastHour: number,
+  field: string,
+) => Promise<MemberValues>;
+
+export const GEPS: EnsembleModel = {
+  slug: "geps",
+  label: "GEPS",
+  runHours: ["12", "00"],
+  lastForecastHour: 384,
+  forecastHours: [
+    ...Array.from({ length: 64 }, (_unused, index) => 3 * (index + 1)),
+    ...Array.from({ length: 32 }, (_unused, index) => 198 + 6 * index),
+  ],
+  probeVariable: "UGRD_TGL_10m",
+  gridKind: "latlon",
+  gridDescription: "the regular 0.5° grid",
+  windComponents: "earthRelative",
+  fileUrl(variableLevel, date, runHour, forecastHour) {
+    const name =
+      `CMC_geps-raw_${variableLevel}_latlon0p5x0p5_` +
+      `${date}${runHour}_P${String(forecastHour).padStart(3, "0")}_allmbrs.grib2`;
+    return (
+      `${datamartBase()}/${date}/WXO-DD/ensemble/geps/grib2/raw/` +
+      `${runHour}/${String(forecastHour).padStart(3, "0")}/${name}`
+    );
+  },
+  surfaceFields: {
+    cloudCoverPercent: ["TCDC_SFC_0", (v) => v],
+    seaLevelPressureHpa: ["PRMSL_MSL_0", (v) => v / 100.0],
+    relativeHumidityPercent: ["RH_TGL_2m", (v) => v],
+    temperatureC: ["TMP_TGL_2m", (v) => v - KELVIN],
+  },
+  surfaceScalars: [
+    "seaLevelPressureHpa",
+    "temperatureC",
+    "dewPointC",
+    "windSpeedMps",
+    "windDirectionDeg",
+    "cloudCoverPercent",
+    "precipitationMmHr",
+    "sensibleHeatFluxWm2",
+    "latentHeatFluxWm2",
+    "capeJkg",
+    "cinJkg",
+  ],
+  // Only CAPE can be absent from a member surface: the -1.0 sentinel
+  // masks to a dropped key. Every other scalar is seeded per hour and a
+  // missing one is a builder bug the aggregator must refuse.
+  optionalSurfaceScalars: ["capeJkg"],
+  isobaricVariable: (variable, pressureHpa) =>
+    `${variable}_ISBL_${String(pressureHpa).padStart(4, "0")}`,
+  windLevelTokens: {
+    TGL_10m: null,
+    ...Object.fromEntries(
+      PRESSURE_LEVELS.map((level) => [`ISBL_${String(level).padStart(4, "0")}`, level]),
+    ),
+  },
+  capeVariable: "CAPE_SFC_0",
+  capeSentinel: -1.0,
+  cinVariable: "CIN_SFC_0",
+  fluxAccumulationVariables: {
+    sensibleHeatFluxWm2: "SHTFL_SFC_0",
+    latentHeatFluxWm2: "LHTFL_SFC_0",
+  },
+  precipAccumulationVariable: "APCP_SFC_0",
+  // 3-hourly to 192, then 6-hourly to 384.
+  previousScheduledHour: (forecastHour) =>
+    forecastHour <= 192 ? forecastHour - 3 : forecastHour - 6,
+  terrainVariable: "HGT_SFC_0",
+  terrainToM: 10.0, // the feed encodes surface orography in decametres
+  verifyTerrain: async (terrain, fetchMembers, sites) => {
+    const surfacePressure = await fetchMembers(SURFACE_PRESSURE_VARIABLE, 0, "surface pressure");
+    requirePlausibleModelElevation(terrain, surfacePressure, sites);
+  },
+};
+
+export const REPS: EnsembleModel = {
+  slug: "reps",
+  label: "REPS",
+  runHours: ["18", "12", "06", "00"],
+  lastForecastHour: 72,
+  forecastHours: Array.from({ length: 72 / 3 }, (_unused, index) => 3 * (index + 1)),
+  probeVariable: "UGRD_AGL-10m",
+  gridKind: "rotated",
+  gridDescription: "the rotated grid",
+  windComponents: "gridRelative",
+  fileUrl(variableLevel, date, runHour, forecastHour) {
+    const name =
+      `${date}T${runHour}Z_MSC_REPS_${variableLevel}_` +
+      `RLatLon0.09x0.09_PT${String(forecastHour).padStart(3, "0")}H.grib2`;
+    return (
+      `${datamartBase()}/${date}/WXO-DD/ensemble/reps/10km/grib2/` +
+      `${runHour}/${String(forecastHour).padStart(3, "0")}/${name}`
+    );
+  },
+  surfaceFields: {
+    cloudCoverPercent: ["TCDC_SFC", (v) => v],
+    latentHeatFluxWm2: ["LHTFL_SFC", (v) => v],
+    seaLevelPressureHpa: ["PRMSL_MSL", (v) => v / 100.0],
+    relativeHumidityPercent: ["RH_AGL-2m", (v) => v],
+    sensibleHeatFluxWm2: ["SHTFL_SFC", (v) => v],
+    temperatureC: ["TMP_AGL-2m", (v) => v - KELVIN],
+  },
+  surfaceScalars: [
+    "seaLevelPressureHpa",
+    "temperatureC",
+    "dewPointC",
+    "windSpeedMps",
+    "windDirectionDeg",
+    "cloudCoverPercent",
+    "precipitationMmHr",
+    "sensibleHeatFluxWm2",
+    "latentHeatFluxWm2",
+  ],
+  optionalSurfaceScalars: [],
+  isobaricVariable: (variable, pressureHpa) =>
+    `${variable}_ISBL-${String(pressureHpa).padStart(4, "0")}`,
+  windLevelTokens: {
+    "AGL-10m": null,
+    ...Object.fromEntries(
+      PRESSURE_LEVELS.map((level) => [`ISBL-${String(level).padStart(4, "0")}`, level]),
+    ),
+  },
+  precipAccumulationVariable: "APCP_SFC",
+  previousScheduledHour: (forecastHour) => forecastHour - 3,
+  terrainVariable: "HGT_SFC",
+  terrainToM: 1.0,
+};
+
+// GEPS's terrain plausibility guard: the feed's decametre encoding once
+// changed silently, so the datum is cross-checked against the model's own
+// surface pressure and an Earth ceiling.
+export const SURFACE_PRESSURE_VARIABLE = "PRES_SFC_0";
+export const TERRAIN_CEILING_M = 9000.0;
+export const STANDARD_SEA_LEVEL_PA = 101325.0;
+export const BAROMETRIC_SCALE_HEIGHT_M = 8434.0;
+export const TERRAIN_PRESSURE_TOLERANCE_M = 1000.0;
+
+export function requirePlausibleModelElevation(
+  terrain: MemberValues,
+  surfacePressure: MemberValues,
+  sites: readonly EnsembleSite[],
+): void {
+  for (const site of sites) {
+    const elevation = terrain[0]![site.slug]!;
+    const pressurePa = surfacePressure[0]![site.slug]!;
+    const impliedM = BAROMETRIC_SCALE_HEIGHT_M * Math.log(STANDARD_SEA_LEVEL_PA / pressurePa);
+    if (Math.abs(impliedM - elevation) > TERRAIN_PRESSURE_TOLERANCE_M) {
+      throw new Error(
+        `GEPS model elevation for ${site.name} is ${elevation.toFixed(1)} m, ` +
+          `but its own ${(pressurePa / 100).toFixed(1)} hPa surface pressure puts ` +
+          `the surface near ${impliedM.toFixed(0)} m — further apart than any ` +
+          "weather allows; the surface-orography encoding has changed " +
+          "(see GEPS.terrainToM)",
+      );
+    }
+    if (elevation > TERRAIN_CEILING_M) {
+      throw new Error(
+        `GEPS model elevation for ${site.name} is ${elevation.toFixed(1)} m — ` +
+          "higher than any Earth terrain; the surface-orography encoding " +
+          "has changed (see GEPS.terrainToM)",
+      );
+    }
+  }
+}
+
+export async function latestCompleteRun(
+  model: EnsembleModel,
+  fetchImpl: TransportFetch = keepAliveFetch,
+  now: () => Date = () => new Date(),
+): Promise<string | null> {
+  const current = now();
+  for (const dayOffset of [0, 1]) {
+    const day = new Date(current.getTime() - dayOffset * 86_400_000);
+    const date = day.toISOString().slice(0, 10).replaceAll("-", "");
+    for (const hour of model.runHours) {
+      if (dayOffset === 0 && Number.parseInt(hour, 10) > current.getUTCHours()) {
+        continue;
+      }
+      const probe = model.fileUrl(model.probeVariable, date, hour, model.lastForecastHour);
+      if (await exists(probe, fetchImpl)) {
+        return runReferenceTime({ date, hour });
+      }
+    }
+  }
+  return null;
+}
+
 export async function sampleScalarMembers(
+  model: EnsembleModel,
   data: Uint8Array,
   sites: readonly EnsembleSite[],
   field: string,
@@ -183,10 +331,10 @@ export async function sampleScalarMembers(
   for (const message of splitMessages(data)) {
     for (const grib of parseFields(message)) {
       const grid = parseGrid(grib.section3);
-      if (grid.kind !== "latlon") {
-        throw new Error(`GEPS ${field} file is not on the regular 0.5° grid`);
+      if (grid.kind !== model.gridKind) {
+        throw new Error(`${model.label} ${field} file is not on ${model.gridDescription}`);
       }
-      parsed.push({ grib, grid, member: requiredPerturbationNumber(grib.section4, field) });
+      parsed.push({ grib, grid, member: requiredPerturbationNumber(model, grib.section4, field) });
     }
   }
   await Promise.all(
@@ -214,31 +362,45 @@ export async function sampleScalarMembers(
       members[member] = values;
     }),
   );
-  requireAllMembers(members, field);
+  requireAllMembers(model, members, field);
   return members;
 }
 
 export async function sampleWindMembers(
+  model: EnsembleModel,
   data: Uint8Array,
   sites: readonly EnsembleSite[],
   decodeJ2k?: DecodeJ2kAsync,
   decodeJ2kSampled?: DecodeJ2kSampled,
-): Promise<MemberValues> {
-  const members: MemberValues = {};
-  const parsed: Array<{ grib: GribField; grid: ReturnType<typeof parseGrid>; member: number }> = [];
+): Promise<Record<number, WindMemberSamples>> {
+  const members: Record<number, WindMemberSamples> = {};
+  const parsed: Array<{
+    grib: GribField;
+    grid: ReturnType<typeof parseGrid>;
+    member: number;
+  }> = [];
   for (const message of splitMessages(data)) {
     for (const grib of parseFields(message)) {
       const grid = parseGrid(grib.section3);
-      if (grid.kind !== "latlon") {
-        throw new Error("GEPS wind file is not on the regular 0.5° grid");
+      if (grid.kind !== model.gridKind) {
+        throw new Error(`${model.label} wind file is not on ${model.gridDescription}`);
       }
-      if (grid.uvRelativeToGrid) {
-        throw new Error("GEPS wind components are unexpectedly grid-relative");
+      if (model.windComponents === "earthRelative") {
+        if (grid.uvRelativeToGrid) {
+          throw new Error(`${model.label} wind components are unexpectedly grid-relative`);
+        }
+      } else {
+        if (grid.kind === "rotated" && grid.angleOfRotation !== 0.0) {
+          throw new Error(`${model.label} wind grid has an unexpected rotation angle`);
+        }
+        if (!grid.uvRelativeToGrid) {
+          throw new Error(`${model.label} wind components are unexpectedly earth-relative`);
+        }
       }
       parsed.push({
         grib,
         grid,
-        member: requiredPerturbationNumber(grib.section4, "wind component"),
+        member: requiredPerturbationNumber(model, grib.section4, "wind component"),
       });
     }
   }
@@ -264,55 +426,44 @@ export async function sampleWindMembers(
           member,
         );
       }
-      members[member] = values;
+      members[member] =
+        grid.kind === "rotated"
+          ? {
+              values,
+              southPoleLatitude: grid.southPoleLatitude,
+              southPoleLongitude: grid.southPoleLongitude,
+            }
+          : { values };
     }),
   );
-  requireAllMembers(members, "wind component");
+  requireAllMembers(model, members, "wind component");
   return members;
 }
 
-function requiredPerturbationNumber(section4: Uint8Array, field: string): number {
+function requiredPerturbationNumber(
+  model: EnsembleModel,
+  section4: Uint8Array,
+  field: string,
+): number {
   const member = parseProduct(section4).perturbationNumber;
   if (member === undefined) {
-    throw new Error(`GEPS ${field} message carries no perturbationNumber`);
+    throw new Error(`${model.label} ${field} message carries no perturbationNumber`);
   }
   return member;
 }
 
-function requireAllMembers(members: Record<number, unknown>, field: string): void {
+function requireAllMembers(
+  model: EnsembleModel,
+  members: Record<number, unknown>,
+  field: string,
+): void {
   const carried = Object.keys(members)
     .map((key) => Number.parseInt(key, 10))
     .sort((a, b) => a - b);
   if (carried.length !== MEMBER_COUNT || carried.some((member, index) => member !== index)) {
-    throw new Error(`GEPS ${field} file carries members [${carried.join(", ")}], expected 0–20`);
-  }
-}
-
-export function requirePlausibleModelElevation(
-  terrain: MemberValues,
-  surfacePressure: MemberValues,
-  sites: readonly EnsembleSite[],
-): void {
-  for (const site of sites) {
-    const elevation = terrain[0]![site.slug]!;
-    const pressurePa = surfacePressure[0]![site.slug]!;
-    const impliedM = BAROMETRIC_SCALE_HEIGHT_M * Math.log(STANDARD_SEA_LEVEL_PA / pressurePa);
-    if (Math.abs(impliedM - elevation) > TERRAIN_PRESSURE_TOLERANCE_M) {
-      throw new Error(
-        `GEPS model elevation for ${site.name} is ${elevation.toFixed(1)} m, ` +
-          `but its own ${(pressurePa / 100).toFixed(1)} hPa surface pressure puts ` +
-          `the surface near ${impliedM.toFixed(0)} m — further apart than any ` +
-          "weather allows; the surface-orography encoding has changed " +
-          "(see TERRAIN_DAM_TO_M)",
-      );
-    }
-    if (elevation > TERRAIN_CEILING_M) {
-      throw new Error(
-        `GEPS model elevation for ${site.name} is ${elevation.toFixed(1)} m — ` +
-          "higher than any Earth terrain; the surface-orography encoding " +
-          "has changed (see TERRAIN_DAM_TO_M)",
-      );
-    }
+    throw new Error(
+      `${model.label} ${field} file carries members [${carried.join(", ")}], expected 0–20`,
+    );
   }
 }
 
@@ -322,10 +473,10 @@ interface EnsembleHour {
   validAt: string;
 }
 
-function emptyEnsembleHour(validAt: string): EnsembleHour {
+function emptyEnsembleHour(model: EnsembleModel, validAt: string): EnsembleHour {
   return {
-    capeJkg: Number.NaN,
-    cinJkg: Number.NaN,
+    ...(model.capeVariable !== undefined ? { capeJkg: Number.NaN } : {}),
+    ...(model.cinVariable !== undefined ? { cinJkg: Number.NaN } : {}),
     cloudCoverPercent: Number.NaN,
     latentHeatFluxWm2: Number.NaN,
     levels: {},
@@ -372,6 +523,7 @@ export interface BuildDocumentsResult {
 }
 
 export async function buildDocuments(
+  model: EnsembleModel,
   referenceTime: string,
   forecastSlots: readonly ForecastSlot[],
   sites: readonly Site[],
@@ -382,6 +534,7 @@ export async function buildDocuments(
   const decodeJ2k = options.decodeJ2k ?? pool!.decode;
   try {
     return await sampleDocuments(
+      model,
       referenceTime,
       forecastSlots,
       sites,
@@ -396,6 +549,7 @@ export async function buildDocuments(
 }
 
 async function sampleDocuments(
+  model: EnsembleModel,
   referenceTime: string,
   forecastSlots: readonly ForecastSlot[],
   sites: readonly Site[],
@@ -410,31 +564,26 @@ async function sampleDocuments(
   const rawFetch = options.fetchBytes ?? ((url: string) => fetchBytes(url, { stats }));
   const wireFetch = (url: string): Promise<Uint8Array> => fetchGate(() => rawFetch(url));
 
-  const fetchMembers = async (
-    variableLevel: string,
-    forecastHour: number,
-    field: string,
-  ): Promise<MemberValues> =>
+  const fetchMembers: FetchMembers = async (variableLevel, forecastHour, field) =>
     sampleScalarMembers(
-      await wireFetch(fileUrl(variableLevel, runDate, runHour, forecastHour)),
+      model,
+      await wireFetch(model.fileUrl(variableLevel, runDate, runHour, forecastHour)),
       sites,
       field,
       decodeJ2k,
       decodeJ2kSampled,
     );
 
+  const rawTerrain = await fetchMembers(model.terrainVariable, 0, "model elevation");
   const terrain: MemberValues = Object.fromEntries(
-    Object.entries(await fetchMembers(TERRAIN_VARIABLE, 0, "model elevation")).map(
-      ([member, memberValues]) => [
-        member,
-        Object.fromEntries(
-          Object.entries(memberValues).map(([slug, value]) => [slug, value * TERRAIN_DAM_TO_M]),
-        ),
-      ],
-    ),
+    Object.entries(rawTerrain).map(([member, memberValues]) => [
+      member,
+      Object.fromEntries(
+        Object.entries(memberValues).map(([slug, value]) => [slug, value * model.terrainToM]),
+      ),
+    ]),
   );
-  const surfacePressure = await fetchMembers(SURFACE_PRESSURE_VARIABLE, 0, "surface pressure");
-  requirePlausibleModelElevation(terrain, surfacePressure, sites);
+  await model.verifyTerrain?.(terrain, fetchMembers, sites);
 
   const hours: Record<string, Record<number, EnsembleHour[]>> = Object.fromEntries(
     sites.map((site) => [
@@ -442,7 +591,7 @@ async function sampleDocuments(
       Object.fromEntries(
         PERTURBATION_NUMBERS.map((member) => [
           member,
-          forecastSlots.map((slot) => emptyEnsembleHour(slot.validAt)),
+          forecastSlots.map((slot) => emptyEnsembleHour(model, slot.validAt)),
         ]),
       ),
     ]),
@@ -474,11 +623,11 @@ async function sampleDocuments(
 
   const capeTask = (hourIndex: number) => async (): Promise<void> => {
     const values = await fetchMembers(
-      CAPE_VARIABLE,
+      model.capeVariable!,
       forecastSlots[hourIndex]!.forecastHour,
       "capeJkg",
     );
-    store(hourIndex, "capeJkg", values, (value) => maskSentinel(value, CAPE_SENTINEL));
+    store(hourIndex, "capeJkg", values, (value) => maskSentinel(value, model.capeSentinel!));
   };
 
   const pressureTask =
@@ -491,7 +640,7 @@ async function sampleDocuments(
     ) =>
     async (): Promise<void> => {
       const values = await fetchMembers(
-        `${variable}_ISBL_${String(pressureHpa).padStart(4, "0")}`,
+        model.isobaricVariable(variable, pressureHpa),
         forecastSlots[hourIndex]!.forecastHour,
         `${field}@${pressureHpa}`,
       );
@@ -512,8 +661,8 @@ async function sampleDocuments(
     );
   const accumulated = new Map<string, Promise<MemberValues>>();
   for (const variable of [
-    PRECIP_ACCUMULATION_VARIABLE,
-    ...Object.values(FLUX_ACCUMULATION_VARIABLES),
+    model.precipAccumulationVariable,
+    ...Object.values(model.fluxAccumulationVariables ?? {}),
   ]) {
     accumulated.set(`${variable}#0`, Promise.resolve(zeroMembers()));
   }
@@ -537,7 +686,7 @@ async function sampleDocuments(
     ) =>
     async (): Promise<void> => {
       const forecastHour = forecastSlots[hourIndex]!.forecastHour;
-      const windowStart = previousScheduledHour(forecastHour);
+      const windowStart = model.previousScheduledHour(forecastHour);
       const current = await accumulatedMembers(variable, forecastHour);
       const previous = await accumulatedMembers(variable, windowStart);
       const windowHours = forecastHour - windowStart;
@@ -557,13 +706,15 @@ async function sampleDocuments(
     async (): Promise<void> => {
       const forecastHour = forecastSlots[hourIndex]!.forecastHour;
       const uMembers = await sampleWindMembers(
-        await wireFetch(fileUrl(`UGRD_${levelToken}`, runDate, runHour, forecastHour)),
+        model,
+        await wireFetch(model.fileUrl(`UGRD_${levelToken}`, runDate, runHour, forecastHour)),
         sites,
         decodeJ2k,
         decodeJ2kSampled,
       );
       const vMembers = await sampleWindMembers(
-        await wireFetch(fileUrl(`VGRD_${levelToken}`, runDate, runHour, forecastHour)),
+        model,
+        await wireFetch(model.fileUrl(`VGRD_${levelToken}`, runDate, runHour, forecastHour)),
         sites,
         decodeJ2k,
         decodeJ2kSampled,
@@ -571,7 +722,20 @@ async function sampleDocuments(
       for (const member of PERTURBATION_NUMBERS) {
         for (const site of sites) {
           const slug = site.slug;
-          const [speed, direction] = windFromUv(uMembers[member]![slug]!, vMembers[member]![slug]!);
+          const u = uMembers[member]!.values[slug]!;
+          const v = vMembers[member]!.values[slug]!;
+          const [east, north] =
+            model.windComponents === "gridRelative"
+              ? earthWind(
+                  u,
+                  v,
+                  site.latitude,
+                  site.longitude,
+                  uMembers[member]!.southPoleLatitude!,
+                  uMembers[member]!.southPoleLongitude!,
+                )
+              : [u, v];
+          const [speed, direction] = windFromUv(east, north);
           const hour = hours[slug]![member]![hourIndex]!;
           if (pressureHpa === null) {
             hour["windSpeedMps"] = speed;
@@ -586,20 +750,24 @@ async function sampleDocuments(
     };
 
   const tasksForHour = (hourIndex: number): Array<() => Promise<void>> => {
-    const tasks: Array<() => Promise<void>> = Object.entries(SURFACE_FIELDS).map(
+    const tasks: Array<() => Promise<void>> = Object.entries(model.surfaceFields).map(
       ([field, [variableLevel, convert]]) => surfaceTask(hourIndex, field, variableLevel, convert),
     );
-    tasks.push(capeTask(hourIndex));
-    tasks.push(surfaceTask(hourIndex, "cinJkg", CIN_VARIABLE, (v) => v));
+    if (model.capeVariable !== undefined) {
+      tasks.push(capeTask(hourIndex));
+    }
+    if (model.cinVariable !== undefined) {
+      tasks.push(surfaceTask(hourIndex, "cinJkg", model.cinVariable, (v) => v));
+    }
     tasks.push(
       accumulationTask(
         hourIndex,
         "precipitationMm",
-        PRECIP_ACCUMULATION_VARIABLE,
+        model.precipAccumulationVariable,
         (delta, windowHours) => Math.max(0.0, delta) / windowHours,
       ),
     );
-    for (const [field, variable] of Object.entries(FLUX_ACCUMULATION_VARIABLES)) {
+    for (const [field, variable] of Object.entries(model.fluxAccumulationVariables ?? {})) {
       tasks.push(
         accumulationTask(
           hourIndex,
@@ -614,7 +782,7 @@ async function sampleDocuments(
         tasks.push(pressureTask(hourIndex, field, variable, pressureHpa, convert));
       }
     }
-    for (const [levelToken, pressureHpa] of Object.entries(WIND_LEVEL_TOKENS)) {
+    for (const [levelToken, pressureHpa] of Object.entries(model.windLevelTokens)) {
       tasks.push(windTask(hourIndex, levelToken, pressureHpa));
     }
     return tasks;
@@ -633,6 +801,7 @@ async function sampleDocuments(
   for (const site of sites) {
     const memberProfiles = PERTURBATION_NUMBERS.map((member) =>
       deriveMemberProfile(
+        model,
         site,
         hours[site.slug]![member]!,
         terrain[member]![site.slug]!,
@@ -642,7 +811,7 @@ async function sampleDocuments(
     );
     documents.push({
       schemaVersion: SITE_FORECAST_SCHEMA_VERSION,
-      model: SLUG,
+      model: model.slug,
       run: {
         referenceTime,
         generatedAt,
@@ -657,7 +826,7 @@ async function sampleDocuments(
         ...(site.timeZone ? { timeZone: site.timeZone } : {}),
       },
       semantics: SEMANTICS,
-      hours: aggregateHours(memberProfiles),
+      hours: aggregateHours(model, memberProfiles),
     });
   }
   return {
@@ -669,6 +838,7 @@ async function sampleDocuments(
 }
 
 function deriveMemberProfile(
+  model: EnsembleModel,
   site: Site,
   memberHours: readonly EnsembleHour[],
   modelElevationM: number,
@@ -683,7 +853,7 @@ function deriveMemberProfile(
       .map((level) => level["pressureHpa"]);
     if (levels.length !== PRESSURE_LEVELS.length || incomplete.length > 0) {
       throw new Error(
-        `GEPS column for ${site.name} at ${hour.validAt} is missing ` +
+        `${model.label} column for ${site.name} at ${hour.validAt} is missing ` +
           `level data (${incomplete.length > 0 ? incomplete.join(", ") : "whole levels"})`,
       );
     }
@@ -698,7 +868,7 @@ function deriveMemberProfile(
         .map((level) => withDewPointDepression(level))
         .sort((a, b) => a["heightM"]! - b["heightM"]!),
     };
-    if (capeJkg !== null) {
+    if (capeJkg !== undefined && capeJkg !== null) {
       source["capeJkg"] = capeJkg;
     }
     sourceHours.push(source as unknown as SourceHour);
@@ -715,24 +885,22 @@ function deriveMemberProfile(
       siteName: site.name,
       siteTimeZone: site.timeZone,
     },
-    SLUG,
+    model.slug,
     SEMANTICS,
   ) as unknown as MemberProfile;
 }
 
 export function aggregateHours(
+  model: EnsembleModel,
   memberProfiles: readonly MemberProfile[],
 ): Array<Record<string, unknown>> {
   return aggregateMemberProfiles(memberProfiles, {
-    surfaceScalars: SURFACE_SCALARS,
-    // Only CAPE can be absent from a member surface: the -1.0 sentinel
-    // masks to a dropped key. Every other scalar is seeded per hour and a
-    // missing one is a builder bug the aggregator must refuse.
-    optionalSurfaceScalars: ["capeJkg"],
+    surfaceScalars: model.surfaceScalars,
+    optionalSurfaceScalars: model.optionalSurfaceScalars,
   });
 }
 
-export interface GepsBuildOptions {
+export interface EnsembleBuildOptions {
   sitesPath: string;
   history?: boolean;
   outputRoot?: string;
@@ -747,38 +915,56 @@ export interface GepsBuildOptions {
   generatedAt?: () => string;
 }
 
-export async function buildGeps(options: GepsBuildOptions): Promise<boolean> {
+export async function buildEnsemble(
+  model: EnsembleModel,
+  options: EnsembleBuildOptions,
+): Promise<boolean> {
   const cap = options.maxSteps;
   const slots = (referenceTime: string): ForecastSlot[] =>
-    FORECAST_HOURS.slice(0, cap ?? FORECAST_HOURS.length).map((hour) => ({
+    model.forecastHours.slice(0, cap ?? model.forecastHours.length).map((hour) => ({
       forecastHour: hour,
       validAt: validTime(referenceTime, hour),
     }));
   return publishRun(
     {
-      slug: SLUG,
-      label: "GEPS",
+      slug: model.slug,
+      label: model.label,
       publishedNoun: "ensemble documents",
       manifestExtras: { memberCount: MEMBER_COUNT },
       resolveRun: async () => {
         if (options.referenceTime !== undefined) {
           return canonicalInstant(options.referenceTime);
         }
-        return latestCompleteRun(options.fetch, options.now);
+        return latestCompleteRun(model, options.fetch, options.now);
       },
       buildingLine: (referenceTime, siteCount) =>
-        `Building GEPS ensemble ${referenceTime} for ${siteCount} sites ` +
+        `Building ${model.label} ensemble ${referenceTime} for ${siteCount} sites ` +
         `(${slots(referenceTime).length} steps × ${MEMBER_COUNT} members)…`,
       build: async (referenceTime, sites, stats) => {
         const buildOptions: BuildDocumentsOptions = {};
         if (options.fetchBytes !== undefined) buildOptions.fetchBytes = options.fetchBytes;
         if (options.decodeJ2k !== undefined) buildOptions.decodeJ2k = options.decodeJ2k;
         if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
-        return buildDocuments(referenceTime, slots(referenceTime), sites, stats, buildOptions);
+        return buildDocuments(
+          model,
+          referenceTime,
+          slots(referenceTime),
+          sites,
+          stats,
+          buildOptions,
+        );
       },
     },
     options,
   );
+}
+
+export function buildGeps(options: EnsembleBuildOptions): Promise<boolean> {
+  return buildEnsemble(GEPS, options);
+}
+
+export function buildReps(options: EnsembleBuildOptions): Promise<boolean> {
+  return buildEnsemble(REPS, options);
 }
 
 function canonicalInstant(value: string): string {

@@ -5,24 +5,17 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { DecodeJ2k, J2kSamples } from "@azohra/meteo.grib";
 import {
   FETCH_CONCURRENCY,
-  FORECAST_HOURS,
-  LAST_FORECAST_HOUR,
   MEMBER_COUNT,
   PERTURBATION_NUMBERS,
   PRESSURE_LEVELS,
-  RUN_HOURS,
+  REPS,
   SEMANTICS,
-  SLUG,
-  STEP_HOURS,
-  SURFACE_SCALARS,
-  WIND_LEVEL_TOKENS,
   aggregateHours,
   buildDocuments,
   buildReps,
-  fileUrl,
   sampleScalarMembers,
   sampleWindMembers,
-} from "../../src/builders/reps.js";
+} from "../../src/builders/eccc-ensemble.js";
 import { packagedModelsPath } from "../../src/catalogue.js";
 import { circularMedian, percentile, type MemberProfile } from "../../src/ensemble.js";
 import { splitMembers } from "../../src/history.js";
@@ -244,7 +237,7 @@ it("the circular median crosses the wrap and shrugs off a stray member", () => {
 });
 
 it("Datamart URLs follow the MSC naming scheme", () => {
-  expect(fileUrl("TMP_ISBL-0850", "20260807", "12", 24)).toBe(
+  expect(REPS.fileUrl("TMP_ISBL-0850", "20260807", "12", 24)).toBe(
     "https://dd.weather.gc.ca/20260807/WXO-DD/ensemble/reps/10km/grib2/12/024/" +
       "20260807T12Z_MSC_REPS_TMP_ISBL-0850_RLatLon0.09x0.09_PT024H.grib2",
   );
@@ -252,26 +245,26 @@ it("Datamart URLs follow the MSC naming scheme", () => {
 
 it("Datamart URLs honour the base override", () => {
   process.env["METEO_DATAMART_BASE"] = "https://hpfx.collab.science.gc.ca";
-  expect(fileUrl("TMP_ISBL-0850", "20260807", "12", 24)).toMatch(
+  expect(REPS.fileUrl("TMP_ISBL-0850", "20260807", "12", 24)).toMatch(
     /^https:\/\/hpfx\.collab\.science\.gc\.ca\/20260807\/WXO-DD\/ensemble\/reps\//,
   );
 });
 
 it("every published level has a wind file token", () => {
   // 1000 hPa is its own four digits — the token is ISBL-1000, not ISBL-01000.
-  expect(WIND_LEVEL_TOKENS["ISBL-1000"]).toBe(1000);
-  expect(WIND_LEVEL_TOKENS["AGL-10m"]).toBeNull();
+  expect(REPS.windLevelTokens["ISBL-1000"]).toBe(1000);
+  expect(REPS.windLevelTokens["AGL-10m"]).toBeNull();
   expect(
-    Object.keys(WIND_LEVEL_TOKENS)
+    Object.keys(REPS.windLevelTokens)
       .filter((token) => token !== "AGL-10m")
       .sort(),
   ).toEqual(PRESSURE_LEVELS.map((level) => `ISBL-${String(level).padStart(4, "0")}`).sort());
 });
 
 it("the schedule starts after hour zero, which has no fluxes", () => {
-  expect(FORECAST_HOURS[0]).toBe(STEP_HOURS);
-  expect(FORECAST_HOURS).not.toContain(0);
-  expect(FORECAST_HOURS[FORECAST_HOURS.length - 1]).toBe(72);
+  expect(REPS.forecastHours[0]).toBe(REPS.forecastHours[0]!);
+  expect(REPS.forecastHours).not.toContain(0);
+  expect(REPS.forecastHours[REPS.forecastHours.length - 1]).toBe(72);
 });
 
 it("the fetch pool cap holds its documented value", () => {
@@ -281,6 +274,7 @@ it("the fetch pool cap holds its documented value", () => {
 describe("all-members sampling", () => {
   it("scalar members are keyed by GRIB perturbationNumber", async () => {
     const members = await sampleScalarMembers(
+      REPS,
       ensembleFile((member) => 100.0 + member),
       [SITE],
       "test field",
@@ -301,19 +295,26 @@ describe("all-members sampling", () => {
       members: PERTURBATION_NUMBERS.filter((member) => member !== 7),
     });
 
-    await expect(sampleScalarMembers(short, [SITE], "test field", noJ2k)).rejects.toThrow(
+    await expect(sampleScalarMembers(REPS, short, [SITE], "test field", noJ2k)).rejects.toThrow(
       /expected 0–20/,
     );
   });
 
   it("a scalar file off the rotated grid fails loudly", async () => {
     await expect(
-      sampleScalarMembers(ensembleMessage(0, 1.0, { rotated: false }), [SITE], "test field", noJ2k),
+      sampleScalarMembers(
+        REPS,
+        ensembleMessage(0, 1.0, { rotated: false }),
+        [SITE],
+        "test field",
+        noJ2k,
+      ),
     ).rejects.toThrow(/rotated grid/);
   });
 
   it("wind members carry the rotation pole alongside the components", async () => {
     const members = await sampleWindMembers(
+      REPS,
       ensembleFile((member) => 2.0 + member),
       [SITE],
       noJ2k,
@@ -327,6 +328,7 @@ describe("all-members sampling", () => {
   it("earth-relative wind components fail loudly", async () => {
     await expect(
       sampleWindMembers(
+        REPS,
         ensembleFile(() => 1.0, { uvRelative: 0 }),
         [SITE],
         noJ2k,
@@ -359,6 +361,7 @@ describe("all-members sampling", () => {
     const erie = { slug: "erie", name: "Erie", latitude: 49.35, longitude: -117.25 };
 
     const members = await sampleScalarMembers(
+      REPS,
       ensembleFile(() => 0.0, { jpeg2000: true }),
       [SITE, erie], // two sites, still one decode per message
       "test field",
@@ -451,7 +454,7 @@ interface AggregatedHour {
 }
 
 function aggregateOne(...hours: Array<Record<string, unknown>>): AggregatedHour {
-  const aggregated = aggregateHours(profiles(...hours));
+  const aggregated = aggregateHours(REPS, profiles(...hours));
   expect(aggregated).toHaveLength(1);
   return aggregated[0] as unknown as AggregatedHour;
 }
@@ -489,7 +492,7 @@ describe("aggregation", () => {
     const hour = aggregateOne(memberHour({ dewPointC: 8.0 }), memberHour({ dewPointC: 10.0 }));
 
     expect(hour.surface["dewPointC"]).toMatchObject({ members: 2, p50: 9.0 });
-    expect(SURFACE_SCALARS).toContain("dewPointC");
+    expect(REPS.surfaceScalars).toContain("dewPointC");
   });
 
   it("wind direction publishes the circular median, not a percentile block", () => {
@@ -611,6 +614,7 @@ describe("ceiling censoring", () => {
 it("a small document serializes deterministically", async () => {
   const { compactJson, roundDocument } = await import("../../src/publish.js");
   const hours = aggregateHours(
+    REPS,
     profiles(
       memberHour({ levels: [memberLevel(500, 5720.0)] }),
       memberHour({
@@ -738,7 +742,7 @@ function e2eMemberValue(variableLevel: string, member: number): number {
 
 function e2eFiles(): Map<string, Uint8Array> {
   const files = new Map<string, Uint8Array>();
-  files.set(fileUrl("HGT_SFC", "20260807", "00", 0), ensembleFile(E2E_SURFACE["HGT_SFC"]!));
+  files.set(REPS.fileUrl("HGT_SFC", "20260807", "00", 0), ensembleFile(E2E_SURFACE["HGT_SFC"]!));
   const hour3Fields = Object.keys(E2E_SURFACE).filter((name) => name !== "HGT_SFC");
   for (const level of PRESSURE_LEVELS) {
     for (const prefix of ["HGT", "TMP", "RH", "UGRD", "VGRD"]) {
@@ -747,7 +751,7 @@ function e2eFiles(): Map<string, Uint8Array> {
   }
   for (const name of hour3Fields) {
     files.set(
-      fileUrl(name, "20260807", "00", 3),
+      REPS.fileUrl(name, "20260807", "00", 3),
       ensembleFile((member) => e2eMemberValue(name, member)),
     );
   }
@@ -767,6 +771,7 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   };
 
   const result = await buildDocuments(
+    REPS,
     "2026-08-07T00:00:00Z",
     [{ forecastHour: 3, validAt: "2026-08-07T03:00:00Z" }],
     [SITE],
@@ -778,7 +783,7 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   // precipitation files — is touched only for terrain.
   expect([...fetched].sort()).toEqual([...files.keys()].sort());
   expect(fetched.filter((url) => url.includes("PT000H"))).toEqual([
-    fileUrl("HGT_SFC", "20260807", "00", 0),
+    REPS.fileUrl("HGT_SFC", "20260807", "00", 0),
   ]);
 
   expect(result.documents).toHaveLength(1);
@@ -867,7 +872,7 @@ describe("buildReps", () => {
 
     expect(built).toBe(true);
     const document = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "sites", "dundee.json"), "utf-8"),
+      readFileSync(join(outputRoot, REPS.slug, "sites", "dundee.json"), "utf-8"),
     ) as {
       schemaVersion: number;
       model: string;
@@ -876,7 +881,7 @@ describe("buildReps", () => {
       semantics: Record<string, string>;
       hours: unknown[];
     };
-    expect(document.model).toBe(SLUG);
+    expect(document.model).toBe(REPS.slug);
     expect(document.run).toEqual({
       referenceTime: "2026-08-07T00:00:00Z",
       generatedAt: "2026-08-07T05:30:00Z",
@@ -889,19 +894,21 @@ describe("buildReps", () => {
     expect(document.hours).toHaveLength(1);
 
     const manifest = JSON.parse(
-      readFileSync(join(outputRoot, SLUG, "manifest.json"), "utf-8"),
+      readFileSync(join(outputRoot, REPS.slug, "manifest.json"), "utf-8"),
     ) as Record<string, unknown>;
     expect(manifest["firstForecastHour"]).toBe(3);
     expect(manifest["forecastHours"]).toBe(1);
     expect(manifest["lastForecastHour"]).toBe(3);
     expect(manifest["memberCount"]).toBe(21);
-    expect(manifest["model"]).toBe(SLUG);
+    expect(manifest["model"]).toBe(REPS.slug);
     expect(manifest["referenceTime"]).toBe("2026-08-07T00:00:00Z");
     expect(manifest["sites"]).toEqual([{ name: "Dundee", slug: "dundee" }]);
 
     // One run appended as one independent gzip member, one JSON line —
     // and the line IS the ensemble document.
-    const archive = readFileSync(join(outputRoot, SLUG, "history", "dundee", "2026-08.jsonl.gz"));
+    const archive = readFileSync(
+      join(outputRoot, REPS.slug, "history", "dundee", "2026-08.jsonl.gz"),
+    );
     const members = splitMembers(archive);
     expect(members).toHaveLength(1);
     expect(members[0]!.lines).toHaveLength(1);
@@ -946,17 +953,17 @@ describe("buildReps", () => {
 
     // Off: no archive, no sidecar — the gate's manifest read is the only
     // request that left the process.
-    expect(existsSync(join(tmp, "off", SLUG, "history"))).toBe(false);
+    expect(existsSync(join(tmp, "off", REPS.slug, "history"))).toBe(false);
     expect(off.requests).toHaveLength(1);
 
     // The ensemble documents are identical across all three choices…
-    const site = (root: string) => readFileSync(join(tmp, root, SLUG, "sites", "dundee.json"));
+    const site = (root: string) => readFileSync(join(tmp, root, REPS.slug, "sites", "dundee.json"));
     expect(site("on").equals(site("default"))).toBe(true);
     expect(site("off").equals(site("default"))).toBe(true);
 
     // …explicit --history is byte-identical to the default…
     const history = (root: string, name: string) =>
-      readFileSync(join(tmp, root, SLUG, "history", "dundee", name));
+      readFileSync(join(tmp, root, REPS.slug, "history", "dundee", name));
     expect(history("on", "2026-08.jsonl.gz").equals(history("default", "2026-08.jsonl.gz"))).toBe(
       true,
     );
@@ -968,7 +975,7 @@ describe("buildReps", () => {
     // wall-clock stamp are the only fields that vary run to run).
     const manifest = (root: string) => {
       const parsed = JSON.parse(
-        readFileSync(join(tmp, root, SLUG, "manifest.json"), "utf-8"),
+        readFileSync(join(tmp, root, REPS.slug, "manifest.json"), "utf-8"),
       ) as Record<string, unknown>;
       delete parsed["stats"];
       delete parsed["generatedAt"];
@@ -982,7 +989,7 @@ describe("buildReps", () => {
     scratch = mkdtempSync(join(tmpdir(), "reps-test-"));
     const sitesPath = join(scratch, "sites.json");
     writeFileSync(sitesPath, JSON.stringify({ schemaVersion: 2, sites: [SITE] }));
-    const manifest = { model: SLUG, referenceTime: "2026-08-07T00:00:00Z" };
+    const manifest = { model: REPS.slug, referenceTime: "2026-08-07T00:00:00Z" };
     const dataset = stubFetch([{ status: 200, body: JSON.stringify(manifest) }]);
     const lines: string[] = [];
 
@@ -1014,13 +1021,13 @@ const catalogue = JSON.parse(readFileSync(packagedModelsPath(), "utf-8")) as {
 };
 
 it("models.json matches the builder configuration", () => {
-  const entry = catalogue.models.find((model) => model.slug === SLUG)!;
+  const entry = catalogue.models.find((model) => model.slug === REPS.slug)!;
   expect(entry.kind).toBe("ensemble");
-  expect(entry.stepHours).toBe(STEP_HOURS);
-  expect(entry.horizonHours).toBe(LAST_FORECAST_HOUR);
-  expect(entry.runIntervalHours).toBe(24 / RUN_HOURS.length);
+  expect(entry.stepHours).toBe(REPS.forecastHours[0]!);
+  expect(entry.horizonHours).toBe(REPS.lastForecastHour);
+  expect(entry.runIntervalHours).toBe(24 / REPS.runHours.length);
   const capabilities = entry.capabilities;
-  const published = SURFACE_SCALARS as readonly string[];
+  const published = REPS.surfaceScalars as readonly string[];
   expect(capabilities["levels"]).toBe(true);
   expect(capabilities["pressureLevels"]).toEqual([...PRESSURE_LEVELS]);
   // REPS publishes neither CAPE nor CIN; the aggregate carries neither.
