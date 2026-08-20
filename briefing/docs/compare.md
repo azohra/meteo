@@ -36,27 +36,25 @@ Every profile must carry the same `site.id`. The function throws for an empty
 input or mixed sites. The output records the resolved thresholds and retains
 each member's source analysis under `analyses`.
 
-`launch` is optional and is **one launch for the whole comparison**, passed
-to every member's analysis (`AnalyzeOptions.launch`): documents are
-launch-agnostic, and launch-relative votes compare only when every member
-reads against the same launch. Without one the comparison degrades
-gracefully: each member's reference falls back to its model's own ground,
-the ledger's `elevationDeltaM` is null, no member is benched for terrain
-mismatch, and the launch-relative `heightSpread` finding is not emitted.
-The envelope echoes the launch it used as `site.launchAltitudeM` (`null`
-when none was supplied).
+`launch` is optional. One launch applies to the whole comparison and
+reaches every member's analysis as `AnalyzeOptions.launch`, since
+launch-relative votes only compare when all members read against the same
+point. Omit it and each member falls back to its model's own ground. The
+ledger's `elevationDeltaM` is then null, no member is benched, and
+`heightSpread` is not emitted. The envelope records the launch it used as
+`site.launchAltitudeM`, null when none was supplied.
 
 ## Compare cached analyses
 
-`compareForecasts` is a wrapper (one construction) over the real seam:
-`compareAnalyses`, which compares one site's **analysis envelopes** at the
-findings level. It is the door for cached and edge-produced envelopes:
-analyze each profile where the document lives, serialize the
+`compareForecasts` is a one-call wrapper over the real seam:
+`compareAnalyses`, which compares one site's analysis envelopes at the
+findings level. Use it for cached and edge-produced envelopes: analyze
+each profile where the document lives, serialize the
 [self-describing envelope](/docs/briefing/analyze/#the-envelope-self-describes)
-as JSON, and compare later without re-opening any profile. Note what its
-options deliberately lack: `timeZone`, `launch`, `thresholds` come **from
-the members** and are validated, never supplied; that is the whole point
-of the envelope's self-description.
+as JSON, and compare later without re-opening any profile. Its options
+have no `timeZone`, `launch`, or `thresholds`. Those come from the members
+and are validated for coherence, which is what the envelope's
+self-description is for.
 
 ```ts title="compare-cached.ts"
 import { ANALYZE_VOCABULARY_VERSION, type ForecastAnalysis } from "@azohra/meteo.briefing/analyze";
@@ -84,17 +82,15 @@ export function compareCached(
 }
 ```
 
-Coherence is **validated instead of reconstructed**, and every failure is
-a distinct, named error:
+Every coherence failure throws a distinct, named error:
 
 - an empty member list;
-- `site.id` mismatch: one comparison, one site;
-- a duplicate `(model, referenceTime)` member: the same run twice is a
-  programming error, not a second member;
+- `site.id` mismatch;
+- a duplicate `(model, referenceTime)` member — the same run passed
+  twice;
 - `vocabularyVersion` skew against this package's own
-  `ANALYZE_VOCABULARY_VERSION`, with the remedy named (strict equality is
-  v1 of this surface; tolerating older envelopes is a later,
-  evidence-bearing decision, not a default);
+  `ANALYZE_VOCABULARY_VERSION`, with the remedy named. Tolerance is
+  strict equality for now; loosening it would need evidence;
 - missing self-description: an envelope serialized by an old enough
   release lacks `thresholds` / `deterministic` / `coveredDays`, and the
   runtime check is the only door for parsed JSON the compile-time type
@@ -104,9 +100,8 @@ a distinct, named error:
 - thresholds deep-inequality, naming the first differing path
   (`thermalWindow.wstarMinMps: 0.9 vs 0.8`).
 
-Deliberately **not** validated: anything votes don't read;
-`windCeilings` and `smoke` are analysis inputs that shape kinds compare
-never consumes.
+Not validated: `windCeilings` and `smoke`. They are analysis inputs that
+no comparison kind reads.
 
 Because `compareForecasts` analyzes every member itself with the
 comparison's single timezone, launch, and threshold set, its members
@@ -122,18 +117,17 @@ two runs of one model are two members, each with its own ledger row, votes,
 and `analyses` entry. Passing the same run twice is a programming error and
 throws.
 
-The identity change re-keys the envelope, **a documented breaking change**
-for vocabulary-1 consumers: the `analyses` record is keyed by the composite
-member key `"{model}@{referenceTime}"` (the exported `comparisonMemberKey`
-builds it) for **every** member, not by the model slug, because a model-slug
-key can hold only one of a model's two runs. Every vote, abstention, and
-roster entry carries both `member` (the `analyses` / ledger key) and `model`
-(the headline token), so provenance joins on one string without parsing it.
+The identity change re-keys the envelope and was a documented breaking
+change for vocabulary-1 consumers. The `analyses` record is keyed by
+`"{model}@{referenceTime}"` for every member — the exported
+`comparisonMemberKey` builds the key — because a model-slug key can hold
+only one of a model's two runs. Every vote, abstention, and roster entry
+carries both `member` (the `analyses` / ledger key) and `model` (the
+headline token), so provenance joins on one string without parsing it.
 
-Turning the member axis fully onto one model's runs through time is
 [`compareRuns`](/docs/briefing/history/#compare-a-models-runs-through-time)
-in `@azohra/meteo.briefing/history`: the same discipline, the inverse axis, with its own
-independently versioned vocabulary.
+in `@azohra/meteo.briefing/history` turns the member axis onto one model's
+runs through time. It has its own independently versioned vocabulary.
 
 ```ts title="join-provenance.ts"
 import { comparisonMemberKey, type ForecastComparison } from "@azohra/meteo.briefing/compare";
@@ -161,15 +155,14 @@ Each `ComparisonMemberLedger` states the facts that affect comparability:
 | `modelElevationM` / `elevationDeltaM` | Grid terrain and its difference from the comparison's launch (null without a launch) |
 | `benched` | A terrain mismatch whose published lift never reaches the comparison's launch |
 
-These are stated facts for the consumer's judgment, never applied as scores;
-weighting is downstream. Transport misses belong in `options.unavailable`,
-preserving the expected model roster even when a document is absent or
-invalid.
+The ledger does not score or weight members; weighting is downstream.
+Transport misses belong in `options.unavailable`, which preserves the
+expected model roster when a document is absent or invalid.
 
 ## Read the findings
 
-The vocabulary has four comparison kinds; narrow on `kind` and keep each
-finding's own confessions beside its numbers.
+The vocabulary has four comparison kinds. Narrow on `kind`, and read each
+finding's caveat fields beside its numbers.
 
 ```ts title="comparison-findings.ts"
 import type { ForecastComparison } from "@azohra/meteo.briefing/compare";
@@ -186,8 +179,8 @@ export function comparisonRows(comparison: ForecastComparison) {
           unanimous: finding.unanimous,
           wstarFlipAtMps: finding.sensitivity.wstarFlipAtMps,
           startSpreadHours: finding.timing.startSpreadHours,
-          // Up to this many minus one hours of the spread is cadence
-          // quantization, not disagreement.
+          // Spread up to startStepHoursMax - 1 hours can be cadence,
+          // not forecast difference — see the timing envelope note.
           startStepHoursMax: finding.timing.startStepHoursMax,
         };
       case "heightSpread":
@@ -205,9 +198,8 @@ export function comparisonRows(comparison: ForecastComparison) {
         return {
           day: finding.day,
           maxAngularSeparationDeg: finding.maxAngularSeparationDeg,
-          // Read the regime facts before the split: a large separation
-          // across a large ground delta is two flow regimes, not two
-          // opinions about one flow.
+          // Check elevationDeltaM before reading the angle — see
+          // windDirectionSpread.
           acrossElevationDeltaM: finding.maxSeparation.elevationDeltaM,
         };
     }
@@ -233,9 +225,9 @@ votes, per local day. Every non-vote has a stated reason:
   describe the whole window, not this day's slice.
 
 A day's finding is suppressed only when it has zero voters **and** zero
-abstentions: a horizon-edge day whose roster is pure abstentions keeps its
-record, because "nobody could call the day" is a statement with reasons.
-`unanimous` is null below two voters: unanimity of one is not a statement.
+abstentions: a horizon-edge day whose roster is all abstentions keeps its
+record, with each abstention's reason. `unanimous` is null below two
+voters.
 
 Window votes carry `minimalPassingPercentile`: the member's same-day
 `percentileCrossing` token (the lowest published percentile whose day
@@ -250,14 +242,14 @@ window votes the flip is exact; for quiet votes it is necessary but not
 sufficient, because the day peaks are per-quantity maxima at possibly
 different hours and a window needs both floors met in the same hour.
 
-The timing envelope uses **unclipped edges only**: an edge set by a
-document's horizon reads as "open since at least" / "still open at", not as
-timing. Every contributing edge carries its window's `stepHours`, and
+The timing envelope uses unclipped edges only. An edge set by a document's
+horizon reads as "open since at least" / "still open at", not as timing.
+Every contributing edge carries its window's `stepHours`, and
 `startStepHoursMax` / `endStepHoursMax` state the widest step among the
-contributors: a 3-hourly member's 11:00 edge means "somewhere in
-08:00–11:00", so up to that many minus one hours of spread is quantization,
-not disagreement. Multi-hour members stay in the spread: confession over
-exclusion.
+contributors. A 3-hourly member's 11:00 edge means "somewhere in
+08:00–11:00", so up to that many minus one hours of spread is quantization
+rather than disagreement. Multi-hour members stay in the spread instead of
+being excluded.
 
 ### heightSpread
 
@@ -267,11 +259,10 @@ consensus height: measured spreads among comparable members run to
 thousands of metres, and an average of that is a forecast no model made.
 
 Ensemble peaks carry `bandP10P90AboveLaunchM`, the member's own p10–p90
-lift-top band at its peak hour, **context only, never an outlier
-detector**: measured live, 57 of 61 deterministic peaks falling outside an
-ensemble band sat *above* it. Exceedance is the norm (physics and
-vertical-resolution regimes differ), so "outside the band" carries no
-verdict weight.
+lift-top band at its peak hour. It is context, not an outlier detector:
+measured live, 57 of 61 deterministic peaks falling outside an ensemble
+band sat *above* it. Physics and vertical-resolution regimes differ, so a
+peak outside the band is normal and carries no verdict.
 
 ### windDivergence
 
@@ -280,23 +271,21 @@ maximum and gust maximum (its `windSummary` restated), with the spread.
 Wind is a common flyability veto, and vocabulary 1 could not express
 a wind split at all. The shape encodes the measured constraints:
 
-- every entry carries `modelElevationM`, mandatorily: cross-model mean-wind
-  ratios spanned 0.18–1.22 at matched mountain sites, because models
-  grounding a site hundreds of metres apart forecast different flow
-  *regimes*: a spread read without the grounds beside it manufactures
-  disagreement;
-- gust rosters group strictly within one declared semantics class:
-  `hourMax` and `instant` are never pooled; the
-  [measured gap between the classes](/docs/briefing/analyze/) is why one
-  spread cannot serve both. Members without a declared gust semantics
-  roster under `undeclared` with deliberately **no spread**, because an
-  undeclared gust cannot be compared with anything, including another
-  undeclared gust;
-- **no shear rates appear anywhere in compare**: subsampling a dense model
-  to a five-level ensemble grid read a median 0.41× of the dense rate on
-  identical hours: the sparse column reports a different, smeared layer,
-  so the rates are not comparable across level densities. `bandShear` stays
-  an analyze-only statement;
+- every entry carries `modelElevationM`. Cross-model mean-wind ratios
+  spanned 0.18–1.22 at matched mountain sites, because models grounding a
+  site hundreds of metres apart forecast different flow *regimes*; read
+  the spread with the grounds beside it;
+- gust rosters group within one declared semantics class: `hourMax` and
+  `instant` are never pooled, because of the
+  [measured gap between the classes](/docs/briefing/analyze/). Members
+  without a declared gust semantics roster under `undeclared` with no
+  spread, because an undeclared gust cannot be compared with anything,
+  including another undeclared gust;
+- shear rates do not appear in compare. Subsampling a dense model to a
+  five-level ensemble grid read a median 0.41× of the dense rate on
+  identical hours; the sparse column reports a different, smeared layer,
+  so the rates are not comparable across level densities. `bandShear`
+  stays an analyze-only statement;
 - no directions here: that is `windDirectionSpread`'s job.
 
 ### windDirectionSpread
@@ -310,11 +299,10 @@ keeps them out. All aggregation is vector math; raw degrees are never
 averaged, and a member whose vector-mean speed sits under the embedded
 floor has no direction to roster.
 
-The elevation-regime caveat rides the statement, never a footnote: measured
-live, most daytime max-separations straddled a >300 m model-ground delta:
-a low-terrain member forecasting a different flow regime, not a
-disagreement about the same flow. Read `maxSeparation.elevationDeltaM`
-before reading the angle.
+Read `maxSeparation.elevationDeltaM` before the angle. Measured live, most
+daytime max-separations straddled a >300 m model-ground delta: a
+low-terrain member forecasting a different flow regime, not a disagreement
+about the same flow.
 
 ## Versioning
 
@@ -324,6 +312,6 @@ kinds independently of the published profile `schemaVersion`; the
 records each boundary. Readers of serialized comparison envelopes check
 the version at runtime and ignore kinds and fields they do not know;
 the [tolerant-reader convention](/docs/briefing/analyze/#versioning-reads-tolerantly)
-governs readers of the closed set, never the set, which stays
-spike-gated and first-party. The operator chooses weighting,
-display language, and operational thresholds.
+applies to readers. The set of kinds itself stays first-party and
+spike-gated. The operator chooses weighting, display language, and
+operational thresholds.

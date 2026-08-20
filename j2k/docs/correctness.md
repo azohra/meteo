@@ -33,9 +33,10 @@ The corpus itself and its frozen-by-design provenance are documented in
 
 ## Region decode is exact by contract
 
-`decodeJ2kRegion` promises bit-identity, not approximation: every value
+`decodeJ2kRegion` promises bit-identity: every value
 it returns equals `decodeJ2k(codestream).values[index]` for the same
-index. The promise rests on an argument and a gate. The argument: a
+index. Two things hold that promise, a derivation and a test. The
+derivation: a
 windowed inverse 5/3 lift is bit-identical to the full lift at every
 output whose dependency cone lies inside the window, and the region
 decoder's windows carry the full synthesis margin on every side that is
@@ -43,16 +44,16 @@ not a true image boundary; where the window meets the boundary, the
 lift's index clamping *is* the full decoder's boundary extension (the
 derivation is written out at the top of
 [`src/region.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/region.ts)).
-The gate:
+The test:
 [`test/region.test.ts`](https://github.com/azohra/meteo/blob/main/j2k/test/region.test.ts)
 holds region against full decode over every codestream flavor in the
 corpus (12- through 24-bit, corners, full border sweeps, adjacent
-clusters, and dense scatters to 5000 points) to integer equality. One
-mismatched sample is a decoder bug, never tolerance.
+clusters, and dense scatters to 5000 points) to integer equality.
 
-The tie is transitive: the full decode is gated bit-for-bit against the
+The chain is transitive: the full decode is gated bit-for-bit against the
 codec oracle (ring one) and ecCodes' recorded answers (ring two), and
-region decode is gated bit-for-bit against the full decode, so a region-decoded sample
+region decode is held to integer equality with the full decode, so a
+region-decoded sample
 carries exactly the oracle's answer. `@azohra/meteo.grib` re-asserts the
 chain at its own seam: its sampled worker path must reproduce the full
 decode's GRIB-scaled doubles at every requested point

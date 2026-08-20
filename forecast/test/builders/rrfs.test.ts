@@ -242,7 +242,7 @@ function fakeIndex(fileToken: string, forecastHour: number): IdxRecord[] {
       ["MCDC", "middle cloud layer", forecast],
       ["HCDC", "high cloud layer", forecast],
     );
-    // The speciated aerosol menu: dust rides beside smoke on the same
+    // Speciated aerosols: dust sits beside smoke on the same
     // variable/level/forecast triple. Hour 2's AOTK is missing so the
     // all-or-nothing block publishes nothing that hour.
     rows.push(["MASSDEN", "8 m above ground", forecast, "aerosol=Dust dry:aerosol_size <2.5e-06"]);
@@ -287,7 +287,8 @@ function fakeIndex(fileToken: string, forecastHour: number): IdxRecord[] {
 function fakeValue(variable: string, level: string, qualifier: string): number {
   if (variable === "DZDT") return GEOMETRIC_W_MPS;
   if (variable === "MASSDEN") {
-    // The dust twin is poison: a build that reads it publishes dust as smoke.
+    // A build that reads the dust row by mistake publishes dust as smoke;
+    // the distinct values make that visible.
     return qualifier === SMOKE_QUALIFIER ? 2.5e-8 : 9.9e-6;
   }
   if (variable === "COLMD") {
@@ -483,7 +484,7 @@ describe("buildRrfs", () => {
     const sitesPath = writeSites(scratch);
     const outputRoot = join(scratch, "data");
     // The empty published dataset: the manifest gate reads 404, then the
-    // history seed for the site's month reads 404 — absence, not fatality.
+    // history seed for the site's month reads 404.
     const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
     const built = await buildRrfs({

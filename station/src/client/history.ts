@@ -3,8 +3,7 @@ import { parseStationHistoryJson } from "../contract.js";
 import type { StationHistory } from "../contract.js";
 
 const REQUEST_TIMEOUT_MS = 15_000;
-/* Windows a browsing session keeps warm; the oldest fall away. A craft
- * parameter (TRIAL), caller-movable. */
+/* LRU capacity for held windows. Craft parameter (TRIAL), caller-movable. */
 export const HISTORY_STORE_DEFAULT_MAX_WINDOWS = 32;
 
 export type StationHistoryQuery = {
@@ -13,13 +12,9 @@ export type StationHistoryQuery = {
   periodMinutes: number;
 };
 
-/**
- * The archive fetch contract: one requested window in, one
- * parsed document (or null on failure) out. A host that mounts the feed
- * handler uses `stationHistoryFetcher`; one that serves history its own way
- * — an authenticated server function, a proxy — supplies any function of
- * this shape and never touches the handler.
- */
+/** One requested window in, one parsed document (or null on failure) out.
+ * A host that mounts the feed handler uses `stationHistoryFetcher`; a host
+ * serving history its own way supplies any function of this shape. */
 export type StationHistoryFetcher = (query: StationHistoryQuery) => Promise<StationHistory | null>;
 
 /** The default fetcher, against the mounted handler's /history route. */
@@ -94,15 +89,11 @@ export function createStationHistoryStore(
   };
 }
 
-/* ── Paging the archive ──────────────────────────────────────────────────
- * Window math for the host's own pager over the store. The library ships no
- * archive control surface — what a pager looks like is the host's product
- * decision — so these carry the parts that are facts, not taste: the
- * vendor-shaped resolution ladder and calendar-day arithmetic. */
+/* Paging math for a host-composed pager: the resolution ladder and
+ * calendar-day arithmetic. The library ships no archive control surface. */
 
-/* The ladder and point target are craft parameters (TRIAL), caller-movable:
- * the default ladder is the WindNerd record catalogue, and the target keeps
- * one window's response readable and one fetch bounded. */
+/* Craft parameters (TRIAL), caller-movable. The default ladder is the
+ * WindNerd record catalogue; the point target bounds one fetch. */
 export const ARCHIVE_DEFAULT_PERIODS_MINUTES = [1, 5, 10, 15, 30, 60, 180, 360] as const;
 export const ARCHIVE_TARGET_POINTS = 500;
 
@@ -124,9 +115,8 @@ export function archivePeriodFor(
   return ascending[ascending.length - 1] as number;
 }
 
-/** One whole LOCAL day from a YYYY-MM-DD date-input value — the day the
- * person picking it means, not the UTC day; null when the value is not a
- * real date. */
+/** One whole LOCAL day from a YYYY-MM-DD date-input value (not the UTC
+ * day); null when the value is not a real date. */
 export function archiveDayWindow(dateValue: string): ArchiveWindow | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
   if (!match) return null;
@@ -145,16 +135,15 @@ export function archiveDayValue(atMs: number): string {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
 }
 
-/** The day value a number of days away — how a pager steps. Stepping
- * through noon of the target day keeps a DST-shifted midnight from landing
- * the step on the wrong side. Null when the value is not a real date. */
+/** The day value deltaDays away. Steps through noon so a DST-shifted
+ * midnight cannot skip a day; null for an invalid value. */
 export function archiveDayStep(dateValue: string, deltaDays: number): string | null {
   const window = archiveDayWindow(dateValue);
   if (window == null) return null;
   return archiveDayValue(window.fromMs + deltaDays * DAY_MS + DAY_MS / 2);
 }
 
-/** The trailing window ending now — a pager's "today". */
+/** The trailing 24 h ending at nowMs. */
 export function archiveTrailingWindow(nowMs: number, spanMs = DAY_MS): ArchiveWindow {
   return { fromMs: nowMs - spanMs, toMs: nowMs };
 }

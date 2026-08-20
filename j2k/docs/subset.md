@@ -1,5 +1,5 @@
 ---
-title: "The subset: measured, guarded, deliberate"
+title: "The subset"
 description: "The exact codestream shape @azohra/meteo.j2k decodes, measured from the feeds; everything outside it fails loudly with a named UnsupportedJ2kError."
 ---
 
@@ -23,7 +23,7 @@ shape, and this decoder covers exactly it:
   restating style-0 quantization for the one component is honoured: the
   JasPer fields ship one whose exponents really differ from the QCD's)
 - one quality layer, DEFAULT precincts (the implicit 2^15 grid, which
-  is one whole-tile precinct for every gridded field and honestly
+  is one whole-tile precinct for every gridded field and
   several for JasPer's one-row bitmapped fields: 813275×1 is 25 precincts
   at r=5), default codeblock style, 64×64 codeblocks, 5 decomposition
   levels (any level count in [0, 32] accepted: the loops are generic),
@@ -37,14 +37,16 @@ layers, the 9/7 irrational wavelet, explicit precinct partitions,
 RGN/COC/POC, main-header QCC, PPM/PPT packed headers, every non-default
 codeblock style bit by name, SOP/EPH markers, quantization.
 
-Absence of generality is the design: a tripped guard means a feed
-changed shape, and that deserves a loud failure, not a silent slow path.
+The narrow scope is intentional. A tripped guard means a feed changed
+shape, and the right response is a loud failure rather than a silent
+slow path.
 The guards live in
 [`src/codestream.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/codestream.ts);
 the error vocabulary (`UnsupportedJ2kError`, `J2kFormatError`) in
 [`src/errors.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/errors.ts).
 
-One guard is deliberately loose: the three resolution-major progression
+The progression-order guard is looser than the rest: the three
+resolution-major
 orders are accepted interchangeably, because with one layer and one
 component they emit the same resolution-then-precinct packet sequence;
 the position-major orders (PCRL/CPRL) are accepted only while every
@@ -57,14 +59,14 @@ position-major and resolution-major emit the same packet sequence.
 The guards earned their keep on adoption day. Most ECCC fields are
 OpenJPEG-encoded, but the live RDPS smoke surfaced a CAPE field whose
 COM marker says "Creator: JasPer", caught by exactly such a loud
-failure, then extended into the subset deliberately and
+failure, then extended into the subset and
 oracle-verified. It differs in three load-bearing ways from every fixture
 in the golden corpus:
 
 - **Bitmapped one-row geometry**: the coded values are flattened to an
   813275×1 image (section 6 bitmap; the grid is 1140×1045).
 - **Multiple precincts**: 813275 exceeds the default 2^15 precinct, so
-  the upper resolutions honestly have several precincts (25 at r=5) and
+  the upper resolutions have several precincts (25 at r=5) and
   the one-packet-per-resolution degeneracy breaks: this fixture is why
   `packets.ts` walks the precinct grid.
 - **Tile-part QCC**: quantization is restated in the tile-part header

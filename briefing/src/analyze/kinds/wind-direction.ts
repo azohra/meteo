@@ -5,14 +5,11 @@ import type { ThermalWindowFinding } from "./thermal-window.js";
 import { round2, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * Surface-flow evolution across one thermalWindow: direction and speed
- * at the window's start, peak-lift hour, and end, the net circular veer
- * between the endpoints, and the vector-mean surface and climb-band
- * directions. Deterministic documents only — published ensemble
- * direction percentiles are not circular statistics; all direction
- * arithmetic is vector math, raw degrees are never averaged, and any
- * sample or mean whose speed sits under `directionFloorMps` states a
- * null direction.
+ * Direction and speed at a thermalWindow's start, peak-lift hour, and
+ * end; net circular veer; vector-mean surface and climb-band directions.
+ * Deterministic only (ensemble direction percentiles are not circular
+ * statistics). All direction arithmetic is vector math — raw degrees are
+ * never averaged — and speeds under directionFloorMps state null.
  */
 export interface WindDirectionFinding {
   kind: "windDirection";

@@ -11,12 +11,9 @@ import {
 } from "./shared.js";
 
 /**
- * Consecutive hours whose published usable-lift top stands at least
- * `depthMinM` above launch while W* is at least `wstarMinMps` — a
- * compression anchor that deliberately restates the published derived
- * series. The arithmetic tests thermals, not flyability: it is blind to
- * wind, rain, and overdevelopment, and the flyability call stays
- * downstream.
+ * Consecutive hours with published usable-lift top >= depthMinM above
+ * launch and W* >= wstarMinMps. Tests thermals, not flyability: blind to
+ * wind, rain, and overdevelopment; the flyability call is downstream's.
  */
 export interface ThermalWindowFinding {
   kind: "thermalWindow";

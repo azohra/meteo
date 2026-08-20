@@ -12,9 +12,9 @@ const SITE_INK_SOFT = "#3b4a58";
 const SITE_INK_MUTE = "#5b6a79";
 const SITE_ACCENT = "#0f7490";
 
-/* The README hero uses the site's pre-dawn arm. A single static dark plate
-   holds its contrast in both GitHub themes and makes the repository map feel
-   like the same instrument panel as the homepage, rather than a second brand. */
+/* The README hero uses the site's pre-dawn palette. A single static dark
+   plate holds its contrast in both GitHub themes and matches the homepage
+   palette instead of introducing a second one. */
 const NIGHT_PAGE = "#0d1319";
 const NIGHT_SURFACE = "#10161d";
 const NIGHT_RAISED = "#212d3a";

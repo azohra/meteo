@@ -1,18 +1,17 @@
 ---
 title: Wire an inspector
-description: "Connect pointer, keyboard, and pinned selections to the scene's pure queries: the recipe for the state the package deliberately does not ship."
+description: "Connect pointer, keyboard, and pinned selections to the scene's pure queries, and own the small state machine between events."
 ---
 
-An inspector (the readout that follows a pointer, pins on a click, and
-steps with the arrow keys) is two different kinds of code. The geometry
-questions ("which hour is under this pixel", "which drawn barb is nearest",
-"where does this instant fall") are pure functions of the scene, and the
-package answers every one of them. The state between events (preview
-versus pin, what a touch does, what survives a model switch) is a small
-machine whose shape belongs to the consumer and its framework. The first
-production consumer's machine is two-dimensional, never empty, and
-keyboard-driven; a second consumer's will differ. This page is the recipe
-for wiring one, not a module to import.
+An inspector is the readout that follows a pointer, pins on a click, and
+steps with the arrow keys. The package answers its geometry questions —
+which hour is under this pixel, which drawn barb is nearest, where an
+instant falls — as pure functions of the scene. What the package does not
+ship is the state between events: preview versus pin, what a touch does,
+what survives a model switch. That machine is small and belongs to the
+consumer and its framework. The first production consumer's is
+two-dimensional, never empty, and keyboard-driven; a second consumer's
+will differ. This page wires one end to end.
 
 ![A rendered Meteogram whose build received a consumer selection. The serializer drew the tinted selection column with its centre hairline, and a ring on the drawn wind barb the requested altitude snapped to. The scene's own computed best-hour highlight is visible on a different column.](figures/inspector-selection.svg)
 
@@ -53,9 +52,9 @@ export function selectionAtPoint(
 }
 ```
 
-Three decisions in that code are worth making deliberately. The `clamp`
+Three decisions in that code matter. The `clamp`
 means the strips and margins still select an hour: a pointer over the
-pressure strip is asking about that hour, not about nothing. The snap goes
+pressure strip is asking about that hour. The snap goes
 to *drawn* barbs: `nearestDrawnBarb` already knows about the barb stride,
 the min-gap thinning, and the surface row's lifted position
 (`scales.surfaceWindY`), so the selection ring can never circle a glyph
@@ -79,7 +78,7 @@ never a pin. Clicking the already-pinned target unpins; clicking anywhere
 else re-pins. Escape unpins. Written as a reducer it is a handful of
 cases over `{ selection, preview, pinned }`, small enough that owning it
 outright costs less than adapting a shipped one to your framework's
-rendering model, which is why it ships here as a recipe and not as code.
+rendering model.
 
 The worked example behind this page makes three further choices a second
 consumer might make differently, all consumer policy, none scene facts:
@@ -118,9 +117,8 @@ Hover previews fire per pointer event; if a rebuild per move measures too
 hot on your target hardware, draw the preview as a consumer overlay and
 reserve the scene option for the pin. Position the overlay with
 `resolveSelection(scene, { hourIndex, altitudeM })` (the same function
-`buildMeteogramScene` runs for its `selection` option), so the preview and the
-serializer-drawn pin resolve through one implementation and cannot
-disagree about where the selection is.
+`buildMeteogramScene` runs for its `selection` option), so the preview and
+the serializer-drawn pin resolve through one implementation.
 
 ## Carry or reset across a swap
 
@@ -144,7 +142,7 @@ export function carrySelection(
 ```
 
 Whether to carry at all is a product decision, not a correctness one. The
-worked example deliberately resets its pin on every model and day switch
+worked example resets its pin on every model and day switch
 and carries only overlay toggles: a pilot who turned on the thermal
 index is asking a question of the day, and the answer should survive the
 switch; a pin on 2 p.m. may not deserve to. If you do carry, carry by

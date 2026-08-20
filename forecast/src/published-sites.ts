@@ -4,12 +4,10 @@ import { fetchPublished, type DatasetOptions } from "./dataset.js";
 import { parseSites, type Site } from "./sites.js";
 
 /**
- * The launch catalogue read from the dataset itself — the deployment
- * owner publishes sites.json to the root, and builders that pass
- * `--sites dataset` build from it, so site identity never needs a home
- * in an operator's repository. Parsed with the engine's writer-strict
- * parser: what the engine builds from is held to the same discipline as
- * a local file.
+ * The launch catalogue read from the dataset itself: the deployment owner
+ * publishes sites.json to the root, and builders passing `--sites dataset`
+ * build from it instead of a catalogue kept in the operator's repository.
+ * Parsed with the engine's writer-strict parser, same as a local file.
  */
 export async function publishedSites(options: DatasetOptions = {}): Promise<Site[]> {
   const bytes = await fetchPublished(documentPaths.sites(), options);

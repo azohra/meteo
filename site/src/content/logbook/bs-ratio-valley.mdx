@@ -50,7 +50,8 @@ Mountain) from the month archives of the reference operator,
 data is private; the
 [sample dataset](https://meteo.azohra.com/data-sample/hrdps-continental/history/test-hill/2026-08.jsonl.gz)
 publishes the same archive shape. Shear and ratio recomputed with the package's
-`surfaceToBoundaryLayerShearMps` and `buoyancyShearRatio`, the same calls the strip makes.*
+`surfaceToBoundaryLayerShearMps` and `buoyancyShearRatio`, the functions behind the production
+strip.*
 
 ## The assumption
 
@@ -64,10 +65,10 @@ does not measure a gradient any parcel experiences; it measures the angle betwee
 wind systems, and on the best days that angle is large by construction, because the valley wind
 follows the heating while the flow aloft follows the synoptics. The ratio is not noisy at such
 sites. It is structurally pinned to 0.3–0.7 precisely when conditions are best: a doctrine
-answering the wrong question with full confidence.
+answering the wrong question.
 
-See it for yourself: the lab below interpolates the wind through the lift band and computes the
-shear with the same `@azohra/meteo.briefing/derive` calls the strip makes.
+The lab below interpolates the wind through the lift band and computes the shear with the same
+`@azohra/meteo.briefing/derive` calls the strip makes.
 
 <WindShearLab />
 
@@ -92,6 +93,6 @@ Three dispositions, in the order the evidence supports them:
    prototyped against days pilots actually rated, the same bar every threshold in `analyze`
    had to clear.
 
-The general lesson is the same one the stability ramp taught me from a different direction: a
-quantity inherited from a flatland lineage carries its terrain assumptions silently, and the fix
-starts with saying the assumption out loud at the quantity's one home.
+The stability ramp taught the same thing from a different direction: a quantity ported from
+flatland practice carries its terrain assumptions silently, and the fix starts with writing the
+assumption down where the quantity is defined.

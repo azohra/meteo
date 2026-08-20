@@ -11,7 +11,7 @@ monthly gzip archives at one path shape:
 <model>/history/<site>/<YYYY-MM>.jsonl.gz
 ```
 
-The path shape is shared; **the line grammar is not**. Profile history
+The path shape is shared; the line grammar is not. Profile history
 archives whole documents per run; observation history archives single
 observation objects per instant. Know which kind of dataset an archive
 belongs to before reading it: a line from one grammar does not parse as
@@ -40,7 +40,7 @@ history-only shape.
   published at that time.
 - Current catalogue values do not retroactively reinterpret an archived
   profile.
-- A corrected re-publication **appends** a new line for the same
+- A corrected re-publication appends a new line for the same
   `run.referenceTime` with a later `run.generatedAt`; it never rewrites
   the earlier line. A republication is a fact the archive states; readers
   dedupe by `referenceTime`, keeping the latest `generatedAt`.
@@ -63,7 +63,7 @@ requests, which object stores and CDNs commonly do; verify yours does
 before building a reader on it.
 
 The index is recomputed from the archive bytes after every append (a
-pure function of the file), and it is **advisory, never authoritative**:
+pure function of the file), and it is advisory, never authoritative:
 no reader may require it. The
 [history loaders' since-suffix strategy](/docs/briefing/history/#the-sidecar-index-and-the-since-suffix-strategy)
 is the worked consumption, degradations included.

@@ -24,12 +24,12 @@ demonstrates:
 Offline model output can calibrate plausible ranges; figures and tests
 consume the fixed, committed profile. A figure built on a scenario needs a
 clear relationship, a meaningful static frame, units, and an accessible
-description; add a caption when method or limits change the reading, and add
+description. Add a caption when method or limits change the reading. Add
 controls only when changing an input reveals something the static frame
-cannot. The scenario generator and validation gates own committed documents;
-prose and components consume those artifacts.
+cannot. The scenario generator and validation gates own committed
+documents; prose and components consume those artifacts.
 
-The distinction is structural as well as editorial:
+The generator enforces the distinction:
 
 - definitions use synthetic scenario ids and one of the abstract model shapes
   in `scenario.schema.json`, never a production model slug as public identity;
@@ -106,8 +106,7 @@ Every definition has these required fields:
 - `assertions` records machine-checkable relationships that establish the
   lesson.
 
-Each `modelShape` is an abstract transport shape, not a claim that a named
-provider produced the values:
+The `modelShape` vocabulary:
 
 | Shape | Structural promise |
 | --- | --- |

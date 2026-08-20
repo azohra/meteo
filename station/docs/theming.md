@@ -93,8 +93,8 @@ Unstyled by design: style them from your own CSS, or leave them be; the
 default look does not depend on them. The SVG text seams
 (`meteo-grid-label`, `meteo-tick`) are not bare, though: font, size, and
 ink arrive from their chart's base `.meteo-*-svg text` rule, so the class
-itself carries no rule to replace: override the base dress, don't rebuild
-it.
+itself carries no rule to replace: override the base rule rather than
+adding new per-class rules.
 
 ## Token reference
 

@@ -4,14 +4,12 @@ import { fetchPublished, type DatasetOptions } from "./dataset.js";
 
 /* Whether the published site-context still describes the published
    catalogue. Fresh means every catalogued site has a context entry whose
-   measured point equals the catalogue's exactly — the echo is written
-   verbatim, so equality is exact, not approximate. Stale covers every
-   cure-by-regenerating condition: a missing context, an entry the
-   catalogue gained, a moved point, and a v2 context (whose entries carry
-   no point — a measurement whose point is unknown is stale by
-   definition). A missing or unreadable catalogue throws: with no
-   authority to measure against there is no verdict, and an unreachable
-   dataset must never read as one. */
+   measured point equals the catalogue's exactly (the echo is written
+   verbatim, so the comparison is exact equality). Stale covers every
+   condition regeneration cures: a missing context, an entry the catalogue
+   gained, a moved point, and a v2 context, whose entries carry no point.
+   A missing or unreadable catalogue throws rather than returning a
+   verdict. */
 export async function publishedContextFresh(options: DatasetOptions = {}): Promise<boolean> {
   const decoder = new TextDecoder();
   const sitesBytes = await fetchPublished(documentPaths.sites(), options);

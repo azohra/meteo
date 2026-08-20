@@ -38,8 +38,7 @@ export type WindnerdRecordPeriodMinutes = (typeof WINDNERD_RECORD_PERIODS_MINUTE
 const CACHE_TTL_SECONDS = 60;
 const AGGREGATE_CACHE_TTL_SECONDS = 900;
 const LIVE_CACHE_TTL_SECONDS = 15;
-/* Spot metadata (sectors, altitude, offsets) changes on the owner's
- * timescale, not the wind's. */
+/* Spot metadata rarely changes; long cache TTL. */
 const LOCATION_CACHE_TTL_SECONDS = 21_600;
 const LOCATION_MISS_CACHE_TTL_SECONDS = 900;
 export const WINDNERD_LIVE_RECOMMENDED_POLL_SECONDS = 15;
@@ -117,8 +116,7 @@ export const loadWindnerdStation = defineStationAdapter<
       try {
         return await loadWindnerdLiveCurrent(config, environment, options);
       } catch (error) {
-        /* The records road stays open when the live one closes — current
-         * degrades to a one-minute record, never to unavailable-for-nothing. */
+        /* Current mode falls back to a one-minute record when the live stream is unreachable. */
         logUpstreamFailure(
           environment,
           `${config.name} live current unavailable, serving records`,
@@ -239,12 +237,9 @@ function windnerdConditions(
   });
 }
 
-/* ── The archive arm ───────────────────────────────────────────────────────
- * Window/period-parameterized history for pan/zoom browsing. Fetch windows
- * align to whole UTC days so every zoom over the same day reuses one cache
- * entry (a sliding raw window would defeat the cache); the response is
- * sliced back to the request. A window fully in the past is immutable and
- * caches long. */
+/* Archive: window/period-parameterized history. Fetch windows align to
+ * whole UTC days so zooms over one day share a cache entry; the response
+ * is sliced back to the request. Fully-past windows cache long. */
 
 const ARCHIVE_PAST_CACHE_TTL_SECONDS = 2_592_000;
 const ARCHIVE_LIVE_CACHE_TTL_SECONDS = 300;
@@ -303,11 +298,10 @@ export async function loadWindnerdHistory(
   return { periodMinutes, points };
 }
 
-/* ── The live arm ──────────────────────────────────────────────────────────
- * live-url/<stationKey> is an SSE stream: one INIT frame (digest + a ring of
- * 3-second samples), then WIND_SAMPLES and LAST_DIGEST frames each minute.
- * Current mode reads only the INIT frame and hangs up; the open stream
- * belongs to openWindnerdLive. */
+/* Live: live-url/<stationKey> is SSE — one INIT frame (digest plus a ring
+ * of 3-second samples), then WIND_SAMPLES and LAST_DIGEST each minute.
+ * Current mode reads only INIT and disconnects; openWindnerdLive owns the
+ * open stream. */
 
 export type WindnerdLiveDigest = {
   observedAt: string;
@@ -326,9 +320,7 @@ export type WindnerdLiveSampleRecord = {
   directionDeg: number;
 };
 
-/* The INIT frame's location block: the vendor's public metadata about the
- * spot. Parsed tolerantly — enrichment is best-effort and its absence never
- * fails a load. */
+/* INIT location block, parsed tolerantly; absence never fails a load. */
 export type WindnerdLiveLocation = {
   declaredFavorableDirections: DirectionArc[] | null;
   altitudeM: number | null;
@@ -375,12 +367,10 @@ export function parseWindnerdLiveInit(value: string, locationId: number): Windne
   };
 }
 
-/* The digest's pre-digested step blocks — ten 1-minute steps and twelve
- * 5-minute steps — as the contract's RecentSummary list, timestamps walked
- * back from the digest's own anchor. Tolerant by design: a malformed block
- * declares nothing rather than something plausible-but-wrong. Accepts both
- * homes of the digest record, the INIT frame's digest field and a
- * LAST_DIGEST frame itself. */
+/* Digest step blocks (ten 1-minute, twelve 5-minute) as RecentSummary,
+ * timestamps walked back from the digest anchor. A malformed block yields
+ * null, not a partial parse. Accepts the INIT frame's digest field or a
+ * LAST_DIGEST frame. */
 export function parseWindnerdRecentSummaries(value: unknown): RecentSummary[] | null {
   if (!isRecord(value) || !isRecord(value.recent)) return null;
   const anchor = value.recent.date_utc;
@@ -434,8 +424,7 @@ function summaryPoints(
   return points;
 }
 
-/* Tolerant by design: a malformed or absent block reads as null — the
- * enrichment declares nothing rather than something plausible-but-wrong. */
+/* A malformed or absent block reads as null. */
 export function parseWindnerdLiveLocation(value: unknown): WindnerdLiveLocation | null {
   if (!isRecord(value)) return null;
   const finiteOrNull = (entry: unknown) =>
@@ -463,7 +452,7 @@ function parseDirRanges(value: unknown): DirectionArc[] | null {
       typeof entry.to !== "number" ||
       !Number.isFinite(entry.to)
     ) {
-      /* One bad arc poisons the list: declare nothing over a partial lie. */
+      /* One bad arc nulls the whole list. */
       return null;
     }
     arcs.push({ fromDeg: entry.from, toDeg: entry.to });
@@ -471,8 +460,8 @@ function parseDirRanges(value: unknown): DirectionArc[] | null {
   return arcs;
 }
 
-/* "-08:00" → -480; the vendor states the station's STANDARD offset (no
- * DST), the honest clock for climatological bucketing. */
+/* "-08:00" -> -480. The vendor states the STANDARD offset (no DST),
+ * which climatological bucketing requires. */
 export function parseStandardTimeOffset(value: unknown): number | null {
   if (typeof value !== "string") return null;
   const match = /^([+-])(\d{2}):(\d{2})$/.exec(value.trim());
@@ -482,8 +471,7 @@ export function parseStandardTimeOffset(value: unknown): number | null {
   return minutes;
 }
 
-/* Accepts both homes of the digest record: the INIT frame's digest field and
- * a LAST_DIGEST frame itself. */
+/* Accepts the INIT frame's digest field or a LAST_DIGEST frame. */
 export function parseWindnerdLiveDigest(value: unknown, locationId: number): WindnerdLiveDigest {
   const fail = (name: string): never => {
     throw new Error(`WindNerd location ${locationId} returned an invalid live ${name}`);
@@ -654,12 +642,10 @@ async function loadWindnerdLiveCurrent(
   };
 }
 
-/* ── Location enrichment ───────────────────────────────────────────────────
- * The INIT frame's location block is the one public source of the spot's
- * declared sectors, altitude, and offsets. It rides every live read for
- * free; records mode reads it through a 6-hour cache so a feed poll never
- * pays a live connection. Enrichment is best-effort: a failure declares
- * nothing and never fails the load. Consumer config always wins. */
+/* Location enrichment: the INIT location block is the only public source
+ * of declared sectors, altitude, and offsets. Records mode reads it
+ * through a 6-hour cache. Best-effort: a failure enriches nothing and
+ * never fails the load. Config wins over vendor values. */
 
 export type CachedWindnerdLocation = {
   location: WindnerdLiveLocation | null;
@@ -682,9 +668,8 @@ async function cacheWindnerdLocation(
   );
 }
 
-/** The spot's cached location block, read through the 6-hour cache — one
- * live connection at most, then cache-served. Throws on a cold cache with a
- * dark live road; callers decide whether that degrades or fails. */
+/** Cached location block (6-hour TTL). Throws on a cold cache when the
+ * live stream is unreachable; callers choose degrade or fail. */
 export async function loadWindnerdLocation(
   config: WindnerdStationConfig,
   environment: ResolvedEnvironment,
@@ -712,8 +697,7 @@ async function loadWindnerdLocationEnrichment(
     logUpstreamFailure(environment, `${config.name} location metadata unavailable`, error, {
       station: config.id,
     });
-    /* Negative-cache the miss so a dark live stream cannot tax every feed
-     * poll with a fresh connection attempt. */
+    /* Negative-cache misses so a dead stream is not retried every poll. */
     const nothing: CachedWindnerdLocation = { location: null, broadcastDelaySeconds: null };
     await environment.cache.put(
       `windnerd/location/${config.locationId}`,
@@ -806,8 +790,7 @@ export function parseWindnerdRecords(
   };
   const speeds = (name: string) =>
     numberSeries(records[name], dates.length, 0, MAX_WIND_MPS, name, fail);
-  /* A column the response simply lacks reads as all-null — absence over a
-   * parse failure, since not every board publishes every sensor series. */
+  /* A missing column reads as all-null; boards publish different sensor sets. */
   const optionalSeries = (name: string, minimum = -Infinity, maximum = Infinity) =>
     records[name] == null
       ? dates.map(() => null)
@@ -833,9 +816,7 @@ export function parseWindnerdRecords(
     temperatureC: requiredSeries("temperature_avg"),
     temperatureMinC: optionalSeries("temperature_min"),
     temperatureMaxC: optionalSeries("temperature_max"),
-    /* The declared board's average column is required — a config that
-     * declares pressure and a response without it is a loud mismatch — but
-     * the min/max spread is a genuinely optional extra. */
+    /* A declared board's average column is required; the min/max spread is optional. */
     stationPressureHpa: hasPressure
       ? requiredSeries("pressure_hpa_avg", STATION_PRESSURE_MIN_HPA, STATION_PRESSURE_MAX_HPA)
       : dates.map(() => null),

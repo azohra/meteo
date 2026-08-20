@@ -31,8 +31,8 @@ export async function fetchBytes(
   url: string,
   options: FetchBytesOptions = {},
 ): Promise<Uint8Array> {
-  // Keep-alive is load-bearing: undici's fetch reconnects per request
-  // against the Datamart's `Connection: Upgrade` manners.
+  // Keep-alive is required: undici's default fetch reconnects per request
+  // because the Datamart answers with `Connection: Upgrade`.
   const fetchImpl = options.fetch ?? keepAliveFetch;
   const sleep = options.sleep ?? defaultSleep;
   const random = options.random ?? Math.random;

@@ -1,5 +1,5 @@
 ---
-title: "Performance, honestly"
+title: "Performance"
 description: "Measured timings for @azohra/meteo.j2k: region decode (the production shape) against full decode per core, the single-thread table against the WASM OpenJPEG oracle, the Tier-1 profile, and the codeblock-parallel pool."
 ---
 
@@ -71,8 +71,8 @@ sampled decode under it pays the full-decode column every time.
 ## Where the time goes
 
 Profiling puts ~95% of a full decode in Tier-1 (the MQ/EBCOT bit loops;
-the DWT is ~4%). That is exactly why region decode wins (Tier-1 runs
-per codeblock, so skipping codeblocks skips the cost) and exactly the
+the DWT is ~4%). That is why region decode wins (Tier-1 runs
+per codeblock, so skipping codeblocks skips the cost), and it is the
 work
 [`src/parallel.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/parallel.ts)
 decomposes: the largest field is 911 independent codeblock tasks, each a
@@ -82,12 +82,13 @@ native OpenJPEG can use at all.
 
 ## The pool lives next door
 
-The pool wiring is deliberately not in this package (no Node APIs here,
-ever); it lives in `@azohra/meteo.grib/j2k-node`. Its `decodeSampled` rides
+The pool wiring is not in this package (no Node APIs here);
+it lives in `@azohra/meteo.grib/j2k-node`. Its `decodeSampled` rides
 `decodeJ2kRegion` directly; for full decodes, `strategy: "codeblock"`
 fans one field's codeblocks across the whole pool, cutting its latency
 several-fold (736 → 133 ms measured on the largest field through an
-8-worker pool) while saturated throughput ties per-field fan-out exactly.
+8-worker pool). At saturated load its throughput equals per-field
+fan-out's.
 See [JPEG 2000 and the pool](/docs/grib/jpeg2000/) for the pool's API,
 sizing, and heap behaviour.
 

@@ -73,7 +73,7 @@ peak-w\* hour, with `…` marking elided fields, levels, and hours.*
 publication. Ensemble documents also declare total membership once at
 `run.members`.
 
-The `site` block is **sample provenance**: where the atmosphere was sampled
+The `site` block is sample provenance: where the atmosphere was sampled
 (`id`, `name`, `latitude`, `longitude`, optional `timeZone`) and what the
 model thinks the ground there is (`site.modelElevationM`, the plot floor and
 physics reference). It carries no launch elevation: a baked-in launch
@@ -102,7 +102,7 @@ semantics.
 
 ## Deterministic and ensemble values
 
-Every numeric position can contain a number or an ensemble percentile object. Consumers switch on the value shape, not a model name.
+Every numeric position can contain a number or an ensemble percentile object. Consumers narrow by the value's shape rather than by model name.
 
 ```ts title="read-wind.ts"
 import { isEnsembleDropout, isEnsembleValue, type SiteForecast } from "@azohra/meteo.briefing/contract";

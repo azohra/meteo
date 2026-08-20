@@ -40,16 +40,14 @@ import MeteoMark from "../MeteoMark.astro";
 </section>
 
 <style>
-  /* One fixed deep teal in either theme: the accent at instrument depth.
-     Full bleed — the page ends on the band itself, not on a card. */
+  /* Fixed hex in both themes: this band deliberately does not re-theme. */
   .home-closing {
     margin-block-start: clamp(4.5rem, 9vw, 8rem);
     color: #e7f3f7;
     background: #0c5b72;
   }
 
-  /* The grade sweeps the full width once, closing the page the way every
-     page title opens: on the platform's judgment ramp. */
+  /* The same grade ramp the page titles open with; keep the two in step. */
   .home-closing::before {
     display: block;
     height: 4px;
@@ -144,8 +142,6 @@ import MeteoMark from "../MeteoMark.astro";
     color: #7fd7ec;
   }
 
-  /* Where the project stands, in the signoff's shadow: quieter than the
-     signoff, one step above the legal line. */
   .home-closing__maturity {
     margin: 0.55rem 0 0;
     color: color-mix(in srgb, #e7f3f7 70%, #0c5b72);

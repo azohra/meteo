@@ -32,13 +32,12 @@ temperature–dew-point spread goes back to James Espy's nineteenth-century clou
 121 m/°C is the value canadarasp's `windgram-continental.ncl` used. I inherited it the way I
 inherited the strongest-core updraft profile and the 1 m/s sink threshold: ported
 constant-for-constant, because during the schema migration the derivations were the verification
-oracle, the one thing I deliberately held fixed while everything around them moved. That debt is
-recorded with gratitude in the [forecast derivations](/docs/forecast/derivation-science/); the estimate
-served canadarasp's pilots for years and served this project as its proof of equivalence.
+oracle, the one thing I deliberately held fixed while everything around them moved. The port is
+credited in the [forecast derivations](/docs/forecast/derivation-science/); the estimate served
+canadarasp's pilots for years and served this project as its proof of equivalence.
 
-An oracle's virtue is constancy, not precision. Once the migration closed, the linear estimate
-stopped being an asset and became an approximation of a quantity the forecast engine could compute exactly,
-from numbers it was already publishing.
+Once the migration closed, the linear estimate stopped being an asset and became an approximation
+of a quantity the forecast engine could compute exactly, from numbers it was already publishing.
 
 ## The exact answer costs nothing the documents don't already carry
 
@@ -107,8 +106,8 @@ The usable-lift derivation itself is untouched (same profile, same constants), a
 Every shift enters through its cloud-base input alone. Boundary-layer top and thermal velocity
 are moisture-free and did not move.
 
-See every hour's shift below: the uniform cloud-base rise, and the two rust bars where the cap
-came off.
+Every hour's shift is charted below: the uniform cloud-base rise, and the two rust bars where the
+cap came off.
 
 <CloudBaseDeltas />
 

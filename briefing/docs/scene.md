@@ -19,8 +19,8 @@ export function sceneAndFirstReading(profile: SiteForecast, olderProfileTimeZone
   if (!timeZone) throw new Error("older profile needs an explicit IANA timezone");
   const scene = buildMeteogramScene(profile, {
     timeZone,
-    // The launch is yours, not the document's — here the sample's Test Hill
-    // pick from site-context.json. Omit it and no launch marker draws.
+    // The caller picks the launch: here the sample's Test Hill pick
+    // from site-context.json. Omit it and no launch marker draws.
     launch: { name: "Test Hill", elevationM: 1225.1 },
     hours: profile.hours.slice(0, 8),
     overlays: { thermalIndex: true, windShear: true },
@@ -49,15 +49,14 @@ export function sceneAndFirstReading(profile: SiteForecast, olderProfileTimeZone
 Documents are launch-agnostic samples: a profile records where the atmosphere
 was sampled and what the model thinks the ground there is
 (`site.modelElevationM`); it carries no launch elevation, because one grid
-sample serves every launch its cell covers. The launch is a **render input**:
+sample serves every launch its cell covers. The launch is a render input:
 
 - `launch: { elevationM }` draws the launch line at that elevation, labelled
   `launch <n> m`; add `name` and the label becomes `<name> <n> m`. The number
   is the consumer's, typically the `elevation` pick from
   [site-context.json](/docs/briefing/site-context-document/).
 - No `launch` option → `scene.launch` is null and no marker draws. That
-  absence is a fact (the document never knew a launch) and it is not an
-  error.
+  absence means the document never knew a launch; it is not an error.
 - The `launch` **overlay** keeps its meaning as a display toggle: off, it
   hides even a provided launch.
 
@@ -90,57 +89,56 @@ Pass a site's smoke document as `options.smoke` and the smoke strip
 draws wherever the profile itself publishes no smoke: one source per
 strip, never a blend, with `scene.smokeSource` naming the model and run
 that fed the pixels. Set `options.smokeAdjusted: true` to build the
-**smoke-adjusted alternate view**: every hour's w* derated by the
+smoke-adjusted alternate view: every hour's w* derated by the
 slant-path transmittance and the usable-lift envelope re-derived, one
 coherent scene. The graph then carries `scene.smokeAdjustment` (smoke
-model + run): **render that label**; the reference key does it for
+model + run): render that label; the reference key does it for
 you via `KeySpec.smokeAdjusted`. The option quietly no-ops, and
 `smokeAdjustment` stays null, when there is no smoke data or the
 profile's own fluxes are already smoke-aware
 (`semantics.smoke: "radiativelyCoupled"`). Pointer packets from
 `cursorReading` include the drawn hour's `smokeSurfaceUgm3` and
-`smokeAot`, so tooltips and pixels cannot disagree.
+`smokeAot`, so tooltips read the same numbers the pixels drew.
 
 ## Draw measurements beside the forecast
 
 Pass a site's observation document as `options.observations` and the
-**Sun strip** draws: satellite-measured W/m² at the product's own
-cadence — every sample inside the window, where its instant falls —
-with a shadow behind the line that deepens as the measured sky
-under-delivers against the clear-sky expectation (tint = 1 − observed
-transmittance). A measured line stops at its data: it never extends to
-the plot edges the way a forecast strip does, a gap wider than
+Sun strip draws: satellite-measured W/m² at the product's own cadence
+(every sample inside the window, where its instant falls), with a
+shadow behind the line that deepens as the measured sky under-delivers
+against the clear-sky expectation (tint = 1 − observed transmittance).
+A measured line stops at its data: it never extends to the plot edges
+the way a forecast strip does, a gap wider than
 `measurementGapMinutes` (TRIAL default 45) breaks it rather than
 interpolating across a retrieval outage, and a lone surviving sample
 draws as a dot (`MetricStrip.dots`) instead of vanishing. The window's
-remainder past the newest measured instant is not a gap, and the strip
-says so: a pending tint fills from `MetricStrip.measuredToX` to the
-right edge. Entries labelled with a nonzero `quality` — DSR's binary
-DQF-1 "degraded/invalid" state, the sunrise and sunset shoulders —
-never join the line: they draw as dimmed dots
-(`MetricStrip.degradedDots`), indicative rather than quantitative, and
-they never shade the dimming cells, because a ratio built on a
-provider-refused measurement would be a plausible-but-wrong shadow.
-`scene.observationSource` names the dataset and its newest
-measured instant: the strip is another source with its own cadence, and
-renderers must be able to label it; the reference key explains the
-shadow via `KeySpec.measuredDimming`. The shadow cells, pointer
-packets, and the sampling row remain hourly joins by nearest instant —
-per-hour consumers read the hour's nearest measurement, the line reads
-them all. Pointer packets carry `observedIrradianceWm2`,
-`observedIrradianceQuality`, and `observedTransmittance`, so an
-inspector reads the measurement — and its grade — where the pixels
-drew it.
+remainder past the newest measured instant is not a gap: a pending
+tint fills from `MetricStrip.measuredToX` to the right edge. Entries
+labelled with a nonzero `quality` (DSR's binary DQF-1
+"degraded/invalid" state, the sunrise and sunset shoulders) never join
+the line: they draw as dimmed dots (`MetricStrip.degradedDots`),
+indicative rather than quantitative, and they never shade the dimming
+cells, because a ratio built on a provider-refused measurement would
+draw a shadow the data cannot support. `scene.observationSource` names
+the dataset and its newest measured instant: the strip is another
+source with its own cadence, and renderers must be able to label it;
+the reference key explains the shadow via `KeySpec.measuredDimming`.
+The shadow cells, pointer packets, and the sampling row remain hourly
+joins by nearest instant: per-hour consumers read the hour's nearest
+measurement, the line reads them all. Pointer packets carry
+`observedIrradianceWm2`, `observedIrradianceQuality`, and
+`observedTransmittance`, so an inspector reads the measurement and its
+grade where the pixels drew it.
 
 Pass an AOD observation document as `options.aotObservations` and the
-**AOT strip** draws beside it: satellite-measured aerosol optical
+AOT strip draws beside it: satellite-measured aerosol optical
 thickness at 550 nm (the same quantity, wavelength, and field name the
 profile's per-hour `smoke` block forecasts as `aot`), drawn at the
-product's own cadence under the same rules as the Sun strip — gaps
+product's own cadence under the same rules as the Sun strip (gaps
 break the line, lone retrievals draw as dots, the not-yet-measured
-remainder renders pending — with `scene.aotObservationSource` naming
+remainder renders pending), with `scene.aotObservationSource` naming
 the dataset and its newest measured instant. The haze behind the line
-is deliberately the forecast smoke strip's own cell encoding, same
+is the forecast smoke strip's own cell encoding, same
 class and same scale (full tint at AOT 3), and one key chip,
 `KeySpec.smokeHaze`,
 explains both tints. Unlike the Sun strip, a `quality: 1` AOT entry
@@ -151,7 +149,7 @@ strict high-only view. The `observedAot` overlay defaults on, a
 document whose entries are not AOT-shaped contributes nothing, and
 pointer packets carry `observedAot`.
 
-**Provenance is structural.** Every strip declares whose data it draws
+Provenance is structural. Every strip declares whose data it draws
 (`provenance: "model" | "crossModel" | "measurement"`), and the stack
 splits spatially: the viewed model's own strips render as one group,
 and anything foreign (another model's smoke, the Sun and AOT
@@ -161,8 +159,9 @@ inside the strip itself (`sourceLabel`). The reference renderer
 always draws the divider when any foreign strip exists. The one subtle
 case is a model's own passive smoke: its data, so it stays above the
 line, but the strip says *"this model's forecast · not in its
-physics"*. Position answers whose data, the label answers whether the
-physics felt it. Radiatively coupled smoke (HRRR) carries no statement
+physics"*. A strip's position in the stack shows whose data it is; the
+label states whether the model's own fluxes already felt the smoke.
+Radiatively coupled smoke (HRRR) carries no statement
 at all: it is ordinary model data.
 
 ## Render continuous field bands
@@ -188,15 +187,15 @@ The optional `buoyancyShear` strip draws zero-shear, nonzero-buoyancy hours as
 computed.
 
 Pass the model's declared capabilities (`options.capabilities`, the
-`models.json` catalogue entry's own object) and the `verticalVelocity`
-field earns an honesty gate: when fewer than 3 declared omega levels sit
-inside the altitude window — RDPS declares omega at 850 and 700 hPa
-only, and a high site's floor prunes the lower one — the scene draws no
+`models.json` catalogue entry's own object) and the scene gates the
+`verticalVelocity` field: when fewer than 3 declared omega levels sit
+inside the altitude window (RDPS declares omega at 850 and 700 hPa
+only, and a high site's floor prunes the lower one), the scene draws no
 field and records why in `scene.suppressed`
 (`{ key: "verticalVelocity", reason }`). `buildKeySpec` reads only what
 was drawn, so a suppressed field never reaches the key. Two levels
-cannot outline a band, only imply one; absence wins over a plausible
-picture. Without a capabilities declaration no gate applies, because the
+cannot outline a band, only imply one, so the scene draws nothing.
+Without a capabilities declaration no gate applies, because the
 scene cannot know what the model publishes.
 
 ## Fit and label the consuming surface
@@ -239,15 +238,16 @@ keeps one marker at the selected hour.
 `launchWindows` takes the consumer's acceptable launch-wind arcs as
 meteorological FROM bearings in degrees; an arc may wrap 360
 (`{ fromDeg: 315, toDeg: 45 }` spans NW through NE), and any number of
-arcs union. It is a judgment parameter with no default: omit it and no
-marks draw. Given arcs, the scene tests each hour's surface p50 wind
+arcs union. There is no default
+([judgment parameters](/docs/core/conventions/) are the consumer's): omit
+it and no marks draw. Given arcs, the scene tests each hour's surface p50 wind
 direction against the union and emits `scene.windWindow` — one
 `WindWindowMark { hourIndex, x, inWindow }` per hour, on a thin row the
 reference renderer draws between the plot floor and the hour labels.
 In-window hours draw as filled triangles and out-of-window hours as open
 circles (`meteo-gram-wind-window-in` / `-out`, themed by the matching
-`--meteo-gram-wind-window-*` tokens), so shape separates the states
-before colour does, and the key gains a `windWindow` entry. Direction is
+`--meteo-gram-wind-window-*` tokens), so the states differ by shape as
+well as colour, and the key gains a `windWindow` entry. Direction is
 the only input: speed and gusts keep their own marks.
 
 The scene reads the forecast engine's `derived.*` values by default. `sinkRateMps`
@@ -291,7 +291,7 @@ the published cloud base — null while the hour has no lift top, never
 false-by-default) and `capeCapped` (the CAPE strip's CIN-cap dimming —
 null when the model publishes no CAPE or no CIN, because absence is not
 "no cap"). Both are the same computations the strip cells consume, so an
-inspector's words and the drawn cells cannot disagree.
+inspector's words match the drawn cells.
 
 ## Express a selection
 
@@ -300,7 +300,8 @@ hour an inspector is reading, and optionally an altitude) into the build.
 The scene resolves it against what it actually drew and reports the geometry
 as `scene.selection`: the column, its centre line, and the nearest drawn barb
 for the ring. `renderMeteogramSvg` draws all three (`meteo-gram-selection-*` classes, themed
-by `--meteo-gram-selection`), so the marker and the readout cannot disagree. It is
+by `--meteo-gram-selection`); one resolution feeds both the marks and any
+readout the consumer renders. It is
 distinct from `selectedHourIndex`, which the scene computes itself (the
 peak-W* column).
 
@@ -308,7 +309,7 @@ The resolver is also exported: `resolveSelection(scene, { hourIndex,
 altitudeM? })` returns the same `SceneSelection` geometry from an
 already-built scene (it is the very function `buildMeteogramScene` calls), so a
 consumer overlay that must not pay for a rebuild (a hover preview) draws
-from geometry that cannot differ from the serializer-drawn pin.
+from the same geometry as the serializer-drawn pin.
 
 The pointer wiring that feeds these queries (preview, pin, touch policy,
 and carrying a pin across model switches) is a consumer state machine, not

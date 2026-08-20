@@ -46,10 +46,10 @@ live stream advertises `recommendedPollSeconds: 15`.
 
 ## Endpoints
 
-Two vendor endpoints, both unauthenticated, both treated as guests: the
-adapter validates every value in vendor units, degrades to `unavailable` on
-any contract break rather than guessing, and identifies itself with the
-project [User-Agent](/docs/station/adapters/#environment-injection).
+Two vendor endpoints, both unauthenticated. The adapter validates every
+value in vendor units, degrades to `unavailable` on any contract break,
+and identifies itself with the project
+[User-Agent](/docs/station/adapters/#environment-injection).
 
 **Records**: `GET https://windnerd.net/api/records?location_id=…&from=…&to=…&period=…`
 serves the m/s series behind full-mode loads: the 6-hour history and its
@@ -80,7 +80,8 @@ The live stream backs two arms:
   a terminal `unavailable` frame: mid-stream contract breaks close as
   `contract_break`, an upstream hangup as `upstream_error`, and 75 seconds
   of silence (three missed keepalives) as `timeout`. Unknown upstream
-  frame types are ignored; the vendor's future is not a contract break.
+  frame types are ignored, so a new vendor frame does not break the
+  stream.
   There is no server-side reconnect: the client owns the backoff loop, and
   every reconnect gets a fresh `INIT`.
 
@@ -113,14 +114,15 @@ adapter no longer parses the response's historical `time_offset` column
 (absent below period 180, and a per-record column where it appears); the
 standard offset rides the live `INIT` frame's location block as
 `standard_timeoffset`, which `parseWindnerdLiveLocation` surfaces as
-`standardUtcOffsetMinutes` — the honest clock for climatological bucketing.
+`standardUtcOffsetMinutes` — the correct clock for climatological bucketing.
 
 ### The location block enriches the meta
 
 The live `INIT` frame carries the spot's public metadata, and the adapter
 keeps it instead of discarding it: `dir_ranges` land on the wire as
 [`declaredFavorableDirections`](/docs/station/wire-contract/#the-documents)
-(vendor-declared data a consumer may adopt — never a judgment default), the
+(vendor-declared data a consumer may adopt; components never read it as a
+default), the
 frame's `delay` as `broadcastDelaySeconds`, and `altitude`, `timezone`, and
 `guessed_position` fill only the meta fields the consumer's config left
 null — config always wins. Current mode reads the block off the `INIT`
@@ -144,8 +146,8 @@ load.
   degrades instead of serving an empty document.
 - Temperature and pressure are nullable series and go stale honestly: the
   reading takes the latest non-null value only when it lies within 15
-  minutes of the wind reading, otherwise null; a sensor that stopped an
-  hour ago does not pose as current.
+  minutes of the wind reading, otherwise null, so a sensor that stopped
+  an hour ago is not reported as current.
 - Live values hold to the same bounds (samples and digest winds 0–140 m/s,
   directions 0–360, pressure 300–1100 hPa, voltage 0–100 V), and a live
   reading takes the freshest complete minute's scalar average (with its

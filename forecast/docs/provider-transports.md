@@ -21,11 +21,12 @@ path to ECCC's models.
 | NOAA Open Data indexed GRIB | `providers/noaa.ts`, NOAA builders, `@azohra/meteo.grib` `.idx` helpers | Read `.idx`, fetch only byte ranges for needed records, sample sites | Record names, level strings, grid rotation, and accumulation windows are model-specific |
 | NOAA object-store NetCDF (GOES observations) | `builders/granule.ts`, `builders/goes.ts` | Download the whole 9–41 MB granule and read it through h5wasm with netCDF4's mask-and-scale semantics | Fixed-grid projection attributes are read per granule; cadence and validity are per product |
 
-GOES granules are deliberately read whole-file: a granule is one download
-whose handful of probe pixels are extracted in memory: one fetch, no
-fallback machinery. One rule applies to every ranged fetch (a 200 response
-to a Range request is a failure, never a body to use) and lives in
-`@azohra/meteo.grib`'s ranged fetch helpers.
+GOES granules are read whole-file: a granule is one download whose
+handful of probe pixels are extracted in memory. One fetch, no fallback
+machinery. Every ranged fetch shares the guard in `@azohra/meteo.grib`'s
+helpers: a server that answers a Range request with 200 instead of 206
+has ignored the header and sent the whole file, so that response is
+treated as an error, and its body is never read.
 
 ## Preserve provider semantics
 
@@ -40,7 +41,7 @@ verified semantics declaration keeps its meaning attached to the profile.
 Grid readers sample the nearest model point for every configured site and
 check distance. A distant result usually means an out-of-domain coordinate
 was clamped to the grid edge: `@azohra/meteo.grib`'s `nearestGridpoint`
-deliberately never throws; it clamps and reports the true great-circle
+never throws; it clamps and reports the true great-circle
 distance so the builder owns the rejection. The builder must reject that
 sample. Model terrain elevation is a sampled model fact
 (`site.modelElevationM`), distinct from the launch elevation, which the
@@ -50,8 +51,8 @@ a document.
 Projected grids may publish winds relative to grid north. Where provider
 metadata requires it, builders rotate components to true north before
 computing speed and meteorological FROM-direction. Regular latitude/longitude
-earth-relative grids require no such correction. These are verified feed
-facts, not global transport assumptions.
+earth-relative grids require no such correction. These are verified
+per-feed facts.
 
 ## Failure and accounting
 

@@ -1,11 +1,10 @@
 ---
-/* The anatomy of the published dataset: every committed file in
-   site/public/data-sample (README.md aside) as one tree with sizes
-   measured at build time, and a real excerpt of one site document. The
-   excerpt is parsed from test-hill.json and re-rendered — the folds are
-   labelled with counts computed from the same parse, so nothing shown can
-   drift from the file. The spec (test/forecast.spec.ts) walks the same
-   directory and holds every row to disk. */
+/* Every committed file in site/public/data-sample (README.md aside),
+   sizes measured at build time. The excerpt is parsed from
+   test-hill.json and re-rendered, folds labelled with counts from the
+   same parse, so nothing shown can drift from the file. The spec
+   (test/forecast.spec.ts) walks the same directory and holds every row
+   to disk. */
 import { statSync } from "node:fs";
 import { publicDir } from "astro:config/server";
 import manifest from "../../../public/data-sample/hrdps-continental/manifest.json";

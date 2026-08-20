@@ -538,8 +538,7 @@ describe("ensemble sounding levels", () => {
   });
 
   it("a level below a member's terrain counts only the members that kept it", () => {
-    // Member B's filtered column dropped 850 hPa (below its model surface);
-    // the level still publishes, with the membership honest about it.
+    // Member B's filtered column dropped 850 hPa (below its model surface).
     const hour = aggregateOne(memberHour(), memberHour({ levels: [memberLevel(500, 5740.0)] }));
 
     const [lower, upper] = hour.levels;
@@ -831,7 +830,6 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   expect((level850["windSpeedMps"] as Block).p50).toBeCloseTo(6.0, 3);
   expect(level850["windDirectionDeg"]).toBeCloseTo(270.0, 6);
 
-  // Derivations ran per member, 21 atmospheres deep, before any ranking.
   expect(hour.derived["boundaryLayerTopM"]!.members).toBe(21);
   expect(hour.derived["thermalVelocityMps"]!.p50).not.toBeNull();
 });

@@ -6,11 +6,10 @@ import type { ThermalWindowFinding } from "./thermal-window.js";
 import { round1, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * The smoke story per local day — republished numbers only, from the
- * profile's own `hours[].smoke` blocks (source `"profile"`) or from a
- * same-site SmokeDocument joined by validAt (source `"joined"`).
- * Threshold-free by construction: magnitudes and timing only, no verdict
- * — no derated-window verdict and no wstarAdjusted series ship here.
+ * Smoke numbers per local day, republished only: from `hours[].smoke`
+ * (source "profile") or a same-site SmokeDocument joined by validAt
+ * (source "joined"). Threshold-free: magnitudes and timing, no verdicts,
+ * no wstarAdjusted series.
  */
 export type SmokeImpactFinding = SmokeImpactProfileFinding | SmokeImpactJoinedFinding;
 

@@ -5,7 +5,7 @@ description: "Every environment variable the engine reads: the published-root po
 
 The engine takes its per-invocation choices as CLI flags and its
 deployment's standing configuration as environment variables. This page is
-the complete list — if a variable is not here, the engine does not read it.
+the complete list: if a variable is not here, the engine does not read it.
 
 ## Where the published dataset lives
 
@@ -50,7 +50,7 @@ own reads. Setting `METEO_DATA_BASE` always wins.
 | --- | --- |
 | `METEO_TRACEBACK` | When set, CLI errors print their full stack trace to stderr instead of the one-line message. |
 
-One variable is deliberately **not** operator surface: `METEO_MAX_STEPS`
-is how the CLI hands `--max-steps` to the builders — a dispatch without
-the flag clears it, so a value you export is ignored. Pass
-`--max-steps` on the command line.
+One variable is not operator surface: `METEO_MAX_STEPS` is how the CLI
+hands `--max-steps` to the builders. A dispatch without the flag clears
+it, so a value you export is ignored. Pass `--max-steps` on the command
+line.

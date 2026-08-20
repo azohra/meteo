@@ -12,8 +12,8 @@ patchable in this repository.
 
 This decoder is justified by explainability alone: every marker, MQ
 context, and lifting step lives in ten small modules with its clause of
-T.800 named. On top of that sit two structural theses no whole-image
-codec can follow. EBCOT codeblocks are coded independently, so one
+T.800 named. Independence in the format then does two jobs no
+whole-image codec can take on. EBCOT codeblocks are coded independently, so one
 field's hundreds of codeblocks can decode in parallel across workers
 ([`src/parallel.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/parallel.ts)
 is that seam). And the same independence runs the other way:
@@ -30,8 +30,8 @@ build stays selectable for whole-image decodes; OpenJPEG.js is retired
 outright), that package's sampled decode is this decoder's region decode,
 and its worker pool fans full decodes' codeblock tasks across threads.
 
-The package installs on its own, with no
-[forecast engine](/docs/forecast/) or GRIB packages required — Node 22+,
+The package depends on neither the
+[forecast engine](/docs/forecast/) nor the GRIB packages — Node 22+,
 ESM-only, and nothing installs with it:
 
 ```sh
@@ -74,9 +74,9 @@ first samples: 1166, 1166, 1166, 1166
 When only a few gridpoints matter (a forecast engine sampling sites),
 `decodeJ2kRegion` takes full-grid raster indexes and entropy-decodes only
 the codeblocks those points touch, then runs window-bounded inverse
-lifts. The values are **bit-identical** to `decodeJ2k`'s at those indexes
-(region decode is a cheaper route to the same integers, never an
-approximation), and the envelope is the package's usual subset, guarded
+lifts. The values are bit-identical to `decodeJ2k`'s at those indexes
+(region decode is a cheaper route to the same
+integers), and the envelope is the package's usual subset, guarded
 by the same loud errors:
 
 <!-- meteo-doc-fence: run -->
@@ -95,7 +95,7 @@ Int32Array(2) [ 56, 54 ]
 
 On the largest ECCC field a 4-point region decode touches 49 of 911
 codeblocks; the measured table is in
-[Performance, honestly](/docs/j2k/performance/), and the exactness gate in
+[Performance](/docs/j2k/performance/), and the exactness gate in
 [Two-ring correctness](/docs/j2k/correctness/#region-decode-is-exact-by-contract).
 
 ## The `J2kSamples` seam
@@ -118,12 +118,11 @@ see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 |---|---|
 | [The subset](/docs/j2k/subset/) | The measured codestream shape, the loud-failure guards, the JasPer extension |
 | [Two-ring correctness](/docs/j2k/correctness/) | The cross-codec oracle ring, the end-to-end ecCodes ring, region decode's exactness contract |
-| [Performance, honestly](/docs/j2k/performance/) | The measured region-decode and single-thread tables, the Tier-1 profile, the codeblock-parallel thesis |
+| [Performance](/docs/j2k/performance/) | The measured region-decode and single-thread tables, the Tier-1 profile, the codeblock-parallel thesis |
 
 ## References
 
-Written against named references, per house convention, vendoring
-nothing:
+Written against named references; nothing is vendored:
 
 - **ITU-T T.800**: the spec; Annex B (packets, cited in `packets.ts`),
   Annex C (MQ coder, `mq.ts`), Annex D (coefficient bit modelling,
@@ -156,5 +155,5 @@ test/              header parse + guards, parallel-plan equality, the JasPer sha
 tools/bench.ts     single-thread decodeJ2k timing over the corpus
 ```
 
-Zero runtime dependencies, and no Node APIs in `src/`: the package is
-browser-safe by construction.
+Zero runtime dependencies, and no Node APIs in `src/`: the package runs
+in browsers as-is.

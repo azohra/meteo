@@ -169,11 +169,8 @@ export function coalesceUpstreamLoad(
   return loading;
 }
 
-/**
- * The one road to an upstream document: cache lookup, bounded fetch under a
- * timeout, cache fill. Concurrent misses on the same (cache instance,
- * cacheKey) coalesce onto a single in-flight load.
- */
+/** Cache lookup, bounded fetch under a timeout, cache fill. Concurrent
+ * misses on one (cache instance, cacheKey) coalesce onto a single load. */
 export async function fetchUpstreamText(
   environment: ResolvedEnvironment,
   request: UpstreamTextRequest,
@@ -243,11 +240,8 @@ export type UpstreamStreamRequest = {
 
 export const UPSTREAM_CONNECT_TIMEOUT_MS = 10_000;
 
-/**
- * The road to a long-lived upstream body. No cache and no byte cap — the
- * consumer bounds its own buffering — and never coalesced: every caller owns
- * its connection and tears it down through its signal.
- */
+/** Long-lived upstream body: no cache, no byte cap, never coalesced —
+ * the caller owns the connection and tears it down through its signal. */
 export async function fetchUpstreamStream(
   environment: ResolvedEnvironment,
   request: UpstreamStreamRequest,

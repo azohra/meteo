@@ -14,8 +14,8 @@ The core is browser-safe by construction
 Node callers get JPEG 2000 from the separate `@azohra/meteo.grib/j2k-node`
 subpath; see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
-The package installs on its own, with no
-[forecast engine](/docs/forecast/) or forecast documents required —
+Installing it pulls in no
+[forecast engine](/docs/forecast/) and no forecast documents —
 Node 22+, ESM-only, and `@cornerstonejs/codec-openjpeg` (the selectable
 WASM codec) installs with it:
 

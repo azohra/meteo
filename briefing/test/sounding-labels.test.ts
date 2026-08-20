@@ -189,8 +189,8 @@ describe("scene label placement", () => {
     expect(lcl).toBeDefined();
     if (cloudBase!.anchor === lcl!.anchor) {
       expect(Math.abs(cloudBase!.y - lcl!.y)).toBeGreaterThanOrEqual(MARK_LABEL_MIN_GAP - 1e-6);
-      // At ~1.7 px apart at least one of the two had to move beyond the
-      // threshold and earn a leader tick.
+      // At ~1.7 px apart at least one of the two moves beyond the
+      // threshold and gains a leader tick.
       expect([cloudBase!, lcl!].some((entry) => entry.leader !== null)).toBe(true);
     }
   });

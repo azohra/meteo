@@ -1,14 +1,10 @@
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-/* The documentation's structural contract, held mechanically. The 2026-08
-   reader audit found every defect class this gate now refuses: sections
-   that are not capabilities, pages missing from the sidebar (or in it
-   twice), sections that do not open with their landing page, sidebar
-   labels quietly diverging from page titles, hand-typed schema versions
-   drifting from the contract, and retired vocabulary creeping back.
-   Judgment stays with review; this gate holds only the mechanical line. */
+/* Structural checks on the documentation: sidebar shape, labels,
+   orphans, and prose conventions. */
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -72,6 +68,24 @@ const RETIRED_VOCABULARY = [
   [/\bterrain catalogue\b/i, "site-context.json is measured context, not a catalogue"],
   [/\bAuthority by quantity\b/, 'the section is named "Who owns each value"'],
 ];
+
+/* Optional style lane: rejected-phrase patterns from repo git config
+   (`git config --add meteo.styleDeny <regex>`), matched case-insensitively
+   against prose lines. No config entries, no lane. */
+const styleDeny = (() => {
+  try {
+    const out = execSync("git config --get-all meteo.styleDeny", {
+      cwd: repoRoot,
+      encoding: "utf-8",
+    });
+    return out
+      .split("\n")
+      .filter(Boolean)
+      .map((source) => new RegExp(source, "i"));
+  } catch {
+    return [];
+  }
+})();
 
 /* Hand-typed schema versions drift (the about figure shipped a retired 1);
    prose renders the imported constant instead. Fenced samples are wire
@@ -268,6 +282,9 @@ function renderedProseLines(file, text) {
 for (const [, dir] of roots.slice(1)) {
   for (const file of walkPages(dir, [])) checkProse(file);
 }
+for (const file of walkPages(join(repoRoot, "site", "src", "content", "logbook"), [])) {
+  checkProse(file);
+}
 for (const file of walkPages(join(repoRoot, "site", "src", "content", "docs", "docs"), [])) {
   const rel = relative(join(repoRoot, "site", "src", "content", "docs", "docs"), file);
   if (!Object.values(SECTIONS).some((d) => rel.startsWith(`${d}/`) || rel === d)) checkProse(file);
@@ -298,6 +315,11 @@ function checkProse(file, extract = (_file, text) => proseLines(text)) {
     for (const [pattern, advice] of RETIRED_VOCABULARY) {
       if (pattern.test(content)) {
         fail(`${relative(repoRoot, file)}:${line}`, `retired vocabulary ${pattern} — ${advice}`);
+      }
+    }
+    for (const pattern of styleDeny) {
+      if (pattern.test(content)) {
+        fail(`${relative(repoRoot, file)}:${line}`, `rejected phrase ${pattern} (meteo.styleDeny)`);
       }
     }
     if (HAND_TYPED_VERSION.test(content)) {

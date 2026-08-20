@@ -7,8 +7,7 @@ import { resolveStation, useStationFeedContext } from "./StationFeedProvider.js"
 import { WindArrow } from "./WindArrow.js";
 
 /** The source's own step digests as summary panels: per window, the
- * average, gust, and lull beside one small arrow per step — the direction's
- * recent story at a glance. */
+ * average, gust, and lull beside one small arrow per step. */
 export function RecentSummaries({
   summaries,
   station: stationProp,

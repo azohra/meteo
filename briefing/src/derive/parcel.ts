@@ -116,23 +116,14 @@ function environmentAt(nodes: readonly EnvNode[], heightM: number): EnvNode {
 
 /**
  * Lifts one surface parcel through the hour's published levels: dry
- * adiabatic below the lifting condensation level, moist pseudo-adiabatic
- * above it (condensate removed as it forms), buoyancy read in virtual
- * temperature so the vapour the parcel carries — and the vapour the
- * environment holds — both count toward density (Doswell & Rasmussen
- * 1994 on why virtual temperature belongs in parcel buoyancy).
- *
- * The LCL is found by the ascent itself: the height where the parcel's
- * conserved mixing ratio meets the Magnus saturation curve along the dry
- * adiabat — the same saturation physics as the moist branch, so the two
- * legs join without a seam. `lclM` is null when the column never
- * saturates below its top published level.
- *
- * Numbers are plain scalars (resolve ensembles to a percentile first).
- * Dew points above their temperature (supersaturated data noise) are
- * clamped to the temperature. Levels at or below the surface elevation
- * receive the unlifted surface parcel. Samples come out at exactly the
- * published levels, in published order — no resampling.
+ * adiabatic below the LCL, moist pseudo-adiabatic above (condensate
+ * removed), buoyancy in virtual temperature (Doswell & Rasmussen 1994).
+ * The LCL comes from the ascent itself — conserved mixing ratio meeting
+ * the Magnus saturation curve — so the two legs share one saturation
+ * physics; `lclM` is null when the column never saturates below its top
+ * level. Plain scalars only (resolve ensembles first); dew points above
+ * temperature clamp to it; levels at or below surface elevation get the
+ * unlifted parcel; samples come out at exactly the published levels.
  */
 export function parcelAscent(
   surface: { temperatureC: number; dewPointC: number; elevationM: number },

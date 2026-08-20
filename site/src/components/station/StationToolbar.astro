@@ -1,6 +1,5 @@
 ---
-/* The sticky toolbar: section anchors left, the global controls right.
-   The page's client script wires the unit group and #station-live by id;
+/* The page's client script wires the unit group and #station-live by id;
    the segmented-pill chrome is shared (station.css). */
 
 interface Props {
@@ -37,7 +36,6 @@ const { sections } = Astro.props;
 </div>
 
 <style>
-  /* ---- the toolbar: section anchors left, the global controls right ---- */
   .station-toolbar {
     z-index: 20;
     border-block: 1px solid var(--rule);

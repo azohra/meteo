@@ -591,7 +591,7 @@ describe("parseWindnerdLiveLocation", () => {
         ?.declaredFavorableDirections,
     ).toEqual([]);
     expect(parseWindnerdLiveLocation({})?.declaredFavorableDirections).toBeNull();
-    /* One bad arc poisons the list: declare nothing over a partial lie. */
+    /* One malformed arc nulls the whole list; a partial list would misstate the source's declaration. */
     expect(
       parseWindnerdLiveLocation({
         location_type_meta: { dir_ranges: [{ from: 170, to: 0 }, { from: "west" }] },

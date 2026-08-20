@@ -189,8 +189,7 @@ function LiveWind() {
 
 The chart in that card draws only for a station that declares `history`
 (WindNerd and Campbell do; Tempest and Ecowitt serve the latest reading
-only, so their cards render the dial and readouts and no chart — correct
-behaviour, not a wiring error).
+only, so their cards render the dial and readouts and no chart).
 [What your hardware shows](/docs/station/what-your-hardware-shows/) maps
 every capability to its surfaces.
 
@@ -212,9 +211,9 @@ same shared stores and its children render the same DOM:
 composition, and SSR seeding are covered in [React](/docs/station/react/);
 the tokens the components wear are in [Theming](/docs/station/theming/).
 
-That is the whole journey: a mounted feed and a rendered fleet. Two deeper
-paths when you want them — season-scale WindNerd pulls at coarse record
-resolution are a
+That is the full basic path: a mounted feed and a rendered fleet. Two
+deeper options when you want them: season-scale WindNerd pulls at coarse
+record resolution are a
 [direct-adapter option on the WindNerd page](/docs/station/adapters/windnerd/#direct-adapter-options),
 and the pure history-slicing functions behind the charts are in
 [the client data layer](/docs/station/client-data/#slicing-history).

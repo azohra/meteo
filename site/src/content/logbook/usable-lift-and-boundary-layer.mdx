@@ -32,15 +32,15 @@ quantitative validation, and boundary-layer top may work better over complex ter
 
 canadarasp inherits the name and the idea of a sink threshold, but its meteogram code asks a different
 question: how high might the **strongest core** still beat a 1 m/s sink rate? That is the number I
-ported. Same name, different quantity: "Hcrit" names a family of methods, not a portable
-value that every forecast system computes identically.
+ported. Same name, different quantity. Neither is a portable value that every forecast system
+computes identically.
 
 ## How much the strongest-core choice matters
 
 Lenschow and Stephens fitted a normalized mean-updraft shape from aircraft observations. canadarasp
 applies its strongest-core variant before finding the sink-threshold crossing. The
 [forecast derivations](/docs/forecast/derivation-science/) define the current formula, constants,
-fallback, and cloud cap. See for yourself below: one atmosphere, three sink thresholds: the 1.0 m/s
+fallback, and cloud cap. Below, one atmosphere runs against three sink thresholds: the 1.0 m/s
 panel reproduces the published series, and the other two show how much the top owes to that single
 parameter.
 

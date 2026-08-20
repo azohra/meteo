@@ -758,8 +758,8 @@ function e2eFiles(
 ): Map<string, Uint8Array> {
   const files = new Map<string, Uint8Array>();
   files.set(fileUrl("HGT_SFC_0", "20260807", "00", 0), ensembleFile(terrain));
-  // The model's own PT000 surface pressure that vouches for the terrain
-  // barometrically: 853 hPa implies ~1452 m.
+  // The model's own PT000 surface pressure, the barometric cross-check on
+  // the terrain: 853 hPa implies ~1452 m.
   files.set(
     fileUrl("PRES_SFC_0", "20260807", "00", 0),
     ensembleFile(() => 85300.0),
@@ -795,7 +795,7 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
 
   // Every file fetched exactly once; hour 000 — which has no flux or
   // precipitation files — is touched only for terrain and the surface
-  // pressure that vouches for it.
+  // pressure that cross-checks it.
   expect([...fetched].sort()).toEqual([...files.keys()].sort());
   expect(fetched.filter((url) => url.includes("_P000_")).sort()).toEqual(
     [fileUrl("HGT_SFC_0", "20260807", "00", 0), fileUrl("PRES_SFC_0", "20260807", "00", 0)].sort(),
@@ -840,9 +840,9 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   expect((surface["precipitationMmHr"] as Block).p50).toBeCloseTo(2.0, 5);
   expect((surface["precipitationMmHr"] as Block).p10).toBeCloseTo(1.2, 5);
 
-  // The marquee: ensemble storm risk. Three sentinel members stay out of
-  // the CAPE ranking (members honest at 18, percentiles over the defined
-  // 130–300 J/kg spread); CIN ranks all 21, its exact -1 member included.
+  // Three sentinel members stay out of the CAPE ranking (18 members
+  // counted, percentiles over the defined 130–300 J/kg spread); CIN ranks
+  // all 21, its exact -1 member included.
   const cape = surface["capeJkg"] as Block;
   expect(cape.members).toBe(18);
   expect(cape.p10).toBeCloseTo(147.0, 4);
@@ -865,7 +865,6 @@ it("a forecast step flows from Datamart files to the ensemble document", async (
   expect((level850["windSpeedMps"] as Block).p50).toBeCloseTo(6.0, 3);
   expect(level850["windDirectionDeg"]).toBeCloseTo(270.0, 6);
 
-  // Derivations ran per member, 21 atmospheres deep, before any ranking.
   expect(hour.derived["boundaryLayerTopM"]!.members).toBe(21);
   expect(hour.derived["thermalVelocityMps"]!.p50).not.toBeNull();
 });
@@ -924,8 +923,9 @@ it("a six-hourly tail step differences accumulations across its own window", asy
 // The live HGT_SFC file is encoded in decametres while its GRIB metadata
 // claims metres. The builder scales the field to metres and holds the
 // datum to the model's own PT000 surface pressure via p = p0·exp(−z/H):
-// honest weather moves the implied elevation well under the 1,000 m
-// tolerance, a dropped ×10 leaves a ≥1.3 km gap, a gained ×10 a ~13 km one.
+// a correctly scaled field puts the implied elevation well under the
+// 1,000 m tolerance, a dropped ×10 leaves a ≥1.3 km gap, a gained ×10 a
+// ~13 km one.
 
 // The live control-member surface pressure at Dundee: 845.9 hPa.
 const DUNDEE_PRESSURE = { 0: { dundee: 84586.0 } };

@@ -5,13 +5,11 @@ import type { ThermalWindowFinding } from "./thermal-window.js";
 import { round1, round2, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * The strongest layer-shear rate inside the climb band per thermalWindow
- * day: component-wise vector shear between adjacent published levels
- * divided by the layer's thickness. Deterministic documents only, and
- * never compared across documents — rates are not comparable across
- * level densities, which is why `levelsInBand` and the layer bounds are
- * mandatory in the shape; absence means "column too sparse to state",
- * never "no shear".
+ * Strongest layer-shear rate inside the climb band per thermalWindow day:
+ * vector shear between adjacent published levels over layer thickness.
+ * Deterministic documents only. Rates are not comparable across level
+ * densities (hence mandatory levelsInBand and layer bounds); absence means
+ * "column too sparse to state", never "no shear".
  */
 export interface BandShearFinding {
   kind: "bandShear";

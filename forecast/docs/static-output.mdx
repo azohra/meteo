@@ -49,12 +49,12 @@ each instant written once the first time it enters the rolling window.
 
 A build writes only the per-model directories above. The read side also
 expects four files at the dataset root, and none of them is a build side
-effect — an upload flow publishes each as its own step:
+effect: an upload flow publishes each as its own step.
 
 | Root file | Produced by |
 | --- | --- |
 | `models.json` | `meteo forecast catalogue --output` emits the packaged [model catalogue](/docs/briefing/catalogue/); against a bucket, `meteo forecast publish --models` uploads it in one step |
-| `sites.json` | you author it ([Configure launches](/docs/forecast/configure-launches/)); upload it verbatim — the one root file the engine never writes |
+| `sites.json` | you author it ([Configure launches](/docs/forecast/configure-launches/)); upload it verbatim, the one root file the engine never writes |
 | `site-context.json` | `meteo forecast terrain --sites ./sites.json --output` measures it; against a bucket, `terrain --sync` regenerates and publishes it whenever the catalogue moved |
 | `runs.json` | `meteo forecast runs-index --output` regenerates it wholesale from the published manifests; `publish` advances it after every model upload |
 
@@ -71,24 +71,23 @@ check for TypeScript consumers.
 
 If your destination is an S3-compatible bucket, `meteo forecast publish`
 can run the upload itself, in the S3 mode
-[Environment and credentials](/docs/forecast/environment/) describes —
-one deployment choice among the sync approaches below, not the required
-one:
+[Environment and credentials](/docs/forecast/environment/) describes
+(one deployment choice among the sync approaches below, not the required
+one):
 
 ```sh title="Terminal"
 meteo forecast build --model gfs --sites ./sites.json --output data
 meteo forecast publish --model gfs --data data
 ```
 
-What the verb owns is the publication protocol, so an upload script does
-not have to restate it: it skips when the build wrote nothing, refuses to
-publish a scratch tree older than the published dataset (an unreachable
-bucket fails loudly rather than reading as either verdict), uploads
-history archives before site documents before the manifest — the
-manifest is the publication's commit point, so nothing it references
-appears after it — and then regenerates and uploads `runs.json` from the
-published manifests. Every object key comes from the reader contract's
-`documentPaths`.
+The verb owns the publication protocol, so an upload script does not have
+to restate it. It skips when the build wrote nothing, refuses to publish
+a scratch tree older than the published dataset (an unreachable bucket
+fails loudly rather than reading as either verdict), uploads history
+archives before site documents before the manifest, and then regenerates
+and uploads `runs.json` from the published manifests. The manifest is
+the publication's commit point: nothing it references appears after it.
+Every object key comes from the reader contract's `documentPaths`.
 
 Cache lifetimes remain your deployment's choice (`--cache-live`,
 `--cache-closed-months`); the TRIAL defaults suit a 15-minute tick, and the one
@@ -96,13 +95,13 @@ dataset fact behind them is that a closed month archive never changes
 again, so your closed-months value may safely be immutable.
 
 After the manifest lands, `publish` reads it back and parses it with the
-reader contract's guard — a publication a reader could not consume fails
+reader contract's guard. A publication a reader could not consume fails
 in the publishing job's log, not in some consumer's ingest later.
 
 Of the [dataset-root files](#publish-the-dataset-root), `publish`
 advances `runs.json` after every model and `publish --models` uploads the
 model catalogue; `terrain --sync` keeps the site context following the
-site catalogue. `sites.json` itself stays the deployment owner's write —
+site catalogue. `sites.json` itself stays the deployment owner's write:
 the engine reads it (builders accept `--sites dataset` to build straight
 from the published catalogue) and never writes it.
 

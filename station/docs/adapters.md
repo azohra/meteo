@@ -7,16 +7,16 @@ How station hardware becomes wire documents. An adapter is two functions:
 `meta` declares the station's identity and capabilities from config alone,
 and `load` fetches the vendor's upstream, validates it in the vendor's own
 units, and normalizes it into the shapes specified in
-[the wire contract](/docs/station/wire-contract/): fetch, normalize,
-declare. Whatever the hardware, the client sees one document.
+[the wire contract](/docs/station/wire-contract/). Whatever the hardware,
+the client sees one document.
 
 ## The shipped adapters
 
 Four vendors are built in; each has its own reference page: config
 fields, capabilities, endpoint, and the quirks the adapter guards. Every
-vendor page ends with the same Setup block — the
+vendor page ends with the same Setup block (the
 [getting-started](/docs/station/getting-started/) mount with a one-entry
-`stations` array — so the pages differ only in the config entry itself:
+`stations` array), so the pages differ only in the config entry itself:
 
 | Vendor | Hardware | History | Live | Conditions |
 |---|---|---|---|---|
@@ -25,7 +25,7 @@ vendor page ends with the same Setup block — the
 | [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers | yes | no | none |
 | [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) | no; the cloud endpoint serves one report | no | humidity, dew point, pressure, rain, solar, UV |
 
-What each declaration turns on — chart, stream, matrix column — is mapped
+What each declaration turns on (chart, stream, matrix column) is mapped
 surface by surface in
 [What your hardware shows](/docs/station/what-your-hardware-shows/).
 
@@ -33,8 +33,8 @@ Anything else plugs in as a custom adapter, below.
 
 ## The custom arm
 
-Everything from here down is for **writing an adapter of your own** — if
-your vendor is in the table above, pick its page and you are done here.
+Everything from here down is for writing an adapter of your own: if
+your vendor is in the table above, pick its page and stop here.
 
 The derivations the built-in vendors fill the wire with are public, so a
 custom adapter produces the same physics: `pressureTendency` (the trend
@@ -138,11 +138,11 @@ Adapters touch the world only through an injected environment:
 `{ fetch, cache, logger, userAgent, now }`. Upstream documents go through
 `fetchUpstreamText`, which enforces a 4-second timeout and a 512 KiB
 response cap, and maps HTTP 429 to `rate_limited`. Upstream streams go
-through `fetchUpstreamStream`, whose deadline covers only the connect
-(headers must arrive within 10 seconds; the open body answers to the
-caller's `signal` and an idle watchdog, never to a whole-response timeout),
-with the same failure mapping and no cache: a stream is a connection, not a
-document, and every caller owns its own.
+through `fetchUpstreamStream`. Its deadline covers only the connect:
+headers must arrive within 10 seconds. After that, the open body answers
+to the caller's `signal` and an idle watchdog, with no whole-response
+timeout. It shares the same failure mapping, and streams are never
+cached; every caller owns its own connection.
 
 - **`cache`**: provide a `FeedCache` backed by KV/Redis when your platform
   runs multiple isolates, so they share one upstream poll instead of each
@@ -161,24 +161,24 @@ document, and every caller owns its own.
 
 ## The cache trust model
 
-**The shared default cache is a trust boundary.** When no cache is injected,
+The shared default cache is a trust boundary. When no cache is injected,
 every handler and bare adapter call in the process shares one bounded
 in-memory cache, and concurrent misses on a key coalesce into a single
 upstream hit. Cache keys name the *upstream* (vendor + endpoint/station
 identity), never credentials or host-chosen labels:
-[Tempest keys deliberately exclude the token](/docs/station/adapters/tempest/#endpoint-and-the-token-free-cache-key),
+[Tempest keys exclude the token](/docs/station/adapters/tempest/#endpoint-and-the-token-free-cache-key),
 so a config carrying a wrong token can be served a payload another config's
-valid token warmed. That is by design (payloads are per-station, not
-per-credential), but it means the default cache trusts every tenant in the
-process: multi-tenant hosts whose tenants must not share payloads, or must
-re-prove credentials per request, should inject a cache per tenant.
+valid token warmed. Payloads are per-station, not per-credential, so that
+sharing is correct; but it means the default cache trusts every tenant in
+the process. Multi-tenant hosts whose tenants must not share payloads, or
+must re-prove credentials per request, should inject a cache per tenant.
 
 ## Polling etiquette
 
-Every response advertises `recommendedPollSeconds` per station, derived from
-upstream cache TTLs; polling faster only reheats a cache. Upstreams that
-are not official APIs are treated as guests: validate everything, degrade to
-`unavailable` on any contract break rather than guessing, and identify
-yourself with a User-Agent that names the project.
+Every response advertises `recommendedPollSeconds` per station, derived
+from upstream cache TTLs; polling faster than those TTLs returns the same
+cached payload. Upstreams that are not official APIs get extra care:
+validate every value, degrade to `unavailable` on any contract break
+rather than guessing, and send a User-Agent that names the project.
 [WindNerd's endpoints](/docs/station/adapters/windnerd/#endpoints) are
-the shipped example of that stance.
+the shipped example.

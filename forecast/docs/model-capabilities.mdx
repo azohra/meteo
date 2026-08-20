@@ -18,7 +18,7 @@ display intact.
 <CapabilityMatrix />
 
 The rest of this page is the stories behind those cells: where two identical-looking numbers are
-different claims, and where a blank is the most honest thing a model said.
+different claims, and where a blank is itself the model's statement.
 
 ## A 40 km/h gust is two different claims
 
@@ -37,13 +37,13 @@ sample, or nothing), and the readout wording follows the declaration: only the h
 files' own interval metadata could not answer, is in the
 [forecast model feed reference](/docs/forecast/forecast-model-feeds/).
 
-## Smoke is a coupling claim, not just a field list
+## Smoke is a coupling claim
 
 `capabilities.smoke` carries three values because "this model publishes
 smoke" is only half the fact. `"radiativelyCoupled"` (HRRR, RRFS) means the
 model's forecast smoke attenuates its own shortwave: its published
-fluxes, and every thermal quantity derived from them, are **already
-smoke-aware**, so applying a smoke correction on top would double-count
+fluxes, and every thermal quantity derived from them, are already
+smoke-aware, so applying a smoke correction on top would double-count
 the plume. `"passive"` means smoke rides along without touching the
 model's radiation, and a correction is legitimate. `false` means no
 smoke at all: for those models smoke arrives, if anywhere, as a
@@ -82,7 +82,7 @@ chart asks. A large CAPE value is fuel, not a schedule.
 
 ## When a model says nothing, believe it
 
-Absence in this dataset comes in two kinds, and both are deliberate.
+Absence in this dataset comes in two kinds.
 
 The first is within a grid. ECCC encodes "convection not computed at this point" as
 ordinary-looking numbers inside the CAPE and CIN fields, over large fractions of the grid on any
@@ -127,12 +127,12 @@ ECCC model publishes a single total-column percentage. So the cloud shading in t
 different things by model. Where the model publishes its own per-level cloud, the renderer shades
 from it: the model asserting cloud. Everywhere else the shading is an inference: levels whose
 dew-point depression says the air is nearly saturated, from which cloud is a reasonable guess. The
-two routes land in the same visual classes so the chart speaks one language, the model's own cloud
+two routes land in the same visual classes so the chart speaks one language; the model's own cloud
 wins wherever it exists, and the catalogue's cloud-profile flag declares which regime a model is
 in. The layered strip appears only for models that publish layers; on the ECCC models its absence
 is not a rendering gap but a statement about the feed.
 
-## Render the declaration, not an assumption
+## Render the declaration
 
 The catalogue is the machine-readable version of this entry: per model, which pressure levels,
 which fields, and with which semantics. A frontend should render exactly what a model declares (no

@@ -1,15 +1,14 @@
-/* The station exhibits' client wiring, shared by the product page
-   (/station/, the trimmed set of exhibits) and the docs catalogue
-   (/docs/station/component-gallery/, every section). Each block guards on
-   its exhibit's presence, so either page wires exactly what it renders.
+/* Client wiring for the station exhibits, shared by /station/ (a trimmed
+   set) and /docs/station/component-gallery/ (every section). Each block
+   guards on its exhibit's presence, so either page wires exactly what it
+   renders.
 
-   The order is the one a hermetic page needs: set every data property
-   FIRST (the lazy-upgrade pattern captures assignments made before
-   definition), then define the tags — so no element ever upgrades against
-   an empty feed and throws. Republishing every few seconds keeps the
-   freshness badges tracking the clock without a poll loop — the fixture is
-   a deterministic function of the clock; the toolbar's Live control, where
-   present, pauses and resumes that loop. */
+   Order constraint: set every data property first, then define the tags.
+   The lazy-upgrade pattern captures assignments made before definition;
+   an element upgrading against an empty feed throws. Republishing every
+   few seconds keeps the freshness badges tracking the clock; the fixture
+   is a deterministic function of the clock, and the toolbar's Live
+   control, where present, pauses and resumes that loop. */
 import {
   METEOROLOGICAL_SEASON_MONTHS,
   accumulatedCells,
@@ -46,8 +45,7 @@ export function initStationGallery(): void {
   const explicitConditions =
     document.querySelector<CurrentConditionsElement>("#explicit-conditions");
 
-  /* The hero's terminal: the primary station's reading, printed as the wire
-     carries it — the instrument below draws the same object. */
+  /* The instrument beside this terminal draws the same object it prints. */
   const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const renderWire = (document_: ReturnType<typeof buildExhibitFeed>) => {
     if (!wireJson) return;
@@ -120,9 +118,9 @@ export function initStationGallery(): void {
     document.querySelector("#climatology-pattern");
   const season: HistoryPoint[] = seasonConsumers ? buildSeason() : [];
 
-  /* "Two ways in": one fixed slice of the long history feeds both panels —
-     the object windRose() returns and the component that draws it — so the
-     section's claim ("same data") is literally true, not staged. */
+  /* One fixed slice of the long history feeds both panels (the object
+     windRose() returns and the component that draws it), so the section's
+     "same data" claim is literally true. */
   if (waysOutput && waysRose) {
     const midday = filterByTimeOfDay(
       filterByMonth(season, METEOROLOGICAL_SEASON_MONTHS.summer),
@@ -141,16 +139,15 @@ export function initStationGallery(): void {
     waysRose.points = midday;
   }
 
-  /* The launch's favorable window rides the rose as a property. */
   const ridgeRose = document.querySelector<WindRoseElement>("#roses-ridge");
   if (ridgeRose) ridgeRose.favorableDirections = [{ fromDeg: 260, toDeg: 340 }];
 
-  /* Seasons: the rose narrows; the typical day always averages the lot. */
+  /* Unlike the seasons rose (filtered below), the typical-day panel
+     always averages the full season. */
   if (pattern) pattern.points = season;
 
-  /* Live theatre: a deterministic sample ring and step blocks shaped like
-     the vendor's own digests — wired as properties like every live host
-     would. */
+  /* A deterministic sample ring and step blocks shaped like the vendor's
+     own digests. */
   const liveFan = document.querySelector<CompassFanElement>("#live-fan");
   const liveSummaries = document.querySelector<RecentSummariesElement>("#live-summaries");
   if (liveFan || liveSummaries) {
@@ -290,10 +287,10 @@ export function initStationGallery(): void {
   };
   applySeasonFilter();
 
-  /* Data in place — define and upgrade in place. Elements defer their
-     first render until connectedCallback has wired the ambient context,
-     so the spec-ordered attribute reactions during an in-document
-     upgrade are harmless no-ops. */
+  /* Define the tags only now, after every data property above is set.
+     Elements defer their first render until connectedCallback has wired
+     the ambient context, so the spec-ordered attribute reactions during
+     an in-document upgrade are harmless no-ops. */
   defineMeteoElements();
 
   /* One segmented-control behaviour for every group. */

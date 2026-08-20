@@ -5,11 +5,7 @@ import type {
   QuietDayFinding,
 } from "../analyze/index.js";
 
-/**
- * Options for one board: a single local day, resolved in one zone. The
- * day span mirrors the Meteogram's display window (07:00–21:00 local);
- * the hours are conventions of the same pilots' day, movable per call.
- */
+/** Options for one board: one local day, one zone. Default span 07:00–21:00 local, movable per call. */
 export interface CompareBoardOptions {
   /** The local calendar day the board draws, `localDateKey`-shaped ("2026-08-09") in `timeZone`. */
   dateKey: string;
@@ -32,11 +28,7 @@ export interface BoardTick {
   x: number;
 }
 
-/**
- * The board's shared clock: one local day resolved to UTC instants
- * through Intl (never offset arithmetic), so every row's marks compare
- * by position. Geometry consumers read fractions via `xForBoardTime`.
- */
+/** One local day resolved to UTC instants through Intl, never offset arithmetic. Consumers read fractions via `xForBoardTime`. */
 export interface CompareBoardAxis {
   startMs: number;
   endMs: number;
@@ -53,15 +45,7 @@ export interface BoardInstant {
   at: CitedInstant;
 }
 
-/**
- * A finding's run of hours placed on the axis. Bars and words diverge
- * deliberately: `endMs`/`x1` widen the last cited hour by the finding's
- * own step so a bar covers the hour it cites, while `endCitedMs`/
- * `x1Cited` stop at the finding's own last hour — the honest end for any
- * words. A span drawn to `endMs` but described to `end.local` is correct;
- * one described to `endMs` contradicts every other statement of the same
- * finding.
- */
+/** A finding's run of hours on the axis. `endMs`/`x1` widen the last cited hour by the step (bar geometry only); `endCitedMs`/`x1Cited` stop at the last cited hour — words must use these. */
 export interface BoardSpan {
   /** Fraction 0..1 at the first cited hour. */
   x0: number;
@@ -93,13 +77,7 @@ export interface CompareBoardWindow extends BoardSpan {
   viaWindowFrom?: LocalDayKey;
 }
 
-/**
- * One windExceedance finding: window hours at or above a caller-supplied
- * ceiling. The threshold is the caller's own number echoed back — the
- * package owns no "safe wind" figure, and a member with no exceedance
- * entry made no statement (either under the ceiling or no ceiling was
- * supplied), never a verified calm.
- */
+/** Window hours at or above the caller's ceiling; thresholdMps echoes the caller's number (the package owns no safe-wind figure). No entry = no statement, never verified calm. */
 export interface CompareBoardExceedance {
   quantity: "surfaceWind" | "gust" | "bandWind";
   /** The caller's ceiling (m/s), echoed verbatim from the finding. */
@@ -116,12 +94,7 @@ export interface BoardWindSample {
   speedMps: number;
 }
 
-/**
- * The launch cell: surface wind at the window's open, peak-lift hour,
- * and close — the windDirection finding's own endpoint samples, m/s
- * (display conversion is the consumer's). Deterministic members only;
- * ensembles publish no circular direction statistics.
- */
+/** Surface wind at window open, peak-lift hour, and close, m/s. Deterministic members only; ensembles publish no circular direction statistics. */
 export interface CompareBoardLaunch {
   window: { start: CitedInstant; end: CitedInstant };
   start: BoardWindSample;
@@ -133,13 +106,7 @@ export interface CompareBoardLaunch {
   directionFloorMps: number;
 }
 
-/**
- * The strongest gust the day states, m/s, with its reporting class
- * carried per cell: an hour-max gust and an instantaneous sample are
- * different objects for the same air, so a consumer must label the
- * classes differently and never compare them. Null semantics means the
- * document declares none.
- */
+/** The day's strongest gust, m/s. hourMax and instant are different classes: label them and never compare across them. Null semantics: the document declares none. */
 export interface CompareBoardGust {
   gustMps: number;
   meanWindMps: number | null;
@@ -160,13 +127,7 @@ export interface CompareBoardAloft {
   persistenceHours: number | null;
 }
 
-/**
- * The top cell: the day's peak usable-lift top among its own windows.
- * `cloudCapped` states the cause at the cited peak hour from the
- * liftCeiling finding (the number IS cloud base when true); null when
- * the day has no liftCeiling statement. The cause-hour totals ride
- * beside the flag so a consumer can weigh the whole day.
- */
+/** The day's peak usable-lift top. `cloudCapped` true means the number IS cloud base; null when the day states no liftCeiling. */
 export interface CompareBoardTop {
   liftTopM: number;
   /** Null when the analysis ran without a launch. */
@@ -177,17 +138,7 @@ export interface CompareBoardTop {
   ceilingHours: number;
 }
 
-/**
- * The storms cell, as data — consumers own the words. Two mutually
- * exclusive sources by the vocabulary's construction: capTiming where
- * the model publishes CIN, convectiveDay where it publishes CAPE alone;
- * ensembles neither (their row states nothing). "capUnjudgeable" is
- * convectiveDay's one statement: CAPE with no break time, because
- * absence of CIN must never read as "no cap". A convectiveDay whose
- * peak CAPE sits under the analysis's own instability floor states
- * "noInstability", the same floor capTiming's verdict uses. CAPE
- * magnitudes are model-specific — never compare them across rows.
- */
+/** Storms cell as data. capTiming where the model publishes CIN, convectiveDay where CAPE alone; ensembles state nothing. capUnjudgeable = CAPE with no break time (absent CIN never reads "no cap"). CAPE magnitudes are model-specific; never compare across rows. */
 export interface CompareBoardStorms {
   source: "capTiming" | "convectiveDay";
   verdict: "capBreaks" | "cappedAllDay" | "openButWeak" | "noInstability" | "capUnjudgeable";
@@ -214,14 +165,7 @@ export interface CompareBoardStorms {
   noPrecipAboveThreshold: boolean;
 }
 
-/**
- * The member's standing on this day. "window" and "quiet" are votes;
- * the other two are stated non-votes: an abstention is a data boundary
- * (the run covers a sliver of the day, or none of it), and a benched
- * member's published lift never reaches the launch, so every
- * launch-relative statement it makes is structurally biased. A blank
- * lane always has one of these reasons beside it.
- */
+/** "window"/"quiet" are votes. "abstained" is a data boundary; "benched" means published lift never reaches the launch, so launch-relative statements are structurally biased. */
 export type CompareBoardVote =
   | {
       kind: "window";
@@ -237,14 +181,7 @@ export type CompareBoardVote =
   | { kind: "abstained"; reason: "truncatedDay" | "outOfHorizon" }
   | { kind: "benched"; reason: "terrainMismatch"; deltaM: number };
 
-/**
- * One member's day as marks on the shared axis plus its cell facts —
- * instants and numbers, not sentences. Null means the member's data
- * states nothing for the cell (an ensemble's launch cell, a CIN-less
- * model's cap timing); a consumer prints a dash, never silence dressed
- * as calm. All wind values are m/s on the wire; display conversion is
- * the consumer's.
- */
+/** One member's day on the shared axis. A null cell states nothing — print a dash, never treat it as calm. All wind values m/s; display conversion is the consumer's. */
 export interface CompareBoardRow {
   /** `comparisonMemberKey(model, referenceTime)` — joins the comparison's ledger and `analyses` record. */
   member: string;

@@ -73,7 +73,6 @@ describe("CompassFan", () => {
     const ghosts = container.querySelectorAll("path[class^='meteo-fan-ghost-']");
     expect(ghosts.length).toBe(18);
     expect(container.querySelector(".meteo-wind-needle-blade")).not.toBeNull();
-    /* The freshest ghost wears decile 0; the oldest a higher one. */
     const classes = Array.from(ghosts).map((ghost) => ghost.getAttribute("class"));
     expect(classes[classes.length - 1]).toBe("meteo-fan-ghost-0");
     expect(classes[0]).toBe("meteo-fan-ghost-9");

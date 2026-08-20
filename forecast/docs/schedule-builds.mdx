@@ -11,7 +11,7 @@ availability to consumers.
 
 `models.json` declares each forecast model's `runIntervalHours`, `stepHours`,
 and `horizonHours`; observation datasets declare `cadenceMinutes` instead
-and run on their own clock — a GOES observation builder ticks every
+and run on their own clock: a GOES observation builder ticks every
 fifteen minutes, every tick, not when a forecast model publishes
 ([the wire told on us](/logbook/wire-told-on-us/) records learning that
 the expensive way). The living [forecast feed reference](/docs/forecast/forecast-model-feeds/)
@@ -32,7 +32,7 @@ scheduler tick
 ## A worked schedule
 
 `hrdps-continental` publishes four runs a day (00/06/12/18Z), each complete
-roughly **T+3:55** after its reference time — the
+roughly **T+3:55** after its reference time; the
 [feed reference](/docs/forecast/forecast-model-feeds/#hrdps-continental-25-km--supported)
 carries the verified window. Ticking a few minutes after the window, in
 UTC, catches each run once:
@@ -43,7 +43,7 @@ UTC, catches each run once:
 
 Idempotency makes the timing forgiving rather than critical: a tick that
 fires before the run completes publishes nothing, and a tick that sees an
-already-published `referenceTime` exits without rewriting — so an extra
+already-published `referenceTime` exits without rewriting, so an extra
 tick per window (say, 30 minutes later) costs one cheap manifest read and
 covers a slow provider day. `deploy.sh` is whatever moves `--output` to
 your hosting ([Publish static output](/docs/forecast/static-output/) shows

@@ -23,7 +23,7 @@ status union:
   and `samples` (`{ intervalSeconds, points }` of instantaneous
   `LiveSample`s).
 - `status: "unavailable"`: a machine `reason` code; `reading` and
-  `history` are null. Never prose, never stale numbers. The vocabulary is
+  `history` are null. The vocabulary is
   [core's four upstream-failure codes](/docs/core/failures-and-schema/#the-failure-vocabulary)
   plus one of station's own, `not_configured` (`UNAVAILABLE_REASONS` in
   `contract.ts`).
@@ -84,50 +84,49 @@ document or null; they never throw.
   thermometer says so in `capabilities`; a thermometer that is dark right now
   reports null. The two are different facts and both are representable.
   Capabilities gate client UI structure; a dark sensor keeps its structure.
-- **Absence stays absent.** A missing quantity is null, never zero.
-  `windGustMps: null` means "not measured", not "no gust".
-- **Calm carries no direction.** Below the WMO calm threshold (0.5 m/s,
-  `CALM_THRESHOLD_MPS`) `windDirectionDeg` is null: a vane parked below its
-  start-up torque, or a sonic head reading thermal drift, would fabricate a
-  bearing. The measured speed still travels. A null direction on a blowing
-  reading is a dead vane.
+- A missing quantity is null, never zero: `windGustMps: null` means "not
+  measured", not "no gust".
+- Calm carries no direction. Below the WMO calm threshold (0.5 m/s,
+  `CALM_THRESHOLD_MPS`) `windDirectionDeg` is null, because a vane parked
+  below its start-up torque, or a sonic head reading thermal drift, would
+  fabricate a bearing. The measured speed still travels. A null direction
+  on a blowing reading is a dead vane.
 - **A dropout is an absent record, never a zeroed one.** Gaps in
   `history.points` carry no points; `periodMinutes` is on the wire because
   wind run, vane thinning, and dropout detection are all functions of it; a
   client cannot treat 1-minute records and 5-minute logger records alike.
-- **A `LiveSample` is an instant, not a mean.** `HistoryPoint.windAvgMps` is
+- A `LiveSample` is an instant, not a mean. `HistoryPoint.windAvgMps` is
   contractually a period mean; `LiveSample.windMps` is a single anemometer
-  sample. The shapes are separate so neither can pose as the other. The calm
-  and dropout rules apply to both.
-- **Telemetry is device health, not weather.** `batteryVoltage` sits in its
-  own block beside the reading, gated by the `battery` capability, and never
-  inside `conditions`: air data stays air data. Like every sensor field, a
-  declared battery that reports nothing is null, not absent structure.
-- **Declared favorable sectors are data, not judgment.**
+  sample. The shapes are separate types so one cannot be used as the
+  other. The calm and dropout rules apply to both.
+- Telemetry is device health, not weather. `batteryVoltage` sits in its
+  own block beside the reading, gated by the `battery` capability, and
+  never inside `conditions`. Like every sensor field, a declared battery
+  that reports nothing is null, not absent structure.
+- Declared favorable sectors are data, not judgment.
   `declaredFavorableDirections` on the meta carries what the *source*
   declares about the spot (null or absent = nothing knowable, `[]` =
-  explicitly none). No component reads it: a consumer adopts it explicitly —
-  `favorableDirections={declaredFavorableDirections(station) ?? ownArcs}` —
+  explicitly none). No component reads it. A consumer adopts it explicitly
+  (`favorableDirections={declaredFavorableDirections(station) ?? ownArcs}`)
   so a vendor's opinion never becomes a judgment default. The optional
   `broadcastDelaySeconds` states the source's own live-playback delay.
-- **Recent summaries are the source's own digests.** The
-  `recentSummaries` block (gated by the capability of the same name)
-  carries pre-digested rolling step windows — reused `HistoryPoint`s,
-  oldest first, an empty step absent — that a client cannot derive itself:
-  the samples ring covers only ~10 minutes. The block travels whole; a
-  merge never mixes two sources' steps.
-- **History points may carry per-period extremes and the vector mean.**
+- The `recentSummaries` block (gated by the capability of the same name)
+  carries the source's own pre-digested rolling step windows: reused
+  `HistoryPoint`s, oldest first, an empty step absent. A client cannot
+  derive them itself, since the samples ring covers only ~10 minutes. The
+  block travels whole; a merge never mixes two sources' steps.
+- History points may carry per-period extremes and the vector mean.
   `windVectorAvgMps`, `temperatureMinC`/`temperatureMaxC`, and
   `seaLevelPressureMinHpa`/`seaLevelPressureMaxHpa` are additive and
   nullish: absent or null reads as "not published here", never zero. The
-  vector mean is at most `windAvgMps` and is the honest input for further
+  vector mean is at most `windAvgMps` and is the correct input for further
   vector re-aggregation.
 - **No prose on the wire.** Failures carry a reason code; degrees, not
   compass words. Display language, units, and colours are the client's.
-- **Units are SI: speeds are m/s**, converted for display via
+- Units are SI: speeds are m/s, converted for display via
   `speedFromMps`. Everything else keeps its conventional unit: °C, hPa, mm,
   km (lightning distance), W/m², degrees.
-- **The `conditions` block is extensible, not universal.** It is
+- The `conditions` block is extensible, not universal. It is
   WeatherFlow-shaped (pressure-trend enum, one-hour lightning bucket,
   station-local "today" fields; the
   [Tempest adapter](/docs/station/adapters/tempest/) fills every field of
@@ -137,14 +136,14 @@ document or null; they never throw.
 
 ## Evolution rules
 
-Normative, not advisory — the same additive/breaking pattern
+These rules are normative. They apply the same additive/breaking pattern
 [Compatibility](/docs/compatibility/) states for the forecast document
-families, applied to `STATION_SCHEMA_VERSION`:
+families to `STATION_SCHEMA_VERSION`:
 
 - An **additive change** (a new field) never bumps `STATION_SCHEMA_VERSION`. New
   fields arrive nullable, with null meaning what absence meant before.
-  Readers ignore unknown keys; the schemas parse in strip mode, and that is
-  load-bearing.
+  Readers ignore unknown keys; the schemas parse in strip mode, which the
+  additive rule depends on.
 - New **capability keys** must arrive nullish (null = undeclared = false): a
   required boolean would brick every already-published document that predates
   the key.

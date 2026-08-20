@@ -1,10 +1,7 @@
 ---
-/* The meteogram tier: the day the findings read, drawn once — a static
-   plate rendered from the same cloud-base-limits-lift profile the
-   analysis exhibit stated, so the chart is the liftCeiling finding made
-   visible. No layer controls here: the interactive layer-toggle exhibit
-   is the homepage's; this page shows the tier in its place among the
-   others. */
+/* A static plate from the same cloud-base-limits-lift profile the
+   analysis section states. No layer controls here: the interactive
+   layer-toggle exhibit is the homepage's. */
 import Figure from "../figure/Figure.astro";
 import MeteogramAnnotations from "../meteogram/MeteogramAnnotations.astro";
 import MeteogramKey from "../meteogram/MeteogramKey.astro";
@@ -15,9 +12,8 @@ import { briefingDay, fail } from "./exhibit";
 const { scenario, ceiling } = briefingDay();
 const segment = ceiling.segments[0] ?? fail("the plate lost its ceiling segment");
 
-/* No stability field here: over this uniformly unstable column it paints
-   one solid ramp that buries the exhibit's three lines. The lines ARE the
-   finding — lift pinned to cloud base under a boundary layer arcing away. */
+/* No stability field: over this uniformly unstable column it paints one
+   solid ramp that buries the three lines the finding is about. */
 const overlays = onlyOverlays(
   "temperature",
   "wind",

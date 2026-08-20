@@ -42,7 +42,7 @@ describe("compareBoardDayAxis", () => {
     });
     expect(axis.startMs).toBe(Date.parse("2026-08-09T06:00:00Z"));
     expect(axis.endMs).toBe(Date.parse("2026-08-09T20:00:00Z"));
-    /* Ticks outside the span are dropped, never clamped into a lie. */
+    /* Ticks outside the span are dropped, never clamped to the edge. */
     expect(axis.ticks.map((tick) => tick.hour)).toEqual([6, 12, 18]);
     expect(axis.ticks[1].x).toBeCloseTo(6 / 14, 10);
   });
@@ -176,8 +176,8 @@ describe("buildCompareBoardScene", () => {
     expect(row.kind).toBe("ensemble");
     expect(row.vote.kind).toBe("window");
     expect(row.windows).toHaveLength(1);
-    /* No CIN/CAPE story, no circular direction statistics, no levels, no
-       gust series in this document — every cell states nothing. */
+    /* No CIN/CAPE, no circular direction statistics, no levels, no
+       gust series in this document: every cell states nothing. */
     expect(row.storms).toBeNull();
     expect(row.launch).toBeNull();
     expect(row.aloft).toBeNull();

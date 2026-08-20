@@ -1,7 +1,6 @@
 ---
-/* The history exhibit: the sample dataset's own month archive, split by
-   the package's reader (exhibit.ts). Every byte count, offset, and run
-   stamp in the panel is read from the archive and its sidecar index —
+/* Every byte count, offset, and run stamp is read from the sample
+   archive and its sidecar index by the package's reader (exhibit.ts);
    the two are cross-checked, so the panel fails the build before it
    could show a stale offset. */
 import { formatBytes } from "../../lib/forecast-exhibit";

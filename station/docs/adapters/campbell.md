@@ -42,7 +42,7 @@ no barometer, so `conditions` is `false` and the block never appears
 `samplingWindowSeconds` is `currentIntervalSeconds`;
 `recommendedPollSeconds` is the larger of `currentIntervalSeconds` and
 `currentCacheTtlSeconds`; polling a three-second table faster than its
-cache only reheats the cache.
+cache TTL returns the cached rows.
 
 ## Endpoint
 

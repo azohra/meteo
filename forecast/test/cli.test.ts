@@ -93,12 +93,10 @@ describe("the builder registry", () => {
   });
 
   it("factories take exactly the options argument — never the platform's argv", async () => {
-    // Regression: the registry once invoked builder mains whose
-    // argparse read sys.argv — the platform CLI's own arguments — so every
-    // scheduled ensemble build died at parse_args(2) behind the workflow's
-    // ::warning mask. The TS builders parse no argv at all; hold the
-    // registry to that shape, and prove the CLI derives every input from
-    // its explicit argv parameter while process.argv stands contaminated.
+    // Regression pin: the registry once invoked builder mains whose
+    // argparse read sys.argv (the platform CLI's own arguments), killing
+    // every scheduled ensemble build at parse_args(2). Builders take one
+    // options argument; the CLI reads only its explicit argv parameter.
     for (const [slug, factory] of BUILDERS) {
       expect(factory.length, `${slug} factory arity`).toBe(1);
     }
@@ -896,8 +894,8 @@ describe("meteo forecast terrain", () => {
   });
 
   it("defaults --output to site-context.json beside the sites file", async () => {
-    // The context describes exactly the catalogue it sits next to — the
-    // pair travels together, wherever the operator keeps their sites.
+    // The context pairs with the catalogue it was measured from, so the
+    // default output sits beside the sites file.
     const tmp = scratch();
     const sites = writeSites(join(tmp, "club", "launches.json"));
     const calls: string[] = [];

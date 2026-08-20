@@ -218,10 +218,10 @@ export class DownloadCounters {
   /**
    * One `[wire]` block for the build log: totals, busy time against wall,
    * mean concurrency, latency percentiles, cpu split, and a per-host row.
-   * Empty when no timed request ran, so quiet builds stay quiet. Reading
-   * it: busy ≈ wall with concurrency pinned at the builder's gate and low
-   * throughput means the wire paces the build; cpu ≈ wall means compute
-   * does; high p50 against small mean sizes means round trips do.
+   * Empty when no timed request ran. Reading it: busy ≈ wall with
+   * concurrency pinned at the builder's gate and low throughput means the
+   * build is wire-bound; cpu ≈ wall means compute-bound; high p50 against
+   * small mean sizes means round-trip-bound.
    */
   transportReport(): string[] {
     if (this.#durationsMs.length === 0) {

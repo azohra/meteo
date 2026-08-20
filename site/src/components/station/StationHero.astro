@@ -1,8 +1,6 @@
 ---
-/* The hero band: the whole thesis on one raised surface — copy and value
-   props on the left, the wire-to-pixels demo on the right, the docrail as
-   the band's footnote. The page's client script feeds #station-hero-feed
-   and prints the wire object into #station-wire-json. */
+/* The page's client script (src/lib/station-gallery-client.ts) feeds
+   #station-hero-feed and prints the wire object into #station-wire-json. */
 ---
 
 <header class="station-hero" aria-labelledby="station-title">
@@ -69,10 +67,6 @@
 </header>
 
 <style>
-  /* ---- zone one: the hero band ----
-     The whole thesis lives on one raised surface — copy and value props on
-     the left, the wire-to-pixels demo on the right — so the first ground
-     change on the page is the hero itself ending. */
   .station-hero {
     background: var(--surface);
     border-block-end: 1px solid var(--rule);
@@ -169,8 +163,7 @@
   .station-term-body :global(.t-key) { color: var(--term-muted); }
   .station-term-body :global(.t-num) { color: var(--term-number); }
   .station-term-body :global(.t-str) { color: var(--term-string); }
-  /* The wire itself: readings flow down the dotted connector into the
-     instrument — the one place ambient motion depicts the subject. */
+  /* Animated dots on the connector: the only ambient motion on the page. */
   .station-wire-connector { display: grid; gap: 4px; padding: 0.6rem 0; }
   .station-wire-connector span {
     width: 4px; height: 4px; border-radius: 999px;
@@ -190,7 +183,6 @@
     text-align: center;
     text-wrap: balance;
   }
-  /* The value props ride the copy column as a 2×2, under one hairline. */
   .station-values {
     grid-area: values;
     display: grid;
@@ -203,7 +195,6 @@
   .station-values h2 { margin: 0; font-size: 0.92rem; letter-spacing: -0.01em; }
   .station-values p { margin: 0.3rem 0 0; font-size: 0.83rem; line-height: 1.55; color: var(--ink-mute); }
 
-  /* The band's footnote: one quiet line of reference links. */
   .station-docrail {
     display: flex;
     flex-wrap: wrap;

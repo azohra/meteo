@@ -3,8 +3,8 @@ title: "Station: live weather-station display"
 description: "The station capability: one wire contract, vendor adapters, a mountable feed handler, and React plus custom-element bindings for rendering live station conditions."
 ---
 
-The **station** capability reads live weather stations and renders them,
-natively in your page — never a vendor iframe: one wire contract, vendor
+The **station** capability reads live weather stations and renders them
+natively in your page, with no vendor iframe: one wire contract, vendor
 adapters that normalize into it ([four built in, or your
 own](/docs/station/adapters/)), a mountable
 `Request → Response` feed handler, a framework-free client data layer, and
@@ -27,16 +27,19 @@ import { createStationFeedHandler } from "@azohra/meteo.station/server";
 
 ## Principles
 
-- **Capabilities are declared, never inferred.** A station without a
-  thermometer says so; a dark sensor reports null. Absence stays absent:
-  never zero, never a guess.
-- **Degrade, don't lie.** An upstream that fails or breaks contract renders
-  as unavailable with a reason code, not as stale numbers. One broken
-  station never takes down the feed.
-- **No prose on the wire.** Reason codes and degrees travel; words, units,
-  and colours are the client's.
-- **Your thresholds, your palette.** Speed banding is computed against the
-  consumer's limits and painted with the consumer's tokens.
+- Capability flags on the wire say what each station carries, and the
+  display surfaces trust them. A station without a thermometer says so; a
+  dark sensor reports null rather than zero.
+- Degrade, don't lie. An upstream that fails or breaks contract renders
+  as unavailable with a reason code, and one broken station leaves the
+  rest of the feed intact.
+- The wire carries reason codes and degrees; words, units, and colours
+  are the client's.
+- Speed banding is computed against the consumer's limits and painted
+  with the consumer's tokens.
+
+The [wire contract](/docs/station/wire-contract/#semantics) states the
+full semantics.
 
 ## The documentation
 

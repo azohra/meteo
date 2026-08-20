@@ -19,7 +19,7 @@ moves here merely to shorten an import:
 
 - **Units**: the platform's unit vocabulary and conversions (`units.ts`)
 - **Angles**: angular math and compass conventions (`angles.ts`)
-- **Wind**: the platform's ONE wind sign convention (`wind.ts`)
+- **Wind**: the platform's one wind sign convention (`wind.ts`)
 - **Schema primitives**: shared zod building blocks (`schema.ts`)
 - **Failures**: the upstream-failure vocabulary (`failures.ts`)
 - **Schema artifacts**: the rendering machinery behind each capability's

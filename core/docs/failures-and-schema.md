@@ -3,10 +3,9 @@ title: Failures and schema artifacts
 description: The closed upstream-failure vocabulary transports share, the shared zod schema primitives, and the machinery each capability uses to render its published JSON Schema artifacts.
 ---
 
-Three pieces of shared machinery keep the platform's boundaries honest: a
-closed vocabulary for upstream failure, zod schema primitives capability
-configs share, and one renderer for the JSON Schema artifacts each
-capability publishes, defined by
+This page covers a closed vocabulary for upstream failure, the zod
+schema primitives capability configs share, and the one renderer behind
+each capability's published JSON Schema artifacts. They are defined by
 [`failures.ts`](https://github.com/azohra/meteo/blob/main/core/src/failures.ts),
 [`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts),
 and
@@ -25,7 +24,7 @@ codes:
 | `rate_limited` | The upstream refused for rate. |
 | `contract_break` | The upstream answered, but not in the shape the contract promises. |
 
-Two types partition the vocabulary. `UpstreamFailureReason` is all four
+The vocabulary splits into two types. `UpstreamFailureReason` is all four
 codes: what the wire may carry. `UpstreamErrorReason` excludes
 `contract_break`: it is the set an `UpstreamError` may be *thrown* with,
 because `contract_break` is only ever the mapper's verdict, never thrown.
@@ -49,10 +48,11 @@ try {
 }
 ```
 
-The reason code travels; words, retries, and presentation are the
-consumer's.
+The reason code is all that travels. Words, retries, and presentation
+are up to the consumer.
 
-Closed binds what a transport may report, not what a capability's wire may
+"Closed" applies to what a transport may report, not to what a
+capability's wire may
 carry: a wire may extend the vocabulary with failures that are its own.
 Station's `UNAVAILABLE_REASONS` is these four codes plus `not_configured`
 (a config verdict no upstream ever produced), as
@@ -60,9 +60,9 @@ Station's `UNAVAILABLE_REASONS` is these four codes plus `not_configured`
 
 ## Schema primitives
 
-Three zod building blocks in
+The zod building blocks in
 [`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts)
-recur in capability configs:
+that recur in capability configs:
 
 - **`ianaTimeZone`**: a string `Intl.DateTimeFormat` accepts as a time
   zone; anything else fails with `not an IANA time zone`.
@@ -99,7 +99,7 @@ schema emission — a consumer of briefing or station never calls it.
   produce the exact shipped bytes: two-space-indented JSON with a trailing
   newline.
 
-One deliberate choice: the conversion runs with zod's `io: "input"`, so a
+The conversion deliberately runs with zod's `io: "input"`, so a
 published schema never carries `additionalProperties: false`. Wire readers
 ignore unknown keys (that is how the contracts evolve), and a schema that
 rejected unknown keys would contradict the wire's own semantics.

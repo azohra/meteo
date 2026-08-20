@@ -18,20 +18,16 @@ import {
 } from "./dataset.js";
 import { writeRunsIndex } from "./publish.js";
 
-/* Publishing a model is an ordered upload, and the order is the protocol:
-   history archives before site profiles before the manifest — the manifest
-   is the publication's commit point, so nothing it references appears
-   after it — and runs.json advances last, regenerated from the *published*
-   manifests so concurrent lanes converge on whoever writes it last.
-   Every key comes from the reader contract's documentPaths: the layout has
-   one home, and this module never spells a path. */
+/* Upload order: history archives, then site profiles, then the manifest
+   (the publication's commit point; nothing it references may appear after
+   it), then runs.json last, regenerated from the published manifests so
+   concurrent lanes converge on whoever writes it last. Every key comes
+   from the reader contract's documentPaths; this module spells no path. */
 
-/* Cache lifetimes are the operator's, not the platform's — a deployment
-   chooses them to match its own tick and CDN. What IS the dataset's own
-   semantics: a closed month archive never changes again, so whatever the
-   operator picks for closed months may safely be immutable, while
-   everything else changes with the next run. The TRIAL defaults suit a
-   15-minute tick and are caller-movable. */
+/* Cache lifetimes are operator-chosen to match a deployment's tick and
+   CDN. A closed month archive never changes again, so closedMonths may
+   safely be immutable; everything else changes with the next run. The
+   TRIAL defaults suit a 15-minute tick and are caller-movable. */
 export interface CacheLifetimes {
   /** Objects the next run replaces: manifests, site documents, open months, runs.json. TRIAL default "public, max-age=300". */
   live?: string;

@@ -1,18 +1,18 @@
 ---
 title: Run an ingest
-description: "Poll runs.json, ingest coherent publications, and serve through gaps: the recipe for the store-and-serve loop the package deliberately does not ship."
+description: "Poll runs.json, ingest coherent publications, and serve through gaps: the store-and-serve loop the package leaves to the consumer."
 ---
 
-An ingest (the loop that polls the published dataset, notices a new
-publication, pulls one model's documents as a coherent set, and serves them
-from its own storage) is two different kinds of code. The questions with
-correct answers ("is this set one publication", "why is this document
-missing", "is this run late") are package verbs, and `@azohra/meteo.briefing/transport`
-and `@azohra/meteo.briefing/derive` answer every one of them. The loop around those verbs
-(the scheduler, the store, retention, what your product tells its users
-when a feed runs late) is policy whose shape belongs to the consumer and
-its runtime. This page is the recipe for wiring one, not a module to
-import; it is the server-side counterpart of
+An ingest loop polls the published dataset, notices a new publication,
+pulls one model's documents as a coherent set, and serves them from its
+own storage. Two kinds of code meet in it. The questions with correct
+answers ("is this set one publication", "why is this document missing",
+"is this run late") are package verbs; `@azohra/meteo.briefing/transport`
+and `@azohra/meteo.briefing/derive` answer every one of them. The
+scheduler, the store, retention, and what your product tells its users
+when a feed runs late are policy, shaped by the consumer and its runtime.
+This page is the recipe for wiring the loop, not a module to import; it is
+the server-side counterpart of
 [Wire an inspector](/docs/briefing/wire-an-inspector/).
 
 ![The ingest loop's five steps: poll runs.json with loadRuns; compare each model's (referenceTime, generatedAt) pair against seen; fetch a coherent set with loadSiteSet anchored on the manifest; refuse a syncing: true set by ingesting nothing; and atomically swap the store under the new referenceTime. Every path returns to the standing state: serve the newest coherent publication the store holds.](figures/ingest-loop.svg)
@@ -26,7 +26,7 @@ none is needed: the poll is the subscription. One fetch of `runs.json`
 fetches it with the same discriminated miss semantics as every other
 loader in the [transport guide](/docs/briefing/transport/).
 
-The cadence is yours. A sensible loop wakes at a small fraction of the
+Pick the cadence yourself. A sensible loop wakes at a small fraction of the
 fastest `runIntervalHours` it serves (every few minutes is plenty when the
 fastest feed publishes six-hourly), and a poll that finds nothing new costs
 one small document.
@@ -81,9 +81,9 @@ work list and is retried by the next tick, for free.
 A model's sites are separate files behind separate cache entries, so around
 a publish, per-site fetches can straddle two runs even when each
 manifest/document pair looks internally consistent on its own. `loadSiteSet`
-exists for exactly this: it fetches the model's manifest once as the commit
-point, then every site document, and requires each document to carry that
-manifest's run, retrying once on a mid-publish mix; the
+exists for exactly this. It anchors on one fetch of the model's manifest
+as the commit point, requires every site document to carry that manifest's
+run, and retries once on a mid-publish mix; the
 [transport guide](/docs/briefing/transport/#load-a-site-set-as-one-publication)
 defines the contract. The result discriminates on `syncing`:
 
@@ -180,18 +180,18 @@ catalogue's `cadenceMinutes` rather than any `runIntervalHours`.
 
 ## Serve the predecessor through gaps
 
-Publishes take time and providers have bad days, so gaps are a when, not an
-if: a syncing set, a run that never appears, an ingest tick that dies
-halfway. The recipe absorbs all of them one way: the store serves the
-newest coherent publication it holds until a newer one has ingested
-completely, then swaps atomically under the new `referenceTime`. Never
-serve a partially ingested run, and never delete on a miss: a model that
-went quiet still has a perfectly good predecessor run, dated by
-its own `run` block, and a reader told "this is the 06Z run; the 12Z is
-late" is better served than one shown nothing.
+Publishes take time and providers have bad days, so gaps are routine: a
+syncing set, a run that never appears, an ingest tick that dies halfway.
+The recipe absorbs all of them one way: the store serves the newest
+coherent publication it holds until a newer one has ingested completely,
+then swaps atomically under the new `referenceTime`. Never serve a
+partially ingested run, and never delete on a miss. A model that went
+quiet still has a perfectly good predecessor run, dated by its own `run`
+block; telling the reader "this is the 06Z run; the 12Z is late" beats
+showing nothing.
 
-How many predecessors to keep (one, a season, forever) is retention, and
-retention is consumer policy, not a dataset property. The dataset's own
+How many predecessors to keep (one, a season, forever) is the consumer's
+retention policy. The dataset's own
 [history archives](/docs/briefing/history-archives/) already keep the per-site record of
 everything published (readable programmatically with the
 [`@azohra/meteo.briefing/history` loaders](/docs/briefing/history/)), so your store
@@ -210,25 +210,24 @@ provider's bad day: say so in the product and keep serving
 everything else. One freshness grade should never take the whole product
 down with it.
 
-Which feeds are the baseline is product policy: the catalogue declares what
-each model publishes, never which one you depend on. Naming the baseline is
-your decision; treating the two failure classes differently is the recipe.
+Which feeds are the baseline is product policy: the catalogue declares
+what each model publishes, not which ones you depend on.
 
 ## Judge freshness with `runFreshness`
 
 A store that serves through gaps must answer "how current is
 this?". `runFreshness` from `@azohra/meteo.briefing/derive` grades a runs.json entry
-`"current" | "delayed" | "stale"`, and its inputs split exactly along the
-fact/policy line this page keeps drawing: the facts come from the
-[model catalogue](/docs/briefing/catalogue/), the threshold boundaries are
-yours. The grading semantics live in the
+`"current" | "delayed" | "stale"`, and its inputs split the same way as
+everything else here: the facts come from the
+[model catalogue](/docs/briefing/catalogue/), the threshold boundaries
+from you. The grading semantics live in the
 [derive reference](/docs/briefing/derive/#judge-run-freshness).
 
 ```ts title="grade-feeds.ts"
 import type { ModelCatalogue, RunsIndex } from "@azohra/meteo.briefing/contract";
 import { runFreshness, type RunFreshness } from "@azohra/meteo.briefing/derive";
 
-/** This product's tolerance — yours will differ, and that is the point. */
+/** This product's tolerance; yours will differ. */
 const THRESHOLDS = {
   currentIntervals: 1, // the successor run may simply not exist yet
   staleAfterIntervals: 3, // a whole run skipped, and the one after is late too

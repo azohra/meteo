@@ -3,10 +3,10 @@ import ExhibitLinks from "./ExhibitLinks.astro";
 import SectionHeader from "./SectionHeader.astro";
 import "@azohra/meteo.station/styles.css";
 
-/* The station exhibit: a real <meteo-station-card> from the package's
-   custom-elements binding, fed a synthetic season generated in the visitor's
-   browser (src/lib/station-exhibit.ts). Living components, not a
-   screenshot — the full gallery lives at /docs/station/component-gallery/. */
+/* A real <meteo-station-card> from the package's custom-elements binding,
+   fed a synthetic season generated in the visitor's browser
+   (src/lib/station-exhibit.ts). Not a screenshot; the full gallery is
+   /docs/station/component-gallery/. */
 ---
 
 <section id="station" class="home-station-section" aria-labelledby="home-station-title">
@@ -57,9 +57,9 @@ import "@azohra/meteo.station/styles.css";
 </section>
 
 <script>
-  /* Data first, definition second: the shared wiring (src/lib/station-live)
-     feeds every station exhibit on the page — this card and the hero
-     instrument — before defining the tags, so nothing upgrades empty. */
+  /* The shared wiring (src/lib/station-live) feeds every station exhibit
+     on the page (this card and the hero instrument) before defining the
+     tags, so nothing upgrades empty. */
   import { wireStationExhibits } from "../../lib/station-live";
 
   wireStationExhibits();

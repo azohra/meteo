@@ -73,7 +73,7 @@ export type CompassFanScene = {
     y: number;
     text: string;
   }>;
-  /** Oldest first, the newest sample excluded — it wears the needle. */
+  /** Oldest first, newest excluded — the newest is drawn as the needle. */
   ghosts: Array<{ key: string; className: string; d: string }>;
   needle: {
     className: string;

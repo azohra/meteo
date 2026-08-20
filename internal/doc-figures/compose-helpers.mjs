@@ -13,17 +13,16 @@ const { TOKEN_DEFAULTS } = await import(join(figuresRoot, "briefing/dist/meteogr
   },
 );
 
-/* The chrome follows the page; the print never restyles. Every ground,
-   rule, and label ink below is emitted as a var() reference to one of the
-   eight ancestor chrome tokens the site (and any downstream page) supplies
-   — --meteo-gram-surface, strip-bg, ink, ink-soft, ink-mute, rule, halo,
-   halo-barb — with the committed light value as the fallback, so the same
-   bytes stay the familiar light plate wherever no ancestor sets tokens
-   (GitHub, raw file views) and follow the page theme once inlined. Colors
-   that are part of the figures' fixed FACE (the accent annotation inks,
-   the dark code panel and its syntax colors, the brand flag) stay resolved
-   literals on purpose: they pair with each other, not with the page, and
-   the site's :root deliberately supplies only the eight chrome tokens. */
+/* Every ground, rule, and label ink below is emitted as a var() reference
+   to one of the eight ancestor chrome tokens the site (and any downstream
+   page) supplies — --meteo-gram-surface, strip-bg, ink, ink-soft,
+   ink-mute, rule, halo, halo-barb — with the committed light value as the
+   fallback: the same bytes render the light plate wherever no ancestor
+   sets tokens (GitHub, raw file views) and follow the page theme once
+   inlined. Colors that are part of the figures' fixed face (the accent
+   annotation inks, the dark code panel and its syntax colors, the brand
+   flag) stay resolved literals: they pair with each other, not with the
+   page, and the site's :root supplies only the eight chrome tokens. */
 const chrome = (name, lightDefault) => `var(--meteo-gram-${name}, ${lightDefault})`;
 
 export const PAGE = chrome("strip-bg", "#f4efe4");
@@ -103,7 +102,7 @@ export function paper(id, width, height, rx = 20) {
 }
 
 export function flag(scale = 1) {
-  /* Brand mark: a fixed dark ground under the fixed orange — face, not chrome. */
+  /* Brand mark: fixed dark ground under fixed orange; not themed by chrome tokens. */
   return `<g transform="scale(${scale})">
       <rect width="104" height="32" rx="2" fill="${CODE_BG}"/>
       <path d="M7 27V7l53 16 15 2 22-14v16z" fill="${FLAG_ORANGE}"/>

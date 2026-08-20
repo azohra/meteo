@@ -52,8 +52,8 @@ rather than composing two unguarded fetches.
 ## Validate the document
 
 Use `parseForecastManifestJson` from `@azohra/meteo.briefing/contract`. A 404 means the model
-is not published at that root; an invalid document is also unavailable, not an
-invitation for view code to guess missing fields.
+is not published at that root; an invalid document is also unavailable, and
+view code must not guess its missing fields.
 
 The observation datasets (`goes18-dsr`, `goes18-aod`) publish a manifest
 variant: it keeps the identity and `stats` fields but carries

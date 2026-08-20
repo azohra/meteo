@@ -10,13 +10,10 @@ import {
 } from "./shared.js";
 
 /**
- * The membership honesty layer for ensemble documents: `membership` is
- * the per-quantity member-count profile (a p50 computed from few
- * contributing members is a different object than one over the full
- * run), `bands` states the p10-p90 band-width magnitude for the derived
- * series, and `dayBands` is the per-local-day width series at each day's
- * peak-p50-w* hour. No confidence verdicts: the band is member spread,
- * not a confidence interval.
+ * Ensemble documents only. `membership`: per-quantity member counts (a p50
+ * over few members differs from one over the full run). `bands`: p10-p90
+ * band width for derived series. `dayBands`: per-day width at the day's
+ * peak-p50-w* hour. The band is member spread, not a confidence interval.
  */
 export interface EnsembleMembershipFinding {
   kind: "ensembleMembership";

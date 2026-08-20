@@ -6,9 +6,6 @@ export interface NavLink {
   key: NavKey;
 }
 
-/* The header reads in three registers: the platform's own products as a
-   cluster, Docs as the primary destination, and the quieter meanwhile
-   links. GitHub is an exit, rendered as a mark, not a peer. */
 export const PRODUCT_LINKS: readonly NavLink[] = [
   { label: "Briefing", href: "/briefing/", key: "briefing" },
   { label: "Forecast", href: "/forecast/", key: "forecast" },

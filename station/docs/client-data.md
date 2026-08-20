@@ -46,8 +46,7 @@ owed to every caller identically:
   arrived; `{ kind: "contract", cause? }` with the zod error (or JSON syntax
   error) behind an unreadable body.
 - **Seeds refresh**: an `initial` snapshot (SSR-fetched data) fills state
-  before the first fetch; the first poll still fires, because a seed is a
-  starting point, never a substitute for refreshing.
+  before the first fetch; the first poll still fires.
 - **The consumer's `fetchInit` rides every request** (headers, credentials,
   cache mode; pass a function to thread the latest values); the loop's own
   abort signal is applied last and wins.
@@ -155,12 +154,12 @@ import {
 `compareWindow` requires coverage, not just presence: the matched
 span's own edges must land within one typical sample period (scaled by the
 same gap tolerance an outage is judged by) of the window asked for, or it
-returns `null` rather than a two-point ghost of a trace.
+returns `null` rather than drawing a two-point trace.
 
 ## Browsing the archive — fetcher injection
 
-Where re-slicing served points is not enough — browsing back through
-months — the archive road is **fetcher injection**: the data contract is
+Where re-slicing served points is not enough (browsing back through
+months), the archive road is fetcher injection: the data contract is
 one function shape, and how a window is served is the host's business.
 
 ```ts
@@ -182,13 +181,13 @@ window costs nothing, an in-flight window is asked once, and a failed
 fetch is never cached so the next ask retries. The served document echoes
 the `periodMinutes` the source actually supplied.
 
-The library ships no archive control surface: what a pager looks like is
-the host's product decision, made in the host's own visual voice. The math
-that is fact rather than taste ships beside the store — `archivePeriodFor`
-(the vendor-shaped resolution ladder), `archiveDayWindow`,
-`archiveDayValue`, and `archiveDayStep` (LOCAL calendar-day arithmetic for
-a date field and ‹ › steps), and `archiveTrailingWindow` (a pager's
-"today"). Feed the chosen window to the store, and the returned points to
+The library ships no archive control surface; what a pager looks like is
+the host's product decision. The supporting math ships beside the store:
+`archivePeriodFor` (the vendor-shaped resolution ladder),
+`archiveDayWindow`, `archiveDayValue`, and `archiveDayStep` (LOCAL
+calendar-day arithmetic for a date field and ‹ › steps), and
+`archiveTrailingWindow` (a pager's "today"). Feed the chosen window to
+the store, and the returned points to
 [`WindHistoryChart`](/docs/station/react/) with `windowHours`,
 `compareOffsetDays`, and `nightShading`.
 
@@ -200,7 +199,7 @@ The components' ambient-default discipline is one exported rule,
 `"kmh"`), and `formatTime`. `thresholds` resolves explicit → ambient →
 nothing: a judgment parameter ships no package default, and with none
 declared, readings go ungraded. Thresholds are a trichotomy, and
-the distinction is load-bearing in every binding:
+every binding preserves the distinction:
 
 - **omitted** (`undefined`): inherit the ambient thresholds;
 - **a value**: grade against exactly these;
@@ -227,8 +226,8 @@ differs between the passes; bindings correct to the real clock once mounted.
 
 ## Words and formatting
 
-Everything a component prints comes from the isomorphic root, so two
-bindings can never disagree on a character: the strings vocabulary
+Everything a component prints comes from the isomorphic root, so the two
+bindings print identical characters: the strings vocabulary
 (`defaultStrings`, `resolveStrings`, `mergeStringOverrides`,
 `localeFormatTime`), the formatting rules (`roundSpeed`, `optionalSpeed`,
 the one-decimal temperature, `updatedAtText`, `summaryEntries`,

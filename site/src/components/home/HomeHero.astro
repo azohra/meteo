@@ -5,10 +5,9 @@ import { onlyOverlays, renderSyntheticMeteogram } from "../../lib/example-meteog
 import { scenarioById } from "../../lib/scenarios";
 import "@azohra/meteo.station/styles.css";
 
-/* The hero exhibit is the platform statement made literal: the two rendered
-   surfaces, side by side, both real. The Meteogram is a
-   build-time render of a committed synthetic scenario through the package's
-   only chart-geometry path; the station instrument is the live
+/* Two rendered surfaces, side by side, both real: the Meteogram is a
+   build-time render of a committed synthetic scenario through the
+   package's only chart-geometry path; the station instrument is the live
    custom-elements binding fed the same synthetic season as /station/.
    Nothing here is a screenshot. */
 const scenario = scenarioById("convective-cycle");
@@ -84,9 +83,8 @@ const { svg: heroMeteogramSvg } = renderSyntheticMeteogram(
 </section>
 
 <script>
-  /* The hero instrument is live. The shared wiring feeds every station
-     exhibit on the page before defining the tags, so this coexists with
-     the station section below. */
+  /* The shared wiring feeds every station exhibit on the page before
+     defining the tags, so this coexists with the station section below. */
   import { wireStationExhibits } from "../../lib/station-live";
 
   wireStationExhibits();

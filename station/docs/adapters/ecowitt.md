@@ -4,7 +4,7 @@ description: "The Ecowitt adapter: application and API keys, the gateway MAC, th
 ---
 
 Ecowitt sensor arrays (the WS90 "Wittboy" and its siblings) report by
-radio to a gateway or console — GW2000/GW3000 class hardware — which
+radio to a gateway or console, GW2000/GW3000 class hardware, which
 uploads to the vendor's cloud about once a minute. The adapter reads the
 cloud's `real_time` endpoint and normalizes the latest report into a
 [wire document](/docs/station/wire-contract/). The gateway itself carries
@@ -41,21 +41,21 @@ stays null. History is declared `false` because `real_time` serves the
 latest report only; the adapter reports what this endpoint carries and
 fabricates nothing. `samplingWindowSeconds` is null: the cloud does not
 state the averaging window behind its wind values. `recommendedPollSeconds`
-is 60, the gateway's own upload cadence — polling faster rereads the same
+is 60, matching the gateway's upload cadence; a faster poll sees the same
 report.
 
 ## Endpoint and the credential-free cache key
 
 `GET https://api.ecowitt.net/api/v3/device/real_time` with
 `application_key`, `api_key`, `mac`, a `call_back` naming exactly the field
-groups the adapter reads, and unit ids pinning every quantity to SI —
-°C, hPa, m/s, mm, W/m² — so the payload never needs unit conversion. The
+groups the adapter reads, and unit ids pinning every quantity to SI
+(°C, hPa, m/s, mm, W/m²) so the payload never needs unit conversion. The
 `realTimeUrl` direct-adapter option overrides the base URL, for tests and
 proxies.
 
-Responses cache for 60 seconds under the key `ecowitt/<MAC>`; the keys are
-deliberately excluded, because a credential must never leak into a shared
-cache. What that means for multi-tenant hosts is
+Responses cache for 60 seconds under the key `ecowitt/<MAC>`; the
+application and API keys stay out of the cache key, since credentials do
+not belong in a shared cache. What that means for multi-tenant hosts is
 [the cache trust model](/docs/station/adapters/#the-cache-trust-model).
 
 ## What the adapter guards
@@ -106,9 +106,9 @@ const handler = createStationFeedHandler({
 export default { fetch: handler };
 ```
 
-On your page: `history: false` means **no history chart, no trend chart,
-no sparkline** — an Ecowitt `StationCard` renders the dial and readouts and
-no chart, which is correct behaviour, not a wiring error. `/live?station=`
+On your page, `history: false` means no history chart, no trend chart,
+and no sparkline: an Ecowitt `StationCard` renders the dial and readouts.
+The wiring is fine; there is simply no history to draw. `/live?station=`
 answers 404 and the live hooks never apply. The full capability-to-surface
 map is [What your hardware shows](/docs/station/what-your-hardware-shows/).
 

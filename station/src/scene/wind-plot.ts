@@ -269,9 +269,8 @@ export function windRowLabels(
   };
 }
 
-/* Night shading: gray columns between each sunset and the next sunrise,
- * from real astronomy — no coordinates, no shading, never a guessed night.
- * Polar day and night likewise draw nothing: a truthful nothing. */
+/* Night shading: gray columns from each sunset to the next sunrise. No
+ * coordinates, no shading; polar day and night draw nothing. */
 export function nightRects(
   points: ReadonlyArray<HistoryPoint>,
   frame: ChartFrame,

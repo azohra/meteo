@@ -2,13 +2,12 @@ import { spawn } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-/* The full local gate battery, wall-clock honest: one workspace build,
-   then every gate concurrently. Correctness rests on one invariant —
-   after the build, every gate is a pure READER of dist/, so lanes never
-   race on package output. That is why lanes invoke the underlying tools
-   directly instead of the package scripts: the scripts rebuild their
-   dependencies for standalone use, and a rebuild inside a lane would
-   write dist/ under another lane's feet.
+/* The full local gate battery: one workspace build, then every gate
+   concurrently. After the build, every gate is a pure READER of dist/,
+   so lanes never race on package output. Lanes invoke the underlying
+   tools directly instead of the package scripts, because the scripts
+   rebuild their dependencies for standalone use and a rebuild inside a
+   lane would write dist/ while another lane reads it.
 
    A lane runs its steps serially; lanes run concurrently. Output is
    buffered per step and printed on completion, so failures stay legible. */

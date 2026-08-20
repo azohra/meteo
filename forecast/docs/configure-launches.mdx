@@ -7,7 +7,7 @@ import { Aside, Steps } from "../../site/src/components/docs/starlight";
 import { SITES_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 
 A **launch** is the place you fly; a **site** is that launch's record in
-the data — this page authors those records. (Not installed yet? The
+the data. This page authors those records. (Not installed yet? The
 [section landing](/docs/forecast/) carries the install command and the
 Node 22 requirement.) Every builder reads the same
 site catalogue. Pass its path with `--sites`;
@@ -16,8 +16,8 @@ wherever your project keeps it.
 
 ## Catalogue shape
 
-The catalogue is **identity and build selection
-only**: humans author WHERE, and nothing physical. The forecast engine measures
+The catalogue is identity and build selection
+only: humans author the where, nothing physical. The forecast engine measures
 elevation, terrain, and land cover at those coordinates and publishes them
 in [`site-context.json`](/docs/briefing/site-context-document/).
 
@@ -42,7 +42,7 @@ holds it stricter than a reader would: `meteo forecast build` refuses
 unknown fields and `elevationM` outright, where the reader contract merely
 strips them. A field someone typed and the pipeline silently ignored is the
 failure the strictness exists to catch. You publish it to
-the dataset root **verbatim** — a build never copies it there, and once it
+the dataset root verbatim; a build never copies it there. Once it
 is published, builders can read it straight from the dataset
 (`--sites dataset`) instead of a checked-out file
 ([Publish static output](/docs/forecast/static-output/#publish-the-dataset-root)
@@ -94,7 +94,7 @@ walks the root files).
 The catalogue is done. Next in the path:
 [Choose models](/docs/forecast/choosing-models/) picks the slug, and
 [Run one model](/docs/forecast/run-one-model/) validates this file with a
-dry run before anything fetches — an invalid catalogue fails there with the
+dry run before anything fetches: an invalid catalogue fails there with the
 offending field named, and a site outside the chosen model's sampling guard
 fails the build with an out-of-grid error rather than publishing a clamped
 boundary value.

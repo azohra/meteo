@@ -19,6 +19,6 @@ export function wireStationExhibits(): void {
   publish();
   setInterval(publish, 5_000);
 
-  /* Data before definition: a feed element that upgrades with no feed set throws. */
+  /* Define the tags only after the feed is set: an element that upgrades with no feed throws. */
   defineMeteoElements();
 }

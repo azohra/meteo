@@ -2,25 +2,23 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-/* The mechanically checkable slice of BRAND.md's voice rules: unsupported
-   praise never survives review here ("easy", "seamless", "robust", …), so
-   this gate holds that line across every reader-facing source. Judgment
-   rules — the confidence rule, register, dates — stay with review; a gate
-   that needs context would cry wolf. Code fences are skipped: "simple
-   packing" is a GRIB2 packing type, not a claim. A legitimate literal use
-   (quoting a source, naming a provider product) opts out with
-   `meteo-prose: ignore` on the same or preceding line.
+/* The mechanically checkable slice of the voice rules: unsupported praise
+   ("easy", "seamless", "robust", …) fails here across every reader-facing
+   source. Judgment rules (the confidence rule, register, dates) stay with
+   review. Code fences are skipped: "simple packing" is a GRIB2 packing
+   type, not a claim. A legitimate literal use (quoting a source, naming a
+   provider product) opts out with `meteo-prose: ignore` on the same or
+   preceding line.
 
-   The same pass holds the quote convention: straight quotes only — the
-   2026-08 sweep normalized the corpus, and this keeps curly characters
-   from creeping back in. The quote rule also covers package docs, which
-   the praise gate leaves to review. */
+   The same pass enforces straight quotes; the 2026-08 sweep normalized
+   the corpus and this keeps curly characters out. The quote rule also
+   covers package docs, which the praise gate leaves to review. */
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORE_MARKER = "meteo-prose: ignore";
 
-/* Word-boundary, case-insensitive. BRAND.md's own list plus the same
-   claim-words in adjacent forms. */
+/* Word-boundary, case-insensitive. The voice doctrine's banned-praise
+   list plus the same claim-words in adjacent forms. */
 const BANNED = [
   "easy",
   "easier",

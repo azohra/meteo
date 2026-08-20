@@ -3,7 +3,7 @@ title: Builder contract
 description: The invariants every deterministic and ensemble model builder must preserve.
 ---
 
-This page is for someone **writing or reviewing a builder module** — an
+This page is for someone writing or reviewing a builder module. An
 operator running the CLI never needs it (the errors a failed build prints
 are quoted in [Run one model](/docs/forecast/run-one-model/#when-a-build-fails)).
 

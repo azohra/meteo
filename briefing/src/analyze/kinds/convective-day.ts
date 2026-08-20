@@ -5,13 +5,11 @@ import { dayCoverage } from "./quiet-day.js";
 import { round2, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * The convective story a CIN-less model can tell: CAPE magnitude and
- * timing plus precipitation timing per local day — verdict-free
- * restatements, emitted only where the document publishes CAPE and no
- * CIN anywhere, on deterministic days sampled hourly. `capIsJudgeable`
- * is always false (absence of CIN must never be read as "no cap"), and
- * CAPE magnitudes are model-specific — never compare peakCapeJkg across
- * documents.
+ * CAPE magnitude/timing plus precipitation timing per local day, verdict-
+ * free; emitted only where the document publishes CAPE and no CIN, on
+ * deterministic hourly days. capIsJudgeable is always false (absent CIN
+ * never reads "no cap"). CAPE magnitudes are model-specific; never compare
+ * peakCapeJkg across documents.
  */
 export interface ConvectiveDayFinding {
   kind: "convectiveDay";

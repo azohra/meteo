@@ -1,9 +1,7 @@
 ---
-/* The hero: what the engine is, in the README's own words, and the
-   smallest document it publishes — runs.json, printed whole from the
-   committed sample. The panel's bytes are parsed and re-rendered at build
-   time from site/public/data-sample/runs.json; regenerating the sample
-   regenerates the panel. */
+/* The copy restates the README; the panel is parsed and re-rendered at
+   build time from site/public/data-sample/runs.json, so regenerating the
+   sample regenerates the panel. */
 import { statSync } from "node:fs";
 import { publicDir } from "astro:config/server";
 import runs from "../../../public/data-sample/runs.json";

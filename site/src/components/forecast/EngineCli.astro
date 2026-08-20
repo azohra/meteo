@@ -1,9 +1,8 @@
 ---
-/* The CLI, honestly: the install-and-first-build commands are the README's
-   own verified forms (README.md § Install and § Run your own), and the second panel is the
-   exact command that captured the dataset shown above
-   (site/public/data-sample/README.md § How it was generated). The 48-hour
-   horizon is read from the committed catalogue, not typed. */
+/* The commands are the README's verified forms (§ Install, § Run your
+   own); the second panel is the exact command that captured the dataset
+   shown above (site/public/data-sample/README.md § How it was generated).
+   The 48-hour horizon is read from the committed catalogue, not typed. */
 import models from "../../../public/data-sample/models.json";
 
 const hrdps = models.models.find((model) => model.slug === "hrdps-continental");

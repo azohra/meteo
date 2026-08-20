@@ -1,8 +1,6 @@
 ---
-/* The hero: the value, then the proof. The card at right is a pilot-facing
-   briefing assembled from three of analyzeForecast's findings over the
-   exhibit day — the numbers are the package's own output (exhibit.ts), so
-   the card cannot drift from what the package actually said. */
+/* The card's numbers are analyzeForecast's own output over the exhibit
+   day (exhibit.ts), so the card cannot drift from what the package said. */
 import { briefingDay, clock, DAY_WIND_CEILINGS, fail } from "./exhibit";
 
 const { analysis, window, ceiling } = briefingDay();

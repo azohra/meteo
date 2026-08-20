@@ -6,28 +6,29 @@ sites, and work on the remote weather stations pilots use there. meteo grew
 from that life, not from a plan to start a software platform.
 
 It began while I was rebuilding [acrophobia.ca](https://acrophobia.ca) for
-our local free-flight club. We wanted meteograms built around the questions
-pilots ask, and live weather-station data beside what we knew about our
-sites. Building those pieces exposed a larger gap: much of what pilots rely
-on was not available as modern, web-friendly software, and very little of
-it was open enough for another pilot or club to operate and adapt.
+our local free-flight club. The best forecast view we had was a static PNG
+from Canada RASP: genuinely useful, impossible to interact with. I wanted a
+modern, web-native meteogram for my own use and my club's, with live
+weather-station data beside it. Looking for one exposed the gap: everything
+close was paid, Europe-only, or ancient. Nothing was built for Canada,
+nothing was designed around a single club's sites, and none of it was in
+TypeScript.
 
 What started as one club's need became an open-source meteorology platform
 for pilots, primarily free-flight paragliders. meteo by Azohra brings
 forecast and live observational data into tools people can use to inform a
 flying decision. It does not make that decision for them.
 
-The people running and extending the platform will often be technical. The
-people using what it creates should not need to be. A club's site can make
-the result legible and specific to its community while the science,
-contracts, and derivations stay inspectable underneath.
+A club's site can make the result legible and specific to its community,
+with no code asked of the reader, while the science, contracts, and
+derivations stay inspectable underneath.
 
 ## The open-forecast bet
 
-meteo publishes shareable inputs, makes derivations executable, versions
-the resulting document, and lets more than one frontend draw it. Readers
-can check the number behind a mark, compare a profile with its archived
-run, and build another presentation from the same science.
+meteo publishes the inputs, the executable derivations, and the versioned
+result, so more than one frontend can draw the same forecast. A reader can
+check the number behind a mark, or compare a profile with its archived
+run.
 
 ## An acknowledged lineage
 
@@ -36,7 +37,6 @@ This work descends from
 extraordinary resource that has served Canadian pilots for years and to
 which I contribute. It kept its operations open enough for this project to
 learn from; meteo's first derivations were faithful ports of its constants.
-That is a debt worth naming.
 
 The projects now do different jobs: Canada RASP draws national maps from a
 standing server; meteo derives site columns, publishes versioned documents,
@@ -47,16 +47,12 @@ job for the wider free-flight world for years.
 
 ## Learning in public
 
-The platform keeps growing as I learn, find new problems, and gain enough
-understanding to take on another part of the weather stack. The
-documentation, logbook, and labs are part of the work: a record of what I
-learned, where the methods came from, and what remains uncertain. I want
-that trail to help another pilot or builder begin further ahead.
+The platform grows as I learn enough to take on another part of the
+weather stack. The documentation, logbook, and labs record what I learned,
+where the methods came from, and what remains uncertain. I want that trail
+to help another pilot or builder begin further ahead.
 
-## Where the boundaries live
-
-Portable documents keep renderer decisions reversible: presentation belongs
-to the renderer or the application, every published quantity has exactly
-one authority, and a club can run any layer on infrastructure it controls.
-The [documentation](/docs/) maps those boundaries — start with
+Every published quantity has exactly one authority, and a club can run any
+layer on infrastructure it controls. The [documentation](/docs/) maps
+those boundaries — start with
 [Who owns each value](/docs/#who-owns-each-value).

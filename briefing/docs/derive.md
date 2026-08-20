@@ -11,8 +11,8 @@ alignment, units, run freshness, parameterized usable lift, the
 smoke-correction chain, measured-irradiance interpretation, and sunrise
 and sunset instants; display
 smoothing belongs to `@azohra/meteo.briefing/meteogram`'s `smooth121`. It does not
-duplicate the engine's **stored derivations** — the values that require raw
-model inputs and are baked into the published document; that split is
+duplicate the engine's stored derivations: the values that require raw
+model inputs and are baked into the published document. That split is
 defined in the [project overview](/docs/#who-owns-each-value).
 
 Usable lift shows the boundary at its cleanest:
@@ -62,7 +62,7 @@ the selected percentile before use.
 `parcelAscent(surface, levels)` lifts the hour's surface parcel through the
 published levels: dry adiabatic below the lifting condensation level, moist
 pseudo-adiabatic above it, buoyancy read in virtual temperature so the
-vapour the parcel carries — and the vapour the environment holds — both
+vapour the parcel carries and the vapour the environment holds both
 count toward density. Each sample pairs the parcel and environment
 temperatures with their virtual counterparts and states `buoyancyC`
 (parcel minus environment, positive while the parcel is buoyant); `lclM`
@@ -76,7 +76,7 @@ environment, default `0` (an undiluted parcel).
 The thermal index is this same ascent read in the RASP sign convention:
 `thermalIndexC` and `thermalIndexProfile` return the negated `buoyancyC`,
 negative while thermals still reach the level and crossing zero where
-they stop. There is no second buoyancy quantity — the Meteogram's
+they stop. There is no second buoyancy quantity; the Meteogram's
 `thermalIndex` field is the parcel-buoyancy layer. Dew points are
 optional on the thermal-index entry points; omitted, the column is
 treated as fully dry, which reproduces the plain dry-adiabatic
@@ -148,13 +148,13 @@ directly to `buildMeteogramScene`.
 ## Sunrise and sunset
 
 `solarEventsForDate(dateKey, latitude, longitude)` returns a day's sunrise
-and sunset as UTC instants — the NOAA formulation at the official zenith of
-90.833° — or null for polar day and night, an invalid key, or out-of-range
+and sunset as UTC instants (the NOAA formulation at the official zenith of
+90.833°), or null for polar day and night, an invalid key, or out-of-range
 coordinates. It takes the `YYYY-MM-DD` keys `localDateKey` produces and
 anchors them on longitude rather than civil time, so the result is correct
 wherever the civil date matches the longitudinal solar date, and a full day
 off only where date-line politics divorce the two (UTC+13/+14 zones at
-western longitudes). The package ships the instants, never marks; drawing
+western longitudes). The package ships the instants; drawing
 them on a Meteogram is the
 [inspector recipe's time-cursor step](/docs/briefing/wire-an-inspector/#time-cursors).
 
@@ -244,7 +244,7 @@ is the cube root of the heat flux; no flux re-derivation is needed or
 performed. Scope and derivation narrative:
 [Smoke and thermals](/logbook/smoke-and-thermals/).
 
-One caveat rides `smokeAotFromColumn`'s **input**: the RAQDPS
+A caveat on `smokeAotFromColumn`'s input: the RAQDPS
 `smokePlumeColumnMgm2` field is currently
 [quarantined from derived optics](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect):
 the arithmetic is sound (it reproduced HRRR's own optics to 5 %), the
@@ -320,17 +320,17 @@ returns no rows; duplicate model slugs throw. Use
 ## Judge run freshness
 
 `runFreshness(runsEntry, model, now, thresholds)` grades one runs.json entry
-`"current" | "delayed" | "stale"`, split deliberately along the fact/policy
+`"current" | "delayed" | "stale"`, split along the fact/policy
 line. The facts come from the model's catalogue entry: `runIntervalHours`
 (how often a successor run appears) and `typicalPublicationLagHours` (the
 upper end of normal for this dataset's publish after `referenceTime`);
 the thresholds are the consumer's: both count run intervals of age beyond the
 lag, and they are required parameters because how much lateness a product
-tolerates before warning its users is display policy, never a dataset
-property. Age is `now − referenceTime` (`generatedAt` is accepted so a
+tolerates before warning its users is display policy, not something the
+dataset can know. Age is `now − referenceTime` (`generatedAt` is accepted so a
 runs.json entry drops in unchanged, but a republish of the same run never
 makes the forecast younger), and an unparseable instant throws a `RangeError`
-rather than returning a plausible-but-wrong grade. Observation datasets never
+rather than quietly returning a wrong grade. Observation datasets never
 come here: they have no runs; judge them against their catalogue
 `cadenceMinutes`. The polling loop around this function is the
 [ingest recipe](/docs/briefing/run-an-ingest/#judge-freshness-with-runfreshness).

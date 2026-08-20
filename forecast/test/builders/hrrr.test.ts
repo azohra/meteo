@@ -385,7 +385,7 @@ describe("buildHrrr", () => {
     const sitesPath = writeSites(scratch);
     const outputRoot = join(scratch, "data");
     // The empty published dataset: the manifest gate reads 404, then the
-    // history seed for the site's month reads 404 — absence, not fatality.
+    // history seed for the site's month reads 404.
     const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
     const built = await buildHrrr({

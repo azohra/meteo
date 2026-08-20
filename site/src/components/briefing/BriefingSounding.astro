@@ -1,9 +1,7 @@
 ---
-/* The sounding tier: the convective-cycle day drawn twice — the Meteogram
-   for the whole day, and beside it the highlighted hour's column opened
-   vertically by the sounding subpath. The Meteogram's own selected hour
-   (peak w*) picks the instant, passed by validAt: the same selection
-   contract any consumer uses to drive a sounding from a Meteogram. */
+/* The Meteogram's own selected hour (peak w*) picks the sounding's
+   instant, passed by validAt: the same selection contract a consumer
+   uses to drive a sounding from a Meteogram. */
 import {
   buildSoundingKeySpec,
   buildSoundingScene,

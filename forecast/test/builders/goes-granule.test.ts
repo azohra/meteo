@@ -174,7 +174,7 @@ describe("the signature gate", () => {
 
   it("bytes with the signature but no HDF5 structure fail loudly too", async () => {
     // A truncated download: the magic is there, the file is not. The HDF5 C
-    // library narrates the expected failure through console.error; silence
+    // library prints the expected failure through console.error; silence
     // what can be silenced (one stack escapes through a channel bound at
     // WASM init).
     const error = vi.spyOn(console, "error").mockImplementation(() => {});

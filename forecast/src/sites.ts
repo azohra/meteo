@@ -7,8 +7,6 @@ import {
 
 export { SITES_SCHEMA_VERSION };
 
-// Derived from the contract's own entry schema — the field list has no
-// second home to drift in.
 export const SITE_FIELDS = siteCatalogueEntrySchema.keyof().options;
 
 /** One catalogued site: identity and build selection, nothing measured. */
@@ -20,11 +18,9 @@ export type Site = SiteCatalogueEntry;
  * catalogue in error messages.
  *
  * Shape and field semantics are the reader contract's
- * (`sitesCatalogueSchema`); on top of it this writer-side parser refuses
- * what the reader would merely strip — unknown fields and `elevationM` —
- * because a catalogue entry someone typed and the pipeline silently
- * ignored is exactly the plausible-but-wrong failure the strictness
- * exists to catch.
+ * (`sitesCatalogueSchema`). This writer-side parser additionally rejects
+ * unknown fields and `elevationM`, which the reader would merely strip,
+ * so a mistyped catalogue entry fails instead of being silently ignored.
  */
 export function parseSites(input: string | unknown, source = "sites.json"): Site[] {
   const document: unknown = typeof input === "string" ? JSON.parse(input) : input;

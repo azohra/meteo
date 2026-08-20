@@ -197,8 +197,7 @@ describe("pipeline parity", () => {
     const roundedFixture = roundDocument(committed);
     const roundedFresh = roundDocument(regenerate(committed));
     // Byte-for-byte through the same serializer the pipeline publishes
-    // with: the strongest statement of "the published file would not
-    // change".
+    // with.
     expect(compactJson(roundedFresh)).toBe(compactJson(roundedFixture));
   });
 

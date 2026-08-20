@@ -6,11 +6,10 @@ import { CALM_THRESHOLD_MPS, isCalm, normalizeDegrees } from "./derive.js";
 import { speedBand } from "./geometry.js";
 import type { DailyPatternSlot, RoseSector, WindRoseSummary } from "./geometry.js";
 
-/* ── The fold ──────────────────────────────────────────────────────────────
- * Sums, not means, accumulate into (month, slot, sector) buckets so any
- * month/season/time-of-day filter re-aggregates losslessly with no refetch.
- * Bucketing runs in the station's STANDARD time (utcOffsetMinutes, no DST)
- * so a slot means the same solar hours in January and July. */
+/* Sums (not means) accumulate into (month, slot, sector) buckets so any
+ * filter re-aggregates losslessly without refetching. Bucketing uses the
+ * station's STANDARD time (utcOffsetMinutes, no DST) so a slot means the
+ * same solar hours in January and July. */
 
 export type ClimatologyFoldParams = {
   sectorCount: number;

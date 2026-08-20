@@ -7,10 +7,10 @@ import ParcelLab from "../../site/src/components/labs/ParcelLab.astro";
 import UsableLiftLab from "../../site/src/components/labs/UsableLiftLab.astro";
 import DerivationFlow from "../../site/src/components/docs/DerivationFlow.astro";
 
-Each weather model publishes atmospheric fields; one shared derivation turns an hourly vertical
+Each weather model publishes atmospheric fields. One shared derivation turns an hourly vertical
 column into cloud base, thermal velocity, boundary-layer top, and usable
-lift — the **stored derivations**, baked into every published profile — and
-the renderer classifies stability from the same published column.
+lift: the stored derivations, baked into every published profile. The
+renderer classifies stability from the same published column.
 The constants and fallback rules define the product.
 
 <DerivationFlow />
@@ -80,7 +80,7 @@ parcel is no longer warmer than the model environment, then intersects the parce
 temperature lines inside that layer. The crossing is `boundaryLayerTopM`.
 
 If the parcel stays warmer than the entire available sounding, the top level is returned. That value is
-a **column ceiling**, not evidence that mixing stops there; the ensemble work records this
+a column ceiling, not evidence that mixing stops there; the ensemble work records this
 kind of censoring explicitly.
 
 <ParcelLab />

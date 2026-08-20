@@ -1,10 +1,9 @@
 ---
-/* "Two ways in": the same summer-midday points as the object windRose()
-   returns and as the component that draws it. The page's script fills
-   #ways-output and #ways-rose from one shared slice. */
+/* The page's script fills #ways-output and #ways-rose from one shared
+   slice, so both show the same summer-midday points. */
 
-/* The headless snippet, hand-tinted for the terminal's fixed dark face —
-   no highlighter library rides along. */
+/* Hand-tinted snippet: no highlighter library; the terminal face is
+   fixed dark. */
 const WAYS_SNIPPET_HTML = [
   '<span class="term-kw">import</span> { windRose, filterByMonth, filterByTimeOfDay,',
   '         METEOROLOGICAL_SEASON_MONTHS } <span class="term-kw">from</span> <span class="term-str">&quot;@azohra/meteo.station&quot;</span>;',
@@ -47,7 +46,6 @@ const WAYS_RENDER_SNIPPET_HTML =
 </section>
 
 <style>
-  /* ---- "Two ways in": the terminal beside the drawing ---- */
   .station-ways {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));

@@ -423,7 +423,7 @@ Quirks:
   about it** [verified 2026-08-08]: the field decodes as
   `units=m, paramId=228002` (indistinguishable from REPS's genuinely
   metric field), but the values are dam (global max 586.3 = the smoothed
-  Himalaya ×10; Dundee 153.6 → 1 536 m beside GDPS's 1 525 m).
+  Himalaya ×10; one founding site 153.6 → 1 536 m beside GDPS's 1 525 m).
   Pressure-level `HGT_ISBL` files are true metres. The builder scales ×10
   and guards against both this bug and its inverse; any consumer of the
   raw feed must too.
@@ -488,7 +488,7 @@ Quirks:
   `verticalVelocity: false`.
 - **The feed goes dark occasionally**: schedule it as its own job, so a
   1 km failure warns without blocking a 2.5 km publish.
-- **The 1 km grid earns its terrain:** one launch's measured elevation
+- **The 1 km terrain gain is measurable:** one launch's measured elevation
   (site-context's `elevation` pick) is **1,476 m**; model terrain elevation
   is **1,311 m** at 1 km and **1,072 m** at 2.5 km. The 1 km grid reduces
   the terrain error from 404 m to 165 m, and that 239 m shift propagates
@@ -737,8 +737,8 @@ Two findings decided against it:
   3 km; the only addition would be the 51 h tail on four cycles, and its
   own lifetime is bounded by RRFSv2 (MPAS engine, 2027–28).
 
-The omission is a decision, not a blind spot: a feed-viable model whose
-job here is already done by a finer sibling on the same buckets.
+The omission is a decision: a feed-viable model whose job here is
+already done by a finer sibling on the same buckets.
 
 ### ICON global
 

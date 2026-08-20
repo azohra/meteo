@@ -148,8 +148,8 @@ describe("publishPlan", () => {
     expect(byKey.get("gfs/history/dundee/2026-06.jsonl.gz")).toMatchObject({
       cacheControl: "public, max-age=31536000, immutable",
     });
-    // The one file whose job is to say what the archive holds right now
-    // must never ride the immutable TTL while its month is open.
+    // An open month's index must not carry the immutable TTL; it changes
+    // on every append.
     expect(byKey.get("gfs/history/dundee/2026-08.index.json")).toMatchObject({
       cacheControl: "public, max-age=300",
       contentType: "application/json",
@@ -214,7 +214,7 @@ describe("publishModel", () => {
     expect(puts[2].headers["cache-control"]).toBe("public, max-age=31536000, immutable");
     expect(puts[0].headers["content-type"]).toBe("application/gzip");
     expect(puts[6].headers["content-type"]).toBe("application/json");
-    // The freshness read precedes every upload: never publish blind.
+    // The freshness read precedes the first PUT.
     expect(wire.seen[0]).toMatchObject({ method: "GET", path: `/${BUCKET}/gfs/manifest.json` });
     // The read-back canary re-fetches the manifest after its PUT: the
     // publication parsed with the reader's guard the moment it landed.

@@ -88,7 +88,7 @@ test.describe("the docs component gallery exhibits the custom-elements binding",
       "samples",
     );
 
-    // Live theatre: the ghost fan and both step-summary panels render.
+    // Live detail: the ghost fan and both step-summary panels render.
     expect(
       await page.locator("#live-fan path[class^='meteo-fan-ghost-']").count(),
     ).toBeGreaterThan(30);

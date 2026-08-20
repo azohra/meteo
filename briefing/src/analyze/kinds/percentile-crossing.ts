@@ -8,13 +8,11 @@ export type PercentileToken = "p10" | "p25" | "p50" | "p75" | "p90";
 const PERCENTILES: readonly PercentileToken[] = ["p10", "p25", "p50", "p75", "p90"];
 
 /**
- * Where the ensemble's band disagrees with its median: thermalWindow's
- * exact test run at each published percentile per local day, emitted for
- * ensemble documents only and only on days where at least one
- * percentile's day verdict differs from p50's. Percentiles are per-hour,
- * per-quantity marginals — the shape cites passing instants only, never
- * windows or durations, because instants are citable without implying
- * member continuity.
+ * thermalWindow's test at each published percentile per local day;
+ * ensemble documents only, and only days where some percentile's verdict
+ * differs from p50's. Percentiles are per-hour marginals: the shape cites
+ * passing instants only, never windows, to avoid implying member
+ * continuity.
  */
 export interface PercentileCrossingFinding {
   kind: "percentileCrossing";

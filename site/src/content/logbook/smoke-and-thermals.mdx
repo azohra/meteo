@@ -20,8 +20,8 @@ import SmokeTransmittanceFigure from "../../components/docs/SmokeTransmittanceFi
 
 Wildfire smoke is the biggest unmodelled factor in a British Columbia
 summer forecast: from July to September it routinely caps thermal
-strength and visibility while the wind-profile models carry on as if the
-sun were clean. meteo treats smoke the way it treats everything else:
+strength and visibility while the wind-profile models I fly on carry on
+as if the sun were clean. meteo treats smoke the way it treats everything else:
 published raw with its provenance, derived openly, and never silently
 blended into another model's numbers.
 
@@ -62,7 +62,7 @@ correction collapses to one line:
 
 > adjusted w* = published w* × ∛f
 
-Two facts make this correction far gentler than intuition suggests, and
+Two facts make this correction far gentler than my intuition said, and
 both are worth internalizing before a smoky-day flight decision:
 
 <SmokeTransmittanceFigure />
@@ -111,16 +111,16 @@ smoke model and run that derated it, and the reference key renders that
 label. An adjusted Meteogram that looks like a base forecast is the
 failure mode the declaration exists to prevent.
 
-One absence to state plainly: no catalogued pairing reaches this view on
-live data today. The only model that publishes its own optical depth is
+No catalogued pairing reaches this view on live data today. The only
+model that publishes its own optical depth is
 HRRR, which refuses the derate (next section), and a joined smoke
 document withholds optical depth because of the quarantined column. The
 figures on this page exercise the adjusted view through synthetic
-scenarios; the machinery waits for a smoke-carrying model whose
-radiation has not already felt its own plume.
+scenarios; nothing live can run through it until the catalogue gains a
+smoke-carrying model whose radiation is not already smoke-aware.
 
-Feel the relationship directly by dragging a plume of any thickness over the
-same afternoon:
+Drag a plume of any thickness over the same afternoon to watch the
+relationship:
 
 <SmokeLab />
 
@@ -137,20 +137,20 @@ HRRR Meteogram, weak afternoon thermals under a thick haze strip are not
 a contradiction; the model already did the arithmetic this page
 describes.
 
-One caveat rides along: evaluation of the 2023 season found HRRR
-underpredicts optical depth for aged, long-range smoke, so even a
+A caveat from the 2023 season evaluation: HRRR underpredicts optical
+depth for aged, long-range smoke, so even a
 smoke-aware base picture can run optimistic in dense imported-smoke
 events.
 
 ## Two models, one sky
 
 When both sources cover a site, their disagreement is signal, not noise.
-On the first live day of this feature, HRRR put five times more smoke
-over a Fraser Valley site than RAQDPS did: two independent emission and
-transport models reading the same fires differently. A reader who can
+On the first live day of this feature, I watched HRRR put five times
+more smoke over a Fraser Valley site than RAQDPS did — two independent
+emission and transport models reading the same fires differently. A
+reader who can
 see both, each labelled with its model and run, knows more than a reader
-shown one blended number: that is the provenance thesis, applied to
-smoke. The same event brought a third opinion (the sky itself,
+shown one blended number. The same event brought a third opinion (the sky itself,
 measured by GOES-18), as
 [Measured against the sky](/logbook/measured-against-the-sky/)
 describes.

@@ -46,8 +46,6 @@ describe("renderCompareBoardSvg structure", () => {
     expect(svg).toContain('role="img"');
     expect(svg).toContain('aria-labelledby="meteo-board-title"');
     expect(svg).toContain("Compare board — 2026-08-09 (America/Vancouver), 3 members");
-    /* Each row narrates its lane: window words with the data-boundary
-       phrasing, exceedances against the caller's ceiling, rain onset. */
     expect(svg).toContain("window opens 09:00, still open at 14:00");
     expect(svg).toContain("surface wind at or above 3 m/s");
     expect(svg).toContain("rain from 11:00");

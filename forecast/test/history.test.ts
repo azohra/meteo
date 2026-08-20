@@ -98,8 +98,8 @@ describe("history append flow", () => {
     appendHistory(profile("dundee", "2026-08-07T12:00:00Z"), historyDir, publishedHistory);
     appendHistory(profile("dundee", "2026-08-07T18:00:00Z"), historyDir, publishedHistory);
 
-    // A local archive is already the fetched-and-appended truth: only the
-    // first touch asks the data base.
+    // The month is seeded from the dataset once; later appends reuse the
+    // local archive.
     expect(fetches).toEqual(["2026-08"]);
     expect(readRuns(join(historyDir, "dundee/2026-08.jsonl.gz"))).toEqual([
       "2026-08-07T12:00:00Z",
@@ -225,11 +225,11 @@ describe("month index", () => {
     expect(index.members.every((entry) => entry.lines === 1)).toBe(true);
     expect(index.members[1].generatedAt).toBe("2026-08-07T06:00:00Z");
 
-    // CROSS-VALIDATION with the @azohra/meteo.core reader: the sidecar this
-    // writer publishes must speak the exact keys parseHistoryIndexJson
-    // reads — a mismatch is no error there, just a permanent silent
-    // degradation to full fetches — and the archive must split into the
-    // same members through splitHistoryArchive.
+    // Cross-validation with the @azohra/meteo.core reader: the sidecar this
+    // writer publishes must use the exact keys parseHistoryIndexJson reads.
+    // A mismatch is no error there, only a permanent silent degradation to
+    // full fetches. The archive must also split into the same members
+    // through splitHistoryArchive.
     const parsed = parseHistoryIndexJson(readFileSync(indexPath(archive), "utf-8"));
     expect(parsed).not.toBeNull();
     expect(

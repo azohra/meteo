@@ -65,9 +65,8 @@ function loadSitesForCli(path: string): Site[] {
   }
 }
 
-/* `--sites dataset` builds from the catalogue the deployment owner
-   published to the dataset root. Builders read sites from a path, so the
-   fetched identity lands in a scratch file — a bridge, never a home. */
+/* Builders read sites from a path, so `--sites dataset` writes the
+   fetched catalogue to a scratch file for the build's duration. */
 async function resolveSitesPath(
   sites: string | undefined,
   overrides: CliOverrides,

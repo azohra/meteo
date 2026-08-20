@@ -14,10 +14,10 @@ and [`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts).
 Wind values carry two complementary representations, and the sign convention
 between them is fixed platform-wide:
 
-**Direction is meteorological: the compass bearing the wind blows *from*,
+Direction is meteorological: the compass bearing the wind blows *from*,
 in degrees clockwise from north. Components are the velocity of the air
 itself: `uMps` is the zonal component, positive eastward; `vMps` is the
-meridional component, positive northward; both in m/s.**
+meridional component, positive northward; both in m/s.
 
 The two representations point opposite ways, and the conversion owns that
 minus sign so no other package ever writes it:
@@ -75,8 +75,8 @@ Speeds compute in m/s; km/h is a display conversion:
 
 ## Direction arcs
 
-An arc of acceptable from-directions — a station's favorable sectors, a
-launch's wind window — is one shape platform-wide, defined by
+An arc of acceptable from-directions (a station's favorable sectors, a
+launch's wind window) is one shape platform-wide, defined by
 [`arcs.ts`](https://github.com/azohra/meteo/blob/main/core/src/arcs.ts):
 
 - `DirectionArc`: `{ fromDeg, toDeg }`, meteorological FROM bearings in
@@ -98,4 +98,4 @@ inDirectionArcs(180, window); // false
 
 Arcs are a judgment parameter wherever they gate a drawing or a verdict:
 no package supplies a default list, and a consumer that passes none gets
-no marks drawn rather than somebody else's opinion.
+no marks drawn.

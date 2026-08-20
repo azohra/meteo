@@ -18,9 +18,9 @@ The `@azohra/meteo.briefing/contract` export is the executable authority for pub
 Its zod schemas, inferred TypeScript types, nullable parse guards, and generated
 JSON Schemas describe the same nine document families. Every guard
 normalizes up: it parses each version its family ever published and
-returns the newest shape, refusing only versions newer than the package —
-so archived documents stay readable forever, and only "published by a
-newer writer" reads as invalid
+returns the newest shape, refusing only versions newer than the package.
+Archived documents stay readable forever; only "published by a newer
+writer" reads as invalid
 ([Compatibility](/docs/compatibility/) carries the rollout rule).
 
 ![A profile document block by block: excerpts of a real profile, the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.](figures/contract-anatomy.svg)
@@ -57,8 +57,9 @@ export function requireProfile(text: string): SiteForecast {
 
 ## Site timezone propagation
 
-The optional `site.timeZone` echo and its semantics (absence means the
-document predates the echo, never "the launch uses UTC") are defined in the
+The optional `site.timeZone` echo and its semantics (an old document
+simply lacks the echo; that does not put the launch on UTC) are defined in
+the
 [profile reference](/docs/briefing/profile-document/#run-site-and-semantics).
 For an older document without the echo, consumers either supply a known
 fallback or use an API's documented fallback behaviour:

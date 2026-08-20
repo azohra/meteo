@@ -3,18 +3,18 @@ title: Connectivity
 description: "Backhaul health for cellular stations: the StationConnectivity contract, the Hologram loader, what a SIM platform can and cannot tell you, and why there is no signal field."
 ---
 
-A remote station is only as alive as its uplink. When the hardware reports
-over a cellular SIM, the SIM platform knows things the weather feed cannot:
+A remote station depends on its uplink. When the hardware reports over a
+cellular SIM, the SIM platform knows things the weather feed cannot:
 whether the device is in a data session right now, when it last connected,
 which carrier it attached to, and how much data it has moved this billing
-period. `StationConnectivity` is that context — backhaul health, a third
-concern beside the reading (weather) and telemetry (device power), with the
-same honesty rules.
+period. `StationConnectivity` is that context: backhaul health, a third
+concern beside the reading (weather) and telemetry (device power), with
+the same absence rules.
 
 It never rides the public station feed. Data usage and carrier identity are
 operational facts for the station's operator, so the loader returns a
-standalone document for the operator's own routes — an admin page, a
-health check — and the [wire contract](/docs/station/wire-contract/) is
+standalone document for the operator's own routes (an admin page, a
+health check) and the [wire contract](/docs/station/wire-contract/) is
 untouched.
 
 ## The contract
@@ -50,7 +50,7 @@ measurement — the same absence rule the
 Cellular platforms do not expose signal strength through their clouds: RSSI
 is measured by the modem, on the device, and stays there unless the device
 firmware reports it through its own channel. A connectivity document that
-carried a signal number would have to invent one. The honest
+carried a signal number would have to invent one. The usable
 connection-quality signal from the backhaul side is `radioTechnology` plus
 session recency — a station on LTE that connected minutes ago is healthy;
 one whose `lastConnectedAt` is days old is not, however strong its last
@@ -91,8 +91,8 @@ response whose device id is not the one asked for.
 cache for 300 seconds by default (a trial value, caller-movable — Hologram
 devices report in hourly-ish sessions, so five minutes keeps an admin view
 current without leaning on the API) under the key
-`hologram/device/<deviceId>`; the API key is deliberately excluded, because
-a credential must never leak into a shared cache
+`hologram/device/<deviceId>`. The API key is not part of the key:
+credentials stay out of shared caches
 ([the cache trust model](/docs/station/adapters/#the-cache-trust-model)).
 
 Two Hologram habits the normalizer absorbs so you never see them: an open

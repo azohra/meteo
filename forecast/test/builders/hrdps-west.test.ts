@@ -280,9 +280,7 @@ describe("buildProfiles", () => {
   });
 });
 
-/* --- The decode-once rule through this builder's live wire. ---
- *
- * A minimal synthetic DRT 5.40 GRIB2 message (trimmed from eccc.test.ts's
+/* A minimal synthetic DRT 5.40 GRIB2 message (trimmed from eccc.test.ts's
  * builder — copied, per the shared-harness rule): an 11×8, 0.1° grid
  * around Dundee whose 4-byte section 7 payload stands in for a
  * codestream, so the injected JPEG 2000 decode seam must fire. */
@@ -408,9 +406,7 @@ function makeJ2kGrib(): Uint8Array {
 }
 
 it("concurrent samples of one message decode it exactly once", async () => {
-  // The wire this builder walks live (liveDatamartWire, decode injected):
-  // two tasks sampling the same message bytes await ONE in-flight decode —
-  // the per-message promise cache behind the pooled async path.
+  // Pinned mechanism: the per-message promise cache behind the pooled async path.
   const message = makeJ2kGrib();
   let decodes = 0;
   const decodeJ2k = (codestream: Uint8Array): J2kSamples => {

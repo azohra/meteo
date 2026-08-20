@@ -4,7 +4,7 @@
  * - `--meteo-*` is the SHARED skin — surfaces, ink, muted text, borders,
  *   grid lines, the accent, the gap hatch, typography, radius, shadow, and
  *   the freshness states (live/aging/stale). Any meteo capability's
- *   components (wind today, forecast tomorrow) wear these.
+ *   components (wind today, forecast tomorrow) use these.
  * - `--meteo-wind-*` is genuinely wind-scoped — the lull–gust band fill, the mean
  *   trace, vanes, the inspection cursor, the meteo-band-0..4 ramp, and the
  *   rose's favorable/unfavorable judgment ring.
@@ -21,8 +21,7 @@
  * outranks it without specificity games.
  *
  * meteo-band-0..4 is a placeholder ramp — calm blue through green and amber to
- * red. What a band means (flyable, marginal, nuked) and what colour it wears
- * belong to the consumer. */
+ * red. What a band means and what colour it gets belong to the consumer. */
 
 @layer meteo {
 
@@ -94,8 +93,7 @@
   color: var(--meteo-accent, #0f7490);
 }
 
-/* One voice for every caption-grade label: flank labels, summary terms,
- * table headers. */
+/* Shared style for caption-grade labels: flanks, summary terms, table headers. */
 .meteo-microlabel {
   font-size: 0.68rem;
   font-weight: 600;
@@ -151,7 +149,7 @@
   color: var(--meteo-ink, #17232e);
 }
 
-/* The unit hangs quieter beside the number, like the dial hub's unit line. */
+/* Unit is smaller and muted beside the number, matching the dial hub. */
 .meteo-value .meteo-unit {
   font-size: 0.72em;
   font-weight: 500;
@@ -196,7 +194,7 @@
   color: var(--meteo-muted, #62717f);
 }
 
-/* A timestamp is context, not a reading — it speaks in the muted voice. */
+/* Timestamps are context, not readings: muted. */
 .meteo-updated {
   color: var(--meteo-muted, #62717f);
 }
@@ -240,9 +238,7 @@
   box-shadow: var(--meteo-shadow, 0 1px 2px rgb(23 35 46 / 0.06), 0 8px 24px rgb(23 35 46 / 0.05));
 }
 
-/* Wraps rather than overflows: LULL/dial/GUST needs more width than a
- * narrow card can promise, and a flank spilling into whatever sits beside
- * the card reads as a broken layout, not a compact one. */
+/* Wraps rather than overflows when LULL/dial/GUST exceeds a narrow card. */
 .meteo-current-instrument {
   display: flex;
   flex-wrap: wrap;
@@ -305,8 +301,8 @@
   stroke-linecap: butt;
 }
 
-/* The speed arc: the current reading's share of the dial scale, wearing the
- * reading's band when thresholds grade it. */
+/* Speed arc: the reading's share of the dial scale, in the reading's band
+ * colour when thresholds grade it. */
 .meteo-wind-dial-arc {
   fill: none;
   stroke: var(--meteo-accent, #0f7490);
@@ -444,7 +440,7 @@
 
 /* Fixed minimum height so pinning and unpinning never moves the chart. The
  * daily-pattern caption is static — no pin state — but shares the line so
- * it never wears a different rhythm than the chart above it. */
+ * it keeps the same line metrics as the chart caption above it. */
 .meteo-wind-chart-readout,
 .meteo-sample-strip-readout,
 .meteo-daily-pattern-caption,
@@ -491,7 +487,7 @@
   stroke-width: 1;
 }
 
-/* Band zones: each band's territory tinted at a whisper behind the plot. */
+/* Band zones: each band's range faintly tinted behind the plot. */
 .meteo-wind-zone {
   stroke: none;
   fill-opacity: 0.05;
@@ -503,7 +499,7 @@
 .meteo-wind-zone.meteo-band-3 { fill: var(--meteo-band-3, #e2662c); }
 .meteo-wind-zone.meteo-band-4 { fill: var(--meteo-band-4, #c22727); }
 
-/* Threshold guides wear the band they open. */
+/* Threshold guides use the colour of the band they open. */
 .meteo-wind-threshold {
   stroke: var(--meteo-muted, #62717f);
   stroke-width: 1;
@@ -594,7 +590,7 @@
 }
 
 /* Verdict-tinted vanes, drawn only when the consumer supplied favorable
- * arcs; a calm cell never wears one. */
+ * arcs; a calm cell never gets one. */
 .meteo-wind-vane-favorable {
   stroke: var(--meteo-wind-favorable, #2e9e63);
 }
@@ -664,7 +660,7 @@
 }
 
 /* The em-dash placeholder holds the exact box the glyph would, so a station
- * going quiet never twitches the row's layout. */
+ * going empty never shifts the row's layout. */
 .meteo-sparkline-na {
   display: inline-flex;
   align-items: center;
@@ -721,7 +717,7 @@
   width: 100%;
 }
 
-/* The trace speaks in the mean line's voice, a step quieter — a trend is a
+/* The trace uses the mean line's colour, thinner — a trend is a
  * background fact, not the wind. */
 .meteo-trend-line {
   fill: none;
@@ -844,7 +840,7 @@
   font-feature-settings: "tnum";
 }
 
-/* Night columns: sunset to sunrise from real astronomy, quiet gray under
+/* Night columns: sunset to sunrise, low-opacity gray under
  * every data layer. */
 .meteo-night {
   fill: var(--meteo-muted, #62717f);
@@ -1256,7 +1252,7 @@
   padding-top: 0.5rem;
 }
 
-/* Row labels speak in the shared micro-label voice; the unit hangs off the
+/* Row labels use the shared micro-label style; the unit follows the
  * label so cells hold bare numbers. */
 .meteo-air-label {
   font-size: 0.78rem;

@@ -92,7 +92,7 @@ The [TypeScript documentation](https://meteo.azohra.com/docs/briefing/render-fir
 covers the contract, transport, derivations, analysis, scene graph,
 rendering tokens, and ensemble documents; the
 [reading guide](https://meteo.azohra.com/docs/briefing/reading-a-meteogram/)
-explains every mark on the chart, illustrated by the committed
+explains every mark on the chart using the committed
 [synthetic scenarios](scenarios/).
 
 ## Live stations
@@ -139,19 +139,19 @@ theming.
 
 Beneath the engine sit two decoders written for this workspace and
 published on their own. [`@azohra/meteo.grib`](grib/) decodes GRIB2 in pure
-TypeScript — rotated lat-lon and Lambert grids, complex packing,
-multi-field messages, NOMADS `.idx` byte-range helpers — written because no
-maintained JavaScript decoder covered the grids ECCC and NOAA actually
-ship; its acceptance gate decodes real provider messages to
+TypeScript (rotated lat-lon and Lambert grids, complex packing,
+multi-field messages, NOMADS `.idx` byte-range helpers). It exists
+because no maintained JavaScript decoder covered the grids ECCC and NOAA
+actually ship, and its acceptance gate decodes real provider messages to
 [exact equality against ecCodes](https://meteo.azohra.com/docs/grib/correctness/).
 [`@azohra/meteo.j2k`](j2k/) decodes the JPEG 2000 codestreams inside ECCC's
 GRIB2, scoped to
-[exactly the subset those feeds ship](https://meteo.azohra.com/docs/j2k/subset/),
-and can decode only the codeblocks your gridpoints touch — up to ~16×
-faster per core on the largest field, bit-identical to the full decode
+[exactly the subset those feeds ship](https://meteo.azohra.com/docs/j2k/subset/).
+It can decode only the codeblocks your gridpoints touch: bit-identical
+to the full decode, and up to ~16× faster per core on the largest field
 ([measured, losses included](https://meteo.azohra.com/docs/j2k/performance/)).
-Both cores are
-[browser-safe by construction](https://meteo.azohra.com/docs/grib/coverage/#what-the-core-never-does).
+Both cores run in the browser: no `node:` imports, no ambient I/O
+([what the core never does](https://meteo.azohra.com/docs/grib/coverage/#what-the-core-never-does)).
 
 ## Run your own
 

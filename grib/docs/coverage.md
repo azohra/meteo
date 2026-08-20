@@ -24,7 +24,7 @@ lookup is O(1) per point.
 
 `nearestGridpoint` reports the great-circle distance alongside the
 index, because callers use distance as the out-of-domain guard: it
-deliberately clamps and reports rather than throwing.
+clamps and reports rather than throwing.
 [`src/grid.ts`](https://github.com/azohra/meteo/blob/main/grib/src/grid.ts)
 holds the inverses;
 [`src/nearest.ts`](https://github.com/azohra/meteo/blob/main/grib/src/nearest.ts)
@@ -70,9 +70,9 @@ with fetch injected rather than ambient:
 - `fetchIndex`: fetch and parse a sidecar (a plain, unranged GET).
 - `fetchRecord`: fetch one record's bytes with a Range request.
 
-One rule is load-bearing: **a 200 response to a Range request is a
-failure, never a body to use.** A 200 means the server ignored `Range`
-and sent the whole multi-hundred-megabyte file; only `206 Partial
+A 200 response to a Range request is a failure, never a body to use:
+it means the server ignored `Range`
+and sent the whole multi-hundred-megabyte file. Only `206 Partial
 Content` is success. `fetchRecord` enforces this and throws with the
 offending status.
 

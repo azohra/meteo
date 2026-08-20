@@ -4,21 +4,13 @@ import { parcelAscent } from "./parcel.js";
 export { DRY_ADIABATIC_LAPSE_C_PER_M } from "./parcel.js";
 
 /**
- * The thermal index now rides `parcelAscent`, the platform's one parcel
- * implementation: dry adiabatic to the LCL, moist pseudo-adiabatic above
- * it, and — the physical change — compared in VIRTUAL temperature, so
- * the vapour the parcel carries up and the vapour the environment holds
- * both count toward density. The previous implementation compared plain
- * temperatures along a dry adiabat only; in a moist boundary layer that
- * understates parcel buoyancy by a few tenths of a degree and cannot see
- * the moist branch above cloud base at all. Two parcels that disagree is
- * the platform's plausible-but-wrong failure mode, so this module keeps
- * none of its own physics: it negates `buoyancyC` from the ascent.
- *
- * Dew points are additive-optional inputs; a caller that supplies none
- * gets a bone-dry column (vapour pressure below 1e-6 hPa), which
- * reproduces the old plain-temperature arithmetic to well under 0.001
- * degC.
+ * Thermal index over `parcelAscent`, the platform's single parcel
+ * implementation (dry adiabatic to the LCL, moist pseudo-adiabatic above,
+ * compared in virtual temperature). This module keeps no physics of its
+ * own — it negates `buoyancyC` from the ascent — so two parcel
+ * implementations can never disagree. Dew points are optional; with none
+ * supplied the column is dry and TI reduces to plain-temperature
+ * arithmetic to under 0.001 degC.
  */
 
 /** A dew point cold enough that Magnus vapour pressure is < 1e-6 hPa — the "no moisture information" stand-in the optional dew-point inputs fall back to. */

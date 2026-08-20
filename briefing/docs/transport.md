@@ -63,7 +63,7 @@ misses.
 Pair consistency does not compose: two pairs can each be internally
 consistent yet span two runs, so a consumer ingesting many sites needs a
 stronger anchor. `loadSiteSet({ fetch, baseUrl, modelSlug, siteSlugs, guard })`
-fetches the model's manifest **once** as the commit point, then every site
+fetches the model's manifest once as the commit point, then every site
 document, and requires each document to carry that manifest's run. On a
 mid-publish mix it retries once, refetching the manifest and only the
 disagreeing documents. The result discriminates on `syncing`:
@@ -78,15 +78,16 @@ disagreeing documents. The result discriminates on `syncing`:
   publish is mid-flight, and `runsSeen` lists the distinct reference times
   observed. Ingest nothing; the next poll reads coherently.
 
-A manifest miss returns that `DocumentMiss` directly: the model not
-publishing at all is the root cause of every site missing. The store-and-serve
-loop around this verb is the [ingest recipe](/docs/briefing/run-an-ingest/).
+A manifest miss returns that `DocumentMiss` directly; when the model
+publishes nothing, there are no per-site results to report. The
+store-and-serve loop around this verb is the
+[ingest recipe](/docs/briefing/run-an-ingest/).
 
 ## Observations: one guarded fetch, no dance
 
 `loadObservation({ fetch, baseUrl, modelSlug, siteSlug })` fetches one site's
-observation document alone: no manifest, no retry option. That is a proof,
-not an omission. There is no pair invariant to defend: an observation
+observation document alone: no manifest, no retry option. There is no
+pair invariant to defend: an observation
 document has no run; it is a self-contained rolling window of measured
 instants, its identity carried by its own `observed` block, and the
 observation manifest's `referenceTime` is the newest instant across *all* the
@@ -121,7 +122,8 @@ by slug. It is a single document, so there is no pair to tear; it exists so
 run discovery gets the same miss semantics as `loadForecast`. Judge its
 entries with [`runFreshness`](/docs/briefing/derive/#judge-run-freshness)
 from `@azohra/meteo.briefing/derive`: the facts are the catalogue's `runIntervalHours` and
-`typicalPublicationLagHours`; the current/delayed/stale boundaries are yours.
+`typicalPublicationLagHours`; the current/delayed/stale boundaries come
+from the caller.
 
 The pure pair check is exported too: `runsConsistent(manifest, profile)` is
 true exactly when both documents name the same model and run; useful when
@@ -134,8 +136,8 @@ documents arrive through your own storage rather than these loaders.
 month)` and `historyIndex(model, site, month)`, plus the dataset-root
 files `models()`, `sites()`, `siteContext()`, and `runs()`, each
 returning the document's root-relative path. Every URL these loaders
-fetch is `${baseUrl}/${documentPaths...}` — and the same keys address
-the tree where there is no URL at all, which is the object-store case
+fetch is `${baseUrl}/${documentPaths...}`. The same keys address the
+tree where there is no URL at all: the object-store case
 [Downstream access](/docs/forecast/downstream-access/) describes.
 
 ## The caller owns fetch and storage
@@ -143,7 +145,7 @@ the tree where there is no URL at all, which is the object-store case
 `fetch` is a parameter, not an import. Pass the runtime's own WHATWG-shaped
 fetch (browser, Node, workers, undici, or a test stub), which keeps this
 module runtime-agnostic. The one other subpath that fetches,
-[`@azohra/meteo.briefing/history`](/docs/briefing/history/), follows the same manners
+[`@azohra/meteo.briefing/history`](/docs/briefing/history/), follows the same conventions
 (injected fetch, discriminated misses, `TransportHttpError` as the only
 throw) but is server-side by construction: its gzip reader needs
 `node:zlib`. Every remaining subpath of the package is I/O-free; the
@@ -152,8 +154,9 @@ throw) but is server-side by construction: its gzip reader needs
 
 The transport performs no caching and no storage writes, because no storage
 API is portable across runtimes. Cache keys, quotas, invalidation, and
-stale-pair policy belong to the consumer: the transport reports `stale`; what
-happens next is yours. `TransportResponse`, `TransportFetch`, `RetryOptions`,
+stale-pair policy belong to the consumer: the transport reports `stale`
+and leaves the response policy to the caller.
+`TransportResponse`, `TransportFetch`, `RetryOptions`,
 `RunStampedDocument`, `LoadDocumentOptions`/`LoadedDocument`,
 `LoadForecastOptions`/`LoadedForecast`, `LoadSmokeOptions`/`LoadedSmoke`,
 `LoadObservationOptions`, `LoadSiteSetOptions`/`LoadedSiteSet`, and

@@ -53,14 +53,11 @@ export type WindnerdClimatologyOptions = {
   liveUrl?: string;
 };
 
-/**
- * Builds the station's climatology cube from the vendor's yearly archive:
- * one records request per calendar year (closed years cached ~30 days, the
- * running year 6 hours), folded into (month, slot, sector) sums bucketed in
- * the station's STANDARD time. Any year the upstream refuses fails the
- * whole document — a silently missing year would read as an outage, and
- * plausible-but-wrong is the named failure mode.
- */
+/** Builds the climatology cube from the vendor's yearly archive: one
+ * records request per calendar year (closed years cached ~30 days, the
+ * running year 6 hours), folded into (month, slot, sector) sums in the
+ * station's STANDARD time. Any refused year fails the whole document —
+ * a silently missing year would read as an outage. */
 export async function loadWindnerdClimatology(
   config: WindnerdStationConfig,
   options: WindnerdClimatologyOptions,

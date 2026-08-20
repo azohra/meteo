@@ -36,17 +36,16 @@ taken from the legibility of the content above it, so the whole ramp lives in a 
 just under twenty points of lightness, all of it near the paper. Salience still works, because
 salience is relative: with the field quiet, the warm unstable classes are the loudest thing on the
 chart without spending any ink mass, and the classes that dominate an ordinary summer field
-(conditional instability, stable air) recede instead of shouting. A field earns attention for its
-exceptions by being quiet about its rule.
+(conditional instability, stable air) recede instead of shouting.
 
-The register has a price, and it is paid openly: 19.6 L* points of lightness across eight classes
+The register has a price: 19.6 L* points of lightness across eight classes
 cannot also carry a grayscale-survivable ordering, so none is claimed. Class *identity* rides hue;
 class *order* rides the channels the chart already has: the key names every cell in plain words,
 the cursor readouts state the class at any point, and the field's own geometry orders it (stable
-air sits where stable air sits). The palest cells stand near 2:1 against the surface because
-receding into the page is the design, not an accident.
+air sits where stable air sits). The palest cells stand near 2:1 against the surface because the
+point is for them to recede into the page.
 
-See both palettes below (the shipped ramp and its ancestor) with grayscale rows showing exactly
+Both palettes are below (the shipped ramp and its ancestor), with grayscale rows showing exactly
 what ordering the register gives up.
 
 <StabilityRampStrips />
@@ -73,8 +72,8 @@ two conditional purples (`#ff96ff`, `#ccbfff`) sat at adjacent ΔE 11.8 to a nor
 under deuteranopia, where roughly 6 is the floor for telling adjacent fills apart and 1.8 is one
 colour. The most common form of colour-vision deficiency erased the boundary between
 conditional-strong and conditional instability, a boundary the chart exists to draw. The defect
-lived below the threshold of design-by-eye and above the threshold of measurement, which is the
-process lesson: once a palette is measurable, "looks right" stops being the acceptance test.
+lived below the threshold of design-by-eye and above the threshold of measurement. Once a palette
+is measurable, "looks right" stops being the acceptance test.
 
 The shipped default, [`STABILITY_TOKEN_DEFAULTS`](https://github.com/azohra/meteo/blob/main/briefing/src/svg/theme.ts), is that
 ancestry re-set into the pale register: I kept the hue architecture and moved every one of the
@@ -88,7 +87,7 @@ repairs the same way I found the defect: a validator over OKLab with CVD simulat
 indices 11, 10, 7, 8, 3, 2, 13, 14 of `windgram-continental-colormap.ncl`: most unstable first,
 the index-2 purple-blue repeated across the invisible −0.5 boundary.*
 
-Check the boundaries yourself below: bars for a normal eye, dots for simulated deuteranopia, both
+The boundary chart below shows bars for a normal eye and dots for simulated deuteranopia, both
 palettes side by side.
 
 <RampAdjacentDeltaE />

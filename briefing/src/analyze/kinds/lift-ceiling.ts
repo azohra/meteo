@@ -3,12 +3,10 @@ import type { ThermalWindowFinding } from "./thermal-window.js";
 import { round1, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * Within each thermal window: is the top of the climb set by cloud base
- * or by updraft decay? The cause is an arithmetic relation — `cloudCapped`
- * when the published cloud base sits within `cloudCapMarginM` of (or
- * below) the lift top, else `sinkLimited` — segmented into runs, each
- * segment citing its peak lift top with the other series sampled at that
- * same hour.
+ * Per thermal window: cloudCapped when published cloud base sits within
+ * cloudCapMarginM of (or below) the lift top, else sinkLimited; segmented
+ * into runs, each citing its peak lift top with the other series sampled
+ * at the same hour.
  */
 export interface LiftCeilingFinding {
   kind: "liftCeiling";

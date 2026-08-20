@@ -87,7 +87,7 @@ function ens(median: number, spread: number): EnsembleValue {
   };
 }
 
-/** A 5-level ensemble column, the sparse-honesty stress case. */
+/** A 5-level ensemble column: the sparse-column stress case. */
 export function ensembleLevelsProfile(): SiteForecast {
   const floorM = 900;
   const heights = [1100, 1600, 2100, 2600, 3100];

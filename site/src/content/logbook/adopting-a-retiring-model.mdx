@@ -31,9 +31,8 @@ NCEP's SCN 26-48: the Rapid Refresh Forecast System and its ensemble replace NAM
 all HiresW domains but Guam, with implementation and retirement on the same day. There is no
 overlap era: a builder written for NAM starts its life with a death date.
 
-Skipping it would have been defensible. Builders are real work, and code written for a feed that
-stops answering is the least dignified kind of dead code. The reason to build anyway came from
-verifying the successor first.
+Skipping it would have been defensible: builders are real work. The reason to build anyway came
+from verifying the successor first.
 
 ## The successor was verified before the predecessor was adopted
 
@@ -41,17 +40,16 @@ RRFS's prototype output checked out against the same contract the catalogue hold
 and one fact carried the decision: its CONUS cutout is exactly the grid the NAM nest already runs
 on, which is itself exactly HRRR's grid. The builder the NAM nest needs is, to a first
 approximation, the builder RRFS will need, minus a filename scheme and one field-semantics
-difference. Adopting NAM now is not two months of throwaway work; it is the RRFS port started
-early, with two months of production shakedown against a live feed and two months of NAM columns
-accumulating in the forecast history before the switch.
+difference. Adopting NAM now buys the RRFS port started early, with two months of production
+shakedown against a live feed and two months of NAM columns accumulating in the forecast history
+before the switch.
 
 The succession is also a simplification. Today NAM must be two catalogue entries, because the
 parent and the nest are separately integrated models with different grids, horizons, and cadences.
 On cutover day both entries end and a single `rrfs` entry replaces them, carrying the nest's
-3 km resolution and the parent's 84-hour horizon in one model. Two entries collapse into one
-better one, a rare direction for a catalogue to move.
+3 km resolution and the parent's 84-hour horizon in one model.
 
-## Sunset is data, not prose
+## Sunset as data
 
 A retirement date that lives only in reference prose is a fact consumers cannot act on. So the
 catalogue schema gained a `sunset` field: a date and a successor slug, declared on both NAM
@@ -61,7 +59,7 @@ prose; `successor: null` remains available for a true end-of-life with no replac
 
 The field was designed for more than this episode. RAP's lifetime is bounded by RRFS's second
 version, and eventually HRRR's is too; when those dates firm up, they become `sunset`
-declarations, not surprises.
+declarations.
 
 <ModelLifecycleTimeline />
 
@@ -72,8 +70,8 @@ and the result was uncomfortable: HRRR and GFS have always published omega at ev
 pressure level, through their full horizons. The catalogue declared `verticalVelocity: false` for
 both, not because the feeds lacked the field, but because the builders never fetched it. A
 declaration that is supposed to mean "the model does not publish this" was quietly meaning "nobody
-asked". That is exactly the kind of dishonesty the capability system exists to prevent, so
-I paid the debt in the same change: both builders now fetch and publish omega.
+asked". The capability system exists to prevent exactly that, so I paid the debt in the same
+change: both builders now fetch and publish omega.
 
 The fix also changed the declaration's type. RRFS does not publish omega at all (its vertical
 velocity is geometric w in m/s), so the port will convert during the forecast build (ω ≈ −ρgw, with density
@@ -96,10 +94,9 @@ its own successor is scheduled.
 I did not adopt ICON global for now, the harder call of the two. It is the only candidate that
 would add a physics and data-assimilation lineage from outside North America, which is genuine
 disagreement signal no NOAA or ECCC sibling can supply. The cost is not the physics but a new
-transport, and several contract fields it cannot fill. The entry it would occupy is a judgment
-call deferred, not a door closed.
+transport, and several contract fields it cannot fill. That entry stays open for later.
 
-## Slugs name legs, not descriptions
+## Slug naming
 
 Adding models forced me to answer what a slug is before minting more of them. The
 tempting answer embeds description: a slug like `gdps-15km` reads naturally right up until the
@@ -116,4 +113,4 @@ siblings that are separately integrated or separately cycled. The NAM nest earns
 RRFS's `conus`, `ak`, `hi`, and `pr` files look superficially similar but are distribution
 cutouts of one 3 km North-America integration, so the future slug is `rrfs`, not `rrfs-conus`:
 which cutout a builder fetches is transport detail, and naming it would mint two "models" out of
-one the day a site crosses a cutout boundary. Cutouts share a slug; legs get their own.
+one the day a site crosses a cutout boundary.

@@ -39,14 +39,11 @@ export type WindnerdLiveOptions = {
   idleTimeoutMs?: number;
 };
 
-/**
- * Opens the station's live stream and returns our frames: one init, then
- * samples/reading/ping as the upstream serves them. The connect phase —
- * headers plus the upstream init frame — rejects on failure; once resolved,
- * failures degrade to a terminal unavailable frame instead of throwing.
- * One call is one upstream connection: reconnect and fan-out belong to the
- * caller, and a reconnect's fresh init frame is the resume story.
- */
+/** Opens the station's live stream: one init frame, then
+ * samples/reading/ping as served. The connect phase (headers plus the
+ * upstream init frame) rejects on failure; after that, failures degrade
+ * to a terminal unavailable frame. One call is one upstream connection;
+ * reconnect and fan-out belong to the caller. */
 export async function openWindnerdLive(
   config: WindnerdStationConfig,
   options: WindnerdLiveOptions = {},

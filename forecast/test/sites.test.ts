@@ -37,9 +37,8 @@ describe("parseSites", () => {
   });
 
   it("rejects a typed-in elevation and points at the context", () => {
-    // An elevationM in the catalogue means someone hasn't absorbed the
-    // launch decoupling: the message must direct them to the measured home,
-    // not merely reject the field.
+    // The error must point at the measured source (site-context.json and
+    // `meteo forecast terrain`), not merely reject the field.
     const failing = () => parseSites(catalogue([{ ...SITE, elevationM: 1485 }]));
     expect(failing).toThrowError(/site-context\.json/);
     expect(failing).toThrowError(/meteo forecast terrain/);

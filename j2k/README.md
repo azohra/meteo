@@ -9,7 +9,7 @@ internals pays twice: `decodeJ2kRegion` decodes *only* the codeblocks a
 few requested gridpoints touch (bit-identical to the full decode at
 those points, ~16× faster per core on the largest ECCC field), and the
 worker pool fans one field's independent EBCOT codeblocks across threads
-for full decodes. The receipts are at
+for full decodes. Benchmarks, with dates and method:
 <https://meteo.azohra.com/docs/j2k/performance/>.
 Zero runtime dependencies, no Node APIs in `src/`.
 

@@ -12,12 +12,10 @@ import {
 } from "./shared.js";
 
 /**
- * A local day that produced no thermal window — the negative stated with
- * its evidence instead of by absence. Emitted once per covered local day
- * without a thermalWindow finding; `failed` names the floors the day's
- * best hours missed, including `"coincidence"` (each threshold met at
- * some hour but never both in the same hour), and `context` restates the
- * upstream atmospheric numbers with no causal verdict drawn.
+ * Emitted once per covered local day without a thermalWindow finding.
+ * `failed` names the floors the day's best hours missed, including
+ * "coincidence" (each threshold met at some hour, never both in the same
+ * hour); `context` restates upstream numbers with no causal verdict.
  */
 export interface QuietDayFinding {
   kind: "quietDay";
@@ -73,10 +71,9 @@ export interface QuietDayFinding {
 }
 
 /**
- * The coverage block quietDay and convectiveDay share: covered span and
- * the horizon-truncation verdict over one local day's chronological
- * document hours, judged at the local cadence of the day's own edge
- * hours — never a document-wide constant, since cadence can widen
+ * Coverage block shared by quietDay and convectiveDay: covered span and
+ * horizon-truncation verdict, judged at the local cadence of the day's own
+ * edge hours — never a document-wide constant; cadence can widen
  * mid-horizon.
  */
 export function dayCoverage(context: Context, hours: ForecastHour[]): QuietDayFinding["coverage"] {

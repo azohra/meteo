@@ -35,8 +35,8 @@ export function analyzeProfileJson(text: string): ForecastAnalysis {
   if (!profile) throw new Error("invalid profile");
 
   return analyzeForecast(profile, {
-    // The launch is yours, not the document's — here the sample's Test Hill
-    // pick from site-context.json. It anchors every launch-relative statement.
+    // One launch anchors every launch-relative statement — the sample's
+    // Test Hill pick from site-context.json. The caller supplies it.
     launch: { elevationM: 1225.1 },
     thresholds: {
       thermalWindow: { wstarMinMps: 1.0, depthMinM: 350 },
@@ -45,20 +45,20 @@ export function analyzeProfileJson(text: string): ForecastAnalysis {
 }
 ```
 
-`launch` is optional and mirrors the scene's `MeteogramOptions.launch`:
-documents are launch-agnostic, so the caller names the launch the analysis
-reads against. Without one the analysis degrades gracefully rather than
-guessing: launch-relative arithmetic (the `thermalWindow` depth
-threshold) falls back to the model's own ground (`site.modelElevationM`),
-`peakLiftTopAboveLaunchM` is `null` instead of a number relative to the
-wrong ground, and `terrainMismatch` (a launch-vs-model-ground statement)
-is never emitted. The analysis envelope records the launch it used as
-`site.launchAltitudeM` (`null` when none was supplied).
+`launch` is optional and mirrors the scene's `MeteogramOptions.launch`.
+Documents are launch-agnostic, so the caller names the launch the analysis
+reads against. Without one, launch-relative arithmetic (the
+`thermalWindow` depth threshold) falls back to the model's own ground
+(`site.modelElevationM`), `peakLiftTopAboveLaunchM` is `null` instead of a
+number relative to the wrong ground, and `terrainMismatch` (a
+launch-vs-model-ground statement) is never emitted. The launch the
+analysis used is echoed on the envelope as `site.launchAltitudeM`; without
+one, that field is null.
 
 `thresholds` is optional. Overrides are merged by finding kind over
-`DEFAULT_ANALYZE_THRESHOLDS`. They are conventions chosen by the caller, not
-new physics, and the effective values are copied into every finding they
-shape. The defaults (release-current values of `DEFAULT_ANALYZE_THRESHOLDS`):
+`DEFAULT_ANALYZE_THRESHOLDS`. They are caller conventions, and the
+effective values are copied into every finding they shape. The defaults
+(release-current values of `DEFAULT_ANALYZE_THRESHOLDS`):
 
 | Kind | Default thresholds |
 | --- | --- |
@@ -73,27 +73,28 @@ shape. The defaults (release-current values of `DEFAULT_ANALYZE_THRESHOLDS`):
 
 `thermalWindow.maxGapHours` is a segmentation tolerance: adjacent passing
 runs merge when the failing steps between them cover at most that many
-hours and every bridged step publishes both series (bridging a data hole
-would manufacture continuity the model never forecast). The default `0`
+hours and every bridged step publishes both series (a data hole is never
+bridged: that would invent continuity the model never forecast). The default `0`
 merges nothing: exactly the pre-v4 segmentation. Bridged hours join the
 cited evidence, so the dip stays visible.
 
-## Two analysis inputs are not thresholds
+## Smoke and wind ceilings
 
-`AnalyzeOptions` carries two more caller-owned inputs beside `launch`:
+`AnalyzeOptions` carries two more caller-owned inputs beside `launch`.
+Neither is a threshold:
 
 **`smoke`** joins a same-site smoke document (RAQDPS) beside a smoke-blind
 profile, by exact `validAt` match. The `smokeImpact` kind then republishes
-the smoke run's surface and column magnitudes with a coverage confession and
+the smoke run's surface and column magnitudes with a coverage count and
 the smoke run's own `referenceTime` beside the envelope's. It is ignored
 when the profile carries its own `hours[].smoke` (the model's own smoke
 wins). Absent both, the analysis is smoke-blind and says so with the
 `dataCaveats` `"smoke"` family token: absence means "not published", never
 clear air.
 
-**`windCeilings`** feeds `windExceedance`, and is deliberately **not** in
-`thresholds`, because **no defaults exist**: the package never owns a "safe
-wind" number. Without a ceiling the kind emits nothing; each supplied value
+**`windCeilings`** feeds `windExceedance`. It sits outside `thresholds`
+because no defaults exist: the package never owns a "safe wind" number.
+Without a ceiling the kind emits nothing; each supplied value
 is echoed verbatim in the findings it produces. Gust ceilings are per
 declared semantics class (`gust.hourMaxMps` / `gust.instantMps`) and are never
 reused across classes: the two classes measure a factor ~1.8–2.8 apart at
@@ -114,8 +115,8 @@ export function analyzeWithInputs(profileText: string, smokeText: string) {
     launch: { elevationM: 1225.1 },
     // Same-site RAQDPS document; ignored when the profile has its own smoke.
     smoke: parseSmokeDocumentJson(smokeText),
-    // YOUR conventions for one pilot at one site — not recommendations, and
-    // not package defaults: omit a ceiling and that quantity emits nothing.
+    // Caller conventions for one pilot at one site. Omit a ceiling and
+    // that quantity emits nothing.
     windCeilings: {
       surfaceMps: 7,
       gust: { hourMaxMps: 11, instantMps: 8 },
@@ -140,9 +141,9 @@ export function windowRows(analysis: ForecastAnalysis) {
 
     return [{
       day: finding.day,
-      // Hours from the run's referenceTime to the peak-lift hour: a day-10
-      // window and a day-1 window are different objects wearing the same
-      // vocabulary, and only this field says which one you hold.
+      // Hours from the run's referenceTime to the peak-lift hour. A day-10
+      // window and a day-1 window read very differently; this field says
+      // which one you hold.
       leadHours: finding.leadHours,
       localStart: finding.start.local,
       localEnd: finding.end.local,
@@ -168,7 +169,7 @@ evidence. Those fields are what make the compressed statement auditable.
 ## The envelope self-describes
 
 Everything a downstream comparison validates or states about a member is
-**on the envelope**, so a serialized `ForecastAnalysis` re-enters
+on the envelope, so a serialized `ForecastAnalysis` re-enters
 [`compareAnalyses`](/docs/briefing/compare/#compare-cached-analyses)
 without re-opening the profile:
 
@@ -182,23 +183,22 @@ without re-opening the profile:
   and never from cadence arithmetic (live documents widen their step
   mid-horizon);
 - `extensions`: named third-party statements, when
-  [extensions](#extend-over-the-public-frame) were passed; **absent, not
-  empty**, otherwise, so an extension-free envelope is byte-identical to
+  [extensions](#extend-over-the-public-frame) were passed; absent rather
+  than empty otherwise, so an extension-free envelope is byte-identical to
   one serialized before the field existed.
 
 These are required fields, which is additive for every *reader* of the
 envelope: only code that constructs `ForecastAnalysis` values by hand
 (test fixtures) gains fields to fill. Analyze once at the edge, cache the
-envelope as JSON, and compare later: the self-description is what a
-later compare validates against.
+envelope as JSON, and compare later without the profile.
 
 ![The envelope analyzeForecast computed for the committed teaching profile, quoted field by field with the required self-description highlighted (the fully resolved thresholds, the precomputed deterministic flag, coveredDays, and extensions absent rather than empty), beside the six named validations compareAnalyses runs against those same fields: vocabulary-version skew, site and launch mismatch, timezone mismatch, thresholds deep-inequality, missing self-description, and duplicate member identity.](figures/analyze-envelope.svg)
 
 ## Versioning reads tolerantly
 
 `vocabularyVersion` is typed `number`, not the version literal: a
-deliberate loosening with zero wire consequence. It encodes
-the **tolerant-reader convention**: consumers of serialized envelopes must
+loosening with zero wire consequence. It encodes
+the tolerant-reader convention: consumers of serialized envelopes must
 ignore finding kinds and envelope fields they do not know, so additive
 kinds bump the version number without breaking any conforming reader.
 Readers check the stamp at runtime (`compareAnalyses` throws on skew)
@@ -231,10 +231,10 @@ export function dayVerdicts(envelope: ForecastAnalysis) {
 }
 ```
 
-The convention governs **readers** of the closed set, never the set
-itself: unknown kinds are ignorable, not admissible. Nothing enters
-`findings` without the evidence spike that gates the vocabulary;
-third-party statements have their own door, below.
+The convention governs readers only: unknown kinds are ignorable, not
+admissible. Nothing enters `findings` without the evidence spike that
+gates the vocabulary. Third-party statements have their own path,
+[below](#extend-over-the-public-frame).
 
 ## The finding vocabulary
 
@@ -242,13 +242,12 @@ third-party statements have their own door, below.
 renaming, or removing a `kind` is an analysis-contract event, independent
 of the profile `schemaVersion`; the
 [package changelog](https://github.com/azohra/meteo/blob/main/briefing/CHANGELOG.md)
-records each boundary. One rename still bites old
-code: vocabulary 4 renamed `flyableWindow` to `thermalWindow` because the
-test reads two thermal quantities (W* and usable-lift depth) against
-stated floors and is blind to wind, rain, and overdevelopment (the
-flyability call stays downstream), so code that switches on
-`"flyableWindow"` or overrides `thresholds.flyableWindow` now spells both
-`thermalWindow`.
+records each boundary. One rename still bites old code. Vocabulary 4
+renamed `flyableWindow` to `thermalWindow`: the test reads two thermal
+quantities (W* and usable-lift depth) against stated floors and is blind
+to wind, rain, and overdevelopment, so the flyability call stays
+downstream. Code that switches on `"flyableWindow"` or overrides
+`thresholds.flyableWindow` now spells both `thermalWindow`.
 
 | Finding kind | What it states | Evidence and limits |
 | --- | --- | --- |
@@ -296,7 +295,7 @@ export function upsideDays(analysis: ForecastAnalysis) {
       p50PassingSteps: finding.perPercentile.p50.passingSteps,
       p90PassingSteps: p90.passingSteps,
       // A "p75" over 12 contributing members is a different object than
-      // one over 21 — the echo, not the label, is the guarantee.
+      // one over 21; check membersMin, not just the label.
       fewestContributingMembers: p90.membersMin,
     }];
   });
@@ -308,9 +307,9 @@ the read:
 
 | Kind | Reading caveats |
 | --- | --- |
-| `smokeImpact` | No derated window and no adjusted W\*, deliberately: the only live passive column source measured far below a satellite-verified column ([the column defect's home](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)), and even satellite-magnitude optics flipped almost nothing. `semantics: "radiativelyCoupled"` makes any downstream derate a double-count. A null `duringWindow` means no window, or no smoke hour landed on one |
-| `convectiveDay` | Exists so a CAPE-without-CIN model's washout day still states instability where `capTiming`'s gate stays shut; deliberately unable to say "uncapped". A `coverage.truncated` day's peaks are peaks of the covered hours only: live horizon slivers carry nocturnal CAPE peaks cited at 01:00–05:00. A 0.00 precipitation series (`noPrecipAboveThreshold`) is a forecast of dryness, not absence |
-| `windExceedance` | Supply the ceiling via [the analysis inputs](#two-analysis-inputs-are-not-thresholds). A day without a thermal window emits nothing whatever the wind; absence on a window day means no window hour met the ceiling. `gustSemantics` is present exactly when `quantity` is `"gust"`; each run's `hours` is the covered span at the document's actual cadence, with `stepHours` as its quantization bound |
+| `smokeImpact` | No derated window and no adjusted W\*: the only live passive column source measured far below a satellite-verified column ([the column defect's home](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect)), and even satellite-magnitude optics flipped almost nothing. `semantics: "radiativelyCoupled"` makes any downstream derate a double-count. A null `duringWindow` means no window, or no smoke hour landed on one |
+| `convectiveDay` | Exists so a CAPE-without-CIN model's washout day still states instability where `capTiming`'s gate stays shut; it never says "uncapped". A `coverage.truncated` day's peaks are peaks of the covered hours only: live horizon slivers carry nocturnal CAPE peaks cited at 01:00–05:00. A 0.00 precipitation series (`noPrecipAboveThreshold`) is a forecast of dryness, not absence |
+| `windExceedance` | Supply the ceiling via [the analysis inputs](#smoke-and-wind-ceilings). A day without a thermal window emits nothing whatever the wind; absence on a window day means no window hour met the ceiling. `gustSemantics` is present exactly when `quantity` is `"gust"`; each run's `hours` is the covered span at the document's actual cadence, with `stepHours` as its quantization bound |
 | `windDirection` | The drainage-to-upvalley story across one window. All arithmetic is vector math (raw degrees are never averaged), and a sample under the embedded floor states its speed with a null bearing rather than a jittering direction. `netVeerDeg` reads zero for a flow that boxes the compass and returns; the per-hour path stays in `finding.evidence` |
 | `bandShear` | Component-wise vector shear between adjacent published levels. The rate means nothing without its layer: "2.3 m/s/km across 1506–3129 m" must not be mistaken for a sharp shear zone, and a sparse column reports a different, smeared layer, not a softer number. `bothEndpointsUnderFloorMps` marks a "shear" that may be a direction difference between two near-calm winds |
 
@@ -318,8 +317,7 @@ the read:
 
 The extraction frame (the normalization ground every first-party
 extractor stands on) is public: `AnalysisFrame`, versioned
-separately as `ANALYSIS_FRAME_VERSION` (the frame is where extractors
-stand, the vocabulary is what they say; the frame changes rarely, and a
+separately as `ANALYSIS_FRAME_VERSION` (the frame changes rarely, and a
 frame change is its own contract event). `AnalyzeOptions.extensions` runs
 caller extractors over it **after** first-party extraction, receiving the
 finished findings read-only.
@@ -337,10 +335,10 @@ selectors the first-party extractors use (`p50`, `localDateKey`,
 import { analyzeForecast, type AnalysisExtension } from "@azohra/meteo.briefing/analyze";
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
 
-/** The extension's OWN statement type. The vocabulary's guarantees stop
- * at `findings`, so this contract is the extension's to state — and the
- * house discipline (evidence, embedded thresholds) is documented but
- * unenforceable expectation, yours to hold. */
+/** The extension's own statement type. The vocabulary's guarantees stop
+ * at `findings`; this contract is the extension's to state. The house
+ * discipline (evidence, embedded thresholds) is documented but
+ * unenforced. */
 interface WindowPaceStatement {
   day: string;
   citedHours: number;
@@ -369,10 +367,10 @@ const windowPace: AnalysisExtension = {
 
 export function paceStatements(profile: SiteForecast): WindowPaceStatement[] {
   const analysis = analyzeForecast(profile, { extensions: [windowPace] });
-  // Statements land on the envelope's named `extensions` entry, NEVER in
-  // `findings` — they stay unknown[], and consumers narrow through the
-  // extension's own types, so no third-party statement can masquerade as
-  // a first-party finding.
+  // Statements land on the envelope's `extensions` entry, not in
+  // `findings`. They stay unknown[]; consumers narrow through the
+  // extension's own types, so a third-party statement cannot masquerade
+  // as a first-party finding.
   const entry = analysis.extensions?.find((e) => e.extension === "example/windowPace");
   return (entry?.statements ?? []) as WindowPaceStatement[];
 }
@@ -381,17 +379,15 @@ export function paceStatements(profile: SiteForecast): WindowPaceStatement[] {
 A throwing extension fails the analysis: you supplied the code, and
 `analyzeForecast` does not sandbox it.
 
-Three things are deliberately **not** exposed, and the absences are the
-design:
+Three things are not exposed:
 
-- **the extraction `Context`**: it carries the full `AnalyzeThresholds`
+- the extraction `Context`: it carries the full `AnalyzeThresholds`
   and `WindCeilings`, so exposing it would re-couple this rarely-changing
   surface to every vocabulary event. Extensions bring their own thresholds
-  and are expected to embed them in their own statements, per the house
-  discipline;
-- **the citation and cadence factories**: the frame carries their
+  and are expected to embed them in their own statements;
+- the citation and cadence factories: the frame carries their
   *results* (`cite`, `dayOf`, `leadHours`, `steps`), not the machinery;
-- **the first-party kind extractors**: extensions consume the finished
+- the first-party kind extractors: extensions consume the finished
   findings; they do not re-run or re-order the pipeline.
 
 ## Local time and cadence stay visible

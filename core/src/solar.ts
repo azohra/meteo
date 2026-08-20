@@ -19,8 +19,8 @@ export type SolarEvents = {
  * of 90.833°. The date key (YYYY-MM-DD, the shape `localDateKey` produces)
  * is anchored on longitude, not civil time: the result is correct wherever
  * the civil date matches the longitudinal solar date — including most of
- * the eastern hemisphere — and lands a full day off only where date-line
- * politics divorce the two (UTC+13/+14 zones at western longitudes). Null
+ * the eastern hemisphere — and lands a full day off only where the
+ * date-line separates the two (UTC+13/+14 zones at western longitudes). Null
  * for polar day or night, a malformed or impossible date key, or
  * out-of-range coordinates.
  */

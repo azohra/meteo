@@ -410,16 +410,12 @@ describe("Datamart GRIB sampling", () => {
   });
 
   it("samples every site from one decoded field", async () => {
-    // The decode-once rule is structural here — one decode serves every
-    // site — so the observable contract is the shared result.
     const samples = await sampleDatamartField(makeGrib(7.0), [DUNDEE, ERIE], 15.0);
     expect(samples).toEqual({ dundee: 7.0, erie: 7.0 });
   });
 
   it("concurrent samples of one message decode it exactly once", async () => {
-    // The decode-once rule under the pooled async path: two tasks
-    // sampling the same message bytes await ONE in-flight decode (the
-    // per-message promise cache), never racing two decodes of one field.
+    // Pinned mechanism: the per-message promise cache behind the pooled async path.
     const message = makeGrib(0, { jpeg2000: true });
     let decodes = 0;
     const decodeJ2k = (codestream: Uint8Array): J2kSamples => {
@@ -808,7 +804,7 @@ describe("buildEccc", () => {
     const sitesPath = writeSites(scratch);
     const outputRoot = join(scratch, "data");
     // The empty published dataset: the manifest gate reads 404, then the
-    // history seed for the site's month reads 404 — absence, not fatality.
+    // history seed for the site's month reads 404.
     const dataset = stubFetch([{ status: 404 }, { status: 404 }]);
 
     const built = await buildEccc(TEST_MODEL, {

@@ -8,21 +8,19 @@ import CardsSection from "../components/station/sections/CardsSection.astro";
 import ChartsSection from "../components/station/sections/ChartsSection.astro";
 import RosesSection from "../components/station/sections/RosesSection.astro";
 
-/* The living station front door: every <meteo-*> tag on this page is the
-   real custom-elements binding from @azohra/meteo.station/elements,
-   upgraded by the client script at the bottom and fed a synthetic fleet
-   generated in the visitor's browser (src/lib/station-exhibit.ts). Nothing
-   is fetched; nothing is a screenshot.
-
-   Three exhibits carry the pitch — the card, the history charts, the
-   roses; the full twelve-section catalogue lives in the docs
-   (/docs/station/component-gallery/), rendered from the same section
-   components under src/components/station/sections/. */
+/* Every <meteo-*> tag on this page is the real custom-elements binding
+   from @azohra/meteo.station/elements, upgraded by the client script at
+   the bottom and fed a synthetic fleet generated in the visitor's browser
+   (src/lib/station-exhibit.ts). Nothing is fetched; nothing is a
+   screenshot. This page shows three sections (card, history charts,
+   roses); the full catalogue is /docs/station/component-gallery/,
+   rendered from the same components under
+   src/components/station/sections/. */
 ---
 
 <Base
   title="Station — live weather-station components — meteo by Azohra"
-  description="Live wind from launch stations: vendor adapters read any weather station into one documented contract, and framework-free components render it live: dials, history, roses, the whole page vocabulary."
+  description="Live wind from launch stations: vendor adapters read any weather station into one documented contract, and framework-free components render it live: dials, history charts, roses, and daily patterns."
   activeNav="station"
 >
   <main id="main-content" class="station-main">

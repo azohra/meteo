@@ -10,11 +10,10 @@ import {
   type Vane,
 } from "./geometry.js";
 
-/* Composition primitives over the 3-second sample window — the live
- * counterparts of the history chart's machinery, returning the same
- * ChartScales and Vane shapes so vanePath, vaneTicks, and the frame
- * helpers serve both without adaptation. Samples are instants: there is
- * no band to draw, and a dropout is a gap, never a zero. */
+/* Composition primitives over the 3-second sample window, returning the
+ * same ChartScales and Vane shapes as the history chart so vanePath,
+ * vaneTicks, and the frame helpers serve both. Samples are instants:
+ * no band, and a dropout is a gap, never a zero. */
 
 /* One gap rule platform-wide: spacing beyond 2.5 sample intervals is a
  * dropout, the same tolerance the history chart holds records to. */
@@ -47,10 +46,9 @@ export function sampleRuns(
   return runs;
 }
 
-/* The history chart's scales, computed from instantaneous speeds: the top
- * of the scale is the fastest sample, snapped up to a nice step with a
- * floor so a calm window still draws against a readable axis. Returns
- * ChartScales, so every consumer of the history scales composes unchanged. */
+/* History-chart scales from instantaneous speeds: top of scale is the
+ * fastest sample, snapped up to a step with a floor so a calm window
+ * still draws against a readable axis. Returns ChartScales. */
 export function sampleScales(
   samples: LiveSamples,
   frame: ChartFrame,
@@ -127,7 +125,7 @@ export function thinSampleVanes(
 }
 
 export type SamplesSummary = {
-  /* The newest sample — the number a reader quotes. */
+  /* Newest sample. */
   latest: LiveSample;
   peakMps: number;
   peakAt: string;
@@ -138,8 +136,7 @@ export type SamplesSummary = {
   spanSeconds: number;
 };
 
-/* The window reduced to the words a strip caption needs. Null when there is
- * nothing to summarize — an empty window has no latest sample to misquote. */
+/* Null when the window is empty. */
 export function samplesSummary(samples: LiveSamples): SamplesSummary | null {
   const points = samples.points;
   const latest = points[points.length - 1];

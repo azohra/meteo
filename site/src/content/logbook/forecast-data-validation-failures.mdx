@@ -34,10 +34,11 @@ and the rule the platform keeps.
 <Incident
   arrived={'A correctly shaped terrain crop at the requested "native" resolution. The sampled RDPS elevation, 1,426 geopotential metres, was a perfectly plausible number for a mountain site.'}
   witness="GeoMet's point query reported 1,168 gpm for the same model cell, and 2 m temperatures differed by up to 2.5 °C at half the test sites. A finely oversampled crop reproduced the point values; the fault was the crop's sampling, not the model."
-  rule="A crop is a rendered coverage, not proof of nearest-cell sampling."
+  rule="Nearest-cell sampling needs its own proof; a rendered crop can look right while sampling the wrong cells."
 >
   While the pipeline read WCS, the builders compared several crop values with an independent point
-  query before trusting the georeferencing. The transport is retired; the rule is not.
+  query before trusting the georeferencing. The WCS transport is retired; the comparison check
+  stayed.
 </Incident>
 
 ## A broken WCS request returned valid zeros
@@ -74,7 +75,7 @@ and the rule the platform keeps.
 <Incident
   arrived="A GEPS orography URL returned 4.3 MB of decodable GRIB."
   witness="The grid inside was REPS-shaped. The one external tell: the body length disagreed with the server's declared Content-Length and ETag. An immediate retry returned the expected bytes; the upstream cause remains unknown."
-  rule="A valid file format cannot identify the model inside it."
+  rule="Decodable GRIB says nothing about which model produced it."
 >
   The download client now checks every full response against its declared length and retries
   mismatches.
@@ -85,7 +86,7 @@ and the rule the platform keeps.
 <Incident
   arrived="Several models expose sensible heat flux in units reducible to W/m²: the same variable, the same unit, believable values everywhere."
   witness="The shared unit hides three different clocks. HRRR and REPS publish instantaneous values; GFS publishes averages over growing windows that reset every six hours; GEPS publishes accumulations that require differencing. Treat all three as instantaneous and afternoon heating smears into the morning."
-  rule="A variable name and unit do not define its time semantics."
+  rule="The variable name and unit leave the time semantics unstated; read the product metadata."
 >
   The builders read product-definition and time-range metadata, then test sequences across window
   resets.
@@ -108,13 +109,13 @@ and the rule the platform keeps.
 <Incident
   arrived="Documentation, examples, and old forum answers all pointed to layer families such as `GDPS.ETA_*`, `RDPS.ETA_*`, and legacy ensemble directory trees."
   witness="The live capabilities and directory listings had moved on: some names returned 404; others survived as aliases with different availability."
-  rule="Provider identifiers are dated observations; the service outranks its prose."
+  rule="Provider identifiers are dated observations; verify against the live service rather than its documentation."
 >
   The [forecast model feed reference](/docs/forecast/forecast-model-feeds/) records what was
   live-verified and when.
 </Incident>
 
-## What parsing can never prove
+## Beyond parsing
 
 Schema validation proves shape. Each trust boundary also compares the payload with an independent
 fact about identity, location, projection, or time semantics, and the check lives beside the code

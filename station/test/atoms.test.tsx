@@ -178,7 +178,7 @@ describe("Direction", () => {
       "meteo-direction meteo-direction-unfavorable",
     );
 
-    /* Calm never wears a verdict — there is no direction to judge. */
+    /* Calm samples get no favorable/unfavorable class: no direction to classify. */
     const calm = render(
       <Direction favorableDirections={[{ fromDeg: 260, toDeg: 340 }]} station={calmStation()} />,
     );

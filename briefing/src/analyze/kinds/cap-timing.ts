@@ -4,12 +4,10 @@ import type { ThermalWindowFinding } from "./thermal-window.js";
 import { round2, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * The overdevelopment-timing story per local day: CAPE build vs CIN
- * erosion vs the thermal window's close. Gated to deterministic documents
- * that publish CIN (ensemble-median CIN is bimodal and says neither
- * thing); the day's own sampling decides the verdict semantics — hourly
- * days carry instant verdicts, multi-hour days carry interval verdicts
- * over the published steps only, never claims about the hours between.
+ * Overdevelopment timing per local day: CAPE build vs CIN erosion vs the
+ * thermal window's close. Deterministic documents publishing CIN only
+ * (ensemble-median CIN is bimodal). Hourly days carry instant verdicts;
+ * multi-hour days carry interval verdicts over published steps only.
  */
 export interface CapTimingFinding {
   kind: "capTiming";

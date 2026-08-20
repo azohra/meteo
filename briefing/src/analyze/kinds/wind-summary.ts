@@ -5,13 +5,10 @@ import type { ThermalWindowFinding } from "./thermal-window.js";
 import { round1, round2, type CitedInstant, type Context, type LocalDayKey } from "./shared.js";
 
 /**
- * Wind magnitudes and timing per local day: the strongest surface gust
- * (with its declared semantics) and the strongest wind at any level
- * inside the climb band, with altitude and persistence. Two scopes, two
- * questions: the whole-day maxima cover every published hour (a front
- * after the window closes is real information), and `duringWindow`
- * answers the wind while anyone is airborne. Deliberately no hazard or
- * barrier verdicts — safety judgment is downstream's call.
+ * Strongest surface gust (with declared semantics) and strongest
+ * climb-band wind per local day, with altitude and persistence. Whole-day
+ * maxima cover every published hour; duringWindow covers airborne hours.
+ * No hazard verdicts — safety judgment is downstream's.
  */
 export interface WindSummaryFinding {
   kind: "windSummary";

@@ -25,10 +25,10 @@ From a workspace checkout, the same commands run as
 
 ## Engine, not instance
 
-The engine is the package; an operator's pipeline is the operator's own
-repository. The cron schedule, the site catalogue a deployment builds from,
-the bucket and its credentials: none of that ships here, and the platform
-ships no production instance; the reference deployment lives with its
+The engine is the package. An operator's pipeline (the cron schedule,
+the site catalogue a deployment builds from, the bucket and its
+credentials) is the operator's own repository. The platform ships no
+production instance; the reference deployment lives with its
 operator. What the engine guarantees is the published surface: any
 operator's instance publishes the same versioned document shapes at the
 same stable paths, so everything on the read side works against any of

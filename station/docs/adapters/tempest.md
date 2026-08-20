@@ -33,15 +33,15 @@ capability key reads as false
 The hardware carries the full sensor suite, so gust/lull, temperature, and
 the extended conditions block are always declared. History is declared
 `false` because the REST observations endpoint serves the latest observation
-only; the adapter reports what this endpoint carries and fabricates
-nothing, so `history` is null on every document. `samplingWindowSeconds`
+only; the adapter reports only what this endpoint carries, so `history`
+is null on every document. `samplingWindowSeconds`
 and `recommendedPollSeconds` are both 60.
 
-On your page that means: **no history chart, no trend chart, no
-sparkline** — a Tempest `StationCard` renders the dial and readouts and no
-chart, which is correct behaviour, not a wiring error. `/live?station=`
-answers 404 and the live hooks never apply. The full capability-to-surface
-map is [What your hardware shows](/docs/station/what-your-hardware-shows/).
+On your page that means no history chart, no trend chart, and no
+sparkline: a Tempest `StationCard` renders the dial and readouts only.
+`/live?station=` answers 404 and the live hooks never apply. For the
+full capability-to-surface map, see
+[What your hardware shows](/docs/station/what-your-hardware-shows/).
 
 The wire contract's `conditions` block is
 [WeatherFlow-shaped](/docs/station/wire-contract/#semantics); this adapter
@@ -54,8 +54,8 @@ The `observationsUrl` direct-adapter option overrides the base URL, for
 tests and proxies.
 
 Responses cache for 60 seconds under the key `tempest/<stationId>`; the
-token is deliberately excluded, because a credential must never leak into a
-shared cache. What that means for multi-tenant hosts is
+token is left out of the key so the credential never lands in a shared
+cache. Multi-tenant hosts should read
 [the cache trust model](/docs/station/adapters/#the-cache-trust-model).
 
 ## What the adapter guards

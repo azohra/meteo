@@ -55,10 +55,9 @@ export interface DatasetOptions {
   random?: () => number;
 }
 
-/* The one home for the S3 wire: retryable error codes, error-code
-   extraction, the signed exchange (client construction, key encoding,
-   timeout), and the backoff — shared by the read path here and the
-   publisher's PUTs so the wire never grows a second implementation. */
+/* Shared by the read path here and the publisher's PUTs: keep the S3
+   client (retryable codes, signing, key encoding, backoff) in this
+   module only. */
 export const RETRYABLE_S3_CODES = new Set([
   "InternalError",
   "RequestTimeout",

@@ -265,8 +265,8 @@ export interface LoadObservationOptions {
 
 /**
  * Fetches one site's observation document — a guarded single fetch, no
- * manifest and no skew dance: an observation document has no run, so
- * there is no pair invariant to defend. Misses discriminate exactly like
+ * manifest pairing: an observation document has no run, so there is no
+ * pair invariant to defend. Misses discriminate exactly like
  * `loadDocument`'s; non-404 HTTP errors throw `TransportHttpError`.
  */
 export async function loadObservation(

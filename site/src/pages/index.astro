@@ -36,14 +36,12 @@ import Base from "../layouts/Base.astro";
     scroll-margin-top: 8.5rem;
   }
 
-  /* ---- the scroll's alternation, stated once ----
-     The homepage alternates bare page ground and full-bleed bands so each
-     boundary is felt: hero and 01 on --page, 02 dips to the sunken band,
-     03 returns to --page, 04 turns to the accent-tinted band, 05 closes
-     compressed on --page, and the teal colophon ends the page. The 02 band
-     lives here (not in HomeTeachingMeteogram) because that component's
-     markup and inner styles belong to the scenario exhibit; the id-keyed
-     rule outranks its scoped section rule. */
+  /* The 02 band is painted here rather than in HomeTeachingMeteogram:
+     that component's markup and inner styles belong to the scenario
+     exhibit, and this id-keyed rule outranks its scoped section rule.
+     Page-wide ground sequence (spread across five components): hero+01
+     --page, 02 sunken, 03 --page, 04 accent-tinted, 05 --page, teal
+     colophon. */
   .home-main :global(#briefing) {
     padding-block: clamp(5.5rem, 10vw, 9rem);
     background: var(--surface-sunken);

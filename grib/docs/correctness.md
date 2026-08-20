@@ -11,7 +11,7 @@ identical.
 
 Decoded GRIB values are integers scaled by powers of two and ten, so
 every value assertion is exact equality: an inexact double is a decoder
-bug, never a tolerance question. Two deliberate refinements the gate
+bug. Two refinements the gate
 forced:
 
 - Scale factors use ecCodes' iterated `codes_power`, not `Math.pow`;
@@ -37,7 +37,7 @@ expectation sidecar:
 - ecCodes' own nearest-gridpoint answer for every catalogued site.
 
 A decoder that reproduces a sidecar is bit-for-bit compatible with
-ecCodes on that message. The corpus deliberately covers the awkward
+ecCodes on that message. The corpus was curated to cover the awkward
 shapes: a two-submessage NCEP paired-wind message, a sparse bitmap
 (76 of 1,905,141 points masked), grid-relative ensemble wind for
 rotation validation, and the GEPS orography field whose values are
@@ -54,10 +54,10 @@ of harvest and no harvester ships in this repository; and the site
 coordinates in the sidecars are a frozen copy of the
 catalog as it stood at harvest (2026-08-11), part of the golden data
 rather than a live catalog. The committed bytes are the ground truth;
-the URLs are provenance, not a reproduction recipe.
+the URLs are provenance only.
 
-One fixture sits deliberately beside the corpus rather than in it:
-`rdps-cape-sfc-jasper`, a JasPer-encoded RDPS field that a live smoke
+`rdps-cape-sfc-jasper` sits beside the corpus rather than in it:
+a JasPer-encoded RDPS field that a live smoke
 surfaced after the corpus froze. It answers to a different oracle
 (OpenJPEG.js, verified out-of-tree before that codec's retirement), so
 the golden suite's enumeration stays the twenty ecCodes messages and the

@@ -1,9 +1,8 @@
 ---
 import SectionHeader from "./SectionHeader.astro";
 
-// The engine and its artifact are one story: `meteo forecast build` writes the
-// JSON, and the same terminal reads it back. Commands and paths restate
-// README.md § "Run your own" and /docs/forecast/configure-launches/.
+// Commands and paths restate README.md § "Run your own" and
+// /docs/forecast/configure-launches/; keep them in step.
 const references = [
   {
     title: "Configure your launches",
@@ -35,7 +34,7 @@ const references = [
       eyebrow="@azohra/meteo.forecast"
       title="Publish forecasts anyone can read"
       titleId="home-data-title"
-      intro="meteo forecast build fetches each model's newest run, derives the soaring numbers, and writes static JSON at stable paths, a schemaVersion on every document. curl is a complete client. You own the pipeline it runs in — a schedule, a bucket, your credentials; the platform ships the engine, not a hosted service."
+      intro="meteo forecast build fetches each model's newest run, derives the soaring numbers, and writes static JSON at stable paths, a schemaVersion on every document. curl is a complete client. You own the pipeline it runs in: a schedule, a bucket, your credentials."
     />
 
     <div class="home-data__layout">

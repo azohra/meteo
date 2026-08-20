@@ -3,7 +3,7 @@ title: Observation document
 description: "The per-site measured time series from GOES-18 (downward shortwave and aerosol optical depth): the observed window, validity discipline, verified product facts, and what the measurements are for."
 ---
 
-The observation document is the contract's one **measured**
+The observation document is the contract's one measured
 [document family](/docs/compatibility/#document-families): a per-site
 time series of satellite observations:
 GOES-18's downward shortwave radiation and aerosol optical depth today.
@@ -14,15 +14,15 @@ fraction of the sun), and measurement tests both halves of it: measured
 irradiance under a known plume tests the transmittance, and measured
 optical depth tests the premise, whether the stated plume is there at
 all. Consumers join an observation series to profile or smoke documents
-by instant, truth beside prediction —
+by instant;
 [measured against the sky](/logbook/measured-against-the-sky/) is the
 case study that established the kind.
 
 The live sample dataset publishes no observation documents: the datasets
 this kind was built against stayed with their operator when the engine
-went public, and are private now. The JSON shown here is therefore
-illustrative — a capture from before that split, not something you can
-fetch. The one committed real capture is the
+went public, and are private now. The JSON shown here is illustrative:
+a capture from before that split, no longer fetchable. The one committed
+real capture is the
 [history-archive](/docs/briefing/history-archives/) fixture
 `briefing/test/fixtures/goes18-aod-erie-2026-08.jsonl.gz`: a smoked-in
 afternoon of measured AOT entries, in the archive's
@@ -67,8 +67,7 @@ extent), which `parseForecastManifestJson` does not accept.
 ```
 
 *Captured from the now-private dataset (`dundee`), kept for its real
-measured values; illustrative in the sense above — no published dataset
-serves it today.*
+measured values; no published dataset serves it today.*
 
 | Field | Unit | Meaning |
 | --- | --- | --- |
@@ -86,7 +85,7 @@ key check before reading the value, as the fence below does.
 Observations are chronological, and **gaps are real**: an absent instant
 had no accepted retrieval (night, rejected quality flags, scan
 gaps) and means "not measured", never zero. Both are daytime products;
-a series that goes silent overnight is behaving, not broken.
+a series that goes silent overnight is normal.
 
 ```ts title="read-observations.ts"
 import { parseObservationDocumentJson } from "@azohra/meteo.briefing/contract";
@@ -124,15 +123,15 @@ Facts measured live from the granules themselves:
 Quirks:
 
 - **DQF = 0 does not imply a retrieval**: night pixels are fill with DQF 0.
-  A value publishes only when the DSR pixel is unmasked **and** DQF ≤ 1 —
+  A value publishes only when the DSR pixel is unmasked **and** DQF ≤ 1;
   the unmasked half of the gate, not the DQF half, is what keeps night
   out. The builder
   ([`goes.ts`](https://github.com/azohra/meteo/blob/main/forecast/src/builders/goes.ts))
   publishes an unmasked DQF-1 retrieval labelled `quality: 1` and
   everything else as absence.
 - **DSR's DQF 1 is a lumped "degraded/invalid" state**, not a graded
-  medium: in practice the sun beyond the 70° good-quality zenith bound —
-  the sunrise and sunset shoulders. Live shoulder values track the
+  medium: in practice the sun beyond the 70° good-quality zenith bound
+  (the sunrise and sunset shoulders). Live shoulder values track the
   clear-sky expectation plausibly, but the provider refuses them a
   grade, so a labelled entry is indicative ("the sun is on, roughly this
   strongly"), never quantitative. The reference scene draws them as
@@ -211,8 +210,7 @@ algorithm's validation record [verified 2026-08-10]:
   conservative": the top-two set scores r = 0.87 with bias 0.04 and
   RMSE 0.09 against AERONET (Zhang, Kondragunta et al. 2020,
   [AMT 13:5955](https://doi.org/10.5194/amt-13-5955-2020)), and it is
-  the smoke-event choice, and smoke events are what this dataset
-  exists for. A medium-quality entry carries `quality: 1`, so the
+  the smoke-event choice. A medium-quality entry carries `quality: 1`, so the
   strict high-only view is one filter away.
 - **The Enterprise algorithm is why the dataset exists at all.**
   Operational since 2024-02-06, it raised the quantitative view-zenith
@@ -231,7 +229,7 @@ algorithm's validation record [verified 2026-08-10]:
   measured", never clear air. The builder's first live run, at night,
   correctly published nothing.
 
-The entry shape is `{ observedAt, aot }`: deliberately the same field
+The entry shape is `{ observedAt, aot }`: the same field
 name and wavelength the profile's `smoke` block forecasts as `aot` (the
 [smoke document](/docs/briefing/smoke-document/) itself carries no
 optical-depth field), so a measured value sits beside a forecast one with
@@ -243,14 +241,13 @@ Each document holds a rolling ~72-hour window; the build is incremental,
 merging granules newer than the published `lastObservedAt`. Behind the
 window, both datasets keep [history archives](/docs/briefing/history-archives/) at
 `<model-slug>/history/<site>/<YYYY-MM>.jsonl.gz`: the same seeded
-gzip-member mechanics as profile history, but a deliberately different
+gzip-member mechanics as profile history, but a different
 line grammar: **one observation object per line**, archived exactly once,
 when the instant first enters the window (the history page carries the
 grammar and its why). NOAA's own bucket remains the deep archive: every
 granule, every pixel. A consumer who wants raw granules reads the bucket;
-a consumer who wants the published series for a month reads the archive;
-a consumer who wants the recent sky beside today's forecast reads this
-document.
+the published series for a month, the archive; the recent sky beside
+today's forecast, this document.
 
 ## Joining observations to forecasts
 

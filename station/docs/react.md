@@ -40,8 +40,8 @@ Live is a per-station capability, and today only WindNerd declares it
 ([What your hardware shows](/docs/station/what-your-hardware-shows/)). For
 a station without `live`, `/live?station=` answers 404 and the live store
 sits in `backoff` — reach for `useStationLive` and `live: true` only for
-stations that declare it. The custom-elements binding deliberately has no
-live surface; it polls only.
+stations that declare it. The custom-elements binding has no live
+surface; it polls only.
 
 `useFreshness(observedAt, servedAt, receivedAtMs, thresholds?)` grades an
 observation for display; the semantics are the wire contract's
@@ -49,11 +49,12 @@ observation for display; the semantics are the wire contract's
 re-judged on the shared 30 s cadence.
 
 `useMeasuredChartWidth(ref)` measures a chart container before first
-paint and re-measures on resize: null until a real width exists — a
-hidden container measures zero and the hook stays held until it is shown
-— and the fallback width (`CHART_FALLBACK_WIDTH` on the root) only where
-ResizeObserver is missing. Frame a custom SVG at this measured pixel
-width; a fixed viewBox stretched by CSS magnifies every label and stroke.
+paint and re-measures on resize. The width is null until a real one
+exists: a hidden container measures zero, and the hook stays held until
+it is shown. The fallback width (`CHART_FALLBACK_WIDTH` on the root)
+applies only where ResizeObserver is missing. Frame a custom SVG at this measured pixel
+width; if a fixed viewBox is stretched by CSS, every label and stroke
+scales up with it.
 
 ## The provider
 
@@ -91,7 +92,7 @@ Wind-speed components are display-unit aware (`unit?: "kmh" | "knots" | "mph" | 
 default `"kmh"`) and all take `strings` (word overrides / i18n); components
 that print a timestamp also take `formatTime`.
 Per-station components take `station` (or `stationId`); fleet components take `stations`.
-Components believe the station's declared capabilities:
+Components follow the station's declared capabilities:
 `WindHistoryChart`, `TrendChart`, and the sparkline render nothing for a
 station without `history`, `WindSampleStrip` needs `live` samples, and
 `AirMatrix` carries columns only for `conditions`-capable stations —
@@ -108,7 +109,7 @@ full map.
 | `WindRose` | Direction shares. `station`/`stationId` or raw `points`, `sectorCount`, `thresholds`, `favorableDirections`. No `unit`: the rose shows percentages |
 | `DailyPattern` | A typical day: every point bucketed by time-of-day and vector-averaged, with a persistent compass-letter row and Avg row (dashed for a slot nothing ever fell into). `station`/`stationId` or raw `points`, `slotMinutes` (default 180), `utcOffsetMinutes`, `thresholds`, `favorableDirections` |
 | `FavorableShare` | One stat: the share of non-calm history from a favorable direction. `station`/`stationId` or raw `points`, `favorableDirections`. Renders nothing at all without arcs; a calm-only history notes calm instead of inventing 0% |
-| `ClimatologyRose` | The [climatology cube](/docs/station/climatology/) as a stacked rose: each wedge split by the document's own thresholds, honesty captions beneath (favorable share with arcs; coverage only unfiltered). `document` (from `useStationClimatology`), `months`, `slots`, `favorableDirections`, `stationName` |
+| `ClimatologyRose` | The [climatology cube](/docs/station/climatology/) as a stacked rose: each wedge split by the document's own thresholds, coverage captions beneath (favorable share with arcs; coverage only unfiltered). `document` (from `useStationClimatology`), `months`, `slots`, `favorableDirections`, `stationName` |
 | `ClimatologyDailyPattern` | The cube's typical day through the daily-pattern drawing, month-filtered client-side. `document`, `months`, `thresholds`, `favorableDirections`, `unit`, `plotHeight`, `stationName` |
 | `StationTable` | One row per `stations` entry; unavailable rows keep their geometry. `servedAt`, `receivedAtMs`, `stationMeta`, the sub-label under each name (default: the source attribution; render the sampling window, a distance, anything the station itself can say) |
 | `StationStrip` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness. `station`/`stationId`, `servedAt`, `receivedAtMs`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line, reason in words |
@@ -123,7 +124,7 @@ the freshness badge.
 
 ### Composing the station card
 
-`StationCard` is a context provider: with **no children authored** it renders
+`StationCard` is a context provider: with no children authored it renders
 the full card (header, instrument, chart, summary); with children you say
 which pieces appear, in what order, without re-threading props. The trigger
 is `children === undefined`; authored children that evaluate to `false` or
@@ -146,27 +147,28 @@ dot-access across an RSC client boundary); rendering one outside
 ### Favorable directions
 
 `favorableDirections={[{ fromDeg: 260, toDeg: 340 }]}` (degrees FROM; sectors
-may wrap through north — `fromDeg > toDeg` spans the north crossing) is a
-judgment parameter with no default, resolved by the same
-omitted/value/null trichotomy as `thresholds`: set it once on
-`StationFeedProvider` and every direction-bearing surface inherits it, pass
-it on one component to override, pass `null` to opt one component out.
+may wrap through north — `fromDeg > toDeg` spans the north crossing) resolves
+like `thresholds`
+([client data](/docs/station/client-data/#display-resolution--shared-across-bindings)):
+set it once on `StationFeedProvider` and every direction-bearing surface
+inherits it, pass it on one component to override, pass `null` to opt one
+component out.
 
 Where the verdict shows: the rose and the dial draw a thin judgment ring
 (favourable arcs in `--meteo-wind-favorable`, the remainder in
 `--meteo-wind-unfavorable`); the history chart, daily pattern, and sample
 strip tint each vane by its own direction; the `Direction` fragment tints
 its text and speaks the verdict; `FavorableShare` states the share outright.
-The ring judges direction, the petals report distribution; the two never
-mix — and calm never wears a verdict, because calm has no direction to
-judge.
+The verdict ring and the distribution petals are independent layers;
+neither changes the other. Calm samples take no favorable or unfavorable
+class, since a calm reading has no direction.
 
 ## Primitives
 
 The smallest reading fragments as standalone inline elements, for composing
 your own layouts out of package-consistent pieces. They share the component
-set's discipline: a value the station cannot report is an em dash **in
-place** (a lacking capability and an unavailable station earn the same dash),
+set's discipline: a value the station cannot report is an em dash in
+place (a lacking capability and an unavailable station both dash the same way),
 calm is said in the calm word (the dash on a direction is reserved for a
 dead vane on a blowing reading), and shown speeds convert to the display unit
 while the wire value rides the `<data>` element's `value` attribute in m/s,

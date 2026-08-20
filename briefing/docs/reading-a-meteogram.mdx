@@ -51,7 +51,7 @@ layer strip:
 | **Layers · %** | Low, middle, and high cloud fraction, on models that publish them. | The rows are terrain-following model layers, not fixed altitudes. |
 | **Smoke · µg/m³** | Near-surface wildfire smoke, with a haze tint that deepens with the model's own published optical depth. Smoke joined from another model is labelled with that model and its run, and draws no tint (its column is quarantined). | Surface air can be clean under an elevated plume (line low, tint deep) and vice versa; see [Smoke and thermals](/logbook/smoke-and-thermals/). |
 | **Sun · W/m²** | Satellite-measured surface sunlight (GOES-18), with a shadow that deepens as the sky under-delivers against a clear-sky expectation. | A measurement, never a forecast; it always renders below the provenance divider. |
-| **AOT · 550 nm** | Satellite-measured aerosol optical thickness (GOES-18): the same sun-dimming number the smoke strip forecasts, tinted with the same haze encoding so the two compare directly. | A measurement, never a forecast; below the divider, daytime only; a missing hour means no accepted retrieval, not clear air. |
+| **AOT · 550 nm** | Satellite-measured aerosol optical thickness (GOES-18): the same sun-dimming number the smoke strip forecasts, tinted with the same haze encoding so the two compare directly. | Measured like the Sun strip, not forecast; below the divider, daytime only; a missing hour means no accepted retrieval, not clear air. |
 
 Strips below the dashed divider (labelled *beside this model — not in
 its physics*) come from another source entirely: a different model's
@@ -195,7 +195,7 @@ panel rather than the line vertices: the renderer smooths the cloud-base and usa
 default, so a sharp one-hour spike like this one draws flattened while the published value stays
 exact. The cloud-limited example shows the opposite
 relationship: its cloud base pins the solid line at 2,079 m, a moisture-limited climb, while the
-parcel-derived boundary layer reaches 4,215 m. Different physics remain separate marks.
+parcel-derived boundary layer reaches 4,215 m.
 
 Thin isotherms show the elevation of fixed temperatures. The emphasized 0 °C contour is the freezing
 level. Body shading and cloud base remain separate: the shading shows every near-saturated layer
@@ -237,9 +237,8 @@ time for the arrival of valley circulation, strengthening synoptic flow, or a re
 ## Two overlays that fail in mountain terrain
 
 The optional `buoyancyShear` strip and `verticalVelocity` field ship off
-by default, and at mountain sites the defaults are the honest choice.
-Both inherit flatland assumptions that terrain breaks in specific,
-describable ways.
+by default, and mountain sites are why. Both inherit flatland assumptions
+that terrain breaks in specific, describable ways.
 
 **The B/S ratio reads broken on genuinely good days.** The
 buoyancy/shear ratio divides thermal velocity w\* by the vector wind
@@ -247,8 +246,8 @@ difference between the surface and the boundary-layer top, and its
 surface end is the model's 10 m wind. On flat ground that wind is the
 bottom of the boundary layer's own profile, so a large difference across
 the layer is a real gradient a thermal must climb through. In a mountain
-valley the 10 m wind is thermally driven valley circulation — anabatic
-flow that rotates with the sun and decouples from the flow aloft — so
+valley the 10 m wind is thermally driven valley circulation (anabatic
+flow that rotates with the sun and decouples from the flow aloft), so
 the subtraction measures the angle between two different wind systems,
 not a gradient any parcel experiences. That angle is large by
 construction on the best days, because the valley wind follows the
@@ -261,7 +260,7 @@ column and never straddles that decoupling, so it survives terrain.
 
 **A sparse omega column misreads ridge lift as a sink signature.**
 Models declare vertical velocity (omega) on a subset of their pressure
-levels — RDPS on 850 and 700 hPa only — and at a high site the model's
+levels (RDPS on 850 and 700 hPa only), and at a high site the model's
 own terrain sits above some of them, so a single level can be all that
 survives. A band interpolated from one level paints a column-wide claim
 from almost no data, and the value at that level inverts in meaning near

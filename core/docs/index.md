@@ -29,7 +29,7 @@ moves here merely to shorten an import:
   ([`units.ts`](https://github.com/azohra/meteo/blob/main/core/src/units.ts))
 - **Angles**: angular math and compass conventions
   ([`angles.ts`](https://github.com/azohra/meteo/blob/main/core/src/angles.ts))
-- **Wind**: the platform's ONE wind sign convention
+- **Wind**: the platform's one wind sign convention
   ([`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts))
 - **Schema primitives**: the shared zod building blocks `ianaTimeZone`,
   `httpUrl`, and the `positionFields` position claims

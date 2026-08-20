@@ -20,7 +20,7 @@ suite holds them byte-identical, so neither is "the reference".
 </script>
 ```
 
-The binding removes the framework, not the packaging: it ships as npm ESM,
+The binding removes the framework but keeps the packaging: it ships as npm ESM,
 so the bare specifier above still needs a bundler, an import map, or a
 module-serving CDN to resolve in a browser. A site with no build step
 serves the resolved module and `styles.css` from its own assets however it
@@ -92,8 +92,8 @@ Invalid JSON warns and reads as absent.
 
 ## The tags
 
-The tags believe the station's declared capabilities: a station without
-`history` gets **no chart at all** (the history and trend tags render
+The tags render only what the station's declared capabilities allow: a
+station without `history` gets no chart at all (the history and trend tags render
 nothing, not an empty frame), a station without `conditions` contributes no
 air-matrix column, and gust/lull cells dash without `gustLull` —
 [What your hardware shows](/docs/station/what-your-hardware-shows/) is the
@@ -114,7 +114,7 @@ Everything else has a twin rendering the identical DOM.
 | `<meteo-wind-rose>` | Direction shares as petals, percentages not speeds | `sector-count` (default 16), `thresholds`, `favorable-directions` ([the judgment ring](#favorable-directions)); `points` property. No `unit`. With neither `points` nor station history, the no-history words |
 | `<meteo-daily-pattern>` | A typical day: every point bucketed by time-of-day and vector-averaged, with the persistent compass-letter and Avg rows (Avg dashes for a slot nothing ever fell into) and a coverage caption | `slot-minutes` (default 180), `utc-offset-minutes` (default 0 — pass the station's fixed local offset), `plot-height`, `thresholds`, `unit`, `favorable-directions` (tints each vane by its verdict); `points` property to aggregate your own slice |
 | `<meteo-favorable-share>` | One stat: the share of non-calm history from a favorable direction | `favorable-directions`; `points` property. Renders nothing at all without arcs; a calm-only history notes calm instead of inventing 0% |
-| `<meteo-climatology-rose>` | The [climatology cube](/docs/station/climatology/) as a stacked rose with honesty captions | `months` / `slots` (JSON integer lists), `favorable-directions`, `station-name`; the `document` property carries the parsed cube. Without one, the no-climatology words |
+| `<meteo-climatology-rose>` | The [climatology cube](/docs/station/climatology/) as a stacked rose with coverage captions | `months` / `slots` (JSON integer lists), `favorable-directions`, `station-name`; the `document` property carries the parsed cube. Without one, the no-climatology words |
 | `<meteo-climatology-daily-pattern>` | The cube's typical day through the daily-pattern drawing | `months`, `plot-height`, `thresholds`, `unit`, `favorable-directions`, `station-name`; `document` property. Filters re-sum the held cube — no refetch |
 | `<meteo-station-table>` | One row per station; unavailable rows keep their geometry, reason in words | `unit`; `stations` property (defaults to the ambient feed's), `stationMeta` property: `(station) => string \| Node \| null`, the sub-label under each name (default: the source attribution) |
 | `<meteo-station-strip>` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness | `unit`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line |
@@ -134,8 +134,8 @@ Station resolution and the wiring error are the shared rules: explicit
 ### Text atoms
 
 The smallest reading fragments as inline tags, for composing your own
-layouts — a sentence, a table cell, a board row — out of package-consistent
-pieces:
+layouts (a table cell, a caption, one line of a board) out of
+package-consistent pieces:
 
 ```html
 <meteo-station-feed src="/api/wind" unit="knots">
@@ -156,8 +156,8 @@ pieces:
 | `<meteo-band-chip>` | The reading graded against `thresholds`, worn as a chip with `data-band`. A `labels` property (values.length + 1 words) supplies the vocabulary; without labels the chip states the converted speed. Calm says the calm word, ungraded |
 
 The atoms hold the display discipline the composed tags do: a value the
-station cannot report is an em dash **in place** (a lacking capability and
-an unavailable station earn the same dash — the layout never reflows around
+station cannot report is an em dash in place (a lacking capability and
+an unavailable station earn the same dash; the layout never reflows around
 missing data); calm is said in the calm word (the dash on a direction is
 reserved for a dead vane on a blowing reading); shown speeds convert to the
 display unit while the wire value rides the `<data>` element's `value`
@@ -165,10 +165,11 @@ attribute in m/s, unrounded.
 
 ### Favorable directions
 
-Favorable arcs are a judgment parameter with no default, resolved by the
-same omitted/value/null trichotomy as `thresholds`: set them once on the
-provider and every direction-bearing tag inherits, set them on one tag to
-override, set the property to `null` to opt one tag out. The
+Favorable arcs follow the `thresholds`
+[trichotomy](/docs/station/client-data/#display-resolution--shared-across-bindings)
+and carry no package default: set them once on the provider and every
+direction-bearing tag inherits, set them on one tag to override, set the
+property to `null` to opt one tag out. The
 `favorable-directions` attribute takes the same JSON on any of those tags
 (`"none"` opts out); the `favorableDirections` property carries the parsed
 array:
@@ -184,12 +185,13 @@ tints its text and speaks the verdict; `<meteo-favorable-share>` states the
 share outright. Favourable arcs paint in `--meteo-wind-favorable`, the
 remainder in `--meteo-wind-unfavorable`
 ([the tokens are yours](/docs/station/theming/#token-reference)). The ring
-judges direction, the petals report distribution; the two never mix — and
-calm never wears a verdict, because calm has no direction to judge.
+and the petals never share a job: the ring grades direction against your
+arcs, the petals report where the wind came from. A calm sample gets
+neither class, because calm has no direction.
 
 ## Composing the station card
 
-With **no authored content** `<meteo-station-card>` renders the full
+With no authored content `<meteo-station-card>` renders the full
 default card; any authored child (an element, or non-whitespace text) means
 composition mode: your pieces move into the card and only they appear. The
 choice is read once, when the element first renders. The `compose`
@@ -212,7 +214,7 @@ Each part accepts its own `thresholds`/`unit` attributes and
 
 Elements are client-rendered light DOM: there is no declarative shadow DOM
 and no hydration. Server HTML may contain the tags; they are inert until
-`defineMeteoElements()` runs, then render themselves on upgrade, REPLACING
+`defineMeteoElements()` runs, then render themselves on upgrade, replacing
 any pre-existing children (usable as a static skeleton), except
 `<meteo-station-card>`, where authored children are the composition signal.
 Pages that need server-rendered, hydrated markup use the

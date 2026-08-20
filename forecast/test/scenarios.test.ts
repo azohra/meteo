@@ -491,12 +491,12 @@ describe("scenario index schema validation", () => {
       "committed scenarios/index.json",
     );
 
-    // The failure mode the generated-index call site guards: the freshly
-    // built {"schemaVersion": 1, "scenarios": entries} document is validated
-    // as "generated scenario index" before its bytes exist. Producing an
-    // invalid index through the real build would require a definition that
-    // already fails scenario.schema.json, so the function is exercised
-    // directly with the same source label the build-time call site passes.
+    // The freshly built {"schemaVersion": 1, "scenarios": entries} document
+    // is validated as "generated scenario index" before its bytes exist.
+    // Producing an invalid index through the real build would require a
+    // definition that already fails scenario.schema.json, so the function
+    // is exercised directly with the same source label the build-time call
+    // site passes.
     let message = "";
     try {
       validateScenarioIndex(
