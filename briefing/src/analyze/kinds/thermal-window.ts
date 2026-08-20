@@ -43,6 +43,19 @@ export interface ThermalWindowFinding {
   };
 }
 
+/**
+ * The local days a window's evidence hours touch — the one electorate
+ * every day-keyed consumer counts: quietDay's exclusion, comparison's
+ * windowAgreement votes, and the compare board's day filter. Unique keys
+ * in evidence (chronological) order.
+ */
+export function windowTouchedDays(
+  window: Pick<ThermalWindowFinding, "evidence">,
+  timeZone: string,
+): LocalDayKey[] {
+  return [...new Set(window.evidence.hours.map((validAt) => localDateKey(validAt, timeZone)))];
+}
+
 function band(value: Scalar | null | undefined): [number, number] | null {
   if (value !== null && value !== undefined && isEnsembleValue(value)) {
     if (value.p10 === null || value.p90 === null) return null;

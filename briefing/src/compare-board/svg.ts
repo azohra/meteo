@@ -1,3 +1,4 @@
+import { el, escapeXml, text } from "../xml.js";
 import type { CompareBoardRow, CompareBoardScene, CompareBoardVote } from "./types.js";
 import { DEFAULT_BOARD_STYLESHEET } from "./theme.js";
 
@@ -6,28 +7,6 @@ export interface RenderCompareBoardSvgOptions {
   stylesheet?: string | null;
   /** Prefix for generated element ids — give each board on a page its own so pattern ids cannot collide. Default "meteo-board". */
   idPrefix?: string;
-}
-
-type AttrValue = string | number;
-
-function el(tag: string, attrs: Record<string, AttrValue>, children?: string): string {
-  const rendered = Object.entries(attrs)
-    .map(([name, value]) => ` ${name}="${escapeXml(String(value))}"`)
-    .join("");
-  if (children === undefined) return `<${tag}${rendered}/>`;
-  return `<${tag}${rendered}>${children}</${tag}>`;
-}
-
-function text(attrs: Record<string, AttrValue>, content: string): string {
-  return el("text", attrs, escapeXml(content));
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 /** Short numeric attribute value (two decimals, no trailing zeros). */

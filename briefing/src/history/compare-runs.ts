@@ -1,5 +1,5 @@
 import type { SiteForecast } from "../contract.js";
-import { localDateKey } from "../derive/day-window.js";
+import { localDateKey, localInstantMs } from "../derive/day-window.js";
 import {
   analyzeForecast,
   round1,
@@ -11,6 +11,7 @@ import {
 } from "../analyze/index.js";
 import {
   compareAnalyses,
+  nearestTo,
   type Abstention,
   type ComparisonMemberLedger,
   type QuietVote,
@@ -245,7 +246,7 @@ export function compareRunAnalyses(
   const leadOf = (day: LocalDayKey, referenceTime: string): number => {
     let anchor = anchors.get(day);
     if (anchor === undefined) {
-      anchor = wallClockInstantMs(day, leadAnchorLocalHour, timeZone);
+      anchor = localInstantMs(day, leadAnchorLocalHour, timeZone);
       anchors.set(day, anchor);
     }
     return round1((anchor - Date.parse(referenceTime)) / 3_600_000);
@@ -475,47 +476,4 @@ export function compareRuns(
     runs.map((profile) => analyzeForecast(profile, { timeZone, launch, thresholds })),
     shared,
   );
-}
-
-function nearestTo(candidates: ReadonlyArray<number>, floor: number): number | null {
-  if (candidates.length === 0) return null;
-  return candidates.reduce((best, value) => {
-    const distance = Math.abs(value - floor);
-    const bestDistance = Math.abs(best - floor);
-    if (distance < bestDistance) return value;
-    if (distance === bestDistance && value < best) return value;
-    return best;
-  });
-}
-
-const wallClockFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function wallClockAsUtcMs(ms: number, timeZone: string): number {
-  let formatter = wallClockFormatters.get(timeZone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-      timeZone,
-    });
-    wallClockFormatters.set(timeZone, formatter);
-  }
-  const parts = Object.fromEntries(
-    formatter.formatToParts(new Date(ms)).map(({ type, value }) => [type, value]),
-  );
-  return Date.parse(
-    `${parts["year"]}-${parts["month"]}-${parts["day"]}T${parts["hour"]}:${parts["minute"]}:${parts["second"]}Z`,
-  );
-}
-
-function wallClockInstantMs(day: LocalDayKey, localHour: number, timeZone: string): number {
-  const target = Date.parse(`${day}T00:00:00Z`) + localHour * 3_600_000;
-  let guess = target;
-  for (let i = 0; i < 2; i += 1) guess += target - wallClockAsUtcMs(guess, timeZone);
-  return guess;
 }

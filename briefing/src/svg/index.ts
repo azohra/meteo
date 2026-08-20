@@ -1,3 +1,4 @@
+import { el, escapeXml, text, type AttrValue } from "../xml.js";
 import type { BarbPlacement, MeteogramScene } from "../scene/types.js";
 import type { KeySpec } from "../scene/key.js";
 import { short } from "../scene/path.js";
@@ -18,30 +19,8 @@ export interface RenderMeteogramSvgOptions {
   idPrefix?: string;
 }
 
-type AttrValue = string | number;
-
-function el(tag: string, attrs: Record<string, AttrValue>, children?: string): string {
-  const rendered = Object.entries(attrs)
-    .map(([name, value]) => ` ${name}="${escapeXml(String(value))}"`)
-    .join("");
-  if (children === undefined) return `<${tag}${rendered}/>`;
-  return `<${tag}${rendered}>${children}</${tag}>`;
-}
-
-function text(attrs: Record<string, AttrValue>, content: string): string {
-  return el("text", attrs, escapeXml(content));
-}
-
 function stripScaleLabel(value: number): string {
   return String(Math.round(value * 10) / 10);
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 function renderBarb(barb: BarbPlacement): string {

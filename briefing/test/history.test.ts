@@ -148,15 +148,61 @@ describe("parseHistoryIndexJson", () => {
     });
   });
 
+  it("parses the writer's stamped shape, member kinds mixed", () => {
+    const written = JSON.stringify({
+      schemaVersion: 1,
+      archive: "2026-08.jsonl.gz",
+      archiveLength: 3000,
+      members: [
+        {
+          byteOffset: 0,
+          byteLength: 1000,
+          lines: 1,
+          referenceTime: "2026-08-10T00:00:00Z",
+          generatedAt: "2026-08-10T09:57:54Z",
+        },
+        { byteOffset: 1000, byteLength: 800, lines: 3 },
+        {
+          byteOffset: 1800,
+          byteLength: 1200,
+          lines: 5,
+          firstObservedAt: "2026-08-10T16:00:21Z",
+          lastObservedAt: "2026-08-10T20:50:21Z",
+        },
+      ],
+    });
+    const index = parseHistoryIndexJson(written)!;
+    expect(index.members).toHaveLength(3);
+    expect(index.members[0].referenceTime).toBe("2026-08-10T00:00:00Z");
+    expect(index.members[1]).toEqual({ byteOffset: 1000, byteLength: 800, lines: 3 });
+    expect(index.members[2].firstObservedAt).toBe("2026-08-10T16:00:21Z");
+  });
+
   it("rejects anything that is not the sidecar shape", () => {
     expect(parseHistoryIndexJson("not json")).toBeNull();
     expect(parseHistoryIndexJson("[]")).toBeNull();
-    expect(parseHistoryIndexJson('{"members":[{"byteOffset":"0"}]}')).toBeNull();
-    expect(
-      parseHistoryIndexJson(
-        '{"members":[{"byteOffset":0,"byteLength":0,"referenceTime":"x","generatedAt":"y"}]}',
-      ),
-    ).toBeNull();
+    expect(parseHistoryIndexJson('{"schemaVersion":1}')).toBeNull();
+  });
+
+  it("refuses a schemaVersion it does not understand", () => {
+    expect(parseHistoryIndexJson('{"schemaVersion":2,"members":[]}')).toBeNull();
+    expect(parseHistoryIndexJson('{"schemaVersion":"1","members":[]}')).toBeNull();
+    expect(parseHistoryIndexJson('{"schemaVersion":1,"members":[]}')).toEqual({ members: [] });
+  });
+
+  it("skips a member it cannot place and keeps the rest", () => {
+    const index = parseHistoryIndexJson(
+      JSON.stringify({
+        members: [
+          { byteOffset: "0" },
+          { byteOffset: 0, byteLength: 0, referenceTime: "x", generatedAt: "y" },
+          { byteOffset: 1131, byteLength: 1104, referenceTime: "2026-08-10T12:00:00Z" },
+        ],
+      }),
+    )!;
+    expect(index.members).toEqual([
+      { byteOffset: 1131, byteLength: 1104, referenceTime: "2026-08-10T12:00:00Z" },
+    ]);
   });
 });
 
@@ -332,6 +378,62 @@ describe("loadHistory", () => {
       }),
     );
     expect(calls[1]).toEqual({ url: RAQDPS_URL, range: "bytes=1131-" });
+    expect(loaded.runs.map((run) => run.run.referenceTime)).toEqual(["2026-08-10T12:00:00Z"]);
+  });
+
+  it("Range-narrows past a proven-old run member but keeps an unstamped member in the fetch", async () => {
+    // The second member is indexed without a run stamp (a multi-line
+    // append); the index cannot prove it too old, so the Range starts there.
+    const mixedIndex = JSON.stringify({
+      schemaVersion: 1,
+      archive: "2026-08.jsonl.gz",
+      archiveLength: 2235,
+      members: [
+        {
+          byteOffset: 0,
+          byteLength: 1131,
+          lines: 1,
+          referenceTime: "2026-08-10T00:00:00Z",
+          generatedAt: "2026-08-10T09:57:54Z",
+        },
+        { byteOffset: 1131, byteLength: 1104, lines: 1 },
+      ],
+    });
+    const { fetch, calls } = stubFetch({
+      [RAQDPS_URL]: { bytes: RAQDPS_ARCHIVE },
+      [RAQDPS_INDEX_URL]: { bytes: new TextEncoder().encode(mixedIndex) },
+    });
+    const loaded = hit(
+      await loadSmokeHistory({
+        fetch,
+        baseUrl: BASE,
+        modelSlug: "raqdps",
+        siteSlug: "erie",
+        months: ["2026-08"],
+        since: "2026-08-10T12:00:00Z",
+      }),
+    );
+    expect(calls[1]).toEqual({ url: RAQDPS_URL, range: "bytes=1131-" });
+    expect(loaded.runs.map((run) => run.run.referenceTime)).toEqual(["2026-08-10T12:00:00Z"]);
+  });
+
+  it("degrades an index with an unknown schemaVersion to the full fetch", async () => {
+    const futureIndex = JSON.stringify({ schemaVersion: 999, members: [] });
+    const { fetch, calls } = stubFetch({
+      [RAQDPS_URL]: { bytes: RAQDPS_ARCHIVE },
+      [RAQDPS_INDEX_URL]: { bytes: new TextEncoder().encode(futureIndex) },
+    });
+    const loaded = hit(
+      await loadSmokeHistory({
+        fetch,
+        baseUrl: BASE,
+        modelSlug: "raqdps",
+        siteSlug: "erie",
+        months: ["2026-08"],
+        since: "2026-08-10T12:00:00Z",
+      }),
+    );
+    expect(calls[1]).toEqual({ url: RAQDPS_URL });
     expect(loaded.runs.map((run) => run.run.referenceTime)).toEqual(["2026-08-10T12:00:00Z"]);
   });
 

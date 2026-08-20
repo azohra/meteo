@@ -1,5 +1,6 @@
 import {
   ANALYZE_VOCABULARY_VERSION,
+  windowTouchedDays,
   type CapTimingFinding,
   type CitedInstant,
   type ConvectiveDayFinding,
@@ -13,7 +14,7 @@ import {
   type WindSummaryFinding,
 } from "../analyze/index.js";
 import { comparisonMemberKey, type ForecastComparison } from "../compare.js";
-import { localDateKey } from "../derive/day-window.js";
+
 import { compareBoardDayAxis, xForBoardTime } from "./axis.js";
 import type {
   BoardInstant,
@@ -162,17 +163,14 @@ function buildRow(
   };
 
   /* Windows touching the day — a midnight-spanning window draws its
-     in-day part and confesses its home day via viaWindowFrom, the same
-     electorate windowAgreement counts. */
+     in-day part and confesses its home day via viaWindowFrom; structurally
+     the same electorate windowAgreement counts. */
   const windows: CompareBoardWindow[] = [];
   let touchesDay = false;
   for (const finding of analysis.findings) {
     if (finding.kind !== "thermalWindow") continue;
     const window = finding as ThermalWindowFinding;
-    const touched = window.evidence.hours.some(
-      (validAt) => localDateKey(validAt, day.timeZone) === day.dateKey,
-    );
-    if (!touched) continue;
+    if (!windowTouchedDays(window, day.timeZone).includes(day.dateKey)) continue;
     touchesDay = true;
     windows.push({
       ...span(window.start, window.end, window.stepHours),

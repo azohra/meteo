@@ -1,107 +1,26 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { gzipSync, inflateRawSync } from "node:zlib";
-
-export const INDEX_SCHEMA_VERSION = 1;
+import { gzipSync } from "node:zlib";
+import {
+  INDEX_SCHEMA_VERSION,
+  splitHistoryArchive,
+  type HistoryArchiveMember,
+  type MonthIndex,
+  type MonthIndexMember,
+} from "./archive.js";
 
 export const ARCHIVE_SUFFIX = ".jsonl.gz";
 export const INDEX_SUFFIX = ".index.json";
 
-/** One independent gzip member: where it sits and what it says. */
-export interface Member {
-  offset: number;
-  length: number;
-  /** Decompressed JSON lines, newline stripped. */
-  lines: string[];
-}
-
-/** One member's sidecar index entry. */
-export interface MonthIndexMember {
-  byteOffset: number;
-  byteLength: number;
-  lines: number;
-  referenceTime?: string;
-  generatedAt?: string | null;
-  firstObservedAt?: string;
-  lastObservedAt?: string;
-}
-
-/** The sidecar index document for one month archive. */
-export interface MonthIndex {
-  schemaVersion: number;
-  archive: string;
-  archiveLength: number;
-  members: MonthIndexMember[];
-}
-
-const GZIP_ID1 = 0x1f;
-const GZIP_ID2 = 0x8b;
-const GZIP_DEFLATE_METHOD = 8;
-const GZIP_HEADER_LENGTH = 10;
-const GZIP_FHCRC = 0x02;
-const GZIP_FEXTRA = 0x04;
-const GZIP_FNAME = 0x08;
-const GZIP_FCOMMENT = 0x10;
-
 /**
  * Splits archive bytes into independent gzip members with exact byte
- * boundaries. A truncated or corrupt member fails loudly — the archives
- * are the publishing pipeline's own writes, so damage is a bug.
+ * boundaries — the shared reader walk, rethrown loudly: the archives are
+ * the publishing pipeline's own writes, so damage is a bug, not weather.
  */
-export function splitMembers(data: Uint8Array): Member[] {
-  const members: Member[] = [];
-  const decoder = new TextDecoder();
-  let offset = 0;
-  while (offset < data.length) {
-    const start = offset;
-    const truncated = () => new Error(`truncated gzip member at byte ${start}`);
-    if (offset + GZIP_HEADER_LENGTH > data.length) throw truncated();
-    if (
-      data[offset] !== GZIP_ID1 ||
-      data[offset + 1] !== GZIP_ID2 ||
-      data[offset + 2] !== GZIP_DEFLATE_METHOD
-    ) {
-      throw new Error(`not a gzip member at byte ${start}`);
-    }
-    const flags = data[offset + 3];
-    offset += GZIP_HEADER_LENGTH;
-    if (flags & GZIP_FEXTRA) {
-      if (offset + 2 > data.length) throw truncated();
-      offset += 2 + (data[offset] | (data[offset + 1] << 8));
-    }
-    for (const nulTerminated of [flags & GZIP_FNAME, flags & GZIP_FCOMMENT]) {
-      if (!nulTerminated) continue;
-      while (offset < data.length && data[offset] !== 0) offset += 1;
-      offset += 1;
-    }
-    if (flags & GZIP_FHCRC) offset += 2;
-    if (offset >= data.length) throw truncated();
-
-    // The deflate stream self-terminates and the engine reports the input
-    // bytes it consumed — the member boundary. @types/node types the
-    // info:true result as Buffer; at runtime it is { buffer, engine }.
-    let inflated: Uint8Array;
-    let deflateLength: number;
-    try {
-      const result = inflateRawSync(data.subarray(offset), {
-        info: true,
-      }) as unknown as { buffer: Uint8Array; engine: { bytesWritten: number } };
-      inflated = result.buffer;
-      deflateLength = result.engine.bytesWritten;
-    } catch {
-      throw truncated();
-    }
-    offset += deflateLength;
-
-    // RFC 1952 member trailer: 4-byte CRC32, then 4-byte ISIZE.
-    if (offset + 8 > data.length) throw truncated();
-    offset += 8;
-
-    members.push({
-      offset: start,
-      length: offset - start,
-      lines: splitlines(decoder.decode(inflated)),
-    });
+export function splitMembers(data: Uint8Array): HistoryArchiveMember[] {
+  const members = splitHistoryArchive(data);
+  if (members === null) {
+    throw new Error("truncated or corrupt gzip member sequence in month archive");
   }
   return members;
 }
@@ -121,13 +40,10 @@ export function monthIndex(archiveBytes: Uint8Array, archiveName: string): Month
   };
 }
 
-function memberEntry(member: Member): MonthIndexMember {
-  // Key names must match the reader's parseHistoryIndexJson guard exactly;
-  // a mismatch is not an error there, just a permanent silent degradation
-  // to full fetches.
+function memberEntry(member: HistoryArchiveMember): MonthIndexMember {
   const entry: MonthIndexMember = {
-    byteOffset: member.offset,
-    byteLength: member.length,
+    byteOffset: member.byteOffset,
+    byteLength: member.byteLength,
     lines: member.lines.length,
   };
   const first = (member.lines.length > 0 ? JSON.parse(member.lines[0]) : {}) as Record<
@@ -246,14 +162,6 @@ export function seededMonthArchive(
 
 function archiveName(archivePath: string): string {
   return basename(archivePath);
-}
-
-function splitlines(text: string): string[] {
-  const pieces = text.split("\n");
-  if (pieces.length > 0 && pieces[pieces.length - 1] === "") {
-    pieces.pop();
-  }
-  return pieces;
 }
 
 /**

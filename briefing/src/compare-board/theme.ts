@@ -1,28 +1,31 @@
+import { PALETTE } from "../palette.js";
+
 /**
  * Default values for every `--meteo-board-*` token the board stylesheet
- * declares — the one home for these values, following the platform's
- * `meteo-<family>-*` token convention (the Meteogram's `meteo-gram-*` is
- * the sibling). Keys are the token suffixes; restyle by setting the
+ * declares — the one home for which token wears which value, following
+ * the platform's `meteo-<family>-*` token convention (the Meteogram's
+ * `meteo-gram-*` is the sibling); values the charts share come from the
+ * palette module. Keys are the token suffixes; restyle by setting the
  * custom properties, never by editing serialized output.
  */
 export const BOARD_TOKEN_DEFAULTS = {
-  font: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
-  "font-mono": '"IBM Plex Mono", ui-monospace, monospace',
+  font: PALETTE.fontSans,
+  "font-mono": PALETTE.fontMono,
   "text-head": "9px",
   "text-model": "10.5px",
   "text-cell": "10px",
   "text-note": "8.5px",
   "text-hour": "9px",
-  surface: "#fffdf8",
-  lane: "#f2f4f1",
-  rule: "#776956",
-  ink: "#152529",
-  "ink-soft": "#2f454a",
-  "ink-mute": "#40565a",
-  window: "#2179ad",
+  surface: PALETTE.surface,
+  lane: PALETTE.panel,
+  rule: PALETTE.rule,
+  ink: PALETTE.ink,
+  "ink-soft": PALETTE.inkSoft,
+  "ink-mute": PALETTE.inkMute,
+  window: PALETTE.usable,
   limit: "#b3402e",
-  cap: "#8a4a08",
-  rain: "#207a83",
+  cap: PALETTE.cap,
+  rain: PALETTE.rain,
 } as const;
 
 /** `var(--meteo-board-<name>, <default>)` with the fallback read from BOARD_TOKEN_DEFAULTS. */

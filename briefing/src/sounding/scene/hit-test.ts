@@ -1,15 +1,17 @@
 import { componentsToWind } from "../../derive/index.js";
+import {
+  altitudeForY as altitudeForYOnScale,
+  yForAltitude as yForAltitudeOnScale,
+} from "../../scene/altitude-axis.js";
 import { interpolateVertical } from "../../scene/field.js";
 import type { SoundingReading, SoundingScene } from "./types.js";
 
 export function yForAltitude(scene: SoundingScene, altitudeM: number): number {
-  const { plotTop, plotHeight, floorM, topM } = scene.scales;
-  return plotTop + plotHeight * (1 - (altitudeM - floorM) / (topM - floorM));
+  return yForAltitudeOnScale(scene.scales, altitudeM);
 }
 
 export function altitudeForY(scene: SoundingScene, y: number): number {
-  const { plotTop, plotHeight, floorM, topM } = scene.scales;
-  return topM - ((y - plotTop) / plotHeight) * (topM - floorM);
+  return altitudeForYOnScale(scene.scales, y);
 }
 
 /** Plot x for a temperature on the scene's own scale. */

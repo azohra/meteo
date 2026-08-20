@@ -6,6 +6,7 @@ import {
   analyzeForecast,
   round1,
   round2,
+  windowTouchedDays,
   type AnalyzeThresholdOverrides,
   type AnalyzeThresholds,
   type CitedInstant,
@@ -396,10 +397,7 @@ export function compareAnalyses(
     if (benched.has(entry.member)) continue;
     for (const finding of analysesByMember[entry.member].findings) {
       if (finding.kind === "thermalWindow") {
-        const touched = [
-          ...new Set(finding.evidence.hours.map((validAt) => localDateKey(validAt, timeZone))),
-        ];
-        for (const day of touched) {
+        for (const day of windowTouchedDays(finding, timeZone)) {
           dayOf(day).windows.push({
             member: entry.member,
             model: entry.model,
@@ -732,7 +730,8 @@ function spreadOf(values: ReadonlyArray<number>): number | null {
   return round2(Math.max(...values) - Math.min(...values));
 }
 
-function nearestTo(candidates: ReadonlyArray<number>, floor: number): number | null {
+/** The candidate nearest a floor — a run's sensitivity "flip value"; ties keep the smaller candidate, and no candidates is null. */
+export function nearestTo(candidates: ReadonlyArray<number>, floor: number): number | null {
   if (candidates.length === 0) return null;
   return candidates.reduce((best, value) => {
     const distance = Math.abs(value - floor);

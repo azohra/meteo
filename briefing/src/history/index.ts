@@ -1,11 +1,23 @@
-import { inflateRawSync } from "node:zlib";
 import {
   parseSmokeDocumentJson,
   parseSiteForecastJson,
   type SmokeDocument,
   type SiteForecast,
 } from "../contract.js";
-import { documentPaths, TransportHttpError, type DocumentMiss } from "../transport.js";
+import {
+  documentPaths,
+  trimTrailingSlash,
+  TransportHttpError,
+  type DocumentMiss,
+} from "../transport.js";
+import { parseHistoryIndexJson, splitHistoryArchive, type HistoryIndex } from "./archive.js";
+
+export {
+  parseHistoryIndexJson,
+  splitHistoryArchive,
+  type HistoryArchiveMember,
+  type HistoryIndex,
+} from "./archive.js";
 
 /** The run stamp every archived forecast document carries; observation history lines deliberately do not satisfy it. */
 export interface HistoryDocument {
@@ -25,142 +37,6 @@ export type HistoryFetch = (
   url: string,
   init?: { headers: Record<string, string> },
 ) => Promise<HistoryResponse>;
-
-/** One gzip member of a month archive, split and decompressed. */
-export interface HistoryArchiveMember {
-  /** Byte offset of the member's first byte within the archive. */
-  byteOffset: number;
-  /** Compressed length of the member, header and trailer included. */
-  byteLength: number;
-  /** The member's decompressed non-empty lines, one document per line. */
-  lines: string[];
-}
-
-const GZIP_ID1 = 0x1f;
-const GZIP_ID2 = 0x8b;
-const GZIP_DEFLATE_METHOD = 8;
-const GZIP_HEADER_LENGTH = 10;
-const GZIP_FHCRC = 0x02;
-const GZIP_FEXTRA = 0x04;
-const GZIP_FNAME = 0x08;
-const GZIP_FCOMMENT = 0x10;
-
-/**
- * Splits a month archive into its independent gzip members and decompresses
- * each; returns `null` on structurally corrupt bytes, never throws, and
- * accepts any archive slice that starts on a member boundary.
- */
-export function splitHistoryArchive(bytes: Uint8Array): HistoryArchiveMember[] | null {
-  const members: HistoryArchiveMember[] = [];
-  const decoder = new TextDecoder();
-  let offset = 0;
-  while (offset < bytes.length) {
-    const start = offset;
-    if (offset + GZIP_HEADER_LENGTH > bytes.length) return null;
-    if (
-      bytes[offset] !== GZIP_ID1 ||
-      bytes[offset + 1] !== GZIP_ID2 ||
-      bytes[offset + 2] !== GZIP_DEFLATE_METHOD
-    ) {
-      return null;
-    }
-    const flags = bytes[offset + 3];
-    offset += GZIP_HEADER_LENGTH;
-    if (flags & GZIP_FEXTRA) {
-      if (offset + 2 > bytes.length) return null;
-      offset += 2 + (bytes[offset] | (bytes[offset + 1] << 8));
-    }
-    for (const nulTerminated of [flags & GZIP_FNAME, flags & GZIP_FCOMMENT]) {
-      if (!nulTerminated) continue;
-      while (offset < bytes.length && bytes[offset] !== 0) offset++;
-      offset++;
-    }
-    if (flags & GZIP_FHCRC) offset += 2;
-    if (offset >= bytes.length) return null;
-
-    // The deflate stream self-terminates and the engine reports the input
-    // bytes it consumed — the member boundary DecompressionStream never
-    // surfaces. @types/node types the info:true result as Buffer; at runtime
-    // it is { buffer, engine }.
-    let inflated: Uint8Array;
-    let deflateLength: number;
-    try {
-      const result = inflateRawSync(bytes.subarray(offset), {
-        info: true,
-      }) as unknown as { buffer: Uint8Array; engine: { bytesWritten: number } };
-      inflated = result.buffer;
-      deflateLength = result.engine.bytesWritten;
-    } catch {
-      return null;
-    }
-    offset += deflateLength;
-
-    // RFC 1952 member trailer: 4-byte CRC32, then ISIZE = decompressed
-    // length mod 2^32, checked so a misaligned split cannot pass silently.
-    if (offset + 8 > bytes.length) return null;
-    const isize =
-      (bytes[offset + 4] |
-        (bytes[offset + 5] << 8) |
-        (bytes[offset + 6] << 16) |
-        (bytes[offset + 7] << 24)) >>>
-      0;
-    if (isize !== inflated.length >>> 0) return null;
-    offset += 8;
-
-    members.push({
-      byteOffset: start,
-      byteLength: offset - start,
-      lines: decoder
-        .decode(inflated)
-        .split("\n")
-        .filter((line) => line.length > 0),
-    });
-  }
-  return members;
-}
-
-/** One entry of the sidecar byte-offset index published beside an archive as {YYYY-MM}.index.json. */
-export interface HistoryIndexMember {
-  byteOffset: number;
-  byteLength: number;
-  referenceTime: string;
-  generatedAt: string;
-}
-
-/** The sidecar index document: one entry per gzip member, archive order. */
-export interface HistoryIndex {
-  members: HistoryIndexMember[];
-}
-
-/** Guard for the advisory sidecar index — never throws, `null` on anything that is not the index shape. */
-export function parseHistoryIndexJson(text: string): HistoryIndex | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
-    return null;
-  }
-  if (typeof value !== "object" || value === null) return null;
-  const members = (value as { members?: unknown }).members;
-  if (!Array.isArray(members)) return null;
-  for (const member of members) {
-    if (typeof member !== "object" || member === null) return null;
-    const m = member as Record<string, unknown>;
-    if (
-      typeof m.byteOffset !== "number" ||
-      !Number.isInteger(m.byteOffset) ||
-      m.byteOffset < 0 ||
-      typeof m.byteLength !== "number" ||
-      !Number.isInteger(m.byteLength) ||
-      m.byteLength <= 0 ||
-      typeof m.referenceTime !== "string" ||
-      typeof m.generatedAt !== "string"
-    ) {
-      return null;
-    }
-  }
-  return { members: members as HistoryIndexMember[] };
-}
 
 /** A republication, stated: the loader kept the run line with the latest `generatedAt` and these are the stamps it discarded (archive order). */
 export interface HistoryRevision {
@@ -302,7 +178,12 @@ async function fetchArchive(
   if (indexUrl !== undefined && since !== undefined) {
     const index = await fetchIndex(fetch, indexUrl);
     if (index !== null && index.members.length > 0) {
-      const needed = index.members.filter((member) => member.referenceTime >= since);
+      // Only a member the index PROVES too old is skippable; a member with
+      // no run stamp (a multi-line append, an observation batch) could hold
+      // needed lines, so it stays in the fetch and the line guards judge it.
+      const needed = index.members.filter(
+        (member) => member.referenceTime === undefined || member.referenceTime >= since,
+      );
       const uncoveredTailOffset = Math.max(
         ...index.members.map((member) => member.byteOffset + member.byteLength),
       );
@@ -371,10 +252,6 @@ function dedupeKeepLatest<T extends HistoryDocument>(
   return { runs, revisions };
 }
 
-function trimTrailingSlash(url: string): string {
-  return url.endsWith("/") ? url.slice(0, -1) : url;
-}
-
 export {
   compareRunAnalyses,
   compareRuns,
@@ -397,12 +274,13 @@ export {
   type TimingTrajectoryFinding,
 } from "./compare-runs.js";
 
+export { INDEX_SCHEMA_VERSION, type MonthIndex, type MonthIndexMember } from "./archive.js";
+
 export {
   appendHistory,
   appendHistoryLines,
   ARCHIVE_SUFFIX,
   compactJson,
-  INDEX_SCHEMA_VERSION,
   INDEX_SUFFIX,
   indexPath,
   monthIndex,
@@ -411,8 +289,5 @@ export {
   writeJson,
   writeMonthIndex,
   type ArchivableProfile,
-  type Member,
-  type MonthIndex,
-  type MonthIndexMember,
   type PublishedHistoryReader,
 } from "./write.js";

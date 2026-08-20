@@ -1,3 +1,4 @@
+import { el, text, type AttrValue } from "../../xml.js";
 import { short } from "../../scene/path.js";
 import type { SoundingKeySpec } from "../scene/key.js";
 import type { SoundingBarb, SoundingScene } from "../scene/types.js";
@@ -15,28 +16,6 @@ export interface RenderSoundingSvgOptions {
   stylesheet?: string | null;
   /** Prefix for generated element ids — give each sounding on a page its own. Default "meteo-sounding". */
   idPrefix?: string;
-}
-
-type AttrValue = string | number;
-
-function el(tag: string, attrs: Record<string, AttrValue>, children?: string): string {
-  const rendered = Object.entries(attrs)
-    .map(([name, value]) => ` ${name}="${escapeXml(String(value))}"`)
-    .join("");
-  if (children === undefined) return `<${tag}${rendered}/>`;
-  return `<${tag}${rendered}>${children}</${tag}>`;
-}
-
-function text(attrs: Record<string, AttrValue>, content: string): string {
-  return el("text", attrs, escapeXml(content));
-}
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 const DOT_RADIUS = 2.75;

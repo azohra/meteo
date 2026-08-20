@@ -1,4 +1,9 @@
-import { localDateKey, localHourOfDay } from "../derive/index.js";
+import {
+  DEFAULT_DAY_END_HOUR,
+  DEFAULT_DAY_START_HOUR,
+  localDateKey,
+  localHourOfDay,
+} from "../derive/index.js";
 
 export interface DayWindowOptions {
   /** IANA timezone the day is judged in (e.g. "America/Vancouver"). */
@@ -11,8 +16,6 @@ export interface DayWindowOptions {
   minHoursPerDay?: number;
 }
 
-const DEFAULT_DAY_START_HOUR = 7;
-const DEFAULT_DAY_END_HOUR = 21;
 const DEFAULT_MIN_HOURS_PER_DAY = 5;
 
 /**

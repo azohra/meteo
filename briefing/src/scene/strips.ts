@@ -3,6 +3,15 @@ import { bandPath, pointPath, sampledPath, short, type PlotPoint } from "./path.
 import { capeCappedHour, type Band, type ResolvedHour } from "./resolve.js";
 import type { CapeClassThresholds, MetricStrip, OverlayName, StripCell } from "./types.js";
 
+/**
+ * The haze tint's one scale: AOT 3 (heavy smoke) tints a cell fully
+ * opaque; the forecast smoke strip and the measured AOT strip share it,
+ * which is what lets the key explain both with one chip.
+ */
+function hazeTintOpacity(aot: number): number {
+  return Number(Math.min(1, aot / 3).toFixed(2));
+}
+
 export const METRIC_TOP = 20;
 export const METRIC_BAND_HEIGHT = 25;
 export const METRIC_BAND_GAP = 5;
@@ -207,7 +216,7 @@ export function buildStripSpecs(args: {
               x: marginLeft + index * columnWidth,
               width: columnWidth,
               className: "meteo-gram-smoke-cell",
-              opacity: Number(Math.min(1, entry.aot / 3).toFixed(2)),
+              opacity: hazeTintOpacity(entry.aot),
             },
       ),
     });
@@ -275,7 +284,7 @@ export function buildStripSpecs(args: {
               x: marginLeft + index * columnWidth,
               width: columnWidth,
               className: "meteo-gram-smoke-cell",
-              opacity: Number(Math.min(1, entry.aot / 3).toFixed(2)),
+              opacity: hazeTintOpacity(entry.aot),
             },
       ),
     });

@@ -20,6 +20,13 @@ import {
   windToComponents,
   STABILITY_CLASSES,
 } from "../derive/index.js";
+import { localHourOfDay } from "../derive/day-window.js";
+import {
+  altitudeAxisTicks,
+  altitudeDomainTopM,
+  pressureAltitudeTicks,
+  yForAltitude,
+} from "./altitude-axis.js";
 import { smooth121 } from "./smoothing.js";
 import { BARB_GLYPH_HEIGHT, BARB_GLYPH_RADIUS, windBarbParts, windBarbPaths } from "./barbs.js";
 import { resolveSelection } from "./hit-test.js";
@@ -44,14 +51,12 @@ import {
 import {
   DEFAULT_CAPE_CLASSES,
   DEFAULT_OVERLAYS,
-  type AltitudeTick,
   type BarbPlacement,
   type FieldLayer,
   type GustMark,
   type HourSampling,
   type HourTick,
   type OverlayName,
-  type PressureAltitudeTick,
   type MeteogramScene,
   type SceneLabel,
   type SceneMarker,
@@ -77,7 +82,6 @@ const BARB_SCALE_MIN = 0.85;
 const BARB_SCALE_MIN_COLUMN = DEFAULT_COLUMN_WIDTH;
 const BARB_SCALE_MAX_COLUMN = 66;
 const BARB_MIN_GAP_PX = 24;
-export const M_TO_FT = 3.28084;
 
 function shortInstant(instant: string): string {
   const date = instant.slice(0, 10);
@@ -403,9 +407,10 @@ export function buildMeteogramScene(
           ),
         );
 
-  let topM = Math.max(floorM + 800, overlays.launch ? (launchElevationM ?? floorM) : floorM);
-  for (const [hourIndex, hour] of hours.entries()) {
-    for (const candidate of [
+  const topM = altitudeDomainTopM(
+    floorM,
+    overlays.launch ? launchElevationM : null,
+    hours.flatMap((hour, hourIndex) => [
       overlays.cloudBase ? hour.derived.cloudBaseM : null,
       overlays.usableLiftTop ? usableLiftRaw[hourIndex] : null,
       overlays.boundaryLayerTop ? hour.derived.boundaryLayerTopM : null,
@@ -418,14 +423,9 @@ export function buildMeteogramScene(
       overlays.pblHeight && hour.bands.pblHeightM != null
         ? floorM + hour.bands.pblHeightM.p75
         : null,
-    ]) {
-      if (candidate != null && candidate > topM) topM = candidate;
-    }
-    for (const level of hour.levels) {
-      if (level.heightM > topM) topM = level.heightM;
-    }
-  }
-  topM *= 1.04;
+      ...hour.levels.map((level) => level.heightM),
+    ]),
+  );
 
   const plotWidth = columnWidth * Math.max(hours.length, 1);
   const stripGeometry: StripGeometry = { marginLeft: MARGIN_LEFT, columnWidth, plotWidth };
@@ -565,8 +565,8 @@ export function buildMeteogramScene(
   const height = plotBottom + chromeBelowPlot;
   const hourLabelY = plotBottom + (windWindowRow ? WIND_WINDOW_ROW_PX : 0) + HOUR_LABEL_DY;
 
-  const y = (altitudeM: number) =>
-    plotTop + plotHeight * (1 - (altitudeM - floorM) / (topM - floorM));
+  const altitudeScale = { plotTop, plotHeight, floorM, topM };
+  const y = (altitudeM: number) => yForAltitude(altitudeScale, altitudeM);
   const x = (index: number) => MARGIN_LEFT + index * columnWidth;
   const xCenter = (index: number) => x(index) + columnWidth / 2;
 
@@ -950,38 +950,8 @@ export function buildMeteogramScene(
     });
   }
 
-  const altitudeTicks: AltitudeTick[] = [];
-  for (let tick = 0; tick <= 5; tick += 1) {
-    const altitudeM = floorM + ((topM - floorM) * tick) / 5;
-    altitudeTicks.push({
-      altitudeM,
-      y: y(altitudeM),
-      labelMetres: `${Math.round(altitudeM)}m`,
-      labelFeet: `${Math.round(altitudeM * M_TO_FT)}ft`,
-    });
-  }
-
-  const byPressure = new Map<number, number[]>();
-  for (const hour of hours) {
-    for (const level of hour.levels) {
-      const heights = byPressure.get(level.pressureHpa) ?? [];
-      heights.push(level.heightM);
-      byPressure.set(level.pressureHpa, heights);
-    }
-  }
-  const pressureAltitude: PressureAltitudeTick[] = [
-    { altitudeM: Math.round(floorM), pressureHpa: null as number | null },
-    ...[...byPressure.entries()].map(([pressureHpa, heights]) => ({
-      altitudeM: Math.round(median(heights)),
-      pressureHpa: pressureHpa as number | null,
-    })),
-  ]
-    .sort((left, right) => left.altitudeM - right.altitudeM)
-    .filter(
-      (entry, index, entries) =>
-        index === 0 || entry.altitudeM - entries[index - 1].altitudeM >= 80,
-    )
-    .map((entry) => ({ ...entry, y: y(entry.altitudeM) }));
+  const altitudeTicks = altitudeAxisTicks(floorM, topM, y);
+  const pressureAltitude = pressureAltitudeTicks(hours, floorM, y);
 
   const hourConvention = options.hourLabel ?? "24h";
   const hourText =
@@ -1198,12 +1168,6 @@ function sceneAriaLabel(
   return `${identity}, ${span} (${timeZone}): ${chartDescription}.`;
 }
 
-function median(values: number[]): number {
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
-}
-
 function twelveHourLabel(h23Label: string): string {
   const hour = Number(h23Label);
   if (hour === 0) return "12a";
@@ -1211,15 +1175,6 @@ function twelveHourLabel(h23Label: string): string {
   return hour < 12 ? `${hour}a` : `${hour - 12}p`;
 }
 
-const hourLabelFormatters = new Map<string, Intl.DateTimeFormat>();
-
 function hourLabel(validAt: string, timeZone: string): string {
-  let formatter = hourLabelFormatters.get(timeZone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false });
-    hourLabelFormatters.set(timeZone, formatter);
-  }
-  // ICU versions disagree on zero-padding "numeric" h23 hours ("07" vs "7");
-  // normalize through Number so labels are deterministic everywhere.
-  return String(Number(formatter.format(new Date(validAt))));
+  return String(localHourOfDay(validAt, timeZone));
 }

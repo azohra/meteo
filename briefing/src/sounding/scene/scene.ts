@@ -5,8 +5,12 @@ import { windBarbParts, windBarbPaths } from "../../scene/barbs.js";
 import { interpolateVertical, type FieldNode } from "../../scene/field.js";
 import { short } from "../../scene/path.js";
 import { bandOf, resolveHour, type Band, type ResolvedHour } from "../../scene/resolve.js";
-import type { PressureAltitudeTick } from "../../scene/types.js";
-import { M_TO_FT } from "../../scene/scene.js";
+import {
+  altitudeAxisTicks,
+  altitudeDomainTopM,
+  pressureAltitudeTicks,
+  yForAltitude,
+} from "../../scene/altitude-axis.js";
 import { solveLabelRows, solveVerticalLabels } from "./labels.js";
 import {
   DEFAULT_SOUNDING_OVERLAYS,
@@ -51,12 +55,6 @@ interface TraceBands {
 
 function shortInstant(instant: string): string {
   return `${instant.slice(0, 10)} ${instant.slice(11, 16)} UTC`;
-}
-
-function median(values: number[]): number {
-  const sorted = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
 /** Straight polyline through the samples — interpolation drawn as interpolation; never a curve. */
@@ -138,29 +136,25 @@ export function buildSoundingScene(
     .map(resolveHour)
     .filter((entry): entry is ResolvedHour => entry !== null);
 
-  // Altitude domain: the Meteogram's rules over the whole profile plus the
+  // Altitude domain: the shared rule over the whole profile plus the
   // launch, so the axis matches a Meteogram of the same document and stays
-  // put while a consumer scrubs hours.
-  let topM = options.topM ?? Number.NaN;
-  if (options.topM === undefined) {
-    topM = Math.max(floorM + 800, overlays.launch ? (launchElevationM ?? floorM) : floorM);
-    for (const entry of allHours) {
-      for (const candidate of [
+  // put while a consumer scrubs hours. No pblHeight candidates here: the
+  // sounding draws no pblHeight overlay.
+  const topM =
+    options.topM ??
+    altitudeDomainTopM(
+      floorM,
+      overlays.launch ? launchElevationM : null,
+      allHours.flatMap((entry) => [
         overlays.cloudBase ? entry.derived.cloudBaseM : null,
         overlays.usableLiftTop ? entry.derived.usableLiftTopM : null,
         overlays.boundaryLayerTop ? entry.derived.boundaryLayerTopM : null,
         overlays.cloudBase ? entry.bands.cloudBaseM?.p75 : null,
         overlays.usableLiftTop ? entry.bands.usableLiftTopM?.p75 : null,
         overlays.boundaryLayerTop ? entry.bands.boundaryLayerTopM?.p75 : null,
-      ]) {
-        if (candidate != null && candidate > topM) topM = candidate;
-      }
-      for (const level of entry.levels) {
-        if (level.heightM > topM) topM = level.heightM;
-      }
-    }
-    topM *= 1.04;
-  }
+        ...entry.levels.map((level) => level.heightM),
+      ]),
+    );
 
   const levels = hour.levels.filter((level) => level.heightM > floorM && level.heightM <= topM);
   const levelCount = levels.length;
@@ -212,8 +206,8 @@ export function buildSoundingScene(
   const plotHeight = Math.max(40, height - MARGIN_TOP - AXIS_ROW - NOTE_ROW);
   const barbX = plotLeft + plotWidth + PRESSURE_GUTTER + BARB_GUTTER / 2;
 
-  const y = (altitudeM: number) =>
-    plotTop + plotHeight * (1 - (altitudeM - floorM) / (topM - floorM));
+  const altitudeScale = { plotTop, plotHeight, floorM, topM };
+  const y = (altitudeM: number) => yForAltitude(altitudeScale, altitudeM);
   const x = (temperatureC: number) =>
     plotLeft + plotWidth * ((temperatureC - temperatureMinC) / (temperatureMaxC - temperatureMinC));
 
@@ -540,42 +534,11 @@ export function buildSoundingScene(
     }
   }
 
-  const altitudeTicks: SoundingAltitudeTick[] = [];
-  for (let tick = 0; tick <= 5; tick += 1) {
-    const altitudeM = floorM + ((topM - floorM) * tick) / 5;
-    altitudeTicks.push({
-      altitudeM,
-      y: y(altitudeM),
-      labelMetres: `${Math.round(altitudeM)}m`,
-      labelFeet: `${Math.round(altitudeM * M_TO_FT)}ft`,
-    });
-  }
+  const altitudeTicks: SoundingAltitudeTick[] = altitudeAxisTicks(floorM, topM, y);
 
-  // Pressure ticks: median published height per isobaric level across the
-  // whole profile — the Meteogram's convention — so they stay put across
-  // hour selections even where this hour's own level heights differ.
-  const byPressure = new Map<number, number[]>();
-  for (const entry of allHours) {
-    for (const level of entry.levels) {
-      const heights = byPressure.get(level.pressureHpa) ?? [];
-      heights.push(level.heightM);
-      byPressure.set(level.pressureHpa, heights);
-    }
-  }
-  const pressureAltitude: PressureAltitudeTick[] = [
-    { altitudeM: Math.round(floorM), pressureHpa: null as number | null },
-    ...[...byPressure.entries()].map(([pressureHpa, heights]) => ({
-      altitudeM: Math.round(median(heights)),
-      pressureHpa: pressureHpa as number | null,
-    })),
-  ]
-    .filter((entry) => entry.altitudeM >= floorM && entry.altitudeM <= topM)
-    .sort((left, right) => left.altitudeM - right.altitudeM)
-    .filter(
-      (entry, index, entries) =>
-        index === 0 || entry.altitudeM - entries[index - 1].altitudeM >= 80,
-    )
-    .map((entry) => ({ ...entry, y: y(entry.altitudeM) }));
+  // Shared pressure ticks, clamped: options.topM may cut the domain below
+  // published level heights, so out-of-domain ticks must not draw.
+  const pressureAltitude = pressureAltitudeTicks(allHours, floorM, y, topM);
 
   // Temperature furniture stays recessive: gridlines every 10° only.
   const temperatureTicks: SoundingTemperatureTick[] = [];

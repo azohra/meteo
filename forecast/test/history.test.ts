@@ -316,7 +316,7 @@ describe("month index", () => {
   it("index computation rejects a truncated member", () => {
     const whole = archivedLine(profile("erie", "2026-08-07T06:00:00Z"));
     expect(() => monthIndex(whole.subarray(0, whole.length - 4), "2026-08.jsonl.gz")).toThrowError(
-      /truncated gzip member at byte 0/,
+      /truncated or corrupt gzip member/,
     );
   });
 });

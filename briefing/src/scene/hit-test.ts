@@ -1,4 +1,8 @@
 import { componentsToWind, stabilityClass } from "../derive/index.js";
+import {
+  altitudeForY as altitudeForYOnScale,
+  yForAltitude as yForAltitudeOnScale,
+} from "./altitude-axis.js";
 import { interpolateVertical } from "./field.js";
 import type { BarbPlacement, CursorReading, MeteogramScene, SceneSelection } from "./types.js";
 
@@ -30,13 +34,11 @@ export function xForHour(scene: MeteogramScene, index: number): number {
 }
 
 export function yForAltitude(scene: MeteogramScene, altitudeM: number): number {
-  const { plotTop, plotHeight, floorM, topM } = scene.scales;
-  return plotTop + plotHeight * (1 - (altitudeM - floorM) / (topM - floorM));
+  return yForAltitudeOnScale(scene.scales, altitudeM);
 }
 
 export function altitudeForY(scene: MeteogramScene, y: number): number {
-  const { plotTop, plotHeight, floorM, topM } = scene.scales;
-  return topM - ((y - plotTop) / plotHeight) * (topM - floorM);
+  return altitudeForYOnScale(scene.scales, y);
 }
 
 /** Nearest hour column for a plot x; null outside the plot, unless `{ clamp: true }` resolves an outside x to the nearest edge column. */

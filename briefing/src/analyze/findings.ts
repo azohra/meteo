@@ -141,17 +141,11 @@ export function resolveAnalyzeThresholds(overrides?: AnalyzeThresholdOverrides):
 
 function mergeThresholds(overrides?: AnalyzeThresholdOverrides): AnalyzeThresholds {
   if (!overrides) return DEFAULT_ANALYZE_THRESHOLDS;
-  return {
-    thermalWindow: { ...DEFAULT_ANALYZE_THRESHOLDS.thermalWindow, ...overrides.thermalWindow },
-    liftCeiling: { ...DEFAULT_ANALYZE_THRESHOLDS.liftCeiling, ...overrides.liftCeiling },
-    capTiming: { ...DEFAULT_ANALYZE_THRESHOLDS.capTiming, ...overrides.capTiming },
-    convectiveDay: { ...DEFAULT_ANALYZE_THRESHOLDS.convectiveDay, ...overrides.convectiveDay },
-    terrainMismatch: {
-      ...DEFAULT_ANALYZE_THRESHOLDS.terrainMismatch,
-      ...overrides.terrainMismatch,
-    },
-    windSummary: { ...DEFAULT_ANALYZE_THRESHOLDS.windSummary, ...overrides.windSummary },
-    windDirection: { ...DEFAULT_ANALYZE_THRESHOLDS.windDirection, ...overrides.windDirection },
-    bandShear: { ...DEFAULT_ANALYZE_THRESHOLDS.bandShear, ...overrides.bandShear },
-  };
+  // Keyed off the defaults so a new finding kind adds exactly one entry
+  // there — this merge and the overrides type follow along.
+  const merged = {} as Record<keyof AnalyzeThresholds, unknown>;
+  for (const kind of Object.keys(DEFAULT_ANALYZE_THRESHOLDS) as Array<keyof AnalyzeThresholds>) {
+    merged[kind] = { ...DEFAULT_ANALYZE_THRESHOLDS[kind], ...overrides[kind] };
+  }
+  return merged as AnalyzeThresholds;
 }

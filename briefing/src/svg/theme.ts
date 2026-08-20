@@ -1,3 +1,5 @@
+import { PALETTE } from "../palette.js";
+
 /**
  * The default stability ramp — the one home for these eight hexes; keys
  * are the `meteo-gram-stab-*` class/token suffixes in threshold order
@@ -24,15 +26,16 @@ const STABILITY_RULES = Object.entries(STABILITY_TOKEN_DEFAULTS)
 
 /**
  * Default values for every non-stability `--meteo-gram-*` token
- * DEFAULT_STYLESHEET declares — the one home for these values. Keys are
+ * DEFAULT_STYLESHEET declares — the one home for which token wears which
+ * value; values the charts share come from the palette module. Keys are
  * the token suffixes; `text-*` entries are the type scale; the halo
  * tokens are per-element, with `halo-series` defaulting transparent
  * (series lines are bare ink) and `halo-barb` the dark rim that keeps
  * the white barbs legible on any field or bare paper.
  */
 export const TOKEN_DEFAULTS = {
-  font: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
-  "font-mono": '"IBM Plex Mono", ui-monospace, monospace',
+  font: PALETTE.fontSans,
+  "font-mono": PALETTE.fontMono,
   "text-strip-name": "10.5px",
   "text-strip-unit": "9.5px",
   "text-strip-scale": "8px",
@@ -48,29 +51,29 @@ export const TOKEN_DEFAULTS = {
   "text-key-group": "8px",
   "key-group-ink": "#ffffff",
   "key-group-halo": "#00000066",
-  surface: "#fffdf8",
-  "strip-bg": "#f2f4f1",
-  rule: "#776956",
-  ink: "#152529",
-  "ink-soft": "#2f454a",
-  "ink-mute": "#40565a",
-  halo: "#fffdf8",
+  surface: PALETTE.surface,
+  "strip-bg": PALETTE.panel,
+  rule: PALETTE.rule,
+  ink: PALETTE.ink,
+  "ink-soft": PALETTE.inkSoft,
+  "ink-mute": PALETTE.inkMute,
+  halo: PALETTE.surface,
   "halo-series": "transparent",
-  "halo-barb": "#355963",
-  accent: "#913b0c",
-  selection: "#913b0c",
-  temp: "#913b0c",
+  "halo-barb": PALETTE.cloudBase,
+  accent: PALETTE.temp,
+  selection: PALETTE.temp,
+  temp: PALETTE.temp,
   pressure: "#963f36",
-  rain: "#207a83",
+  rain: PALETTE.rain,
   cloud: "#5b6969",
   lift: "#9a7500",
   bs: "#6d597a",
-  cape: "#8a4a08",
+  cape: PALETTE.cap,
   "cape-calm": "#dde3d5",
   "cape-watch": "#e7c46c",
   "cape-risk": "#d98243",
   "cape-severe": "#c04f3a",
-  gust: "#355963",
+  gust: PALETTE.cloudBase,
   pbl: "#56609b",
   smoke: "#8c5a3c",
   sun: "#b07a1a",
@@ -91,10 +94,10 @@ export const TOKEN_DEFAULTS = {
   "omega-sink-strong": "#bd7d5c",
   "wind-window-in": "#2f7d52",
   "wind-window-out": "#a04b3c",
-  boundary: "#a46b10",
-  "cloud-base": "#355963",
+  boundary: PALETTE.boundary,
+  "cloud-base": PALETTE.cloudBase,
   "cloud-marker": "#f8f3d8",
-  usable: "#2179ad",
+  usable: PALETTE.usable,
   freezing: "#2b748f",
   dewpoint: "#3a7d4f",
   wind: "#ffffff",

@@ -10,7 +10,7 @@ export {
   splitMembers,
   writeMonthIndex,
   type ArchivableProfile,
-  type Member,
+  type HistoryArchiveMember,
   type MonthIndex,
   type MonthIndexMember,
   type PublishedHistoryReader,

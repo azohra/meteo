@@ -42,7 +42,14 @@ export {
   type WindSample,
 } from "./shear.js";
 export { usableLiftTopM, type UsableLiftInputs } from "./usable-lift.js";
-export { groupByLocalDay, localDateKey, localHourOfDay } from "./day-window.js";
+export {
+  DEFAULT_DAY_END_HOUR,
+  DEFAULT_DAY_START_HOUR,
+  groupByLocalDay,
+  localDateKey,
+  localHourOfDay,
+  localInstantMs,
+} from "./day-window.js";
 export { runFreshness, type RunFreshness, type RunFreshnessThresholds } from "./freshness.js";
 export {
   projectForecast,

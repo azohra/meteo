@@ -1,35 +1,38 @@
+import { PALETTE } from "../../palette.js";
+
 /**
  * Default values for every `--meteo-sounding-*` token the sounding
- * stylesheet declares — the one home for these values, following the
- * Meteogram theme module's generated-stylesheet pattern. Keys are the
- * token suffixes (`temp` maps to `--meteo-sounding-temp`). Shared meanings
- * keep the Meteogram's values — the same cloud base is the same colour on
- * both charts — but the sounding is themed only through its own family.
+ * stylesheet declares — the one home for which token wears which value,
+ * following the Meteogram theme module's generated-stylesheet pattern.
+ * Keys are the token suffixes (`temp` maps to `--meteo-sounding-temp`).
+ * Shared meanings read the shared palette — the same cloud base is the
+ * same colour on both charts — but the sounding is themed only through
+ * its own family.
  */
 export const SOUNDING_TOKEN_DEFAULTS = {
-  font: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
-  "font-mono": '"IBM Plex Mono", ui-monospace, monospace',
+  font: PALETTE.fontSans,
+  "font-mono": PALETTE.fontMono,
   "text-tick": "10.5px",
   "text-trace-label": "10.5px",
   "text-mark-label": "10px",
   "text-note": "9.5px",
   "text-unit": "9.5px",
   "text-key-label": "10.5px",
-  surface: "#fffdf8",
-  rule: "#776956",
-  ink: "#152529",
-  "ink-soft": "#2f454a",
-  "ink-mute": "#40565a",
-  halo: "#fffdf8",
-  temp: "#913b0c",
+  surface: PALETTE.surface,
+  rule: PALETTE.rule,
+  ink: PALETTE.ink,
+  "ink-soft": PALETTE.inkSoft,
+  "ink-mute": PALETTE.inkMute,
+  halo: PALETTE.surface,
+  temp: PALETTE.temp,
   dewpoint: "#2e8b50",
   parcel: "#7b5ea7",
   lcl: "#7b5ea7",
-  boundary: "#a46b10",
-  "cloud-base": "#355963",
-  usable: "#2179ad",
-  launch: "#152529",
-  wind: "#355963",
+  boundary: PALETTE.boundary,
+  "cloud-base": PALETTE.cloudBase,
+  usable: PALETTE.usable,
+  launch: PALETTE.ink,
+  wind: PALETTE.cloudBase,
 } as const;
 
 /** `var(--meteo-sounding-<name>, <default>)` with the fallback read from SOUNDING_TOKEN_DEFAULTS. */

@@ -1,7 +1,7 @@
 import type { ForecastHour } from "../../contract.js";
 import { localDateKey, localHourOfDay } from "../../derive/day-window.js";
 import { p50 } from "../../derive/ensemble.js";
-import type { ThermalWindowFinding } from "./thermal-window.js";
+import { windowTouchedDays, type ThermalWindowFinding } from "./thermal-window.js";
 import {
   leadHoursTo,
   round1,
@@ -101,9 +101,7 @@ export function findQuietDays(
   const { wstarMinMps, depthMinM } = thresholds.thermalWindow;
   const precipMinMmHr = thresholds.capTiming.precipMinMmHr;
   const windowDays = new Set(
-    windows.flatMap((window) =>
-      window.evidence.hours.map((validAt) => localDateKey(validAt, context.timeZone)),
-    ),
+    windows.flatMap((window) => windowTouchedDays(window, context.timeZone)),
   );
   const byDay = new Map<string, ForecastHour[]>();
   for (const hour of profile.hours) {

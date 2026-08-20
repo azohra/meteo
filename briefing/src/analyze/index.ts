@@ -30,6 +30,7 @@ export {
   type WindSummaryFinding,
 } from "./vocabulary.js";
 export { analyzeForecast, resolveAnalyzeThresholds } from "./findings.js";
+export { windowTouchedDays } from "./kinds/thermal-window.js";
 export {
   ANALYSIS_FRAME_VERSION,
   round1,
