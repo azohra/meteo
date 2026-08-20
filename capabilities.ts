@@ -1,3 +1,11 @@
+/* Declares the display capabilities — briefing and station — whose export
+   surfaces, layer boundaries, and view stacks the boundaries suite
+   enforces in full. The scope is deliberate: core is the foundation every
+   package may import; the forecast engine is modelled as briefing's
+   external server (public-subpath imports only); and the decoder pair is
+   one import edge (grib -> j2k) held to manifest parity. Extend this
+   declaration only when a package grows a layered view surface of its
+   own. */
 export interface PackageHome {
   package: string;
   directory: string;
