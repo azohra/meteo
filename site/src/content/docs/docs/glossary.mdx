@@ -73,16 +73,13 @@ station, grib, and j2k capabilities, as in `meteo <capability> <command>`.
 Qualified — a **declared capability** — it is a flag in a document's
 `capabilities` block: what a [model](/docs/forecast/model-capabilities/) or
 a [station](/docs/station/what-your-hardware-shows/) states it can publish.
-Absence of a declared capability means *not published*, never zero.
 
 ### Operator
 
-The person or club running an engine deployment — one role, two hats: they
-run the pipeline (schedule, storage, credentials) and they own the
-publication their audience sees (hosting, access, presentation, safety
-language). The platform ships the [engine, not an
-instance](/docs/forecast/); everything on the operator's side of that line
-is theirs.
+The person or club running an engine deployment: they run the pipeline and
+own the publication their audience sees.
+[The responsibility boundary](/docs/#the-responsibility-boundary) lists
+what is theirs.
 
 ### Engine and instance
 
@@ -117,7 +114,7 @@ tick counts 5, a full tick 10, a pennant 50, in the chart's printed unit.
 
 ### Boundary layer
 
-The layer surface heating mixes — where thermals live. Its top is the
+The layer surface heating mixes. Its top is the
 chart's dashed line, shortened to *BL top* in prose; *PBL* is the model's
 own declared depth (`pblHeightM`, metres AGL) — the same question with
 different physics, drawn beside it.
@@ -157,11 +154,9 @@ cites, and the thresholds it was computed with.
 
 ### Stored and pure derivations
 
-**Stored derivations** need raw model inputs, so the engine computes them
-and bakes them into the document (boundary-layer top, thermal velocity,
-cloud base, usable lift). **Pure derivations** are functions of the
-published document alone, so the package computes them on demand.
-[Who owns each value](/docs/#who-owns-each-value) is the split's home.
+**Stored derivations** need raw model inputs, so the engine bakes them into
+the document; **pure derivations** are functions of the published document
+alone. [Who owns each value](/docs/#who-owns-each-value) is the split's home.
 
 ### History archive
 

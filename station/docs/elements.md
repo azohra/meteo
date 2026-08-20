@@ -10,7 +10,7 @@ strings, formatting, display-resolution, and instrument geometry on
 `@azohra/meteo.station`; the polling stores on
 [`@azohra/meteo.station/client`](/docs/station/client-data/)) and emit the
 same DOM under the same [stylesheet](/docs/station/theming/); a parity
-suite holds them byte-identical, so neither is "the reference".
+suite holds them byte-identical.
 
 ## Registration
 
@@ -83,59 +83,60 @@ a `station` property carrying the parsed object), `served-at` /
 inside `<meteo-station-feed>`, which supplies them ambiently. The rows
 below list only what each tag adds.
 
-**Thresholds** speak one grammar everywhere, preserving the shared
-[trichotomy](/docs/station/client-data/#display-resolution--shared-across-bindings):
-attribute absent (or property unset) inherits the ambient thresholds;
-`thresholds='{"unit":"kmh","values":[12,20,28]}'` grades against exactly
-these; `thresholds="none"` (or property `null`) explicitly opts out.
+**Thresholds** follow the shared
+[trichotomy](/docs/station/client-data/#display-resolution--shared-across-bindings)
+in one grammar: attribute absent (or property unset) is omitted,
+`thresholds='{"unit":"kmh","values":[12,20,28]}'` is a value, and
+`thresholds="none"` (or property `null`) is the explicit opt-out.
 Invalid JSON warns and reads as absent.
 
 ## The tags
 
-The tags render only what the station's declared capabilities allow: a
-station without `history` gets no chart at all (the history and trend tags render
-nothing, not an empty frame), a station without `conditions` contributes no
-air-matrix column, and gust/lull cells dash without `gustLull` —
-[What your hardware shows](/docs/station/what-your-hardware-shows/) is the
-full capability-to-surface map. Two react components have no tag: `Readout`
+The tags render only what the station's declared capabilities allow;
+[What your hardware shows](/docs/station/what-your-hardware-shows/) has
+the full map. Two react components have no tag: `Readout`
 (the charts' internal inspection line — the chart tags compose their own)
 and `WindSampleStrip` (it renders live samples, which reach this binding
 only through
 [`createStationLiveStore`](/docs/station/client-data/#the-live-store)).
-Everything else has a twin rendering the identical DOM.
+Everything else has a twin rendering the identical DOM, and what a tag
+renders — capability gating, calm, and absence behaviour included — is its
+twin's row under the react page's
+[Components](/docs/station/react/#components) or
+[Primitives](/docs/station/react/#primitives). The rows below carry only
+the binding surface.
 
-| Tag | Renders | Attributes, properties, behaviour |
+| Tag | React twin | Attributes and properties |
 |---|---|---|
-| `<meteo-station-card>` | The full station card: header, instrument, chart, summary | `compose`, `thresholds`, `unit`. A compound — authored children pick its pieces ([composition below](#composing-the-station-card)). Without `history` the chart slot is simply absent |
-| `<meteo-station-card-header>` `-instrument` `-chart` `-summary` | The card's composable pieces | Instrument and chart take their own `thresholds`/`unit` (chart also `plot-height`) over the card's context; all four take `strings`/`formatTime` properties. A part outside `<meteo-station-card>` throws |
-| `<meteo-current-conditions>` | The instrument dial with lull and gust flanks | `thresholds`, `unit`. Calm hides the needle; an unavailable station greys the dial, reason in words |
-| `<meteo-wind-history-chart>` | Lull-gust band + graded mean over served history, with a persistent compass-letter row and Avg row above/below every vane | `plot-height`; `window-hours` slices the trailing N hours of the SAME points, no new fetch; `compare-offset-days` (`1\|2\|3`) overlays a prior day's trace shifted onto today's own x-axis, absent when history doesn't reach back that far; `night-shading` draws gray sunset-to-sunrise columns from the station's own coordinates (none, no shading); `thresholds` (guide labels print your declared numbers), `unit`. The full inspector: pointer preview, click pins by timestamp, touch never previews. Renders nothing without the `history` capability; with it but under two points, the no-history words |
-| `<meteo-trend-chart>` | Temperature (°C) or sea-level pressure (hPa) over history | `series="temperature\|pressure"` required. Null gaps break the trace, never interpolated; a series under two measured points says "not measured". No `unit`: the units are the series' own. Nothing without `history` |
-| `<meteo-wind-rose>` | Direction shares as petals, percentages not speeds | `sector-count` (default 16), `thresholds`, `favorable-directions` ([the judgment ring](#favorable-directions)); `points` property. No `unit`. With neither `points` nor station history, the no-history words |
-| `<meteo-daily-pattern>` | A typical day: every point bucketed by time-of-day and vector-averaged, with the persistent compass-letter and Avg rows (Avg dashes for a slot nothing ever fell into) and a coverage caption | `slot-minutes` (default 180), `utc-offset-minutes` (default 0 — pass the station's fixed local offset), `plot-height`, `thresholds`, `unit`, `favorable-directions` (tints each vane by its verdict); `points` property to aggregate your own slice |
-| `<meteo-favorable-share>` | One stat: the share of non-calm history from a favorable direction | `favorable-directions`; `points` property. Renders nothing at all without arcs; a calm-only history notes calm instead of inventing 0% |
-| `<meteo-climatology-rose>` | The [climatology cube](/docs/station/climatology/) as a stacked rose with coverage captions | `months` / `slots` (JSON integer lists), `favorable-directions`, `station-name`; the `document` property carries the parsed cube. Without one, the no-climatology words |
-| `<meteo-climatology-daily-pattern>` | The cube's typical day through the daily-pattern drawing | `months`, `plot-height`, `thresholds`, `unit`, `favorable-directions`, `station-name`; `document` property. Filters re-sum the held cube — no refetch |
-| `<meteo-station-table>` | One row per station; unavailable rows keep their geometry, reason in words | `unit`; `stations` property (defaults to the ambient feed's), `stationMeta` property: `(station) => string \| Node \| null`, the sub-label under each name (default: the source attribution) |
-| `<meteo-station-strip>` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness | `unit`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line |
-| `<meteo-air-matrix>` | Humidity through lightning behind a live disclosure | `stations` property (defaults to the ambient feed's). Columns only for `conditions`-capable stations; the open/closed disclosure state is the element's own |
-| `<meteo-freshness-badge>` | A dot and a word | `status="live\|aging\|stale"`; any other value renders nothing |
-| `<meteo-compass-fan>` | The live compass: the newest sample as the solid needle, the window's fan aged by tenth | `favorable-directions` (verdict ring); `samples` property (from the live store). Hidden without the `live` capability; the no-samples words on an empty ring |
-| `<meteo-recent-summaries>` | The source's step digests as panels: average, gust, lull, one arrow per step | `favorable-directions`, `unit`; `summaries` property. Hidden without the `recentSummaries` capability; a declared-but-dark block notes the absence |
-| `<meteo-air-extremes>` | Derived atmo tiles: the last completed night's low and the trailing 3 h pressure delta | `now-ms` (pins the clock, mainly for tests). No coordinates, no night tile; nothing derivable, nothing rendered |
-| `<meteo-dial>` | The instrument's gauge alone: `<meteo-current-conditions>` without flanks or rows | `size` (scales the rendered box, never the drawing), `no-calm-word`, `thresholds`, `unit` |
-| `<meteo-sparkline>` | The served history window at word size: lull-gust band + average trace, the big chart's dropout and null-pair rules | `width`, `height`, `no-band`, `thresholds` (grades per segment). Needs two history points; a quiet station holds the same fixed box |
-| `<meteo-wind-arrow>` | The direction arrow glyph alone, pointing downwind | `deg` (degrees FROM, default 0), `size` (default 12). `aria-hidden`; pair it with text |
+| `<meteo-station-card>` | `StationCard` | `compose`, `thresholds`, `unit`. Authored children pick its pieces ([composition below](#composing-the-station-card)) |
+| `<meteo-station-card-header>` `-instrument` `-chart` `-summary` | `StationCard.Header` et al. | Instrument and chart take their own `thresholds`/`unit` (chart also `plot-height`) over the card's context; all four take `strings`/`formatTime` properties. A part outside `<meteo-station-card>` throws |
+| `<meteo-current-conditions>` | `CurrentConditions` | `thresholds`, `unit` |
+| `<meteo-wind-history-chart>` | `WindHistoryChart` | `plot-height`, `window-hours`, `compare-offset-days` (`1\|2\|3`), `night-shading`, `thresholds`, `unit` |
+| `<meteo-trend-chart>` | `TrendChart` | `series="temperature\|pressure"` required |
+| `<meteo-wind-rose>` | `WindRose` | `sector-count` (default 16), `thresholds`, `favorable-directions` ([grammar below](#favorable-directions)); `points` property |
+| `<meteo-daily-pattern>` | `DailyPattern` | `slot-minutes` (default 180), `utc-offset-minutes` (default 0 — pass the station's fixed local offset), `plot-height`, `thresholds`, `unit`, `favorable-directions`; `points` property |
+| `<meteo-favorable-share>` | `FavorableShare` | `favorable-directions`; `points` property |
+| `<meteo-climatology-rose>` | `ClimatologyRose` | `months` / `slots` (JSON integer lists), `favorable-directions`, `station-name`; the `document` property carries the parsed cube |
+| `<meteo-climatology-daily-pattern>` | `ClimatologyDailyPattern` | `months`, `plot-height`, `thresholds`, `unit`, `favorable-directions`, `station-name`; `document` property |
+| `<meteo-station-table>` | `StationTable` | `unit`; `stations` property (defaults to the ambient feed's), `stationMeta` property: `(station) => string \| Node \| null` |
+| `<meteo-station-strip>` | `StationStrip` | `unit` |
+| `<meteo-air-matrix>` | `AirMatrix` | `stations` property (defaults to the ambient feed's); the open/closed disclosure state is the element's own |
+| `<meteo-freshness-badge>` | `FreshnessBadge` | `status="live\|aging\|stale"`; any other value renders nothing |
+| `<meteo-compass-fan>` | `CompassFan` | `favorable-directions`; `samples` property (from the live store) |
+| `<meteo-recent-summaries>` | `RecentSummaries` | `favorable-directions`, `unit`; `summaries` property |
+| `<meteo-air-extremes>` | `AirExtremes` | `now-ms` (pins the clock, mainly for tests) |
+| `<meteo-dial>` | `Dial` | `size` (scales the rendered box, never the drawing), `no-calm-word`, `thresholds`, `unit` |
+| `<meteo-sparkline>` | `Sparkline` | `width`, `height`, `no-band`, `thresholds` |
+| `<meteo-wind-arrow>` | `WindArrow` | `deg` (degrees FROM, default 0), `size` (default 12). `aria-hidden`; pair it with text |
 
-Station resolution and the wiring error are the shared rules: explicit
-`station` property → `station-id` in the ambient feed → `primaryStationId`
-→ first station; resolving nothing throws, naming `<meteo-station-feed>`.
+A tag that resolves no station throws, naming `<meteo-station-feed>`; the
+resolution chain is client-data's
+[display-resolution rules](/docs/station/client-data/#display-resolution--shared-across-bindings).
 
 ### Text atoms
 
-The smallest reading fragments as inline tags, for composing your own
-layouts (a table cell, a caption, one line of a board) out of
-package-consistent pieces:
+Inline tags for placing a reading inside your own markup — a table cell,
+a caption, one line of a board:
 
 ```html
 <meteo-station-feed src="/api/wind" unit="knots">
@@ -146,48 +147,31 @@ package-consistent pieces:
 </meteo-station-feed>
 ```
 
-| Tag | Renders |
-|---|---|
-| `<meteo-speed>` / `<meteo-gust>` / `<meteo-lull>` | The converted integer + unit word in a `<data>` element (`unit` attribute); gust and lull dash without the `gustLull` capability |
-| `<meteo-temperature>` | One decimal with the degree word |
-| `<meteo-pressure>` | Sea-level pressure, one decimal hPa (needs the `conditions` capability) |
-| `<meteo-direction>` | Arrow glyph + compass point + rounded degrees; calm in a word, dead vane dashes. The aria sentence spells the point out |
-| `<meteo-updated-at>` | Ticking relative age ("just now", "3 min ago"), falling back to the absolute time words past ~6 hours; server-anchored when `served-at`/`received-at-ms` (or the ambient feed) exist |
-| `<meteo-band-chip>` | The reading graded against `thresholds`, worn as a chip with `data-band`. A `labels` property (values.length + 1 words) supplies the vocabulary; without labels the chip states the converted speed. Calm says the calm word, ungraded |
-
-The atoms hold the display discipline the composed tags do: a value the
-station cannot report is an em dash in place (a lacking capability and
-an unavailable station earn the same dash; the layout never reflows around
-missing data); calm is said in the calm word (the dash on a direction is
-reserved for a dead vane on a blowing reading); shown speeds convert to the
-display unit while the wire value rides the `<data>` element's `value`
-attribute in m/s, unrounded.
+Each atom is the tag twin of the react
+[primitive](/docs/station/react/#primitives) of the same name:
+`<meteo-speed>` / `<meteo-gust>` / `<meteo-lull>` (`unit` attribute),
+`<meteo-temperature>`, `<meteo-pressure>`, `<meteo-direction>`,
+`<meteo-updated-at>` (server-anchored by `served-at` / `received-at-ms`, or
+the ambient feed), and `<meteo-band-chip>` (a `labels` property). The atoms
+hold the primitives' display discipline: an unreportable value is an em
+dash in place, never a zero, and calm is said in the calm word.
 
 ### Favorable directions
 
-Favorable arcs follow the `thresholds`
-[trichotomy](/docs/station/client-data/#display-resolution--shared-across-bindings)
-and carry no package default: set them once on the provider and every
-direction-bearing tag inherits, set them on one tag to override, set the
-property to `null` to opt one tag out. The
-`favorable-directions` attribute takes the same JSON on any of those tags
-(`"none"` opts out); the `favorableDirections` property carries the parsed
-array:
+The semantics — resolution, no package default, and where the verdict
+shows — are the react page's
+[Favorable directions](/docs/station/react/#favorable-directions). The
+`favorable-directions` attribute takes the same JSON on any
+direction-bearing tag (`"none"` opts out); the `favorableDirections`
+property carries the parsed array:
 
 ```js
 document.querySelector("meteo-station-feed").favorableDirections =
   [{ fromDeg: 260, toDeg: 340 }]; // degrees FROM; sectors may wrap through north
 ```
 
-The rose and the dial draw a thin judgment ring; the history chart and
-daily pattern tint each vane by its own direction; `<meteo-direction>`
-tints its text and speaks the verdict; `<meteo-favorable-share>` states the
-share outright. Favourable arcs paint in `--meteo-wind-favorable`, the
-remainder in `--meteo-wind-unfavorable`
-([the tokens are yours](/docs/station/theming/#token-reference)). The ring
-and the petals never share a job: the ring grades direction against your
-arcs, the petals report where the wind came from. A calm sample gets
-neither class, because calm has no direction.
+A calm sample gets neither the favorable nor the unfavorable class,
+because calm has no direction.
 
 ## Composing the station card
 

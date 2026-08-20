@@ -65,7 +65,6 @@ export const sidebar = [
           { slug: "docs/forecast/schedule-builds", label: "Schedule builds" },
           { slug: "docs/forecast/tune-the-wire", label: "Tune the wire" },
           { slug: "docs/forecast/static-output", label: "Publish static output" },
-          { slug: "docs/forecast/downstream-access", label: "Downstream access" },
         ],
       },
       { slug: "docs/forecast/architecture", label: "Forecast architecture" },

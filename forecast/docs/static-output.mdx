@@ -102,13 +102,17 @@ Of the [dataset-root files](#publish-the-dataset-root), `publish`
 advances `runs.json` after every model and `publish --models` uploads the
 model catalogue; `terrain --sync` keeps the site context following the
 site catalogue. `sites.json` itself stays the deployment owner's write:
-the engine reads it (builders accept `--sites dataset` to build straight
-from the published catalogue) and never writes it.
+the engine reads it
+([`--sites dataset`](/docs/forecast/run-one-model/#complete-command-surface))
+and never writes it.
 
 ## Put the tree on static storage
 
 Copy or sync the output directory only after a successful builder exit. Keep
-paths stable, preserve JSON content types and gzip encoding, and let caches
+paths stable, preserve JSON content types and gzip encoding (`.jsonl.gz`
+serves as `application/gzip`, or as raw gzip bytes with no
+`Content-Encoding` header, so a reader receives the archive itself, never a
+transparently decompressed body), and let caches
 expire independently without assuming an atomic multi-file deployment. That
 last condition is why consumers validate the manifest/profile pair.
 
@@ -160,3 +164,27 @@ The package contract, scene, and SVG tests exercise this validation â†’ scene â†
 serialization chain. The input path, timezone, rendering options, palette,
 hosting destination, and audience remain downstream configuration. A publisher
 can change them without copying formulas or renderer internals.
+
+## Downstream access
+
+Authentication, membership, launch discovery, product navigation, alerts,
+retention, and operational language belong to the downstream application.
+Choose the access model at the hosting boundary:
+
+| Publication need | Downstream implementation |
+| --- | --- |
+| Public club archive | Static host or object storage with explicit retention |
+| Member-only current output | Application or edge authorization in front of the static tree |
+| Build-time chart pages | Fetch/validate during the downstream build and deploy generated HTML/SVG |
+| Custom interactive viewer | Validate documents, build a scene, and own browser state and accessibility |
+
+The JSON contract does not contain users, roles, sessions, launch
+permissions, or API keys. Adding them would couple portable forecast
+documents to one publisher's policy. A gate that addresses the tree by key
+rather than by URL (object storage behind an application, a Cloudflare
+Worker reading an R2 bucket binding) builds those keys with
+[`documentPaths`](/docs/briefing/transport/#the-trees-layout-is-exported),
+the same exported layout `publish` uploads through.
+
+At every access level, keep provider attribution with derived material and
+state the publisher's operational limitations.

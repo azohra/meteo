@@ -73,9 +73,8 @@ fallback or use an API's documented fallback behaviour:
 
 ## Scalar values
 
-Every numeric position under `surface`, `levels`, and `derived` is either a
-number or an ensemble percentile object. Switch on shape, not a model slug;
-the [profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
+Switch on the value's shape, not a model slug; the
+[profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
 carries the worked narrowing fence.
 
 Full ensemble dropout is `members: 0` with every percentile `null`.
@@ -179,10 +178,9 @@ and site context `SITES_SCHEMA_VERSION` (<code>{SITES_SCHEMA_VERSION}</code>) an
 - Model identity is an open slug discovered from the catalogue, not a package
   enum.
 - An absent optional field means not published there, never zero.
-- A stored profile's own `semantics` keeps gust and precipitation meaning with
-  the document; absence of that optional tag does not imply a default.
-- A stored profile's optional `site.timeZone` keeps local-time interpretation
-  with the document; absence of that optional echo does not imply UTC.
+- A stored profile's optional `semantics` and `site.timeZone` keep meaning
+  with the document; neither's absence implies a default
+  ([profile reference](/docs/briefing/profile-document/#run-site-and-semantics)).
 - The zod contract is behavioural authority. For other languages, the
   generated JSON Schema files ship in the `@azohra/meteo.briefing` tarball's
   `schema/` directory and in the repository at `briefing/schema/`;

@@ -16,7 +16,7 @@ discovery document paired with the larger site profiles.
 | **Parse** | `parseForecastManifestJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
 | **Zod authority** | `forecastManifestSchema` |
 | **JSON Schema** | [`manifest.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/manifest.schema.json) |
-| **Discovery** | one per published model directory; `runs.json` at the data root indexes every current manifest's publication identity |
+| **Discovery** | one per published model directory; `runs.json` at the data root indexes every current manifest's publication identity, but does not replace the manifest's site inventory or forecast extent |
 
 ## Stable fields
 
@@ -64,7 +64,3 @@ forecast-hour extent (its `referenceTime` equals `lastObservedAt`), so
 dataset kind is unknown; the
 [observation document reference](/docs/briefing/observation-document/)
 covers that dataset family.
-
-`runs.json` at the data root indexes each current manifest's publication identity across
-models in one document. It does not replace the manifest's site inventory or
-forecast extent.

@@ -23,10 +23,9 @@ path to ECCC's models.
 
 GOES granules are read whole-file: a granule is one download whose
 handful of probe pixels are extracted in memory. One fetch, no fallback
-machinery. Every ranged fetch shares the guard in `@azohra/meteo.grib`'s
-helpers: a server that answers a Range request with 200 instead of 206
-has ignored the header and sent the whole file, so that response is
-treated as an error, and its body is never read.
+machinery. Every ranged fetch shares `@azohra/meteo.grib`'s guard: a 200
+answer to a Range request is an error, never a body to read
+([What it decodes](/docs/grib/coverage/#the-idx-byte-range-helpers)).
 
 ## Preserve provider semantics
 

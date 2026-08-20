@@ -47,8 +47,7 @@ runs in order:
 | [Environment and credentials](/docs/forecast/environment/) | Every environment variable the engine reads: the published-root pointer, the S3 credential set, host overrides |
 | [Schedule builds](/docs/forecast/schedule-builds/) | Scheduling the build command so each model rebuilds when its provider publishes a new run |
 | [Tune the wire](/docs/forecast/tune-the-wire/) | The transport report every build prints, and what it decides: connections, hosts, or nothing |
-| [Publish static output](/docs/forecast/static-output/) | Moving a build's manifests and forecast documents to storage you control |
-| [Downstream access](/docs/forecast/downstream-access/) | Serving published forecasts publicly, privately, or behind your own membership gate |
+| [Publish static output](/docs/forecast/static-output/) | Moving a build's manifests and forecast documents to storage you control, and serving them publicly, privately, or behind your own membership gate |
 
 The engine's own reference:
 

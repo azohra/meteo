@@ -65,13 +65,9 @@ the sync commands); run it only on a zero exit.
 - Preserve logs containing model slug, start/end time, exit status, and the
   published `(referenceTime, generatedAt)` pair.
 
-An operator's pipeline (the scheduler, the site catalogue, the storage
-credentials) is its own repository composing this CLI; the reference
-operator is public at
-[`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts),
-scheduling every rule on this page. An operator may choose any
-scheduler and access model, but should reuse the CLI and contract rather
-than copy builder internals.
+The public reference operator schedules every rule on this page;
+[Tune the wire](/docs/forecast/tune-the-wire/#the-reference-operator)
+walks its pipeline.
 
 For a multi-model schedule, prefer separate invocations over `--all` when
 failure isolation matters. `--all` is useful for controlled batch execution

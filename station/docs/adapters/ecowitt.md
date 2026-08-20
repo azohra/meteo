@@ -37,7 +37,9 @@ as false ([evolution rules](/docs/station/wire-contract/#evolution-rules)).
 
 The array measures gusts but no lull, so `windLullMps` is null on every
 reading — the gust/lull structure stays allocated and the absent half
-stays null. History is declared `false` because `real_time` serves the
+stays null. The conditions block, in contrast, arrives full: humidity,
+dew point, pressure, rain, solar, and UV.
+History is declared `false` because `real_time` serves the
 latest report only; the adapter reports what this endpoint carries and
 fabricates nothing. `samplingWindowSeconds` is null: the cloud does not
 state the averaging window behind its wind values. `recommendedPollSeconds`
@@ -106,11 +108,8 @@ const handler = createStationFeedHandler({
 export default { fetch: handler };
 ```
 
-On your page, `history: false` means no history chart, no trend chart,
-and no sparkline: an Ecowitt `StationCard` renders the dial and readouts.
-The wiring is fine; there is simply no history to draw. `/live?station=`
-answers 404 and the live hooks never apply. The full capability-to-surface
-map is [What your hardware shows](/docs/station/what-your-hardware-shows/).
+[What your hardware shows](/docs/station/what-your-hardware-shows/) maps
+these declarations to your page's surfaces.
 
 ## Where next
 

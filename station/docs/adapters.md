@@ -18,15 +18,15 @@ vendor page ends with the same Setup block (the
 [getting-started](/docs/station/getting-started/) mount with a one-entry
 `stations` array), so the pages differ only in the config entry itself:
 
-| Vendor | Hardware | History | Live | Conditions |
-|---|---|---|---|---|
-| [WindNerd](/docs/station/adapters/windnerd/) | windnerd.net wind stations | yes | **yes** | pressure, when configured |
-| [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest | no; the REST endpoint serves one observation | no | the full conditions block |
-| [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers | yes | no | none |
-| [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) | no; the cloud endpoint serves one report | no | humidity, dew point, pressure, rain, solar, UV |
+| Vendor | Hardware |
+|---|---|
+| [WindNerd](/docs/station/adapters/windnerd/) | windnerd.net wind stations |
+| [Tempest](/docs/station/adapters/tempest/) | WeatherFlow Tempest |
+| [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers |
+| [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) |
 
-What each declaration turns on (chart, stream, matrix column) is mapped
-surface by surface in
+What each vendor declares, and what each declaration turns on (chart,
+stream, matrix column), is mapped surface by surface in
 [What your hardware shows](/docs/station/what-your-hardware-shows/).
 
 Anything else plugs in as a custom adapter, below.

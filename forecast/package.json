@@ -1,7 +1,7 @@
 {
   "name": "@azohra/meteo.forecast",
   "version": "0.5.1",
-  "description": "The forecast engine of meteo by Azohra: fetches provider bytes (ECCC Datamart, NOAA Open Data), samples gridpoints, derives site forecasts, and publishes the versioned JSON documents and history archives that @azohra/meteo.briefing reads - the write side of the contract that package's read side validates.",
+  "description": "Forecast engine: fetches provider bytes from ECCC Datamart and NOAA Open Data, samples gridpoints, derives site forecasts, and publishes the versioned JSON documents and history archives that @azohra/meteo.briefing reads.",
   "keywords": [
     "weather",
     "forecast",

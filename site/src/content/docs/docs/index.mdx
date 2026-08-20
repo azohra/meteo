@@ -5,12 +5,10 @@ description: What each layer does, from provider bytes to a published forecast a
 
 import QuantityHomes from "../../../components/about/QuantityHomes.astro";
 
-meteo by Azohra is machinery for publishing soaring forecasts to a flying
-community: an engine you point at your launches, and packages that read,
-analyze, and draw what it publishes. The platform splits a published
-forecast into layers with hard edges — an engine derives and publishes
-versioned JSON documents, and packages validate, analyze, and render what
-it published. Any layer can run on infrastructure its operator controls.
+meteo by Azohra publishes soaring forecasts for a flying community. The
+forecast engine builds versioned JSON documents for the launches you
+catalogue; the TypeScript packages validate those documents and draw the
+charts. Any layer can run on infrastructure its operator controls.
 
 ## Where to begin
 
@@ -38,9 +36,9 @@ this page is the map of how those layers fit.
 | [`@azohra/meteo.core`](/docs/core/), the shared foundation | Units, angle and wind-vector math with one sign convention platform-wide, zod primitives, and the upstream-failure vocabulary | The [shared physical vocabulary](/docs/core/) the briefing and station packages build on |
 | The [operator](/docs/glossary/#operator) | Location selection, schedule, hosting, retention, presentation, access, verification, and safety language | A complete publication for their audience |
 
-The operator's pipeline (the cron schedule, the site catalogue, the storage
-credentials) is their own repository, composing the engine; the platform
-ships [the engine, not an instance](/docs/forecast/#engine-not-instance).
+The platform ships [the engine, not an
+instance](/docs/forecast/#engine-not-instance); an operator composes it
+into a pipeline of their own.
 
 ## Who owns each value
 

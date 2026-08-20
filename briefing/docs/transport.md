@@ -138,7 +138,8 @@ files `models()`, `sites()`, `siteContext()`, and `runs()`, each
 returning the document's root-relative path. Every URL these loaders
 fetch is `${baseUrl}/${documentPaths...}`. The same keys address the
 tree where there is no URL at all: the object-store case
-[Downstream access](/docs/forecast/downstream-access/) describes.
+[Downstream access](/docs/forecast/static-output/#downstream-access)
+describes.
 
 ## The caller owns fetch and storage
 
@@ -163,5 +164,4 @@ and leaves the response policy to the caller.
 `LoadRunsOptions` type those seams.
 
 Where these files come from and how they are deployed is the publisher's
-side of the story: [Publish static output](/docs/forecast/static-output/) and
-[Downstream access](/docs/forecast/downstream-access/).
+side of the story: [Publish static output](/docs/forecast/static-output/).

@@ -1,7 +1,7 @@
 {
   "name": "@azohra/meteo.j2k",
   "version": "0.1.1",
-  "description": "The JPEG 2000 decoder of meteo by Azohra: a pure-TypeScript ITU-T T.800 implementation scoped to exactly the codestream subset ECCC's GRIB2 feeds ship - single tile, single grayscale component, reversible 5/3 wavelet, single quality layer, default precincts, MQ-coded EBCOT. Everything outside that subset throws a named UnsupportedJ2kError. Validated bit-for-bit against the OpenJPEG oracles over the golden fixture corpus.",
+  "description": "A pure-TypeScript ITU-T T.800 JPEG 2000 decoder scoped to the codestream subset ECCC's GRIB2 feeds ship: single tile, single grayscale component, reversible 5/3 wavelet, single quality layer, default precincts, MQ-coded EBCOT. Anything outside that subset throws a named UnsupportedJ2kError. Validated bit-for-bit against the OpenJPEG oracles over the golden fixture corpus.",
   "keywords": [
     "jpeg2000",
     "j2k",

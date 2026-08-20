@@ -114,7 +114,7 @@ test.describe("/forecast/ exhibits the engine's committed output", () => {
     await guardStaticBrowsing(page, baseURL!);
     await page.goto("/forecast/", { waitUntil: "networkidle" });
 
-    // The docrail mirrors the sidebar's five forecast reference pages.
+    // The docrail mirrors the sidebar's four forecast reference pages.
     const docrail = page.locator(".fc-docrail a");
     expect(
       await docrail.evaluateAll((links) => links.map((a) => a.getAttribute("href"))),
@@ -123,7 +123,6 @@ test.describe("/forecast/ exhibits the engine's committed output", () => {
       "/docs/forecast/derivation-science/",
       "/docs/forecast/builder-contract/",
       "/docs/forecast/provider-transports/",
-      "/docs/forecast/adding-a-model/",
     ]);
 
     // The boundary paragraph hands off to the operator path and the index.

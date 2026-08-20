@@ -83,12 +83,9 @@ native OpenJPEG can use at all.
 ## The pool lives next door
 
 The pool wiring is not in this package (no Node APIs here);
-it lives in `@azohra/meteo.grib/j2k-node`. Its `decodeSampled` rides
-`decodeJ2kRegion` directly; for full decodes, `strategy: "codeblock"`
-fans one field's codeblocks across the whole pool, cutting its latency
-several-fold (736 → 133 ms measured on the largest field through an
-8-worker pool). At saturated load its throughput equals per-field
-fan-out's.
+it lives in `@azohra/meteo.grib/j2k-node`. Under its
+`strategy: "codeblock"` a full decode of the largest field drops from
+736 to 133 ms through an 8-worker pool.
 See [JPEG 2000 and the pool](/docs/grib/jpeg2000/) for the pool's API,
 sizing, and heap behaviour.
 

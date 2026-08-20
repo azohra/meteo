@@ -43,10 +43,8 @@ unknown fields and `elevationM` outright, where the reader contract merely
 strips them. A field someone typed and the pipeline silently ignored is the
 failure the strictness exists to catch. You publish it to
 the dataset root verbatim; a build never copies it there. Once it
-is published, builders can read it straight from the dataset
-(`--sites dataset`) instead of a checked-out file
-([Publish static output](/docs/forecast/static-output/#publish-the-dataset-root)
-walks the root files).
+is published, builders can read it from the dataset
+([`--sites dataset`](/docs/forecast/run-one-model/#complete-command-surface)).
 
 | Field | Meaning |
 | --- | --- |

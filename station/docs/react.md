@@ -66,12 +66,11 @@ Every component's data and display props become optional overrides over it;
 an explicit prop always wins, and components still work fully via explicit
 props with no provider anywhere.
 
-Per-station components inside a provider resolve their station in this order:
-an explicit `station` prop → a `stationId` prop looked up in the feed → the
-feed's `primaryStationId` → `stations[0]`. A component that resolves nothing
-throws a wiring error rather than rendering a mystery blank. The rule is
-`resolveStation`, shared with every binding
-([client data](/docs/station/client-data/#display-resolution--shared-across-bindings)).
+Per-station components inside a provider resolve their station by the
+shared [`resolveStation`
+rule](/docs/station/client-data/#display-resolution--shared-across-bindings);
+a component that resolves nothing throws a wiring error rather than
+rendering a mystery blank.
 
 ## Thresholds
 
@@ -81,9 +80,9 @@ converted to the m/s wire once, internally (`thresholdsToMps`, exported from
 `@azohra/meteo.station` next to the other unit conversions); chart guide
 labels print the numbers you declared, never round-tripped wire values.
 Inside a provider, `thresholds={null}` opts one component out of the ambient
-grading; the omitted/value/null trichotomy is the shared
-[display-resolution rule](/docs/station/client-data/#display-resolution--shared-across-bindings),
-applied identically by every binding. Bands map to `meteo-band-0..n` classes;
+grading (the shared
+[trichotomy](/docs/station/client-data/#display-resolution--shared-across-bindings)).
+Bands map to `meteo-band-0..n` classes;
 the colours are [yours](/docs/station/theming/#speed-bands-and-your-palette).
 
 ## Components
@@ -92,30 +91,27 @@ Wind-speed components are display-unit aware (`unit?: "kmh" | "knots" | "mph" | 
 default `"kmh"`) and all take `strings` (word overrides / i18n); components
 that print a timestamp also take `formatTime`.
 Per-station components take `station` (or `stationId`); fleet components take `stations`.
-Components follow the station's declared capabilities:
-`WindHistoryChart`, `TrendChart`, and the sparkline render nothing for a
-station without `history`, `WindSampleStrip` needs `live` samples, and
-`AirMatrix` carries columns only for `conditions`-capable stations —
-[What your hardware shows](/docs/station/what-your-hardware-shows/) is the
-full map.
+Components follow the station's declared capabilities; the
+capability-to-surface map is
+[What your hardware shows](/docs/station/what-your-hardware-shows/).
 
 | Component | Props that matter |
 |---|---|
 | `StationCard` | The station card, a compound (below). `station`/`stationId`, `servedAt`, `receivedAtMs`, `thresholds`, `unit` |
 | `CurrentConditions` | The instrument dial. Same props; calm hides the needle, outages grey the dial |
-| `WindHistoryChart` | Lull–gust band + graded mean, a persistent compass-letter row and Avg row above/below every vane. `thresholds` (guide labels show your declared numbers), `plotHeight`, `windowHours` (slices to the trailing N hours of the SAME points, no new fetch), `compareOffsetDays` (`1 \| 2 \| 3`; overlays a prior day's trace shifted onto today's own x-axis, absent when history doesn't reach back far enough), `nightShading` (gray sunset-to-sunrise columns from the station's own coordinates; no coordinates, no shading) |
+| `WindHistoryChart` | Lull–gust band + graded mean, a persistent compass-letter row and Avg row above/below every vane. `thresholds` (guide labels show your declared numbers), `plotHeight`, `windowHours` (slices to the trailing N hours of the SAME points, no new fetch), `compareOffsetDays` (`1 \| 2 \| 3`; overlays a prior day's trace shifted onto today's own x-axis, absent when history doesn't reach back far enough), `nightShading` (gray sunset-to-sunrise columns from the station's own coordinates, absent without them). The full inspector: pointer preview, click pins by timestamp, touch never previews. With `history` but under two points, the no-history words |
 | `WindSampleStrip` | The history chart's live sibling: the rolling sample window over the same frame, grid, compass-letter and avg rows, and edge-anchored ticks. Samples-only by design: pass `samples` (from `useStationLive`) and `stationName`; instants stay ungraded, a dropout breaks the trace, a one-sample run draws as a dot. `plotHeight` |
-| `TrendChart` | Temperature (°C) or sea-level pressure (hPa) over history. `series: "temperature" \| "pressure"`; null gaps break the trace, never interpolated. No `unit`: the units are the series' own |
-| `WindRose` | Direction shares. `station`/`stationId` or raw `points`, `sectorCount`, `thresholds`, `favorableDirections`. No `unit`: the rose shows percentages |
-| `DailyPattern` | A typical day: every point bucketed by time-of-day and vector-averaged, with a persistent compass-letter row and Avg row (dashed for a slot nothing ever fell into). `station`/`stationId` or raw `points`, `slotMinutes` (default 180), `utcOffsetMinutes`, `thresholds`, `favorableDirections` |
+| `TrendChart` | Temperature (°C) or sea-level pressure (hPa) over history. `series: "temperature" \| "pressure"`; null gaps break the trace, never interpolated; a series under two measured points says "not measured". No `unit`: the units are the series' own |
+| `WindRose` | Direction shares. `station`/`stationId` or raw `points`, `sectorCount`, `thresholds`, `favorableDirections`. No `unit`: the rose shows percentages. With neither `points` nor history, the no-history words |
+| `DailyPattern` | A typical day: every point bucketed by time-of-day and vector-averaged, with a persistent compass-letter row, an Avg row (dashed for a slot nothing ever fell into), and a coverage caption. `station`/`stationId` or raw `points`, `slotMinutes` (default 180), `utcOffsetMinutes`, `thresholds`, `favorableDirections` |
 | `FavorableShare` | One stat: the share of non-calm history from a favorable direction. `station`/`stationId` or raw `points`, `favorableDirections`. Renders nothing at all without arcs; a calm-only history notes calm instead of inventing 0% |
-| `ClimatologyRose` | The [climatology cube](/docs/station/climatology/) as a stacked rose: each wedge split by the document's own thresholds, coverage captions beneath (favorable share with arcs; coverage only unfiltered). `document` (from `useStationClimatology`), `months`, `slots`, `favorableDirections`, `stationName` |
+| `ClimatologyRose` | The [climatology cube](/docs/station/climatology/) as a stacked rose: each wedge split by the document's own thresholds, coverage captions beneath (favorable share with arcs; coverage only unfiltered). `document` (from `useStationClimatology`), `months`, `slots`, `favorableDirections`, `stationName`. Without a document, the no-climatology words |
 | `ClimatologyDailyPattern` | The cube's typical day through the daily-pattern drawing, month-filtered client-side. `document`, `months`, `thresholds`, `favorableDirections`, `unit`, `plotHeight`, `stationName` |
 | `StationTable` | One row per `stations` entry; unavailable rows keep their geometry. `servedAt`, `receivedAtMs`, `stationMeta`, the sub-label under each name (default: the source attribution; render the sampling window, a distance, anything the station itself can say) |
 | `StationStrip` | One station on one line: name, wind, lull/gust, FROM, temp, updated + freshness. `station`/`stationId`, `servedAt`, `receivedAtMs`. Absent values dash in place; a capability the station lacks omits its cell; an unavailable station keeps the line, reason in words |
 | `AirMatrix` | Humidity → lightning behind a live disclosure; columns only for conditions-capable `stations` |
 | `FreshnessBadge` | A dot and a word, from `useFreshness` |
-| `CompassFan` | The live compass: the newest sample as the solid needle, every sample of the rolling window as a faint fan aged by tenth — a tight fan means steady direction. `samples` (from `useStationLive`) or `station`/`stationId`, `favorableDirections` (verdict ring). Hidden without the `live` capability |
+| `CompassFan` | The live compass: the newest sample as the solid needle, every sample of the rolling window as a faint fan aged by tenth — a tight fan means steady direction. `samples` (from `useStationLive`) or `station`/`stationId`, `favorableDirections` (verdict ring). Hidden without the `live` capability; an empty ring shows the no-samples words |
 | `RecentSummaries` | The source's own step digests as panels: per window, average, gust, and lull beside one small arrow per step. `summaries` or `station`/`stationId`, `favorableDirections` (arrow verdicts), `unit`. Hidden without the `recentSummaries` capability; a declared-but-dark block notes the absence |
 | `AirExtremes` | Derived atmo tiles from served history: the last completed night's low (real astronomy — no coordinates, no tile) and the trailing 3 h pressure delta. `station`/`stationId`. Nothing derivable, nothing rendered |
 
@@ -168,7 +164,8 @@ class, since a calm reading has no direction.
 The smallest reading fragments as standalone inline elements, for composing
 your own layouts out of package-consistent pieces. They share the component
 set's discipline: a value the station cannot report is an em dash in
-place (a lacking capability and an unavailable station both dash the same way),
+place (a lacking capability and an unavailable station both dash the same
+way, and the layout never reflows around missing data),
 calm is said in the calm word (the dash on a direction is reserved for a
 dead vane on a blowing reading), and shown speeds convert to the display unit
 while the wire value rides the `<data>` element's `value` attribute in m/s,

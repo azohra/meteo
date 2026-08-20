@@ -19,10 +19,8 @@ browsers. Every other subpath of the package stays runtime-agnostic
 
 ## Why the reader splits gzip members itself
 
-A month archive is a sequence of independent gzip members: each
-forecast engine build appends its run as its own member, so existing archive
-bytes are never rewritten and a closed month can publish immutable.
-Inside a member, one compact-JSON document per line, but never assume
+A month archive is a sequence of independent gzip members
+([the archive format](/docs/briefing/history-archives/)). Never assume
 one line per member: forecast archives run one line per member, while
 observation archives batch a whole granule of instants per member
 (re-verified 2026-08-10 across every published model). The reader splits

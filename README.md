@@ -88,9 +88,8 @@ const svg = renderMeteogramSvg(
 
 Documents are launch-agnostic: one forecast serves every launch its grid
 cell covers; a launch marker and its measured elevation are render inputs.
-The [TypeScript documentation](https://meteo.azohra.com/docs/briefing/render-first-meteogram/)
-covers the contract, transport, derivations, analysis, scene graph,
-rendering tokens, and ensemble documents; the
+The TypeScript documentation starts at
+[Render a first Meteogram](https://meteo.azohra.com/docs/briefing/render-first-meteogram/); the
 [reading guide](https://meteo.azohra.com/docs/briefing/reading-a-meteogram/)
 explains every mark on the chart using the committed
 [synthetic scenarios](scenarios/).
@@ -138,18 +137,11 @@ theming.
 ## The decoders
 
 Beneath the engine sit two decoders written for this workspace and
-published on their own. [`@azohra/meteo.grib`](grib/) decodes GRIB2 in pure
-TypeScript (rotated lat-lon and Lambert grids, complex packing,
-multi-field messages, NOMADS `.idx` byte-range helpers). It exists
-because no maintained JavaScript decoder covered the grids ECCC and NOAA
-actually ship, and its acceptance gate decodes real provider messages to
+published on their own: [`@azohra/meteo.grib`](grib/) exists because no
+maintained JavaScript GRIB2 decoder covered the grids ECCC and NOAA
+actually ship, and [`@azohra/meteo.j2k`](j2k/) decodes the JPEG 2000
+inside ECCC's messages. Every decode path is accepted to
 [exact equality against ecCodes](https://meteo.azohra.com/docs/grib/correctness/).
-[`@azohra/meteo.j2k`](j2k/) decodes the JPEG 2000 codestreams inside ECCC's
-GRIB2, scoped to
-[exactly the subset those feeds ship](https://meteo.azohra.com/docs/j2k/subset/).
-It can decode only the codeblocks your gridpoints touch: bit-identical
-to the full decode, and up to ~16× faster per core on the largest field
-([measured, losses included](https://meteo.azohra.com/docs/j2k/performance/)).
 Both cores run in the browser: no `node:` imports, no ambient I/O
 ([what the core never does](https://meteo.azohra.com/docs/grib/coverage/#what-the-core-never-does)).
 
@@ -181,8 +173,7 @@ costs are recorded in the
 [feed reference](https://meteo.azohra.com/docs/forecast/forecast-model-feeds/))
 and must not run more often than their model publishes.
 
-An operator's pipeline (the cron schedule, the site catalogue, the bucket
-credentials) is your own repository composing the engine; the platform ships
+An operator's pipeline is your own repository composing the engine; the platform ships
 [the engine, not an instance](https://meteo.azohra.com/docs/forecast/#engine-not-instance),
 and the reference operator's pipeline is public at
 [`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts).

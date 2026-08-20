@@ -33,17 +33,15 @@ the CLI so external site and output paths are scoped consistently.
    run) reads the published dataset to detect what is already there, and
    refuses to guess where that is: without configuration it exits with
    `PublisherConfigurationError`. Set `METEO_DATA_BASE` to the public URL
-   your dataset will live at. On day one, before anything is published
-   there, that URL 404s and the engine correctly treats it as "nothing
-   published yet" and builds everything:
+   your dataset will live at:
 
    ```sh title="Terminal"
    export METEO_DATA_BASE="https://forecasts.your.club/data"
    ```
 
-   Deployments that read their bucket directly instead leave it unset and
-   provide the S3 credential set (`METEO_R2_BUCKET`, `METEO_S3_ENDPOINT`,
-   `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
+   [Environment and credentials](/docs/forecast/environment/) covers the
+   day-one state of that URL and the S3 mode that reads the bucket
+   directly.
 5. **Run the build.** Remove `--dry-run` (and `--max-steps`, if you used
    it) for the full declared horizon.
 6. **Inspect output before deploying it.** The model manifest and each

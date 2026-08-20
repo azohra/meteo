@@ -143,10 +143,7 @@ whether it was news. For a smoke model the recipe is identical with
 ## Observation series are the exception
 
 Observation documents are ingested per site with `loadObservation`: a
-guarded single fetch, no manifest anchor, no coherence dance. An
-observation document has no run: its identity lives in its own `observed`
-block, the worst case is being one internally-consistent granule behind,
-and the next poll tick heals it. The
+guarded single fetch, no manifest anchor, no coherence dance. The
 [transport guide](/docs/briefing/transport/#observations-one-guarded-fetch-no-dance)
 carries the full argument for why the dance would be wrong here.
 
@@ -217,10 +214,7 @@ what each model publishes, not which ones you depend on.
 
 A store that serves through gaps must answer "how current is
 this?". `runFreshness` from `@azohra/meteo.briefing/derive` grades a runs.json entry
-`"current" | "delayed" | "stale"`, and its inputs split the same way as
-everything else here: the facts come from the
-[model catalogue](/docs/briefing/catalogue/), the threshold boundaries
-from you. The grading semantics live in the
+`"current" | "delayed" | "stale"`; the grading semantics live in the
 [derive reference](/docs/briefing/derive/#judge-run-freshness).
 
 ```ts title="grade-feeds.ts"

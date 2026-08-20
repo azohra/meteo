@@ -37,11 +37,8 @@ only; the adapter reports only what this endpoint carries, so `history`
 is null on every document. `samplingWindowSeconds`
 and `recommendedPollSeconds` are both 60.
 
-On your page that means no history chart, no trend chart, and no
-sparkline: a Tempest `StationCard` renders the dial and readouts only.
-`/live?station=` answers 404 and the live hooks never apply. For the
-full capability-to-surface map, see
-[What your hardware shows](/docs/station/what-your-hardware-shows/).
+[What your hardware shows](/docs/station/what-your-hardware-shows/) maps
+these declarations to your page's surfaces.
 
 The wire contract's `conditions` block is
 [WeatherFlow-shaped](/docs/station/wire-contract/#semantics); this adapter

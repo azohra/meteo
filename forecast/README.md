@@ -26,8 +26,6 @@ The reference lives in [`docs/`](docs/) and is served at
   every builder must honour. These are the binding rules.
 - [Provider transports](docs/provider-transports.md): whole-file ECCC
   sampling, indexed NOAA byte ranges, whole-file GOES granules.
-- [Add a forecast model](docs/adding-a-model.md): the
-  verify-before-code workflow from live feed to registered builder.
 
 ## The CLI
 
