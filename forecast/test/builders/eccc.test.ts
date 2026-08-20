@@ -14,7 +14,6 @@ import { NotFoundError } from "../../src/providers/datamart.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
 import type { Site } from "../../src/sites.js";
 import {
-  FETCH_CONCURRENCY,
   GDPS,
   GDPS_INTERMEDIATE_LEVELS,
   HRDPS,
@@ -31,11 +30,14 @@ import {
   pinnedRun,
   precipRateForHour,
   previousScheduledHour,
+  type DatamartModel,
+} from "../../src/builders/eccc.js";
+import {
+  FETCH_CONCURRENCY,
   resetGridPointsCache,
   sampleDatamartField,
-  type DatamartModel,
   type DatamartWire,
-} from "../../src/builders/eccc.js";
+} from "../../src/providers/datamart.js";
 import {
   FETCH_CONCURRENCY as HRDPS_WEST_FETCH_CONCURRENCY,
   SEMANTICS as HRDPS_WEST_SEMANTICS,

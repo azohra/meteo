@@ -7,7 +7,7 @@ import { packagedModelsPath } from "../../src/catalogue.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
 import { splitMembers } from "../../src/history.js";
 import type { Site } from "../../src/sites.js";
-import { liveDatamartWire, type DatamartWire } from "../../src/builders/eccc.js";
+import { liveDatamartWire, type DatamartWire } from "../../src/providers/datamart.js";
 import {
   FETCH_CONCURRENCY,
   FORECAST_HOURS,

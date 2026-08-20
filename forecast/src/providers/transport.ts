@@ -281,3 +281,42 @@ export async function exists(
   });
   return response.status === 200;
 }
+
+/**
+ * The shared retry cadence: exponential backoff with ±25% jitter. Every
+ * provider and dataset transport waits through this one formula.
+ */
+export function transportBackoff(
+  attempt: number,
+  options: { sleep?: (ms: number) => Promise<void>; random?: () => number } = {},
+): Promise<void> {
+  const sleep =
+    options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  const random = options.random ?? Math.random;
+  return sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+}
+
+export function concurrencyLimit(maxConcurrent: number): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0;
+  const waiting: Array<() => void> = [];
+  const release = (): void => {
+    const next = waiting.shift();
+    if (next !== undefined) {
+      next();
+    } else {
+      active -= 1;
+    }
+  };
+  return async (task) => {
+    if (active >= maxConcurrent) {
+      await new Promise<void>((resolve) => waiting.push(resolve));
+    } else {
+      active += 1;
+    }
+    try {
+      return await task();
+    } finally {
+      release();
+    }
+  };
+}

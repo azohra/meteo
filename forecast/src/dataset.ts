@@ -5,6 +5,7 @@ import type { PublishedManifest, PublishedManifestReader } from "./publish.js";
 import {
   REQUEST_TIMEOUT_S,
   USER_AGENT,
+  transportBackoff,
   type TransportFetch,
   type TransportResponse,
 } from "./providers/transport.js";
@@ -105,12 +106,6 @@ export async function signedS3Fetch(
   return { status: response.status, payload: new Uint8Array(await response.arrayBuffer()) };
 }
 
-export function s3Backoff(attempt: number, options: DatasetOptions): Promise<void> {
-  const sleep = options.sleep ?? defaultSleep;
-  const random = options.random ?? Math.random;
-  return sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
-}
-
 /** `s3://bucket/key` for error messages. */
 export function s3ObjectName(key: string): string {
   return `s3://${s3Bucket()}/${key}`;
@@ -148,7 +143,7 @@ async function fetchPublishedS3(key: string, options: DatasetOptions): Promise<U
       lastError = new Error(`${s3ObjectName(key)} failed with ${code ?? exchange.status}`);
     }
     if (attempt < 2) {
-      await s3Backoff(attempt, options);
+      await transportBackoff(attempt, options);
     }
   }
   throw lastError!;
@@ -163,8 +158,6 @@ export async function fetchPublished(
     return fetchPublishedS3(key, options);
   }
   const fetchImpl = options.fetch ?? globalThis.fetch;
-  const sleep = options.sleep ?? defaultSleep;
-  const random = options.random ?? Math.random;
   const url = `${dataBase()}/${key}`;
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -204,7 +197,7 @@ export async function fetchPublished(
       lastError = new Error(`data base ${url} failed with ${response.status}`);
     }
     if (attempt < 2) {
-      await sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+      await transportBackoff(attempt, options);
     }
   }
   throw lastError!;
@@ -249,8 +242,4 @@ export async function prefetchedManifestReader(
     }),
   );
   return (slug) => manifests.get(slug) ?? null;
-}
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

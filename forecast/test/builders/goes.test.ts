@@ -99,7 +99,7 @@ class FakeGranule implements GranuleReader {
   }
 }
 
-const BUILD_ENV = ["METEO_GOES_BACKFILL_HOURS", "METEO_MAX_STEPS"] as const;
+const BUILD_ENV = ["METEO_GOES_BACKFILL_HOURS"] as const;
 let savedEnv: Partial<Record<string, string | undefined>> = {};
 beforeEach(() => {
   savedEnv = {};
@@ -615,10 +615,10 @@ function scriptedSampler(
 }
 
 describe("buildGoesProduct", () => {
-  it("METEO_MAX_STEPS caps the granule walk", async () => {
-    // --max-steps reaches builders as METEO_MAX_STEPS; a capped
-    // observation build samples only the first N granules instead of the
-    // whole backlog.
+  it("maxSteps caps the granule walk", async () => {
+    // --max-steps reaches observation builders as the forwarded option; a
+    // capped build samples only the first N granules instead of the whole
+    // backlog.
     process.env["METEO_GOES_BACKFILL_HOURS"] = "1";
     const hour05 = [
       granuleKey("DSRF", 222, "05", "20262220540213"),
@@ -629,7 +629,7 @@ describe("buildGoesProduct", () => {
       granuleKey("DSRF", 222, "06", "20262220610213"),
       granuleKey("DSRF", 222, "06", "20262220620213"),
     ];
-    const run = async () => {
+    const run = async (maxSteps?: number) => {
       const wire = stubFetch([
         { status: 200, body: listingXml(hour05) },
         { status: 200, body: listingXml(hour06) },
@@ -643,14 +643,12 @@ describe("buildGoesProduct", () => {
         publishedManifest: async () => null,
         granuleSamples: scriptedSampler(sampled),
         log: () => {},
+        ...(maxSteps !== undefined ? { maxSteps } : {}),
       });
       return sampled;
     };
 
-    process.env["METEO_MAX_STEPS"] = "2";
-    expect(await run()).toHaveLength(2);
-
-    delete process.env["METEO_MAX_STEPS"];
+    expect(await run(2)).toHaveLength(2);
     expect(await run()).toHaveLength(5);
   });
 

@@ -1,10 +1,8 @@
-import { mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { MissingRecordError, findRecord, type IdxRecord } from "@azohra/meteo.grib";
-import { MANIFEST_SCHEMA_VERSION, type ForecastSemantics } from "@azohra/meteo.briefing/contract";
-import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
+import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import type { DatasetOptions } from "../dataset.js";
 import { deriveSiteForecast, type SourceHour } from "../derive.js";
-import { appendHistory, type ArchivableProfile } from "../history.js";
+import type { ArchivableProfile } from "../history.js";
 import { dewPointDepression } from "../moisture.js";
 import {
   fetchIndex,
@@ -15,22 +13,22 @@ import {
   type NoaaOptions,
   type SampleSite,
 } from "../providers/noaa.js";
-import { manifestStats, roundDocument, writeJson } from "../publish.js";
-import { parseSites, type Site } from "../sites.js";
+import type { Site } from "../sites.js";
 import { DownloadCounters, exists, type TransportFetch } from "../providers/transport.js";
 import {
   KELVIN,
   emptyHour,
-  manifestInstant,
   isCompleteLevel,
-  maxSteps as envMaxSteps,
+  parseCycleStamp,
   profileInstant,
   requiredValue,
   runConcurrent,
+  runReferenceTime,
   validTime,
   type BuilderHour,
   type BuilderLevel,
 } from "./common.js";
+import { publishRun } from "./publication.js";
 
 export const SLUG = "gfs";
 export const BASE_URL = "https://noaa-gfs-bdp-pds.s3.amazonaws.com";
@@ -143,7 +141,7 @@ export async function buildProfiles(
   options: BuildProfilesOptions = {},
 ): Promise<BuildProfilesResult> {
   const wire = options.wire ?? liveWire({ stats });
-  const cap = options.maxSteps ?? envMaxSteps();
+  const cap = options.maxSteps;
   let forecastSlots = [];
   for (let hour = STEP_HOURS; hour <= LAST_FORECAST_HOUR; hour += STEP_HOURS) {
     forecastSlots.push({ forecastHour: hour, validAt: validTime(referenceTime, hour) });
@@ -452,83 +450,37 @@ export interface GfsBuildOptions {
 }
 
 export async function buildGfs(options: GfsBuildOptions): Promise<boolean> {
-  const log = options.log ?? ((line: string) => console.log(line));
-  const sitesPath = options.sitesPath;
-  const outputRoot = options.outputRoot ?? "data";
-  const sites = parseSites(readFileSync(sitesPath, "utf-8"), sitesPath);
-
-  let run: GfsRun | null;
-  let referenceTime: string;
-  if (options.referenceTime !== undefined) {
-    run = pinnedRun(options.referenceTime);
-    referenceTime = options.referenceTime;
-  } else {
-    run = await latestCompleteRun(options.fetch, options.now);
-    if (run === null) {
-      log("No complete GFS run is available.");
-      return false;
-    }
-    const date = run.date;
-    referenceTime = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T${run.hour}:00:00Z`;
-  }
-  if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
-    log(`GFS run ${referenceTime} is already published.`);
-    return false;
-  }
-
-  log(`Building GFS ${referenceTime} for ${sites.length} sites…`);
-  const startedAt = performance.now();
-  const stats = new DownloadCounters();
-  const buildOptions: BuildProfilesOptions = {};
-  if (options.maxSteps !== undefined) buildOptions.maxSteps = options.maxSteps;
-  if (options.wire !== undefined) buildOptions.wire = options.wire;
-  if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
-  const result = await buildProfiles(run, referenceTime, sites, stats, buildOptions);
-
-  const outDir = join(outputRoot, SLUG);
-  const sitesDir = join(outDir, "sites");
-  mkdirSync(sitesDir, { recursive: true });
-  const month = referenceTime.slice(0, 7);
-  for (const profile of result.profiles) {
-    const document = roundDocument(profile) as ArchivableProfile;
-    writeJson(join(sitesDir, `${document.site.id}.json`), document, { compact: true });
-    if (options.history ?? true) {
-      const published = await publishedHistory(SLUG, document.site.id, month, options.dataset);
-      appendHistory(document, join(outDir, "history"), () => published);
-    }
-  }
-  const manifest = {
-    firstForecastHour: result.firstForecastHour,
-    forecastHours: result.forecastHours,
-    generatedAt: manifestInstant(),
-    lastForecastHour: result.lastForecastHour,
-    model: SLUG,
-    referenceTime,
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
-    stats: manifestStats(stats, startedAt),
-  };
-  writeJson(join(outDir, "manifest.json"), manifest, { compact: false });
-  log(
-    `Published ${result.profiles.length} GFS profiles for ${referenceTime} ` +
-      `(${stats.requests} requests, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
+  let run: GfsRun;
+  return publishRun(
+    {
+      slug: SLUG,
+      label: "GFS",
+      publishedNoun: "GFS profiles",
+      resolveRun: async () => {
+        if (options.referenceTime !== undefined) {
+          run = pinnedRun(options.referenceTime);
+          return options.referenceTime;
+        }
+        const probed = await latestCompleteRun(options.fetch, options.now);
+        if (probed === null) {
+          return null;
+        }
+        run = probed;
+        return runReferenceTime(probed);
+      },
+      build: async (referenceTime, sites, stats) => {
+        const buildOptions: BuildProfilesOptions = {};
+        if (options.maxSteps !== undefined) buildOptions.maxSteps = options.maxSteps;
+        if (options.wire !== undefined) buildOptions.wire = options.wire;
+        if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
+        const result = await buildProfiles(run, referenceTime, sites, stats, buildOptions);
+        return { ...result, documents: result.profiles };
+      },
+    },
+    options,
   );
-  for (const line of stats.transportReport()) {
-    log(line);
-  }
-  return true;
 }
 
 function pinnedRun(referenceTime: string): GfsRun {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):00:00Z$/.exec(referenceTime);
-  if (match === null) {
-    throw new Error(
-      `referenceTime ${referenceTime} is not a GFS cycle stamp (YYYY-MM-DDTHH:00:00Z)`,
-    );
-  }
-  const hour = match[4]!;
-  if (!(RUN_HOURS as readonly string[]).includes(hour)) {
-    throw new Error(`referenceTime hour ${hour} is not a GFS cycle (00/06/12/18)`);
-  }
-  return { date: `${match[1]}${match[2]}${match[3]}`, hour };
+  return parseCycleStamp(referenceTime, RUN_HOURS, "GFS");
 }

@@ -16,6 +16,7 @@ import {
 import {
   REQUEST_TIMEOUT_S,
   USER_AGENT,
+  transportBackoff,
   type DownloadCounters,
   type TransportFetch,
 } from "./transport.js";
@@ -29,8 +30,6 @@ export interface NoaaOptions {
 
 function retryingFetch(options: NoaaOptions): IdxFetch {
   const fetchImpl = options.fetch ?? globalThis.fetch;
-  const sleep = options.sleep ?? defaultSleep;
-  const random = options.random ?? Math.random;
   return async (url, init) => {
     let lastError: Error | null = null;
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -62,7 +61,7 @@ function retryingFetch(options: NoaaOptions): IdxFetch {
         lastError = error instanceof Error ? error : new Error(String(error));
       }
       if (attempt < 2) {
-        await sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+        await transportBackoff(attempt, options);
       }
     }
     throw lastError!;
@@ -203,8 +202,4 @@ export function windFromUv(uMs: number, vMs: number): [speedMps: number, directi
   // directions pin this spelling.
   const direction = (((Math.atan2(-uMs, -vMs) * (180 / Math.PI)) % 360) + 360) % 360;
   return [speed, direction];
-}
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

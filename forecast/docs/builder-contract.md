@@ -51,11 +51,15 @@ every build shares. Its exports:
 - `validTime(referenceTime, forecastHour)`, `manifestInstant()`, and
   `profileInstant()`: the shared timestamp forms.
 - `runConcurrent(tasks, maxWorkers)`: the bounded fetch pool.
-- `maxSteps()`: the `METEO_MAX_STEPS` build cap; `KELVIN` and the
-  `NamedSite` type round out the module.
+- `parseCycleStamp(referenceTime, runHours, name)` and
+  `runReferenceTime(run)`: the pinned-cycle validator and its inverse;
+  `KELVIN` and the `NamedSite` type round out the module.
 
-Publication authority lives in `derive.ts` and `publish.ts`; a builder never
-open-codes the profile, history, or manifest writes.
+Publication authority lives in `derive.ts`, `publish.ts`, and
+`builders/publication.ts`: every run builder hands its model-specific
+parts to `publishRun`, which resolves the run, applies the
+already-published gate, and owns the profile, history, and manifest
+writes — a builder never open-codes them.
 
 A semantics declaration (invariant 6) is one verified line per builder,
 HRDPS West's, from `forecast/src/builders/hrdps-west.ts`:

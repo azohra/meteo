@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { dewPointDepression } from "../../src/moisture.js";
 import { compactJson } from "../../src/publish.js";
 import {
@@ -6,11 +6,12 @@ import {
   emptyHour,
   manifestInstant,
   isCompleteLevel,
-  maxSteps,
   memberRequiredValue,
+  parseCycleStamp,
   profileInstant,
   requiredValue,
   runConcurrent,
+  runReferenceTime,
   validTime,
   withDewPointDepression,
 } from "../../src/builders/common.js";
@@ -107,29 +108,22 @@ describe("withDewPointDepression", () => {
   });
 });
 
-describe("maxSteps", () => {
-  let saved: string | undefined;
-  beforeEach(() => {
-    saved = process.env["METEO_MAX_STEPS"];
-    delete process.env["METEO_MAX_STEPS"];
-  });
-  afterEach(() => {
-    if (saved === undefined) {
-      delete process.env["METEO_MAX_STEPS"];
-    } else {
-      process.env["METEO_MAX_STEPS"] = saved;
-    }
+describe("cycle stamps", () => {
+  it("runReferenceTime spells a provider cycle as an ISO instant", () => {
+    expect(runReferenceTime({ date: "20260807", hour: "06" })).toBe("2026-08-07T06:00:00Z");
   });
 
-  it("is undefined when the cap is unset (and when it is empty, as Python's falsy check)", () => {
-    expect(maxSteps()).toBeUndefined();
-    process.env["METEO_MAX_STEPS"] = "";
-    expect(maxSteps()).toBeUndefined();
-  });
-
-  it("reads the smoke tests' step cap", () => {
-    process.env["METEO_MAX_STEPS"] = "4";
-    expect(maxSteps()).toBe(4);
+  it("parseCycleStamp resolves a pinned cycle and refuses the rest", () => {
+    expect(parseCycleStamp("2026-08-07T12:00:00Z", ["12", "00"], "GEPS")).toEqual({
+      date: "20260807",
+      hour: "12",
+    });
+    expect(() => parseCycleStamp("20260807T12Z", ["12", "00"], "GEPS")).toThrow(
+      /not a GEPS cycle stamp/,
+    );
+    expect(() => parseCycleStamp("2026-08-07T06:00:00Z", ["12", "00"], "GEPS")).toThrow(
+      /not a GEPS cycle \(12\/00\)/,
+    );
   });
 });
 

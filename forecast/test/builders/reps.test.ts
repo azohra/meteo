@@ -20,7 +20,6 @@ import {
   buildDocuments,
   buildReps,
   fileUrl,
-  forecastHoursFromSteps,
   sampleScalarMembers,
   sampleWindMembers,
 } from "../../src/builders/reps.js";
@@ -273,12 +272,6 @@ it("the schedule starts after hour zero, which has no fluxes", () => {
   expect(FORECAST_HOURS[0]).toBe(STEP_HOURS);
   expect(FORECAST_HOURS).not.toContain(0);
   expect(FORECAST_HOURS[FORECAST_HOURS.length - 1]).toBe(72);
-  expect(() => forecastHoursFromSteps("0")).toThrow(/0/);
-});
-
-it("explicit steps must be on the three-hourly schedule", () => {
-  expect(forecastHoursFromSteps("24,18,21")).toEqual([18, 21, 24]);
-  expect(() => forecastHoursFromSteps("17")).toThrow(/17/);
 });
 
 it("the fetch pool cap holds its documented value", () => {

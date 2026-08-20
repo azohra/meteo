@@ -373,7 +373,7 @@ describe("buildHrrr", () => {
 
     // Only the synoptic cycles run to 48 h — an off-cycle pin is refused.
     await expect(buildHrrr({ sitesPath, referenceTime: "2026-08-07T13:00:00Z" })).rejects.toThrow(
-      /not a HRRR synoptic cycle/,
+      /not a HRRR cycle/,
     );
     await expect(buildHrrr({ sitesPath, referenceTime: "20260807T12Z" })).rejects.toThrow(
       /not a HRRR cycle stamp/,

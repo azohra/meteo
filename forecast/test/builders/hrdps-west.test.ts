@@ -5,7 +5,7 @@ import { packagedModelsPath } from "../../src/catalogue.js";
 import { NotFoundError } from "../../src/providers/datamart.js";
 import { DownloadCounters } from "../../src/providers/transport.js";
 import type { Site } from "../../src/sites.js";
-import { liveDatamartWire, type DatamartWire } from "../../src/builders/eccc.js";
+import { liveDatamartWire, type DatamartWire } from "../../src/providers/datamart.js";
 import {
   BASE_URL,
   CAPE_SENTINEL,
@@ -84,11 +84,12 @@ it("models.json matches the builder configuration", () => {
   expect(entry.capabilities["pblHeight"]).toBe(true);
 });
 
-it("METEO_MAX_STEPS caps the schedule", () => {
-  expect(forecastHours()).toEqual(Array.from({ length: 48 }, (_, index) => index + 1));
+it("the schedule is the full 48 hours; caps apply at build time", () => {
+  // The step cap (options.maxSteps ?? METEO_MAX_STEPS) is applied once,
+  // inside the build — the schedule itself stays pure.
   process.env["METEO_MAX_STEPS"] = "3";
   try {
-    expect(forecastHours()).toEqual([1, 2, 3]);
+    expect(forecastHours()).toEqual(Array.from({ length: 48 }, (_, index) => index + 1));
   } finally {
     delete process.env["METEO_MAX_STEPS"];
   }
@@ -454,7 +455,7 @@ describe("the pinned referenceTime", () => {
   });
 
   it("rejects non-cycle stamps", () => {
-    expect(() => pinnedRun("2026-08-08T06:00:00Z")).toThrow(/not an hrdps-west cycle/);
+    expect(() => pinnedRun("2026-08-08T06:00:00Z")).toThrow(/not a HRDPS 1 km cycle/);
     expect(() => pinnedRun("20260808T12Z")).toThrow(/cycle stamp/);
   });
 });

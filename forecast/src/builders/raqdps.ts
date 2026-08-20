@@ -1,11 +1,7 @@
-import { mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
+import type { DatasetOptions } from "../dataset.js";
 import { datamartBase } from "../providers/datamart.js";
-import { MANIFEST_SCHEMA_VERSION, SMOKE_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
-import { appendHistory, type ArchivableProfile } from "../history.js";
-import { manifestStats, roundDocument, writeJson } from "../publish.js";
-import { parseSites, type Site } from "../sites.js";
+import { SMOKE_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
+import type { Site } from "../sites.js";
 import {
   DownloadCounters,
   exists,
@@ -13,13 +9,15 @@ import {
   type TransportFetch,
 } from "../providers/transport.js";
 import {
-  manifestInstant,
-  maxSteps as envMaxSteps,
+  parseCycleStamp,
   profileInstant,
   runConcurrent,
+  runReferenceTime,
   validTime,
 } from "./common.js";
-import { TASK_CONCURRENCY, concurrencyLimit, liveDatamartWire, type DatamartWire } from "./eccc.js";
+import { publishRun } from "./publication.js";
+import { TASK_CONCURRENCY, liveDatamartWire, type DatamartWire } from "../providers/datamart.js";
+import { concurrencyLimit } from "../providers/transport.js";
 
 export const SLUG = "raqdps";
 export const PATH = "model_raqdps/10km/grib2";
@@ -124,7 +122,7 @@ async function sampleDocuments(
   wire: DatamartWire,
   options: BuildDocumentsOptions,
 ): Promise<BuildDocumentsResult> {
-  const cap = options.maxSteps ?? envMaxSteps();
+  const cap = options.maxSteps;
   let forecastSlots = Array.from({ length: FORECAST_HOURS }, (_, index) => ({
     forecastHour: index + 1,
     validAt: validTime(referenceTime, index + 1),
@@ -214,83 +212,36 @@ export interface RaqdpsBuildOptions {
 }
 
 export async function buildRaqdps(options: RaqdpsBuildOptions): Promise<boolean> {
-  const log = options.log ?? ((line: string) => console.log(line));
-  const sitesPath = options.sitesPath;
-  const outputRoot = options.outputRoot ?? "data";
-  const sites = parseSites(readFileSync(sitesPath, "utf-8"), sitesPath);
-
-  let run: RaqdpsRun | null;
-  let referenceTime: string;
-  if (options.referenceTime !== undefined) {
-    run = pinnedRun(options.referenceTime);
-    referenceTime = options.referenceTime;
-  } else {
-    run = await latestCompleteRun(options.fetch, options.now);
-    if (run === null) {
-      log("No complete RAQDPS run is available.");
-      return false;
-    }
-    const date = run.date;
-    referenceTime = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T${run.hour}:00:00Z`;
-  }
-  if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
-    log(`RAQDPS run ${referenceTime} is already published.`);
-    return false;
-  }
-
-  log(`Building RAQDPS ${referenceTime} for ${sites.length} sites…`);
-  const startedAt = performance.now();
-  const stats = new DownloadCounters();
-  const buildOptions: BuildDocumentsOptions = {};
-  if (options.maxSteps !== undefined) buildOptions.maxSteps = options.maxSteps;
-  if (options.wire !== undefined) buildOptions.wire = options.wire;
-  if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
-  const result = await buildDocuments(run, referenceTime, sites, stats, buildOptions);
-
-  const outDir = join(outputRoot, SLUG);
-  const sitesDir = join(outDir, "sites");
-  mkdirSync(sitesDir, { recursive: true });
-  const month = referenceTime.slice(0, 7);
-  for (const document of result.documents) {
-    const rounded = roundDocument(document) as ArchivableProfile;
-    writeJson(join(sitesDir, `${rounded.site.id}.json`), rounded, { compact: true });
-    if (options.history ?? true) {
-      const published = await publishedHistory(SLUG, rounded.site.id, month, options.dataset);
-      appendHistory(rounded, join(outDir, "history"), () => published);
-    }
-  }
-  const manifest = {
-    firstForecastHour: result.firstForecastHour,
-    forecastHours: result.forecastHours,
-    generatedAt: manifestInstant(),
-    lastForecastHour: result.lastForecastHour,
-    model: SLUG,
-    referenceTime,
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
-    stats: manifestStats(stats, startedAt),
-  };
-  writeJson(join(outDir, "manifest.json"), manifest, { compact: false });
-  log(
-    `Published ${result.documents.length} RAQDPS smoke documents for ${referenceTime} ` +
-      `(${stats.requests} downloads, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
+  let run: RaqdpsRun;
+  return publishRun(
+    {
+      slug: SLUG,
+      label: "RAQDPS",
+      publishedNoun: "RAQDPS smoke documents",
+      resolveRun: async () => {
+        if (options.referenceTime !== undefined) {
+          run = pinnedRun(options.referenceTime);
+          return options.referenceTime;
+        }
+        const probed = await latestCompleteRun(options.fetch, options.now);
+        if (probed === null) {
+          return null;
+        }
+        run = probed;
+        return runReferenceTime(probed);
+      },
+      build: async (referenceTime, sites, stats) => {
+        const buildOptions: BuildDocumentsOptions = {};
+        if (options.maxSteps !== undefined) buildOptions.maxSteps = options.maxSteps;
+        if (options.wire !== undefined) buildOptions.wire = options.wire;
+        if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
+        return buildDocuments(run, referenceTime, sites, stats, buildOptions);
+      },
+    },
+    options,
   );
-  for (const line of stats.transportReport()) {
-    log(line);
-  }
-  return true;
 }
 
 export function pinnedRun(referenceTime: string): RaqdpsRun {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):00:00Z$/.exec(referenceTime);
-  if (match === null) {
-    throw new Error(
-      `referenceTime ${referenceTime} is not a raqdps cycle stamp (YYYY-MM-DDTHH:00:00Z)`,
-    );
-  }
-  const hour = match[4]!;
-  if (!(RUN_HOURS as readonly string[]).includes(hour)) {
-    throw new Error(`referenceTime hour ${hour} is not a raqdps cycle (12/00)`);
-  }
-  return { date: `${match[1]}${match[2]}${match[3]}`, hour };
+  return parseCycleStamp(referenceTime, RUN_HOURS, "raqdps");
 }

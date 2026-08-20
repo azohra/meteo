@@ -1,5 +1,3 @@
-import { mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
   ECCODES_MISSING_VALUE,
   nearestGridpoint,
@@ -13,20 +11,17 @@ import {
   type GribField,
 } from "@azohra/meteo.grib";
 import {
-  MANIFEST_SCHEMA_VERSION,
   SITE_FORECAST_SCHEMA_VERSION,
   type ForecastSemantics,
 } from "@azohra/meteo.briefing/contract";
 import { datamartBase, fetchBytes } from "../providers/datamart.js";
-import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
+import type { DatasetOptions } from "../dataset.js";
 import { deriveSiteForecast, type SourceHour } from "../derive.js";
 import { aggregateMemberProfiles, type MemberProfile } from "../ensemble.js";
-import { appendHistory, type ArchivableProfile } from "../history.js";
 import { dewPointDepression } from "../moisture.js";
 import { windFromUv } from "../providers/noaa.js";
-import { manifestStats, roundDocument, writeJson } from "../publish.js";
 import { maskSentinel } from "../sentinel.js";
-import { parseSites, type Site } from "../sites.js";
+import type { Site } from "../sites.js";
 import {
   DownloadCounters,
   exists,
@@ -35,15 +30,15 @@ import {
 } from "../providers/transport.js";
 import {
   KELVIN,
-  manifestInstant,
-  maxSteps as envMaxSteps,
   memberRequiredValue,
   profileInstant,
   runConcurrent,
   validTime,
   withDewPointDepression,
 } from "./common.js";
-import { TASK_CONCURRENCY, concurrencyLimit, lazyJ2kPool } from "./eccc.js";
+import { TASK_CONCURRENCY, lazyJ2kPool } from "../providers/datamart.js";
+import { concurrencyLimit } from "../providers/transport.js";
+import { publishRun } from "./publication.js";
 
 export const SLUG = "geps";
 
@@ -143,24 +138,6 @@ export function fileUrl(
     `${datamartBase()}/${date}/WXO-DD/ensemble/geps/grib2/raw/` +
     `${runHour}/${String(forecastHour).padStart(3, "0")}/${name}`
   );
-}
-
-export function forecastHoursFromSteps(steps: string | undefined): number[] {
-  if (steps === undefined) {
-    return [...FORECAST_HOURS];
-  }
-  const hours = steps
-    .split(",")
-    .map((step) => Number.parseInt(step, 10))
-    .sort((a, b) => a - b);
-  for (const hour of hours) {
-    if (!FORECAST_HOURS.includes(hour)) {
-      throw new Error(
-        `forecast hour ${hour} is not on the GEPS schedule (3-hourly to 192, 6-hourly to 384)`,
-      );
-    }
-  }
-  return hours;
 }
 
 export async function latestCompleteRun(
@@ -771,77 +748,37 @@ export interface GepsBuildOptions {
 }
 
 export async function buildGeps(options: GepsBuildOptions): Promise<boolean> {
-  const log = options.log ?? ((line: string) => console.log(line));
-  const sitesPath = options.sitesPath;
-  const outputRoot = options.outputRoot ?? "data";
-  const sites = parseSites(readFileSync(sitesPath, "utf-8"), sitesPath);
-
-  let referenceTime: string;
-  if (options.referenceTime !== undefined) {
-    referenceTime = canonicalInstant(options.referenceTime);
-  } else {
-    const probed = await latestCompleteRun(options.fetch, options.now);
-    if (probed === null) {
-      log("No complete GEPS run is available.");
-      return false;
-    }
-    referenceTime = probed;
-  }
-  if ((await publishedReferenceTime(SLUG, options.dataset)) === referenceTime) {
-    log(`GEPS run ${referenceTime} is already published.`);
-    return false;
-  }
-
-  const cap = options.maxSteps ?? envMaxSteps();
-  const forecastSlots = FORECAST_HOURS.slice(0, cap ?? FORECAST_HOURS.length).map((hour) => ({
-    forecastHour: hour,
-    validAt: validTime(referenceTime, hour),
-  }));
-  log(
-    `Building GEPS ensemble ${referenceTime} for ${sites.length} sites ` +
-      `(${forecastSlots.length} steps × ${MEMBER_COUNT} members)…`,
+  const cap = options.maxSteps;
+  const slots = (referenceTime: string): ForecastSlot[] =>
+    FORECAST_HOURS.slice(0, cap ?? FORECAST_HOURS.length).map((hour) => ({
+      forecastHour: hour,
+      validAt: validTime(referenceTime, hour),
+    }));
+  return publishRun(
+    {
+      slug: SLUG,
+      label: "GEPS",
+      publishedNoun: "ensemble documents",
+      manifestExtras: { memberCount: MEMBER_COUNT },
+      resolveRun: async () => {
+        if (options.referenceTime !== undefined) {
+          return canonicalInstant(options.referenceTime);
+        }
+        return latestCompleteRun(options.fetch, options.now);
+      },
+      buildingLine: (referenceTime, siteCount) =>
+        `Building GEPS ensemble ${referenceTime} for ${siteCount} sites ` +
+        `(${slots(referenceTime).length} steps × ${MEMBER_COUNT} members)…`,
+      build: async (referenceTime, sites, stats) => {
+        const buildOptions: BuildDocumentsOptions = {};
+        if (options.fetchBytes !== undefined) buildOptions.fetchBytes = options.fetchBytes;
+        if (options.decodeJ2k !== undefined) buildOptions.decodeJ2k = options.decodeJ2k;
+        if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
+        return buildDocuments(referenceTime, slots(referenceTime), sites, stats, buildOptions);
+      },
+    },
+    options,
   );
-  const startedAt = performance.now();
-  const stats = new DownloadCounters();
-  const buildOptions: BuildDocumentsOptions = {};
-  if (options.fetchBytes !== undefined) buildOptions.fetchBytes = options.fetchBytes;
-  if (options.decodeJ2k !== undefined) buildOptions.decodeJ2k = options.decodeJ2k;
-  if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
-  const result = await buildDocuments(referenceTime, forecastSlots, sites, stats, buildOptions);
-
-  const outDir = join(outputRoot, SLUG);
-  const sitesDir = join(outDir, "sites");
-  mkdirSync(sitesDir, { recursive: true });
-  const month = referenceTime.slice(0, 7);
-  for (const raw of result.documents) {
-    const document = roundDocument(raw) as ArchivableProfile;
-    writeJson(join(sitesDir, `${document.site.id}.json`), document, { compact: true });
-    if (options.history ?? true) {
-      const published = await publishedHistory(SLUG, document.site.id, month, options.dataset);
-      appendHistory(document, join(outDir, "history"), () => published);
-    }
-  }
-  const manifest = {
-    firstForecastHour: result.firstForecastHour,
-    forecastHours: result.forecastHours,
-    generatedAt: manifestInstant(),
-    lastForecastHour: result.lastForecastHour,
-    memberCount: MEMBER_COUNT,
-    model: SLUG,
-    referenceTime,
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
-    stats: manifestStats(stats, startedAt),
-  };
-  writeJson(join(outDir, "manifest.json"), manifest, { compact: false });
-  log(
-    `Published ${result.documents.length} ensemble documents for ${referenceTime} ` +
-      `(${stats.requests} downloads, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
-  );
-  for (const line of stats.transportReport()) {
-    log(line);
-  }
-  return true;
 }
 
 function canonicalInstant(value: string): string {

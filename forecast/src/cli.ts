@@ -90,28 +90,6 @@ function requiredSitesPath(sites: string | undefined): string {
   return resolvePath(path);
 }
 
-async function withMaxStepsEnvironment<T>(
-  maxSteps: number | undefined,
-  body: () => Promise<T>,
-): Promise<T> {
-  const name = "METEO_MAX_STEPS";
-  const previous = process.env[name];
-  try {
-    if (maxSteps === undefined) {
-      delete process.env[name];
-    } else {
-      process.env[name] = String(maxSteps);
-    }
-    return await body();
-  } finally {
-    if (previous === undefined) {
-      delete process.env[name];
-    } else {
-      process.env[name] = previous;
-    }
-  }
-}
-
 function selectedModels(model: string | undefined, all: boolean): readonly string[] {
   if (all) {
     return [...BUILDERS.keys()];
@@ -195,22 +173,20 @@ async function buildCommand(
     history: config.history,
     ...(maxSteps !== undefined ? { maxSteps } : {}),
   };
-  await withMaxStepsEnvironment(config.maxSteps, async () => {
-    for (const slug of models) {
-      try {
-        await runBuilder(slug, buildOptions);
-      } catch (error) {
-        if (error instanceof PublisherConfigurationError) {
-          throw error;
-        }
-        if (process.env["METEO_TRACEBACK"]) {
-          stderr(error instanceof Error && error.stack ? error.stack : String(error));
-        }
-        const message = error instanceof Error ? error.message : String(error);
-        throw new CliFailure(`${slug} build failed: ${message}`, { cause: error });
+  for (const slug of models) {
+    try {
+      await runBuilder(slug, buildOptions);
+    } catch (error) {
+      if (error instanceof PublisherConfigurationError) {
+        throw error;
       }
+      if (process.env["METEO_TRACEBACK"]) {
+        stderr(error instanceof Error && error.stack ? error.stack : String(error));
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      throw new CliFailure(`${slug} build failed: ${message}`, { cause: error });
     }
-  });
+  }
   return 0;
 }
 

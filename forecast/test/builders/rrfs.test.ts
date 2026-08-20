@@ -472,7 +472,7 @@ describe("buildRrfs", () => {
 
     // The other hourly cycles publish no isobaric files — a 13Z pin is refused.
     await expect(buildRrfs({ sitesPath, referenceTime: "2026-08-13T13:00:00Z" })).rejects.toThrow(
-      /not a RRFS synoptic cycle/,
+      /not a RRFS cycle/,
     );
     await expect(buildRrfs({ sitesPath, referenceTime: "20260813T12Z" })).rejects.toThrow(
       /not a RRFS cycle stamp/,

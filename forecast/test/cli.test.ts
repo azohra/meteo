@@ -165,7 +165,7 @@ describe("meteo forecast build", () => {
     expect(stdout).toContain("capped at 2 step(s)");
   });
 
-  it("dispatch passes explicit paths and max-steps, bridging the env without leaks", async () => {
+  it("dispatch passes explicit paths and max-steps, leaving the env untouched", async () => {
     const tmp = scratch();
     const sites = writeSites(join(tmp, "launches.json"));
     const output = join(tmp, "static");
@@ -193,8 +193,10 @@ describe("meteo forecast build", () => {
     );
 
     expect(result).toBe(0);
+    // --max-steps travels only through the forwarded options; the
+    // operator's METEO_MAX_STEPS is never rewritten.
     expect(calls).toEqual([
-      ["gfs", { sitesPath: sites, outputRoot: output, history: true, maxSteps: 3 }, "3"],
+      ["gfs", { sitesPath: sites, outputRoot: output, history: true, maxSteps: 3 }, "91"],
     ]);
     expect(existsSync(output)).toBe(true);
     expect(process.env["METEO_MAX_STEPS"]).toBe("91");

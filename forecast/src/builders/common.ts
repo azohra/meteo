@@ -84,14 +84,40 @@ export function withDewPointDepression(level: BuilderLevel): BuilderLevel {
   };
 }
 
-export function maxSteps(): number | undefined {
-  const raw = process.env["METEO_MAX_STEPS"];
-  return raw ? Number.parseInt(raw, 10) : undefined;
-}
-
 export function validTime(referenceTime: string, forecastHour: number): string {
   const instantMs = Date.parse(referenceTime) + forecastHour * 3_600_000;
   return new Date(instantMs).toISOString().slice(0, 19) + "Z";
+}
+
+/** A provider cycle as its feed names it: YYYYMMDD date, zero-padded UTC hour. */
+export interface CycleRun {
+  date: string;
+  hour: string;
+}
+
+/** The ISO reference time of a provider cycle. */
+export function runReferenceTime(run: CycleRun): string {
+  const date = run.date;
+  return `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T${run.hour}:00:00Z`;
+}
+
+/** Validates a pinned reference time against a model's cycle hours. */
+export function parseCycleStamp(
+  referenceTime: string,
+  runHours: readonly string[],
+  name: string,
+): CycleRun {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):00:00Z$/.exec(referenceTime);
+  if (match === null) {
+    throw new Error(
+      `referenceTime ${referenceTime} is not a ${name} cycle stamp (YYYY-MM-DDTHH:00:00Z)`,
+    );
+  }
+  const hour = match[4]!;
+  if (!runHours.includes(hour)) {
+    throw new Error(`referenceTime hour ${hour} is not a ${name} cycle (${runHours.join("/")})`);
+  }
+  return { date: `${match[1]}${match[2]}${match[3]}`, hour };
 }
 
 export function manifestInstant(): string {

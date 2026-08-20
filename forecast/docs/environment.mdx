@@ -50,7 +50,5 @@ own reads. Setting `METEO_DATA_BASE` always wins.
 | --- | --- |
 | `METEO_TRACEBACK` | When set, CLI errors print their full stack trace to stderr instead of the one-line message. |
 
-One variable is not operator surface: `METEO_MAX_STEPS` is how the CLI
-hands `--max-steps` to the builders. A dispatch without the flag clears
-it, so a value you export is ignored. Pass `--max-steps` on the command
-line.
+`--max-steps` travels to the builders in-process, never through the
+environment; there is no variable to export for it.

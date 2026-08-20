@@ -21,7 +21,6 @@ import {
   buildDocuments,
   buildGeps,
   fileUrl,
-  forecastHoursFromSteps,
   previousScheduledHour,
   requirePlausibleModelElevation,
   sampleScalarMembers,
@@ -314,12 +313,6 @@ it("the schedule is three-hourly to 192 then six-hourly to 384", () => {
   expect(FORECAST_HOURS).toContain(198);
   expect(FORECAST_HOURS[FORECAST_HOURS.length - 1]).toBe(384);
   expect(FORECAST_HOURS).toHaveLength(96);
-});
-
-it("explicit steps must be on the GEPS schedule", () => {
-  expect(forecastHoursFromSteps("24,18,21")).toEqual([18, 21, 24]);
-  expect(() => forecastHoursFromSteps("195")).toThrow(/195/);
-  expect(() => forecastHoursFromSteps("0")).toThrow(/0/);
 });
 
 it("the accumulation window start follows the cadence change", () => {

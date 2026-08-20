@@ -110,6 +110,7 @@ export type GoesBuildOptions = GoesSiteSource & {
   now?: () => Date;
   history?: boolean;
   outputRoot?: string;
+  maxSteps?: number;
   publishedManifest?: (slug: string) => Promise<PublishedManifest | null>;
   fetchPublished?: (path: string) => Promise<Uint8Array | null>;
   publishedHistory?: (model: string, siteId: string, month: string) => Promise<Uint8Array>;
@@ -163,8 +164,8 @@ export async function buildGoesProduct(product: Product, options: GoesBuildOptio
 
   const stats = new DownloadCounters();
   let keys = await scanKeysSince(product, lastObserved, now, stats, wire);
-  const maxSteps = maxStepsFromEnv();
-  if (maxSteps !== null) {
+  const maxSteps = options.maxSteps;
+  if (maxSteps !== undefined) {
     keys = keys.slice(0, maxSteps);
   }
   if (keys.length === 0) {
@@ -584,11 +585,6 @@ function backfillHoursFromEnv(): number {
     throw new Error(`METEO_GOES_BACKFILL_HOURS is not a number: ${raw}`);
   }
   return hours;
-}
-
-function maxStepsFromEnv(): number | null {
-  const raw = process.env["METEO_MAX_STEPS"];
-  return raw ? Number.parseInt(raw, 10) : null;
 }
 
 function decodeXmlText(text: string): string {

@@ -1,37 +1,20 @@
-import { mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import type { ForecastSemantics } from "@azohra/meteo.briefing/contract";
+import type { DatasetOptions } from "../dataset.js";
 import {
-  ECCODES_MISSING_VALUE,
-  gridKey,
-  nearestGridpoint,
-  parseFields,
-  parseGrid,
-  sampleFieldValuesAsync,
-  type DecodeJ2kAsync,
-  type DecodeJ2kSampled,
-  type NearestGridpoint,
-  type SampledFieldValues,
-} from "@azohra/meteo.grib";
-import {
-  createNodeJ2kDecoderPool,
-  type J2kDecoderPool,
-  type J2kDecoderPoolOptions,
-} from "@azohra/meteo.grib/j2k-node";
-import { MANIFEST_SCHEMA_VERSION, type ForecastSemantics } from "@azohra/meteo.briefing/contract";
-import { publishedHistory, publishedReferenceTime, type DatasetOptions } from "../dataset.js";
-import {
+  FETCH_CONCURRENCY,
   NotFoundError,
+  TASK_CONCURRENCY,
   datamartBase,
-  fetchBytes,
-  type FetchBytesOptions,
+  liveDatamartWire,
+  type DatamartWire,
 } from "../providers/datamart.js";
 import { deriveSiteForecast, type SourceHour } from "../derive.js";
-import { appendHistory, type ArchivableProfile } from "../history.js";
-import { manifestStats, roundDocument, writeJson } from "../publish.js";
+import type { ArchivableProfile } from "../history.js";
 import { maskSentinel } from "../sentinel.js";
-import { parseSites, type Site } from "../sites.js";
+import type { Site } from "../sites.js";
 import {
   DownloadCounters,
+  concurrencyLimit,
   exists,
   keepAliveFetch,
   type TransportFetch,
@@ -39,19 +22,17 @@ import {
 import {
   KELVIN,
   emptyHour,
-  manifestInstant,
   isCompleteLevel,
-  maxSteps as envMaxSteps,
+  parseCycleStamp,
   profileInstant,
   requiredValue,
   runConcurrent,
+  runReferenceTime,
   validTime,
   type BuilderHour,
 } from "./common.js";
+import { publishRun } from "./publication.js";
 
-export const FETCH_CONCURRENCY = 5;
-const J2K_POOL_DEFAULT_MAX_WORKERS = 8;
-export const TASK_CONCURRENCY = FETCH_CONCURRENCY + J2K_POOL_DEFAULT_MAX_WORKERS;
 export const GUST_MAX_PACKING_SLACK_MS = 0.1;
 
 export const PRESSURE_LEVELS = [
@@ -250,159 +231,6 @@ export function fileUrl(
   return `${datamartBase()}/${date}/WXO-DD/${model.path}/${runHour}/${step}/${name}`;
 }
 
-export function concurrencyLimit(maxConcurrent: number): <T>(task: () => Promise<T>) => Promise<T> {
-  let active = 0;
-  const waiting: Array<() => void> = [];
-  const release = (): void => {
-    const next = waiting.shift();
-    if (next !== undefined) {
-      next();
-    } else {
-      active -= 1;
-    }
-  };
-  return async (task) => {
-    if (active >= maxConcurrent) {
-      await new Promise<void>((resolve) => waiting.push(resolve));
-    } else {
-      active += 1;
-    }
-    try {
-      return await task();
-    } finally {
-      release();
-    }
-  };
-}
-
-// close() is mandatory once a decode may have run: pool workers are real
-// threads and hold the process open.
-export interface LazyJ2kPool {
-  decode: DecodeJ2kAsync;
-  decodeSampled: DecodeJ2kSampled;
-  close(): Promise<void>;
-}
-
-export function lazyJ2kPool(options: J2kDecoderPoolOptions = {}): LazyJ2kPool {
-  let poolPromise: Promise<J2kDecoderPool> | undefined;
-  const pool = (): Promise<J2kDecoderPool> => (poolPromise ??= createNodeJ2kDecoderPool(options));
-  return {
-    decode: async (codestream) => (await pool()).decode(codestream),
-    decodeSampled: async (codestream, scaling, indices) =>
-      (await pool()).decodeSampled(codestream, scaling, indices),
-    close: async () => {
-      const pending = poolPromise;
-      poolPromise = undefined;
-      const booted = await pending?.catch(() => undefined);
-      await booted?.close();
-    },
-  };
-}
-
-export interface DatamartSite {
-  slug: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  timeZone?: string;
-}
-
-const gridPointsCache = new Map<string, Map<string, NearestGridpoint>>();
-
-export function resetGridPointsCache(): void {
-  gridPointsCache.clear();
-}
-
-const sampledByMessage = new WeakMap<
-  Uint8Array,
-  { key: string; pending: Promise<SampledFieldValues> }
->();
-
-export async function sampleDatamartField(
-  message: Uint8Array,
-  sites: readonly DatamartSite[],
-  maxDistanceKm: number | undefined,
-  decodeJ2k?: DecodeJ2kAsync,
-  decodeJ2kSampled?: DecodeJ2kSampled,
-): Promise<Record<string, number | null>> {
-  const [field] = parseFields(message);
-  if (field === undefined) {
-    throw new Error("Datamart message contains no decodable field");
-  }
-  const key = [
-    gridKey(field.section3),
-    ...sites.map((site) => `${site.slug},${site.latitude},${site.longitude}`),
-  ].join("|");
-  let points = gridPointsCache.get(key);
-  if (points === undefined) {
-    const grid = parseGrid(field.section3);
-    points = new Map();
-    for (const site of sites) {
-      points.set(site.slug, nearestGridpoint(grid, site.latitude, site.longitude));
-    }
-    gridPointsCache.set(key, points);
-  }
-  for (const site of sites) {
-    const point = points.get(site.slug)!;
-    if (maxDistanceKm !== undefined && point.distanceKm > maxDistanceKm) {
-      throw new Error(
-        `(${site.latitude}, ${site.longitude}) is outside the model grid ` +
-          `(nearest gridpoint ${point.distanceKm.toFixed(0)} km away)`,
-      );
-    }
-  }
-  let cached = sampledByMessage.get(message);
-  if (cached === undefined || cached.key !== key) {
-    const indices = Uint32Array.from(sites, (site) => points.get(site.slug)!.index);
-    cached = {
-      key,
-      pending: sampleFieldValuesAsync(field, indices, {
-        ...(decodeJ2k !== undefined ? { decodeJ2k } : {}),
-        ...(decodeJ2kSampled !== undefined ? { decodeJ2kSampled } : {}),
-        missingValue: ECCODES_MISSING_VALUE,
-      }),
-    };
-    sampledByMessage.set(message, cached);
-  }
-  const sampled = await cached.pending;
-  const samples: Record<string, number | null> = {};
-  for (let i = 0; i < sites.length; i++) {
-    const masked = sampled.missingMask !== undefined && sampled.missingMask[i] === 1;
-    samples[sites[i]!.slug] = masked ? null : sampled.values[i]!;
-  }
-  return samples;
-}
-
-export interface DatamartWire {
-  fetchBytes(url: string): Promise<Uint8Array>;
-  sampleSites(
-    message: Uint8Array,
-    sites: readonly DatamartSite[],
-    maxDistanceKm?: number,
-  ): Promise<Record<string, number | null>>;
-  close?(): Promise<void>;
-}
-
-export interface LiveDatamartWireOptions extends FetchBytesOptions {
-  decodeJ2k?: DecodeJ2kAsync;
-  poolSize?: number;
-}
-
-export function liveDatamartWire(options: LiveDatamartWireOptions = {}): DatamartWire {
-  const pool =
-    options.decodeJ2k === undefined
-      ? lazyJ2kPool(options.poolSize !== undefined ? { size: options.poolSize } : {})
-      : undefined;
-  const decodeJ2k = options.decodeJ2k ?? pool!.decode;
-  const decodeJ2kSampled = pool?.decodeSampled;
-  return {
-    fetchBytes: (url) => fetchBytes(url, options),
-    sampleSites: (message, sites, maxDistanceKm) =>
-      sampleDatamartField(message, sites, maxDistanceKm, decodeJ2k, decodeJ2kSampled),
-    close: () => pool?.close() ?? Promise.resolve(),
-  };
-}
-
 export interface DatamartRun {
   date: string;
   hour: string;
@@ -492,7 +320,7 @@ async function sampleProfiles(
   wire: DatamartWire,
   options: BuildProfilesOptions,
 ): Promise<BuildProfilesResult> {
-  const cap = options.maxSteps ?? envMaxSteps();
+  const cap = options.maxSteps;
   let forecastSlots = model.forecastHours.map((hour) => ({
     forecastHour: hour,
     validAt: validTime(referenceTime, hour),
@@ -795,90 +623,37 @@ export interface EcccBuildOptions {
 }
 
 export async function buildEccc(model: DatamartModel, options: EcccBuildOptions): Promise<boolean> {
-  const log = options.log ?? ((line: string) => console.log(line));
-  const sitesPath = options.sitesPath;
-  const outputRoot = options.outputRoot ?? "data";
-  const sites = parseSites(readFileSync(sitesPath, "utf-8"), sitesPath);
-
-  let run: DatamartRun | null;
-  let referenceTime: string;
-  if (options.referenceTime !== undefined) {
-    run = pinnedRun(model, options.referenceTime);
-    referenceTime = options.referenceTime;
-  } else {
-    run = await latestCompleteRun(model, options.fetch, options.now);
-    if (run === null) {
-      log(`No complete ${model.slug} run is available.`);
-      return false;
-    }
-    const date = run.date;
-    referenceTime = `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T${run.hour}:00:00Z`;
-  }
-  if ((await publishedReferenceTime(model.slug, options.dataset)) === referenceTime) {
-    log(`${model.slug} run ${referenceTime} is already published.`);
-    return false;
-  }
-
-  log(`Building ${model.slug} ${referenceTime} for ${sites.length} sites…`);
-  const startedAt = performance.now();
-  const stats = new DownloadCounters();
-  const buildOptions: BuildProfilesOptions = {};
-  if (options.maxSteps !== undefined) buildOptions.maxSteps = options.maxSteps;
-  if (options.wire !== undefined) buildOptions.wire = options.wire;
-  if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
-  const result = await buildProfiles(model, run, referenceTime, sites, stats, buildOptions);
-
-  const outDir = join(outputRoot, model.slug);
-  const sitesDir = join(outDir, "sites");
-  mkdirSync(sitesDir, { recursive: true });
-  const month = referenceTime.slice(0, 7);
-  for (const profile of result.profiles) {
-    const document = roundDocument(profile) as ArchivableProfile;
-    writeJson(join(sitesDir, `${document.site.id}.json`), document, { compact: true });
-    if (options.history ?? true) {
-      const published = await publishedHistory(
-        model.slug,
-        document.site.id,
-        month,
-        options.dataset,
-      );
-      appendHistory(document, join(outDir, "history"), () => published);
-    }
-  }
-  const manifest = {
-    firstForecastHour: result.firstForecastHour,
-    forecastHours: result.forecastHours,
-    generatedAt: manifestInstant(),
-    lastForecastHour: result.lastForecastHour,
-    model: model.slug,
-    referenceTime,
-    schemaVersion: MANIFEST_SCHEMA_VERSION,
-    sites: sites.map((site) => ({ name: site.name, slug: site.slug })),
-    stats: manifestStats(stats, startedAt),
-  };
-  writeJson(join(outDir, "manifest.json"), manifest, { compact: false });
-  log(
-    `Published ${result.profiles.length} profiles for ${referenceTime} ` +
-      `(${stats.requests} downloads, ${Math.floor(stats.responseBytes / (1024 * 1024))} MiB).`,
+  let run: DatamartRun;
+  return publishRun(
+    {
+      slug: model.slug,
+      label: model.slug,
+      publishedNoun: "profiles",
+      resolveRun: async () => {
+        if (options.referenceTime !== undefined) {
+          run = pinnedRun(model, options.referenceTime);
+          return options.referenceTime;
+        }
+        const probed = await latestCompleteRun(model, options.fetch, options.now);
+        if (probed === null) {
+          return null;
+        }
+        run = probed;
+        return runReferenceTime(probed);
+      },
+      build: async (referenceTime, sites, stats) => {
+        const buildOptions: BuildProfilesOptions = {};
+        if (options.maxSteps !== undefined) buildOptions.maxSteps = options.maxSteps;
+        if (options.wire !== undefined) buildOptions.wire = options.wire;
+        if (options.generatedAt !== undefined) buildOptions.generatedAt = options.generatedAt;
+        const result = await buildProfiles(model, run, referenceTime, sites, stats, buildOptions);
+        return { ...result, documents: result.profiles };
+      },
+    },
+    options,
   );
-  for (const line of stats.transportReport()) {
-    log(line);
-  }
-  return true;
 }
 
 export function pinnedRun(model: DatamartModel, referenceTime: string): DatamartRun {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):00:00Z$/.exec(referenceTime);
-  if (match === null) {
-    throw new Error(
-      `referenceTime ${referenceTime} is not a ${model.slug} cycle stamp (YYYY-MM-DDTHH:00:00Z)`,
-    );
-  }
-  const hour = match[4]!;
-  if (!model.runHours.includes(hour)) {
-    throw new Error(
-      `referenceTime hour ${hour} is not a ${model.slug} cycle (${model.runHours.join("/")})`,
-    );
-  }
-  return { date: `${match[1]}${match[2]}${match[3]}`, hour };
+  return parseCycleStamp(referenceTime, model.runHours, model.slug);
 }

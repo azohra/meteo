@@ -9,13 +9,13 @@ import {
   prefetchedManifestReader,
   publishedManifest,
   RETRYABLE_S3_CODES,
-  s3Backoff,
   s3ErrorCode,
   s3Mode,
   s3ObjectName,
   signedS3Fetch,
   type DatasetOptions,
 } from "./dataset.js";
+import { transportBackoff } from "./providers/transport.js";
 import { writeRunsIndex } from "./publish.js";
 
 /* Upload order: history archives, then site profiles, then the manifest
@@ -284,7 +284,7 @@ async function putObject(
       lastError = new Error(`PUT ${s3ObjectName(key)} failed with ${code ?? exchange.status}`);
     }
     if (attempt < 2) {
-      await s3Backoff(attempt, options);
+      await transportBackoff(attempt, options);
     }
   }
   throw lastError!;
