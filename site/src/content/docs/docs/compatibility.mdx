@@ -93,6 +93,8 @@ The one rule left is the release rule: never move a writer to a version
 no released reader parses. Everything else is a pin bump on the
 consumer's own schedule.
 
+![A three-lane swimlane read left to right through a schematic v1-to-v2 schemaVersion bump. The lanes are the writer (an operator pinning @azohra/meteo.forecast, which embeds its own briefing as the writer), the published dataset between them, and readers pinning @azohra/meteo.briefing. In the before column the writer emits v1, v1 documents sit on the wire, and a reader parses them — a guard parses every version ever published, normalized up. In phase 1 the release that bumps the family ships the upgrade with it: the new briefing parses v2 and everything before it, and the forecast release that embeds it is the new writer, emitting only v2; the dataset now holds v2 current documents while v1 archives stay on the wire, append-only and immutable. In phase 2 consumers upgrade at their own pace, in any order: a reader that bumps its pin early keeps parsing the old documents still being published, while a reader that bumps late sees, for new documents only, a miss of invalid with declaredSchemaVersion 2 against a supported 1 — the signal to upgrade the package, not to debug bytes — and an ingesting reader serves what it last stored. A callout carries the release rule: never move a writer to a version no released reader parses.](figures/schema-rollout.svg)
+
 ## The forecast engine's boundary
 
 The engine is the `@azohra/meteo.forecast` package, versioned and

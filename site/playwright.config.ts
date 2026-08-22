@@ -9,7 +9,11 @@ import { defineConfig } from "@playwright/test";
    port of its own, and a server is never reused: this suite must prove
    THIS tree. */
 const digest = createHash("sha256").update(import.meta.dirname).digest();
-const port = 4400 + (digest.readUInt16BE(0) % 4000);
+/* Chromium refuses its restricted ports (ERR_UNSAFE_PORT); skip the ones
+   inside the derived range or a checkout path can hash to a dead suite. */
+const UNSAFE_PORTS = new Set([4045, 5060, 5061, 6000, 6566, 6665, 6666, 6667, 6668, 6669, 6679, 6697]);
+let port = 4400 + (digest.readUInt16BE(0) % 4000);
+while (UNSAFE_PORTS.has(port)) port += 1;
 
 export default defineConfig({
   testDir: "./test",

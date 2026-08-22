@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 672">
+  <defs>
+    <marker id="bstage-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2f454a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="672" fill="#fffdf8"/>
+
+  <!-- connectors (drawn before boxes) -->
+  <line x1="192" y1="120" x2="192" y2="170" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <line x1="324" y1="216" x2="366" y2="216" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <line x1="636" y1="216" x2="678" y2="216" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <path d="M 816 256 L 816 272 Q 816 280 808 280 L 508 280 Q 500 280 500 288 L 500 314" fill="none" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <line x1="500" y1="400" x2="500" y2="430" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <path d="M 420 516 L 420 528 Q 420 536 412 536 L 204 536 Q 196 536 196 544 L 196 554" fill="none" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <line x1="500" y1="516" x2="500" y2="554" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+  <path d="M 580 516 L 580 528 Q 580 536 588 536 L 796 536 Q 804 536 804 544 L 804 554" fill="none" stroke="#2f454a" stroke-width="1" marker-end="url(#bstage-arrow)"/>
+
+  <!-- configuration input -->
+  <rect x="60" y="44" width="264" height="76" rx="6" fill="#fffdf8"/>
+  <rect x="60" y="44" width="264" height="76" rx="6" fill="rgba(47,69,74,0.06)" stroke="#40565a" stroke-width="1"/>
+  <text x="192" y="78" fill="#152529" font-size="12.5" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">models.json + sites.json</text>
+  <text x="192" y="100" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">configuration, passed explicitly</text>
+
+  <!-- step row -->
+  <rect x="60" y="176" width="264" height="80" rx="6" fill="#fffdf8"/>
+  <rect x="60" y="176" width="264" height="80" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <text x="192" y="212" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">provider transport</text>
+  <text x="192" y="236" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">providers/transport.ts</text>
+
+  <rect x="372" y="176" width="264" height="80" rx="6" fill="#fffdf8"/>
+  <rect x="372" y="176" width="264" height="80" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <text x="504" y="212" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">gridpoint sampling</text>
+  <text x="504" y="236" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">datamart.ts · noaa.ts · meteo.grib</text>
+
+  <rect x="684" y="176" width="264" height="80" rx="6" fill="#fffdf8"/>
+  <rect x="684" y="176" width="264" height="80" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <text x="816" y="212" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">source-shaped hours</text>
+  <text x="816" y="236" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">builders/*.ts · builders/common.ts</text>
+
+  <!-- derivation (focal) -->
+  <rect x="368" y="320" width="264" height="80" rx="6" fill="#fffdf8"/>
+  <rect x="368" y="320" width="264" height="80" rx="6" fill="rgba(145,59,12,0.06)" stroke="#913b0c" stroke-width="1.2"/>
+  <text x="500" y="356" fill="#743008" font-size="13" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">deriveSiteForecast</text>
+  <text x="500" y="380" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">derive.ts</text>
+
+  <!-- rounding + validation -->
+  <rect x="340" y="436" width="320" height="80" rx="6" fill="#fffdf8"/>
+  <rect x="340" y="436" width="320" height="80" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <text x="500" y="472" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">contract rounding + validation tests</text>
+  <text x="500" y="496" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">publish.ts · builders/publication.ts</text>
+
+  <!-- published artifacts -->
+  <rect x="76" y="560" width="240" height="76" rx="6" fill="#fffdf8"/>
+  <rect x="76" y="560" width="240" height="76" rx="6" fill="rgba(21,37,41,0.05)" stroke="#40565a" stroke-width="1"/>
+  <text x="196" y="594" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">profile</text>
+  <text x="196" y="616" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">sites/&lt;site-slug&gt;.json</text>
+
+  <rect x="380" y="560" width="240" height="76" rx="6" fill="#fffdf8"/>
+  <rect x="380" y="560" width="240" height="76" rx="6" fill="rgba(21,37,41,0.05)" stroke="#40565a" stroke-width="1"/>
+  <text x="500" y="594" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">manifest</text>
+  <text x="500" y="616" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">manifest.json</text>
+
+  <rect x="684" y="560" width="240" height="76" rx="6" fill="#fffdf8"/>
+  <rect x="684" y="560" width="240" height="76" rx="6" fill="rgba(21,37,41,0.05)" stroke="#40565a" stroke-width="1"/>
+  <text x="804" y="594" fill="#152529" font-size="13" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">history</text>
+  <text x="804" y="616" fill="#40565a" font-size="9.5" font-family="'IBM Plex Mono', monospace" text-anchor="middle">&lt;YYYY-MM&gt;.jsonl.gz · append-only</text>
+</svg>

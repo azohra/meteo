@@ -11,20 +11,7 @@ documents it writes as its supported interface.
 
 Inside the builder stage, provider bytes move through module-owned steps:
 
-```text
-models.json + sites.json
-              │
-provider transport ──→ gridpoint sampling ──→ source-shaped hours
-                                                   │
-                                                   ▼
-                                      deriveSiteForecast
-                                                   │
-                                                   ▼
-                                   contract rounding + validation tests
-                                      │            │             │
-                                      ▼            ▼             ▼
-                                  profile      manifest      history
-```
+![A pipeline flowing top to bottom inside the builder stage. A configuration node, models.json plus sites.json, feeds a three-step row: provider transport owned by providers/transport.ts, gridpoint sampling owned by the datamart and NOAA clients with the grib decoder, and source-shaped hours assembled by the builders on their common skeletons. The hours descend to the accented deriveSiteForecast step in derive.ts, then to contract rounding and validation tests in publish.ts and builders/publication.ts, which fans out to the three published artifacts: the per-site profile under sites/, manifest.json, and the append-only monthly gzip history archive.](figures/builder-stage.svg)
 
 ## Responsibility by module
 

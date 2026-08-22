@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 580">
+  <defs>
+    <marker id="roll-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2f454a"/>
+    </marker>
+    <marker id="roll-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#913b0c"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1040" height="580" fill="#fffdf8"/>
+
+  <!-- dataset lane recessed panel -->
+  <rect x="168" y="208" width="848" height="128" rx="8" fill="#f2f4f1"/>
+
+  <!-- phase column headers -->
+  <text x="304" y="42" fill="#40565a" font-size="10" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.06em">BEFORE THE BUMP</text>
+  <text x="592" y="26" fill="#40565a" font-size="10" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.06em">1 · THE RELEASE THAT BUMPS A FAMILY</text>
+  <text x="592" y="42" fill="#40565a" font-size="10" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SHIPS THE UPGRADE WITH IT</text>
+  <text x="880" y="26" fill="#40565a" font-size="10" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.06em">2 · CONSUMERS UPGRADE AT THEIR</text>
+  <text x="880" y="42" fill="#40565a" font-size="10" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.06em">OWN PACE, IN ANY ORDER</text>
+
+  <!-- separators -->
+  <line x1="160" y1="64" x2="160" y2="556" stroke="#776956" stroke-opacity="0.35" stroke-width="0.8"/>
+  <line x1="448" y1="52" x2="448" y2="556" stroke="#776956" stroke-opacity="0.3" stroke-width="0.8" stroke-dasharray="2,4"/>
+  <line x1="736" y1="52" x2="736" y2="556" stroke="#776956" stroke-opacity="0.3" stroke-width="0.8" stroke-dasharray="2,4"/>
+
+  <!-- lane labels -->
+  <text x="24" y="96" fill="#152529" font-size="10" font-weight="700" font-family="'IBM Plex Mono', monospace" letter-spacing="0.1em">WRITER</text>
+  <text x="24" y="114" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">an operator pins</text>
+  <text x="24" y="130" fill="#2f454a" font-size="9.5" font-family="'IBM Plex Mono', monospace">@azohra/meteo.forecast</text>
+  <text x="24" y="148" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">it embeds its own</text>
+  <text x="24" y="162" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">briefing as the writer</text>
+
+  <text x="24" y="252" fill="#152529" font-size="10" font-weight="700" font-family="'IBM Plex Mono', monospace" letter-spacing="0.1em">PUBLISHED</text>
+  <text x="24" y="266" fill="#152529" font-size="10" font-weight="700" font-family="'IBM Plex Mono', monospace" letter-spacing="0.1em">DATASET</text>
+  <text x="24" y="284" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">the documents</text>
+  <text x="24" y="298" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">between them</text>
+
+  <text x="24" y="380" fill="#152529" font-size="10" font-weight="700" font-family="'IBM Plex Mono', monospace" letter-spacing="0.1em">READERS</text>
+  <text x="24" y="398" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">consumers pinning</text>
+  <text x="24" y="414" fill="#2f454a" font-size="9.5" font-family="'IBM Plex Mono', monospace">@azohra/meteo.briefing</text>
+
+  <!-- arrows (before boxes) -->
+  <line x1="304" y1="152" x2="304" y2="229" stroke="#2f454a" stroke-width="1" marker-end="url(#roll-arrow)"/>
+  <rect x="312" y="188" width="60" height="16" rx="2" fill="#fffdf8"/>
+  <text x="316" y="200" fill="#40565a" font-size="9" font-family="'IBM Plex Mono', monospace" letter-spacing="0.06em">PUBLISHES</text>
+
+  <line x1="600" y1="164" x2="600" y2="229" stroke="#913b0c" stroke-width="1.2" marker-end="url(#roll-arrow-accent)"/>
+  <rect x="608" y="188" width="82" height="16" rx="2" fill="#fffdf8"/>
+  <text x="612" y="200" fill="#743008" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" letter-spacing="0.06em">EMITS ONLY v2</text>
+
+  <line x1="304" y1="296" x2="304" y2="353" stroke="#2f454a" stroke-width="1" marker-end="url(#roll-arrow)"/>
+
+  <line x1="488" y1="356" x2="488" y2="171" stroke="#2f454a" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#roll-arrow)"/>
+  <rect x="494" y="314" width="72" height="16" rx="2" fill="#f2f4f1"/>
+  <text x="498" y="326" fill="#40565a" font-size="9" font-family="'IBM Plex Mono', monospace" letter-spacing="0.06em">EMBEDDED IN</text>
+
+  <line x1="840" y1="304" x2="840" y2="345" stroke="#2f454a" stroke-width="1" marker-end="url(#roll-arrow)"/>
+
+  <path d="M728,304 L728,468 Q728,476 736,476 L740,476" fill="none" stroke="#2f454a" stroke-width="1" marker-end="url(#roll-arrow)"/>
+
+  <!-- writer lane -->
+  <rect x="184" y="88" width="240" height="64" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <text x="304" y="114" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">writer emits v1</text>
+  <text x="304" y="134" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">a writer emits only the newest</text>
+
+  <rect x="472" y="80" width="240" height="84" rx="6" fill="rgba(145,59,12,0.08)" stroke="#913b0c" stroke-width="1.2"/>
+  <text x="592" y="102" fill="#743008" font-size="12.5" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">the new writer</text>
+  <text x="592" y="122" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">the forecast release that embeds</text>
+  <text x="592" y="136" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">the new briefing</text>
+  <text x="592" y="154" fill="#743008" font-size="10" font-family="'IBM Plex Mono', monospace" text-anchor="middle">schemaVersion: 2</text>
+
+  <!-- release rule callout -->
+  <rect x="744" y="84" width="2" height="88" fill="#776956" fill-opacity="0.7"/>
+  <text x="758" y="98" fill="#40565a" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" letter-spacing="0.1em">THE RELEASE RULE</text>
+  <text x="758" y="120" fill="#2f454a" font-size="12" font-style="italic" font-family="'IBM Plex Sans', sans-serif">never move a writer to a version</text>
+  <text x="758" y="138" fill="#2f454a" font-size="12" font-style="italic" font-family="'IBM Plex Sans', sans-serif">no released reader parses</text>
+  <text x="758" y="156" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">everything else is a pin bump on</text>
+  <text x="758" y="170" fill="#40565a" font-size="10" font-family="'IBM Plex Sans', sans-serif">the consumer's own schedule</text>
+
+  <!-- dataset lane -->
+  <rect x="184" y="232" width="240" height="64" rx="6" fill="rgba(21,37,41,0.05)" stroke="#40565a" stroke-width="1"/>
+  <text x="304" y="258" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">v1 documents</text>
+  <text x="304" y="278" fill="#2f454a" font-size="10" font-family="'IBM Plex Mono', monospace" text-anchor="middle">schemaVersion: 1</text>
+
+  <rect x="504" y="232" width="512" height="72" rx="6" fill="rgba(21,37,41,0.05)" stroke="#40565a" stroke-width="1"/>
+  <text x="760" y="258" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">v2 current documents · v1 archives stay on the wire</text>
+  <text x="760" y="280" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">month archives are append-only and immutable — a guard never drops a version</text>
+
+  <!-- readers lane -->
+  <rect x="184" y="356" width="240" height="72" rx="6" fill="rgba(47,69,74,0.06)" stroke="#40565a" stroke-width="1"/>
+  <text x="304" y="380" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">reader parses v1</text>
+  <text x="304" y="400" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">a guard parses every version</text>
+  <text x="304" y="414" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">ever published, normalized up</text>
+
+  <rect x="472" y="356" width="240" height="72" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <text x="592" y="380" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">new briefing released</text>
+  <text x="592" y="400" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">parses v2 and everything</text>
+  <text x="592" y="414" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">before it</text>
+
+  <rect x="744" y="348" width="272" height="64" rx="6" fill="rgba(47,69,74,0.06)" stroke="#40565a" stroke-width="1"/>
+  <text x="880" y="370" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">pin bumped early — any order</text>
+  <text x="880" y="388" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">keeps parsing the old documents</text>
+  <text x="880" y="402" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">still being published</text>
+
+  <rect x="744" y="424" width="272" height="132" rx="6" fill="rgba(47,69,74,0.06)" stroke="#40565a" stroke-width="1"/>
+  <text x="880" y="446" fill="#152529" font-size="12" font-weight="600" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">pin bumped late — keeps serving</text>
+  <text x="880" y="464" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">only symptom, on new documents:</text>
+  <text x="880" y="482" fill="#152529" font-size="10" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">{ miss: "invalid" }</text>
+  <text x="880" y="498" fill="#2f454a" font-size="10" font-family="'IBM Plex Mono', monospace" text-anchor="middle">declaredSchemaVersion: 2 · supported 1</text>
+  <text x="880" y="516" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">upgrade the package, not debug bytes;</text>
+  <text x="880" y="530" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">an ingest serves what it last stored:</text>
+  <text x="880" y="544" fill="#2f454a" font-size="10.5" font-family="'IBM Plex Sans', sans-serif" text-anchor="middle">stale, never wrong</text>
+</svg>

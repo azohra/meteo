@@ -53,6 +53,8 @@ Every archive publishes an advisory byte-offset index beside it:
 <model>/history/<site>/<YYYY-MM>.index.json
 ```
 
+![A month history archive drawn as a horizontal bar of four concatenated gzip members, each starting with the gzip magic bytes 1f 8b, with byte offsets 0, 20991, 41449, and 63220 marked at the member boundaries and archiveLength 83325 at the end. Directly beneath, the sidecar index 2026-08.index.json lists one entry per member in archive order, each entry aligned under the member it places and carrying byteOffset, byteLength, lines, referenceTime, and generatedAt. A read row walks one read: a reader wants the 2026-08-12T06:00:00Z run, the accented entry 3 supplies byteOffset 41449 and byteLength 21771, the request sends Range: bytes=41449-63219, and the 206 response returns member 3 alone, split from its member boundary and gunzipped to one profile line; the other 61554 bytes never leave the server. Footer notes state that the index is recomputed from the archive bytes after every append and is advisory, never authoritative — a missing or stale sidecar degrades to the full-month fetch — and that a profile entry's identity is referenceTime and generatedAt while an observation batch carries firstObservedAt and lastObservedAt, with lines counting its instants.](figures/sidecar-index.svg)
+
 One entry per gzip member, in archive order: `byteOffset`, `byteLength`,
 `lines`, and the member's identity: `referenceTime` and `generatedAt`
 for a profile run, `firstObservedAt` / `lastObservedAt` for an

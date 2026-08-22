@@ -244,4 +244,77 @@ export const AUTHORED_FIGURE_TARGETS = [
       "A later generatedAt for the same referenceTime is a corrected re-publication, and re-ingesting it is exactly as mandatory as a new run. loadSiteSet retries a mid-publish mix once before reporting syncing: true. How many predecessors to keep is retention: consumer policy, never a dataset property.",
     units: "one poll tick; no numeric scale",
   }),
+  authoredTarget({
+    id: "docs-builder-stage",
+    file: "forecast/docs/figures/builder-stage.svg",
+    source: "builder-stage.svg",
+    idPrefix: "bstage-",
+    title: "Module-owned steps inside the builder stage",
+    lesson:
+      "Provider bytes move through module-owned steps: gridpoint samples become source-shaped hours, deriveSiteForecast produces the derived values, and contract rounding plus validation fan out to the three published artifacts.",
+    description:
+      "A pipeline flowing top to bottom inside the builder stage. A configuration node, models.json plus sites.json, feeds a three-step row: provider transport owned by providers/transport.ts, gridpoint sampling owned by the datamart and NOAA clients with the grib decoder, and source-shaped hours assembled by the builders on their common skeletons. The hours descend to the accented deriveSiteForecast step in derive.ts, then to contract rounding and validation tests in publish.ts and builders/publication.ts, which fans out to the three published artifacts: the per-site profile under sites/, manifest.json, and the append-only monthly gzip history archive.",
+    caption:
+      "models.json and sites.json are configuration, passed explicitly, never held in ambient state. Each step names its owning module: one transport supplies the User-Agent, timeout, and download telemetry; the provider clients and the grib decoder fetch, decode, and sample; builders assemble source hours; derive.ts produces the published profile blocks and derived values; and publish.ts with builders/publication.ts rounds, writes, and appends — a builder never open-codes those writes.",
+    units: "module-owned pipeline steps; no numeric scale",
+  }),
+  authoredTarget({
+    id: "docs-sidecar-index",
+    file: "briefing/docs/figures/sidecar-index.svg",
+    source: "sidecar-index.svg",
+    idPrefix: "sidx-",
+    title: "The sidecar index places every member",
+    lesson:
+      "A month archive is concatenated independent gzip members whose boundaries only decompression reveals. The sidecar index states each member's byteOffset and byteLength, so a reader Range-fetches exactly the members it needs — here one run — without downloading or decompressing the month.",
+    description:
+      "A month history archive drawn as a horizontal bar of four concatenated gzip members, each starting with the gzip magic bytes 1f 8b, with byte offsets 0, 20991, 41449, and 63220 marked at the member boundaries and archiveLength 83325 at the end. Directly beneath, the sidecar index 2026-08.index.json lists one entry per member in archive order, each entry aligned under the member it places and carrying byteOffset, byteLength, lines, referenceTime, and generatedAt. A read row walks one read: a reader wants the 2026-08-12T06:00:00Z run, the accented entry 3 supplies byteOffset 41449 and byteLength 21771, the request sends Range: bytes=41449-63219, and the 206 response returns member 3 alone, split from its member boundary and gunzipped to one profile line; the other 61554 bytes never leave the server. Footer notes state that the index is recomputed from the archive bytes after every append and is advisory, never authoritative — a missing or stale sidecar degrades to the full-month fetch — and that a profile entry's identity is referenceTime and generatedAt while an observation batch carries firstObservedAt and lastObservedAt, with lines counting its instants.",
+    caption:
+      "Offsets, lengths, and stamps are schematic, but every printed number obeys the byte arithmetic: each byteOffset is the running sum of the byteLengths before it, archiveLength 83325 is their total, and the Range end 63219 is 41449 + 21771 - 1. A real month holds one member per append, not four. The shipped since fast path sends an open-ended range (bytes=offset-) because an append can outrun the sidecar; the placement arithmetic is identical.",
+    units: "byte offsets and lengths in bytes · timestamps UTC · values schematic",
+  }),
+  authoredTarget({
+    id: "docs-adapter-flow",
+    file: "station/docs/figures/adapter-flow.svg",
+    source: "adapter-flow.svg",
+    idPrefix: "adapt-",
+    title: "The adapter fan-in",
+    lesson:
+      "Every vendor upstream, whatever its shape and units, fans in through its own adapter to the one wire contract — everything downstream speaks only the contract.",
+    description:
+      "Five lanes on the left, one per adapter, each pairing a vendor upstream with the adapter that guards it. WindNerd: windnerd.net live and records endpoints, already in m/s; the adapter validates speeds 0 to 140 m/s and its live INIT block enriches the meta, with config winning over vendor values. Tempest: the WeatherFlow REST endpoint at swd.weatherflow.com, m/s; the adapter validates 0 to 140 m/s and fills every field of the conditions block. Campbell: the logger's own DataQuery web API with no vendor cloud, tables in km/h; the adapter bounds speeds 0 to 500 km/h then converts with kmhToMps, and pinned field contracts check the units. Ecowitt: the cloud real_time endpoint, roughly one upload a minute; the request pins SI units because the defaults are imperial, and speeds are validated 0 to 140 m/s. A fifth dashed lane, Custom, takes any upstream you can fetch: your mapping must return a valid Station, and defineStationAdapter supplies the full belt. All five lanes' arrows, labelled normalized Station, converge on one accented node, the wire contract's Station document: identity plus capabilities on both arms of the status union, status ok carrying reading and history, status unavailable carrying a reason code, speeds in m/s with null never zero, and capabilities declared, never inferred. An italic note beneath states the point: whatever the hardware, the client sees one document. To the right, a downstream zone that speaks only the contract, never a vendor: the station feed handler assembles stations into StationFeed and serves /feed, /current, /live, and the other routes over HTTP to components and clients, which keep one decoder for every station. A footer strip states the degradation belt: a throw or an invalid return degrades that station to status unavailable with a machine reason code — still the contract — and the rest of the feed survives.",
+    caption:
+      "The four shipped adapters and the custom arm each fetch their vendor's upstream and validate it in the vendor's own units — 0–140 m/s for the m/s upstreams, 0–500 km/h for Campbell's km/h tables, with Ecowitt pinning SI units in the request — before normalizing into one Station document. The feed handler assembles those documents into StationFeed and serves them over HTTP; clients keep one decoder. Failure stays on the contract too: a throw or an invalid return degrades the station to an unavailable reason code and the rest of the feed survives.",
+    units:
+      "schematic; no numeric scale — printed units are each vendor's upstream units and the wire's m/s",
+  }),
+  authoredTarget({
+    id: "docs-climatology-cube",
+    file: "station/docs/figures/climatology-cube.svg",
+    source: "climatology-cube.svg",
+    idPrefix: "clim-",
+    title: "The climatology cube",
+    lesson:
+      "StationClimatology is one (month, slot-of-day, sector) cube of sums; every view is a re-aggregation of the held document, and the years ledger says how much record stands behind it.",
+    description:
+      "A recessed panel holds the StationClimatology document. Inside it, a 12-by-8 grid of cells spans months January to December across and eight 3-hour slots of standard time down; shaded cells hold records, a few blank cells are absent rather than zero-filled, and one accented cell opens into a detail panel. The opened cell lists sampleCount (all records, calm included), calmCount (calm belongs to the bucket, not a sector — calm has no direction), and a row of 16 sector boxes, the third axis, each carrying count, uSum, vSum, speedSumMps, bandCounts of length thresholds plus one, and maxGustMps; a note says sums, not means, so any filter re-aggregates losslessly. Two declaration boxes ride beside the cells: thresholdsMps, the consumer's bounds with no shipped default, and utcOffsetMinutes, the standard offset with no DST so a slot means the same solar hours in January and July. A ledger strip shows per-year bars of sampleCount within expectedCount, one interior year silent, noting that a silent interior year stays as a real outage while leading pre-station years are trimmed. Four arrows leave the document to the views: climatologyRose collapses month and slot into per-sector totals that keep their bandCounts stacks; climatologyPattern collapses month and sector and vector-averages each slot; climatologyFavorableShare yields the share of the filtered non-calm record inside the consumer's arcs, judged at sector centres; and climatologyCoverage sums the ledger. A heading over the views says every view is a pure function of the held document — a filter change re-sums and never refetches.",
+    caption:
+      "Cells are keyed by month and slot-of-day, bucketed in the station's standard time; the sector axis lives inside each cell as per-sector sums. Sums, not means, so any month, season, or time-of-day filter re-sums losslessly without a refetch. Months are fixed at 12; the 8 slots (180-minute) and 16 sectors drawn are the WindNerd adapter's defaults — slotMinutes must divide 1440 and sectorCount is at least 4. The opened cell's coordinates and the ledger bars are schematic.",
+    units:
+      "schematic; grid axes: month 1-12 across, slot-of-day in station standard time down; ledger bars: sampleCount within expectedCount per year",
+  }),
+  authoredTarget({
+    id: "docs-schema-rollout",
+    file: "site/src/content/docs/docs/figures/schema-rollout.svg",
+    source: "schema-rollout.svg",
+    idPrefix: "roll-",
+    title: "Rolling a schemaVersion bump",
+    lesson:
+      "Guards normalize up and writers emit only the newest, so the release that bumps a family ships the upgraded reader with the new writer, and consumers pin-bump at their own pace — never move a writer to a version no released reader parses.",
+    description:
+      "A three-lane swimlane read left to right through a schematic v1-to-v2 schemaVersion bump. The lanes are the writer (an operator pinning @azohra/meteo.forecast, which embeds its own briefing as the writer), the published dataset between them, and readers pinning @azohra/meteo.briefing. In the before column the writer emits v1, v1 documents sit on the wire, and a reader parses them — a guard parses every version ever published, normalized up. In phase 1 the release that bumps the family ships the upgrade with it: the new briefing parses v2 and everything before it, and the forecast release that embeds it is the new writer, emitting only v2; the dataset now holds v2 current documents while v1 archives stay on the wire, append-only and immutable. In phase 2 consumers upgrade at their own pace, in any order: a reader that bumps its pin early keeps parsing the old documents still being published, while a reader that bumps late sees, for new documents only, a miss of invalid with declaredSchemaVersion 2 against a supported 1 — the signal to upgrade the package, not to debug bytes — and an ingesting reader serves what it last stored. A callout carries the release rule: never move a writer to a version no released reader parses.",
+    caption:
+      'Versions are schematic (a v1 to v2 bump). A reader that upgrades late keeps serving until it does: its only symptom for new documents is { miss: "invalid" } with declaredSchemaVersion naming the newer number — the signal to upgrade the package, not to debug bytes — and an ingesting reader serves what it last stored throughout.',
+    units:
+      "one schema bump; three phases, time left to right; versions schematic — no numeric scale",
+  }),
 ];
