@@ -7,7 +7,7 @@ description: Follow provider bytes through sampling, derivation, rounding, curre
 `node forecast/dist/cli.js` from a workspace checkout) and the versioned
 documents it writes as its supported interface.
 
-![A five-stage sequence from upstream forecast publication through completeness probing, model-specific building, one static publication, and a consumer consistency check.](figures/publication-flow.svg)
+![A five-stage sequence across three actors: an upstream provider publishes a forecast cycle; the forecast engine probes completeness, builds each model, and publishes once across the static-dataset boundary; the browser reads manifest and profile and exposes a torn pair as stale.](figures/publication-flow.svg)
 
 Inside the builder stage, provider bytes move through module-owned steps:
 

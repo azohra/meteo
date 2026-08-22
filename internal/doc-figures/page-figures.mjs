@@ -33,7 +33,17 @@ function wrapped(x, y, lines, o, lineHeight) {
   return lines.map((line, index) => t(x, y + index * lineHeight, line, o)).join("\n  ");
 }
 
-function frame({ id, title, lesson, caption, units, description, bodyWidth, bodyHeight, body }) {
+export function frame({
+  id,
+  title,
+  lesson,
+  caption,
+  units,
+  description,
+  bodyWidth,
+  bodyHeight,
+  body,
+}) {
   const width = bodyWidth + FRAME_MARGIN * 2;
   const textWidth = width - FRAME_MARGIN * 2;
 
@@ -292,99 +302,6 @@ async function composePointerStates() {
       "Touch pointers skip the Previewing state: a finger cannot hover, so a tap pins directly. The swap edge is the carry-or-reset decision: key the stored selection by validAt and re-resolve it with hourIndexForValidAt, or reset, as the measured first consumer does.",
     bodyWidth: 900,
     bodyHeight: 318,
-    body,
-  });
-}
-
-const PUBLICATION_STAGES = [
-  {
-    number: "1",
-    title: "Upstream model products",
-    detail: "ECCC or NOAA publishes a forecast cycle.",
-  },
-  {
-    number: "2",
-    title: "Completeness probe",
-    detail: "Request the final required hour before fetching the run.",
-  },
-  {
-    number: "3",
-    title: "Per-model builder",
-    detail: "Fetch required records; verify; derive; serialize.",
-  },
-  {
-    number: "4",
-    title: "Publish to storage",
-    detail:
-      "Upload every completed model directory and append one history record per site and run.",
-  },
-  {
-    number: "5",
-    title: "Consumer read",
-    detail: "Fetch manifest and profile; compare referenceTime; expose a torn pair as stale.",
-  },
-];
-
-async function composePublicationFlow() {
-  const width = 980;
-  const cell = width / 5;
-  const circleY = 24;
-  const titleSpec = { family: "ibm-plex-sans", weight: 700, size: 14 };
-  const detailSpec = { family: "ibm-plex-sans", weight: 400, size: 12.5 };
-
-  const stages = PUBLICATION_STAGES.map((stage, index) => {
-    const cx = cell * index + cell / 2;
-    const accent = index === 3;
-    const titleLines = wrapText(stage.title, cell - 22, titleSpec);
-    const detailLines = wrapText(stage.detail, cell - 22, detailSpec);
-    const parts = [];
-    parts.push(
-      `<circle cx="${round(cx)}" cy="${circleY}" r="19" fill="${accent ? SURFACE_ACCENT : SURFACE}" stroke="${accent ? ACCENT : RULE_STRONG}" stroke-width="2"/>`,
-    );
-    parts.push(
-      t(cx, circleY + 5, stage.number, {
-        font: MONO,
-        size: 14,
-        weight: 700,
-        fill: accent ? ACCENT_STRONG : INK,
-        anchor: "middle",
-      }),
-    );
-    let y = circleY + 42;
-    for (const line of titleLines) {
-      parts.push(t(cx, y, line, { size: 14, weight: 700, anchor: "middle" }));
-      y += 18;
-    }
-    y += 2;
-    for (const line of detailLines) {
-      parts.push(t(cx, y, line, { size: 12.5, fill: INK_SOFT, anchor: "middle" }));
-      y += 17;
-    }
-    return { markup: parts.join("\n  "), bottom: y };
-  });
-
-  const stagesBottom = Math.max(...stages.map((stage) => stage.bottom)) + 8;
-  const boundaryY = stagesBottom + 14;
-
-  const body = `<path d="M${round(cell / 2)} ${circleY} H${round(width - cell / 2)}" stroke="${RULE_STRONG}" stroke-width="2"/>
-  ${stages.map((stage) => stage.markup).join("\n  ")}
-  <path d="M0 ${round(stagesBottom)} h${width}" stroke="${RULE}"/>
-  ${t(0, boundaryY + 12, "STATIC DATASET PUBLICATION", { font: MONO, size: 12, weight: 700, ls: 0.5, fill: ACCENT_STRONG })}
-  ${t(width, boundaryY + 12, "manifest.json · site profiles · append-only history", { font: MONO, size: 12, fill: INK_MUTE, anchor: "end" })}
-  <path d="M0 ${round(boundaryY + 24)} h${width}" stroke="${INK}" stroke-width="2"/>`;
-
-  return frame({
-    id: "publication-flow",
-    title: "Publication flow from model cycle to browser",
-    lesson:
-      "A run is published only after completeness and derivation checks, then read as static files.",
-    description:
-      "A five-stage sequence from upstream forecast publication through completeness probing, model-specific building, one static publication, and a consumer consistency check.",
-    caption:
-      "Builders complete independently. Each polling cycle publishes every finished model update once; consumers compare independently cached static files and choose their own stale-pair policy.",
-    units: "ordered stages; no numeric scale",
-    bodyWidth: width,
-    bodyHeight: boundaryY + 26,
     body,
   });
 }
@@ -3274,11 +3191,6 @@ export const PAGE_FIGURE_TARGETS = [
     id: "docs-ingest-loop",
     file: "briefing/docs/figures/ingest-loop.svg",
     compose: composeIngestLoop,
-  },
-  {
-    id: "docs-publication-flow",
-    file: "forecast/docs/figures/publication-flow.svg",
-    compose: composePublicationFlow,
   },
   {
     id: "docs-two-transports",

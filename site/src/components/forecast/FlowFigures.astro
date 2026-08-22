@@ -32,7 +32,7 @@ function inlineFigure(raw: string, alt: string): string {
 
 const publicationFlow = inlineFigure(
   publicationFlowRaw,
-  "A five-stage sequence from upstream forecast publication through completeness probing, model-specific building, one static publication, and a consumer consistency check.",
+  "A five-stage sequence across three actors: an upstream provider publishes a forecast cycle; the forecast engine probes completeness, builds each model, and publishes once across the static-dataset boundary; the browser reads manifest and profile and exposes a torn pair as stale.",
 );
 const twoTransports = inlineFigure(
   twoTransportsRaw,

@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 792"
+       font-family="'IBM Plex Sans', sans-serif">
+    <defs>
+      <marker id="pf-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#40565a"/>
+      </marker>
+      <marker id="pf-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#913b0c"/>
+      </marker>
+    </defs>
+
+    <!-- ground -->
+    <rect width="1000" height="792" fill="#fffdf8"/>
+
+    <!-- ================= phase rules (background) ================= -->
+    <line x1="24" y1="136" x2="976" y2="136" stroke="rgba(119,105,86,0.30)" stroke-width="0.8"/>
+    <line x1="24" y1="356" x2="976" y2="356" stroke="rgba(119,105,86,0.30)" stroke-width="0.8"/>
+    <line x1="24" y1="564" x2="976" y2="564" stroke="rgba(119,105,86,0.30)" stroke-width="0.8"/>
+    <text x="32" y="152" fill="#743008" font-size="9" font-family="'IBM Plex Mono', monospace" letter-spacing="0.2em" font-weight="600">BUILD</text>
+    <text x="32" y="372" fill="#743008" font-size="9" font-family="'IBM Plex Mono', monospace" letter-spacing="0.2em" font-weight="600">PUBLISH</text>
+    <text x="32" y="580" fill="#743008" font-size="9" font-family="'IBM Plex Mono', monospace" letter-spacing="0.2em" font-weight="600">READ</text>
+
+    <!-- ================= loop fragment frame (zone, painted before lifelines) ================= -->
+    <rect x="648" y="576" width="296" height="120" rx="4" fill="#f2f4f1" stroke="rgba(119,105,86,0.55)" stroke-width="1"/>
+    <rect x="648" y="576" width="40" height="16" rx="2" fill="#fffdf8" stroke="rgba(119,105,86,0.55)" stroke-width="1"/>
+    <text x="668" y="588" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.12em">LOOP</text>
+    <text x="660" y="612" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">[runs disagree -> wait 1500 ms · refetch once]</text>
+
+    <!-- ================= lifelines ================= -->
+    <line x1="132" y1="120" x2="132" y2="712" stroke="rgba(119,105,86,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="400" y1="120" x2="400" y2="712" stroke="rgba(119,105,86,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="668" y1="120" x2="668" y2="712" stroke="rgba(119,105,86,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="896" y1="120" x2="896" y2="712" stroke="rgba(119,105,86,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- ================= activation bars ================= -->
+    <rect x="396" y="160" width="8" height="388" fill="rgba(21,37,41,0.06)" stroke="#40565a" stroke-width="0.8"/>
+    <rect x="128" y="164" width="8" height="40" fill="rgba(21,37,41,0.06)" stroke="#40565a" stroke-width="0.8"/>
+    <rect x="128" y="252" width="8" height="40" fill="rgba(21,37,41,0.06)" stroke="#40565a" stroke-width="0.8"/>
+    <rect x="664" y="396" width="8" height="144" fill="rgba(21,37,41,0.06)" stroke="#40565a" stroke-width="0.8"/>
+    <rect x="664" y="640" width="8" height="40" fill="rgba(21,37,41,0.06)" stroke="#40565a" stroke-width="0.8"/>
+    <rect x="892" y="636" width="8" height="48" fill="rgba(21,37,41,0.06)" stroke="#40565a" stroke-width="0.8"/>
+
+    <!-- ================= messages (arrows before boxes) ================= -->
+
+    <!-- m1: job -> feed : resolve run -->
+    <line x1="396" y1="168" x2="138" y2="168" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <rect x="196" y="144" width="144" height="16" fill="#fffdf8"/>
+    <text x="268" y="155" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.04em">newest complete run?</text>
+
+    <!-- m2: feed -> job : referenceTime (return) -->
+    <line x1="136" y1="200" x2="394" y2="200" stroke="#40565a" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#pf-arrow)"/>
+    <rect x="176" y="176" width="184" height="16" fill="#fffdf8"/>
+    <text x="268" y="187" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.04em">referenceTime · one run</text>
+
+    <!-- guard 1: skip-if-published -->
+    <text x="388" y="220" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="end" letter-spacing="0.02em">[run already published -> skip]</text>
+
+    <!-- m3: job -> feed : fetch fields -->
+    <line x1="396" y1="256" x2="138" y2="256" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <rect x="164" y="232" width="208" height="16" fill="#fffdf8"/>
+    <text x="268" y="243" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.04em">GET declared fields · range reads</text>
+
+    <!-- m4: feed -> job : bytes (return) -->
+    <line x1="136" y1="288" x2="394" y2="288" stroke="#40565a" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#pf-arrow)"/>
+    <rect x="216" y="264" width="104" height="16" fill="#fffdf8"/>
+    <text x="268" y="275" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.04em">GRIB2 bytes</text>
+
+    <!-- m5: self message : sample/derive/round -->
+    <path d="M 404 312 H 448 Q 456 312 456 320 V 336 Q 456 344 448 344 H 410"
+          fill="none" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <text x="468" y="324" fill="#152529" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">sample · derive · round</text>
+    <text x="468" y="340" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">writes local scratch tree data/&lt;model&gt;/</text>
+
+    <!-- guard 2: refuse to publish backwards -->
+    <text x="388" y="380" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="end" letter-spacing="0.02em">[scratch older than published -> refuse]</text>
+
+    <!-- m6: PUT 1 history -->
+    <line x1="404" y1="404" x2="662" y2="404" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <circle cx="430" cy="390" r="8" fill="#fffdf8" stroke="#40565a" stroke-width="1"/>
+    <text x="430" y="393" fill="#40565a" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">1</text>
+    <rect x="440" y="380" width="176" height="16" fill="#fffdf8"/>
+    <text x="444" y="391" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">PUT history + sidecar indexes</text>
+
+    <!-- m7: PUT 2 site documents -->
+    <line x1="404" y1="436" x2="662" y2="436" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <circle cx="430" cy="422" r="8" fill="#fffdf8" stroke="#40565a" stroke-width="1"/>
+    <text x="430" y="425" fill="#40565a" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">2</text>
+    <rect x="440" y="412" width="192" height="16" fill="#fffdf8"/>
+    <text x="444" y="423" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">PUT site documents sites/&lt;id&gt;.json</text>
+
+    <!-- m8: PUT 3 manifest = COMMIT POINT (accent) -->
+    <line x1="404" y1="468" x2="662" y2="468" stroke="#913b0c" stroke-width="1.2" marker-end="url(#pf-arrow-accent)"/>
+    <circle cx="430" cy="454" r="8" fill="#f2dcc1" stroke="#913b0c" stroke-width="1"/>
+    <text x="430" y="457" fill="#743008" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">3</text>
+    <rect x="440" y="444" width="204" height="16" fill="#fffdf8"/>
+    <text x="444" y="455" fill="#743008" font-size="8" font-weight="600" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">PUT manifest.json — the commit point</text>
+
+    <!-- m9: read-back canary -->
+    <line x1="404" y1="500" x2="662" y2="500" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <rect x="416" y="476" width="240" height="16" fill="#fffdf8"/>
+    <text x="420" y="487" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">GET read-back · must parse with reader's guard</text>
+
+    <!-- m10: PUT 4 runs.json -->
+    <line x1="404" y1="532" x2="662" y2="532" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <circle cx="430" cy="518" r="8" fill="#fffdf8" stroke="#40565a" stroke-width="1"/>
+    <text x="430" y="521" fill="#40565a" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">4</text>
+    <rect x="440" y="508" width="216" height="16" fill="#fffdf8"/>
+    <text x="444" y="519" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.02em">PUT runs.json — from published manifests</text>
+
+    <!-- m11: reader -> bucket : GET pair -->
+    <line x1="892" y1="644" x2="678" y2="644" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <rect x="686" y="620" width="188" height="16" fill="#f2f4f1"/>
+    <text x="780" y="631" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.02em">GET manifest + sites/&lt;id&gt;.json</text>
+
+    <!-- m12: bucket -> reader : the pair (return) -->
+    <line x1="672" y1="676" x2="890" y2="676" stroke="#40565a" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#pf-arrow)"/>
+    <rect x="682" y="652" width="196" height="16" fill="#f2f4f1"/>
+    <text x="780" y="663" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.02em">the pair — render when runs agree</text>
+
+    <!-- ================= editorial callouts ================= -->
+    <text x="700" y="404" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">Every object the manifest</text>
+    <text x="700" y="422" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">names is already live when it</text>
+    <text x="700" y="440" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">lands — a crash mid-publish</text>
+    <text x="700" y="458" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">never leaves a half-run.</text>
+    <path d="M 626 644 H 640" fill="none" stroke="rgba(119,105,86,0.6)" stroke-width="0.8"/>
+    <text x="416" y="612" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">A reader sees the previous run or</text>
+    <text x="416" y="630" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">the new one — never a blend. A torn</text>
+    <text x="416" y="648" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">pair is retried once, then flagged</text>
+    <text x="416" y="666" font-family="'IBM Plex Sans', sans-serif" font-style="italic" font-size="13" fill="#2f454a">stale; it is never rendered as one.</text>
+
+    <!-- ================= actor boxes (drawn after arrows) ================= -->
+    <!-- Upstream feed -->
+    <rect x="44" y="72" width="176" height="48" rx="6" fill="#fffdf8"/>
+    <rect x="44" y="72" width="176" height="48" rx="6" fill="rgba(21,37,41,0.03)" stroke="rgba(21,37,41,0.35)" stroke-width="1"/>
+    <rect x="52" y="78" width="28" height="12" rx="2" fill="transparent" stroke="rgba(21,37,41,0.35)" stroke-width="0.8"/>
+    <text x="66" y="87" fill="rgba(21,37,41,0.7)" font-size="7" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+    <text x="132" y="99" fill="#152529" font-size="12" font-weight="600" text-anchor="middle">ECCC Datamart / NOAA</text>
+    <text x="132" y="113" fill="#40565a" font-size="9" font-family="'IBM Plex Mono', monospace" text-anchor="middle">one model run · GRIB2</text>
+
+    <!-- meteo job -->
+    <rect x="312" y="72" width="176" height="48" rx="6" fill="#fffdf8"/>
+    <rect x="312" y="72" width="176" height="48" rx="6" fill="#fffdf8" stroke="#152529" stroke-width="1"/>
+    <rect x="320" y="78" width="28" height="12" rx="2" fill="transparent" stroke="rgba(21,37,41,0.4)" stroke-width="0.8"/>
+    <text x="334" y="87" fill="rgba(21,37,41,0.8)" font-size="7" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CLI</text>
+    <text x="400" y="99" fill="#152529" font-size="12" font-weight="600" text-anchor="middle">meteo forecast job</text>
+    <text x="400" y="113" fill="#40565a" font-size="9" font-family="'IBM Plex Mono', monospace" text-anchor="middle">build -> publish · per model</text>
+
+    <!-- dataset bucket -->
+    <rect x="580" y="72" width="176" height="48" rx="6" fill="#fffdf8"/>
+    <rect x="580" y="72" width="176" height="48" rx="6" fill="rgba(21,37,41,0.05)" stroke="#40565a" stroke-width="1"/>
+    <rect x="588" y="78" width="36" height="12" rx="2" fill="transparent" stroke="rgba(64,86,90,0.5)" stroke-width="0.8"/>
+    <text x="606" y="87" fill="rgba(64,86,90,0.9)" font-size="7" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+    <text x="668" y="99" fill="#152529" font-size="12" font-weight="600" text-anchor="middle">static dataset</text>
+    <text x="668" y="113" fill="#40565a" font-size="9" font-family="'IBM Plex Mono', monospace" text-anchor="middle">S3/R2 bucket · CDN-cached</text>
+
+    <!-- reader -->
+    <rect x="808" y="72" width="176" height="48" rx="6" fill="#fffdf8"/>
+    <rect x="808" y="72" width="176" height="48" rx="6" fill="rgba(64,86,90,0.10)" stroke="rgba(47,69,74,0.8)" stroke-width="1"/>
+    <rect x="816" y="78" width="28" height="12" rx="2" fill="transparent" stroke="rgba(47,69,74,0.5)" stroke-width="0.8"/>
+    <text x="830" y="87" fill="rgba(47,69,74,0.9)" font-size="7" font-family="'IBM Plex Mono', monospace" text-anchor="middle" letter-spacing="0.08em">APP</text>
+    <text x="896" y="99" fill="#152529" font-size="12" font-weight="600" text-anchor="middle">reader's browser</text>
+    <text x="896" y="113" fill="#40565a" font-size="9" font-family="'IBM Plex Mono', monospace" text-anchor="middle">loadForecast() · transport</text>
+
+    <!-- ================= legend ================= -->
+    <line x1="24" y1="728" x2="976" y2="728" stroke="rgba(119,105,86,0.35)" stroke-width="0.8"/>
+    <text x="32" y="752" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+    <line x1="112" y1="748" x2="152" y2="748" stroke="#40565a" stroke-width="1" marker-end="url(#pf-arrow)"/>
+    <text x="160" y="752" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace">call</text>
+    <line x1="216" y1="748" x2="256" y2="748" stroke="#40565a" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#pf-arrow)"/>
+    <text x="264" y="752" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace">return</text>
+    <line x1="336" y1="748" x2="376" y2="748" stroke="#913b0c" stroke-width="1.2" marker-end="url(#pf-arrow-accent)"/>
+    <text x="384" y="752" fill="#743008" font-size="8" font-weight="600" font-family="'IBM Plex Mono', monospace">commit point</text>
+    <circle cx="504" cy="748" r="8" fill="#fffdf8" stroke="#40565a" stroke-width="1"/>
+    <text x="504" y="751" fill="#40565a" font-size="9" font-weight="600" font-family="'IBM Plex Mono', monospace" text-anchor="middle">n</text>
+    <text x="520" y="752" fill="#40565a" font-size="8" font-family="'IBM Plex Mono', monospace">upload order — nothing the manifest references lands after it</text>
+  </svg>

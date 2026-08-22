@@ -89,6 +89,8 @@ and uploads `runs.json` from the published manifests. The manifest is
 the publication's commit point: nothing it references appears after it.
 Every object key comes from the reader contract's `documentPaths`.
 
+![A sequence diagram across four actors — the upstream provider, the forecast job, the static dataset, and the reader's browser. The build phase resolves and fetches one run; the publish phase uploads history, site documents, the manifest as the commit point, and runs.json in that order, with a read-back check; the read phase shows the browser fetching manifest and profile in a retry loop that treats a disagreeing pair as stale.](figures/publication-protocol.svg)
+
 Cache lifetimes remain your deployment's choice (`--cache-live`,
 `--cache-closed-months`); the TRIAL defaults suit a 15-minute tick. The
 one dataset fact behind them: a closed month archive never changes

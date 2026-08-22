@@ -10,28 +10,34 @@ const siteRequire = createRequire(join(root, "scripts", "package.json"));
 
 const FAMILIES = {
   "big-shoulders": { pkg: "@fontsource/big-shoulders", weights: [700, 800] },
-  "ibm-plex-sans": { pkg: "@fontsource/ibm-plex-sans", weights: [400, 500, 600, 700] },
+  "ibm-plex-sans": {
+    pkg: "@fontsource/ibm-plex-sans",
+    weights: [400, 500, 600, 700],
+    italicWeights: [400],
+  },
   "ibm-plex-mono": { pkg: "@fontsource/ibm-plex-mono", weights: [400, 500, 600, 700] },
 };
 
 const fontCache = new Map();
 
-function fontFile(familyKey, weight) {
+function fontFile(familyKey, weight, style) {
   const family = FAMILIES[familyKey];
   const pkgDir = dirname(siteRequire.resolve(`${family.pkg}/package.json`));
-  return join(pkgDir, "files", `${familyKey}-latin-${weight}-normal.woff`);
+  return join(pkgDir, "files", `${familyKey}-latin-${weight}-${style}.woff`);
 }
 
-export function getFont(familyKey, weight = 400) {
+export function getFont(familyKey, weight = 400, style = "normal") {
   const family = FAMILIES[familyKey];
   if (!family) throw new Error(`Unknown font family key: ${familyKey}`);
-  const snapped = family.weights.reduce((best, candidate) =>
+  const weights = style === "italic" ? family.italicWeights : family.weights;
+  if (!weights) throw new Error(`Font family ${familyKey} has no ${style} face`);
+  const snapped = weights.reduce((best, candidate) =>
     Math.abs(candidate - weight) < Math.abs(best - weight) ? candidate : best,
   );
-  const cacheKey = `${familyKey}-${snapped}`;
+  const cacheKey = `${familyKey}-${snapped}-${style}`;
   let font = fontCache.get(cacheKey);
   if (!font) {
-    const bytes = readFileSync(fontFile(familyKey, snapped));
+    const bytes = readFileSync(fontFile(familyKey, snapped, style));
     font = opentype.parse(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
     );
@@ -177,6 +183,7 @@ const CONSUMED_ATTRIBUTES = new Set([
   "text-anchor",
   "font-family",
   "font-size",
+  "font-style",
   "font-weight",
   "letter-spacing",
 ]);
@@ -188,8 +195,8 @@ export function convertTextToPaths(svg, { idPrefix = "" } = {}) {
   const rules = parseClassRules(svg);
   const defs = new Map();
 
-  function glyphUse(font, familyName, weight, glyph, size, x, y) {
-    const key = `${familyName}-${weight}-${glyph.index}-${size}`;
+  function glyphUse(font, familyName, weight, style, glyph, size, x, y) {
+    const key = `${familyName}-${weight}-${style}-${glyph.index}-${size}`;
     let entry = defs.get(key);
     if (!entry) {
       entry = {
@@ -215,21 +222,24 @@ export function convertTextToPaths(svg, { idPrefix = "" } = {}) {
       let family = "ibm-plex-sans";
       let size = 16;
       let weight = 400;
+      let style = "normal";
       let letterSpacingRaw = null;
       for (const rule of rules) {
         if (!classes.includes(rule.className)) continue;
         if (rule.props["font-family"]) family = familyKey(rule.props["font-family"]);
         if (rule.props["font-size"]) size = parsePx(rule.props["font-size"]);
+        if (rule.props["font-style"]) style = rule.props["font-style"];
         if (rule.props["font-weight"]) weight = parseWeight(rule.props["font-weight"]);
         if (rule.props["letter-spacing"]) letterSpacingRaw = rule.props["letter-spacing"];
       }
       if (attrs["font-family"]) family = familyKey(attrs["font-family"]);
       if (attrs["font-size"]) size = parsePx(attrs["font-size"]);
+      if (attrs["font-style"]) style = attrs["font-style"];
       if (attrs["font-weight"]) weight = parseWeight(attrs["font-weight"]);
       if (attrs["letter-spacing"]) letterSpacingRaw = attrs["letter-spacing"];
       const letterSpacing = letterSpacingRaw ? parsePx(letterSpacingRaw, size) : 0;
 
-      const font = getFont(family, weight);
+      const font = getFont(family, weight, style);
       let x = Number.parseFloat(attrs.x ?? "0");
       const y = Number.parseFloat(attrs.y ?? "0");
       const run = shapeRun(font, content, 0, 0, size, letterSpacing);
@@ -239,7 +249,7 @@ export function convertTextToPaths(svg, { idPrefix = "" } = {}) {
       if (run.placements.length === 0) return "";
       const uses = run.placements
         .map((placement) =>
-          glyphUse(font, family, weight, placement.glyph, size, x + placement.x, y),
+          glyphUse(font, family, weight, style, placement.glyph, size, x + placement.x, y),
         )
         .join("");
       const kept = Object.entries(attrs)

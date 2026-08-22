@@ -1,3 +1,4 @@
+import { AUTHORED_FIGURE_TARGETS } from "./authored-figures.mjs";
 import { fitSize, MONO, placeChart, round, t } from "./compose-helpers.mjs";
 import { PAGE_FIGURE_TARGETS } from "./page-figures.mjs";
 
@@ -215,6 +216,7 @@ export const TARGETS = [
   { id: "readme-meteogram", file: "readme-meteogram.svg", compose: composeReadmeMeteogram },
   { id: "social-card", file: "site/assets/social-card.svg", compose: composeSocialCard },
   ...PAGE_FIGURE_TARGETS,
+  ...AUTHORED_FIGURE_TARGETS,
 ];
 
 export const RASTER_TARGETS = [

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1068 416">
+  <defs>
+    <marker id="pubflow-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2f454a"/></marker>
+    <marker id="pubflow-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#913b0c"/></marker>
+  </defs>
+
+  <!-- plate -->
+  <rect width="1068" height="416" fill="#fffdf8"/>
+
+  <!-- static-dataset boundary band between engine and browser lanes -->
+  <rect x="0" y="244" width="1068" height="28" fill="rgba(145,59,12,0.06)"/>
+  <line x1="0" y1="244" x2="1068" y2="244" stroke="rgba(145,59,12,0.5)" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="0" y1="272" x2="1068" y2="272" stroke="rgba(145,59,12,0.5)" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="16" y="262" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" letter-spacing="0.12em" fill="#743008">STATIC DATASET PUBLICATION</text>
+  <text x="912" y="262" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a" text-anchor="end">manifest.json · site profiles · append-only history</text>
+
+  <!-- lane structure -->
+  <line x1="0" y1="36" x2="1068" y2="36" stroke="rgba(119,105,86,0.35)" stroke-width="0.8"/>
+  <line x1="0" y1="140" x2="1068" y2="140" stroke="rgba(119,105,86,0.35)" stroke-width="0.8"/>
+  <line x1="0" y1="376" x2="1068" y2="376" stroke="rgba(119,105,86,0.35)" stroke-width="0.8"/>
+  <line x1="140" y1="36" x2="140" y2="376" stroke="rgba(119,105,86,0.5)" stroke-width="1"/>
+
+  <text x="70" y="92" font-family="'IBM Plex Mono', monospace" font-size="10" letter-spacing="0.08em" fill="#40565a" text-anchor="middle">UPSTREAM</text>
+  <text x="70" y="186" font-family="'IBM Plex Mono', monospace" font-size="10" letter-spacing="0.08em" fill="#40565a" text-anchor="middle">FORECAST</text>
+  <text x="70" y="200" font-family="'IBM Plex Mono', monospace" font-size="10" letter-spacing="0.08em" fill="#40565a" text-anchor="middle">ENGINE</text>
+  <text x="70" y="328" font-family="'IBM Plex Mono', monospace" font-size="10" letter-spacing="0.08em" fill="#40565a" text-anchor="middle">BROWSER</text>
+
+  <!-- step header chips + labels -->
+  <rect x="222" y="8" width="16" height="16" rx="8" fill="rgba(21,37,41,0.12)"/>
+  <text x="230" y="20" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">1</text>
+  <text x="230" y="32" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" letter-spacing="0.12em" fill="#2f454a" text-anchor="middle">CYCLE</text>
+
+  <rect x="402" y="8" width="16" height="16" rx="8" fill="rgba(21,37,41,0.12)"/>
+  <text x="410" y="20" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">2</text>
+  <text x="410" y="32" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" letter-spacing="0.12em" fill="#2f454a" text-anchor="middle">PROBE</text>
+
+  <rect x="582" y="8" width="16" height="16" rx="8" fill="rgba(21,37,41,0.12)"/>
+  <text x="590" y="20" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">3</text>
+  <text x="590" y="32" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" letter-spacing="0.12em" fill="#2f454a" text-anchor="middle">BUILD</text>
+
+  <rect x="762" y="8" width="16" height="16" rx="8" fill="#f2dcc1" stroke="#913b0c" stroke-width="1"/>
+  <text x="770" y="20" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#743008" text-anchor="middle">4</text>
+  <text x="770" y="32" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" letter-spacing="0.12em" fill="#913b0c" text-anchor="middle">PUBLISH</text>
+
+  <rect x="942" y="8" width="16" height="16" rx="8" fill="rgba(21,37,41,0.12)"/>
+  <text x="950" y="20" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">5</text>
+  <text x="950" y="32" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" letter-spacing="0.12em" fill="#2f454a" text-anchor="middle">READ</text>
+
+  <!-- arrows, before nodes -->
+  <path d="M312 88 H402 Q410 88 410 96 V144" fill="none" stroke="#2f454a" stroke-width="1" marker-end="url(#pubflow-arrow)"/>
+  <line x1="492" y1="192" x2="504" y2="192" stroke="#2f454a" stroke-width="1" marker-end="url(#pubflow-arrow)"/>
+  <line x1="672" y1="192" x2="684" y2="192" stroke="#913b0c" stroke-width="1.2" marker-end="url(#pubflow-arrow-accent)"/>
+  <path d="M852 192 H942 Q950 192 950 200 V276" fill="none" stroke="#913b0c" stroke-width="1.2" marker-end="url(#pubflow-arrow-accent)"/>
+
+  <!-- 1 · model cycle (external) -->
+  <rect x="148" y="44" width="164" height="88" rx="6" fill="#fffdf8"/>
+  <rect x="148" y="44" width="164" height="88" rx="6" fill="rgba(21,37,41,0.03)" stroke="rgba(21,37,41,0.3)" stroke-width="1"/>
+  <rect x="156" y="52" width="26" height="13" rx="2" fill="none" stroke="rgba(21,37,41,0.4)" stroke-width="0.8"/>
+  <text x="169" y="62" font-family="'IBM Plex Mono', monospace" font-size="7" letter-spacing="0.08em" fill="rgba(21,37,41,0.8)" text-anchor="middle">EXT</text>
+  <text x="230" y="86" font-family="'IBM Plex Sans', sans-serif" font-size="14" font-weight="600" fill="#152529" text-anchor="middle">Model cycle</text>
+  <text x="230" y="106" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">ECCC or NOAA publishes</text>
+  <text x="230" y="120" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">a forecast cycle</text>
+
+  <!-- 2 · completeness probe -->
+  <rect x="328" y="148" width="164" height="88" rx="6" fill="#fffdf8"/>
+  <rect x="328" y="148" width="164" height="88" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <rect x="336" y="156" width="26" height="13" rx="2" fill="none" stroke="rgba(21,37,41,0.4)" stroke-width="0.8"/>
+  <text x="349" y="166" font-family="'IBM Plex Mono', monospace" font-size="7" letter-spacing="0.08em" fill="rgba(21,37,41,0.8)" text-anchor="middle">ENG</text>
+  <text x="410" y="190" font-family="'IBM Plex Sans', sans-serif" font-size="14" font-weight="600" fill="#152529" text-anchor="middle">Completeness probe</text>
+  <text x="410" y="210" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">request the final required</text>
+  <text x="410" y="224" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">hour before fetching the run</text>
+
+  <!-- 3 · per-model builder -->
+  <rect x="508" y="148" width="164" height="88" rx="6" fill="#fffdf8"/>
+  <rect x="508" y="148" width="164" height="88" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1"/>
+  <rect x="516" y="156" width="26" height="13" rx="2" fill="none" stroke="rgba(21,37,41,0.4)" stroke-width="0.8"/>
+  <text x="529" y="166" font-family="'IBM Plex Mono', monospace" font-size="7" letter-spacing="0.08em" fill="rgba(21,37,41,0.8)" text-anchor="middle">ENG</text>
+  <text x="590" y="190" font-family="'IBM Plex Sans', sans-serif" font-size="14" font-weight="600" fill="#152529" text-anchor="middle">Per-model builder</text>
+  <text x="590" y="210" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">fetch declared records;</text>
+  <text x="590" y="224" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">verify, derive, serialize</text>
+
+  <!-- 4 · publish to storage (focal) -->
+  <rect x="688" y="148" width="164" height="88" rx="6" fill="#fffdf8"/>
+  <rect x="688" y="148" width="164" height="88" rx="6" fill="rgba(145,59,12,0.07)" stroke="#913b0c" stroke-width="1.2"/>
+  <rect x="696" y="156" width="26" height="13" rx="2" fill="none" stroke="rgba(145,59,12,0.5)" stroke-width="0.8"/>
+  <text x="709" y="166" font-family="'IBM Plex Mono', monospace" font-size="7" letter-spacing="0.08em" fill="#743008" text-anchor="middle">ENG</text>
+  <text x="770" y="184" font-family="'IBM Plex Sans', sans-serif" font-size="14" font-weight="600" fill="#152529" text-anchor="middle">Publish to storage</text>
+  <text x="770" y="202" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">upload every completed model</text>
+  <text x="770" y="216" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">directory and append one</text>
+  <text x="770" y="230" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">history record per site + run</text>
+
+  <!-- 5 · consumer read -->
+  <rect x="868" y="280" width="164" height="88" rx="6" fill="#fffdf8"/>
+  <rect x="868" y="280" width="164" height="88" rx="6" fill="rgba(47,69,74,0.06)" stroke="#40565a" stroke-width="1"/>
+  <rect x="876" y="288" width="26" height="13" rx="2" fill="none" stroke="rgba(21,37,41,0.4)" stroke-width="0.8"/>
+  <text x="889" y="298" font-family="'IBM Plex Mono', monospace" font-size="7" letter-spacing="0.08em" fill="rgba(21,37,41,0.8)" text-anchor="middle">BRW</text>
+  <text x="950" y="316" font-family="'IBM Plex Sans', sans-serif" font-size="14" font-weight="600" fill="#152529" text-anchor="middle">Consumer read</text>
+  <text x="950" y="334" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">fetch manifest + profile;</text>
+  <text x="950" y="348" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">compare referenceTime;</text>
+  <text x="950" y="362" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a" text-anchor="middle">a torn pair reads as stale</text>
+
+  <!-- legend -->
+  <text x="16" y="400" font-family="'IBM Plex Mono', monospace" font-size="9.5" letter-spacing="0.14em" fill="#2f454a">LEGEND</text>
+  <line x1="96" y1="396" x2="124" y2="396" stroke="#2f454a" stroke-width="1" marker-end="url(#pubflow-arrow)"/>
+  <text x="136" y="400" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a">hand-off</text>
+  <line x1="224" y1="396" x2="252" y2="396" stroke="#913b0c" stroke-width="1.2" marker-end="url(#pubflow-arrow-accent)"/>
+  <text x="264" y="400" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a">publication path</text>
+  <rect x="388" y="388" width="32" height="12" fill="rgba(145,59,12,0.06)" stroke="rgba(145,59,12,0.5)" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="428" y="400" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#2f454a">static boundary — below it, file reads only; no server</text>
+</svg>
