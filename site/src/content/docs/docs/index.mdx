@@ -22,7 +22,7 @@ station owner's at
 [Station getting started](/docs/station/getting-started/). The rest of
 this page is the map of how those layers fit.
 
-![Two lanes of packages: provider model files decode through grib and j2k into the forecast engine, which publishes versioned JSON documents that the briefing package reads; weather-station hardware feeds the station package directly over its own live wire; both lanes end at the operator, with the core package's shared vocabulary beneath briefing and station.](figures/platform-boundary.svg)
+![Two lanes flow left to right into the operator. A tall tinted band — the versioned JSON documents: manifest, site profiles, month archives, site context — stands as a wall across the top lane: provider model files decode through the grib and j2k packages, the forecast engine publishes through the wall, and the briefing package reads on the far side. The wall stops above the bottom lane, where weather-station hardware feeds the station package over one long wire that passes beneath it, marked never crosses. Both lanes end at the operator column on the right, and a dashed bar beneath the lanes marks the core package's shared vocabulary imported by briefing and station.](figures/platform-boundary.svg)
 
 ## The responsibility boundary
 

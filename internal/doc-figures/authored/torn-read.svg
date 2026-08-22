@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 730">
+  <defs>
+    <marker id="torn-head" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#2f454a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="730" fill="#fffdf8"/>
+
+  <text x="40" y="28" font-family="'Big Shoulders', sans-serif" font-size="18" font-weight="800" letter-spacing="0.36" fill="#152529">THE SKEW DANCE</text>
+  <text x="950" y="27" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#40565a" text-anchor="end">loadForecast: fetch, compare, retry once</text>
+  <line x1="40" y1="42" x2="950" y2="42" stroke="#776956" stroke-width="1.2"/>
+
+  <rect x="340" y="54" width="610" height="92" fill="none" stroke="rgba(119,105,86,0.7)" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="352" y="72" font-family="'IBM Plex Mono', monospace" font-size="10" font-weight="700" letter-spacing="1" fill="#2f454a">ONE PUBLISH, TWO CACHE ENTRIES</text>
+  <text x="938" y="72" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#40565a" text-anchor="end">static storage · independent expiry</text>
+
+  <line x1="140" y1="134" x2="140" y2="566" stroke="rgba(21,37,41,0.25)" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="486" y1="134" x2="486" y2="566" stroke="rgba(21,37,41,0.25)" stroke-width="1" stroke-dasharray="3 3"/>
+  <line x1="810" y1="134" x2="810" y2="566" stroke="rgba(21,37,41,0.25)" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <rect x="40" y="84" width="200" height="50" fill="#fffdf8" stroke="#776956" stroke-width="1.2"/>
+  <text x="140" y="106" font-family="'IBM Plex Mono', monospace" font-size="13" font-weight="700" fill="#152529" text-anchor="middle">loadForecast</text>
+  <text x="140" y="124" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a" text-anchor="middle">the consumer</text>
+
+  <rect x="356" y="84" width="260" height="50" fill="#fffdf8" stroke="#776956" stroke-width="1.2"/>
+  <text x="486" y="106" font-family="'IBM Plex Mono', monospace" font-size="11.5" font-weight="700" fill="#152529" text-anchor="middle">data/&lt;model&gt;/manifest.json</text>
+  <text x="486" y="124" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a" text-anchor="middle">cache entry</text>
+
+  <rect x="680" y="84" width="260" height="50" fill="#fffdf8" stroke="#776956" stroke-width="1.2"/>
+  <text x="810" y="106" font-family="'IBM Plex Mono', monospace" font-size="11.5" font-weight="700" fill="#152529" text-anchor="middle">data/&lt;model&gt;/sites/&lt;site&gt;.json</text>
+  <text x="810" y="124" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a" text-anchor="middle">cache entry</text>
+
+  <rect x="136" y="166" width="8" height="378" fill="rgba(47,69,74,0.06)" stroke="#2f454a" stroke-width="0.8"/>
+
+  <text x="315" y="182" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#2f454a" text-anchor="middle">fetch the pair: manifest + profile, in parallel</text>
+  <path d="M144 190 H482" stroke="#2f454a" stroke-width="1.5" fill="none" marker-end="url(#torn-head)"/>
+  <path d="M144 214 H806" stroke="#2f454a" stroke-width="1.5" fill="none" marker-end="url(#torn-head)"/>
+
+  <text x="259" y="240" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#2f454a">referenceTime</text>
+  <text x="351" y="240" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="700" fill="#743008">06Z</text>
+  <text x="315" y="251" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#40565a" text-anchor="middle">cache entry expired first: the new run is visible</text>
+  <path d="M486 258 H150" stroke="#2f454a" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#torn-head)"/>
+
+  <text x="245" y="284" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#2f454a">run.referenceTime</text>
+  <text x="364" y="284" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="700" fill="#152529">00Z</text>
+  <text x="315" y="295" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#40565a" text-anchor="middle">cache entry still valid: the old run is still served</text>
+  <path d="M810 302 H150" stroke="#2f454a" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#torn-head)"/>
+
+  <rect x="32" y="318" width="216" height="40" fill="#fffdf8" stroke="#776956" stroke-width="1.2"/>
+  <text x="140" y="337" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" fill="#152529" text-anchor="middle">runsConsistent(m, p)?</text>
+  <text x="140" y="352" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#40565a" text-anchor="middle">same model and referenceTime</text>
+
+  <rect x="180" y="374" width="620" height="28" fill="#f2dcc1"/>
+  <text x="490" y="392" font-family="'IBM Plex Sans', sans-serif" font-size="12.5" font-weight="700" fill="#743008" text-anchor="middle">06Z against 00Z: a torn pair. Rendering it as one forecast lies about both runs.</text>
+
+  <rect x="80" y="418" width="810" height="126" fill="rgba(21,37,41,0.02)" stroke="rgba(21,37,41,0.25)" stroke-width="1"/>
+  <rect x="80" y="418" width="64" height="18" fill="#f2f4f1" stroke="rgba(21,37,41,0.25)" stroke-width="1"/>
+  <text x="112" y="431" font-family="'IBM Plex Mono', monospace" font-size="9" font-weight="700" letter-spacing="1.2" fill="#2f454a" text-anchor="middle">RETRY</text>
+  <text x="156" y="431" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#40565a">[runsConsistent false]</text>
+
+  <path d="M144 456 H196 Q204 456 204 464 V468 Q204 476 196 476 H154" stroke="#2f454a" stroke-width="1.5" fill="none" marker-end="url(#torn-head)"/>
+  <text x="216" y="462" font-family="'IBM Plex Mono', monospace" font-size="11.5" font-weight="700" fill="#152529">WAIT ~1.5 s</text>
+  <text x="216" y="478" font-family="'IBM Plex Sans', sans-serif" font-size="10" fill="#40565a">publishes converge quickly</text>
+
+  <text x="315" y="498" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#2f454a" text-anchor="middle">refetch the pair, once</text>
+  <path d="M144 506 H482" stroke="#2f454a" stroke-width="1.5" fill="none" marker-end="url(#torn-head)"/>
+  <path d="M144 530 H806" stroke="#2f454a" stroke-width="1.5" fill="none" marker-end="url(#torn-head)"/>
+
+  <text x="490" y="584" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a" text-anchor="middle">true -&gt; return the pair with stale: false; after the refetch, stale records whether the pair still disagrees</text>
+
+  <text x="40" y="616" font-family="'Big Shoulders', sans-serif" font-size="18" font-weight="800" letter-spacing="0.36" fill="#152529">EVERY WAY IT RESOLVES</text>
+  <text x="950" y="615" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#40565a" text-anchor="end">discriminate a miss with "miss" in result</text>
+  <line x1="40" y1="630" x2="950" y2="630" stroke="#776956" stroke-width="1.2"/>
+
+  <rect x="40" y="646" width="284" height="68" fill="#fffdf8" stroke="#152529" stroke-width="1.5"/>
+  <text x="54" y="666" font-family="'IBM Plex Mono', monospace" font-size="11.5" font-weight="700" fill="#152529">{ manifest, profile, stale: false }</text>
+  <text x="54" y="684" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a">a consistent pair: render it</text>
+
+  <rect x="344" y="646" width="290" height="68" fill="#fffdf8" stroke="#776956" stroke-width="1.2"/>
+  <text x="358" y="666" font-family="'IBM Plex Mono', monospace" font-size="11.5" font-weight="700" fill="#152529">{ manifest, profile, stale: true }</text>
+  <text x="358" y="684" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a">freshest complete pair, still torn;</text>
+  <text x="358" y="698" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a">note it or fall back; never mix the two</text>
+
+  <rect x="654" y="646" width="296" height="68" fill="#fffdf8" stroke="#776956" stroke-width="1.2"/>
+  <text x="668" y="666" font-family="'IBM Plex Mono', monospace" font-size="11.5" font-weight="700" fill="#152529">{ miss: "absent" | "invalid", url }</text>
+  <text x="668" y="684" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a">absent: routine 404 · invalid: contract break;</text>
+  <text x="668" y="698" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#40565a">log it loudly; other HTTP errors throw</text>
+</svg>

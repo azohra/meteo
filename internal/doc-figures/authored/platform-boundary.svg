@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 346">
+  <defs>
+    <marker id="platb-flow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2f454a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1100" height="346" fill="#fffdf8"/>
+
+  <!-- the boundary wall: versioned JSON documents, full-height band that
+       stops above the station lane -->
+  <rect x="598" y="6" width="104" height="178" fill="#f2dcc1"/>
+  <path d="M598 6 V184" stroke="#913b0c" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/>
+  <path d="M702 6 V184" stroke="#913b0c" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/>
+  <path d="M598 184 H702" stroke="#913b0c" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/>
+  <text x="650" y="30" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" letter-spacing="0.5" fill="#743008">VERSIONED</text>
+  <text x="650" y="46" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" letter-spacing="0.5" fill="#743008">JSON</text>
+  <text x="650" y="62" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" letter-spacing="0.5" fill="#743008">DOCUMENTS</text>
+  <text x="650" y="116" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#2f454a">manifest</text>
+  <text x="650" y="131" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#2f454a">site profiles</text>
+  <text x="650" y="146" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#2f454a">month archives</text>
+  <text x="650" y="161" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#2f454a">site context</text>
+
+  <!-- top lane source -->
+  <text x="130" y="88" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a">provider model files:</text>
+  <text x="130" y="104" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a">GRIB2 · JPEG 2000</text>
+
+  <!-- decoders -->
+  <rect x="152" y="36" width="192" height="112" rx="8" fill="#fffdf8" stroke="#776956" stroke-width="1.5"/>
+  <text x="248" y="62" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" fill="#152529">@azohra/meteo.grib ·</text>
+  <text x="248" y="78" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" fill="#152529">@azohra/meteo.j2k</text>
+  <text x="248" y="100" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">Decode provider bytes into</text>
+  <text x="248" y="114" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">typed grids, gated bit-for-bit</text>
+  <text x="248" y="128" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">against ecCodes.</text>
+
+  <!-- forecast engine -->
+  <rect x="372" y="36" width="196" height="112" rx="8" fill="#fffdf8" stroke="#776956" stroke-width="1.5"/>
+  <text x="470" y="72" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" fill="#152529">@azohra/meteo.forecast</text>
+  <text x="470" y="96" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">Samples each launch, derives</text>
+  <text x="470" y="110" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">engine-owned values,</text>
+  <text x="470" y="124" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">publishes documents.</text>
+
+  <!-- briefing -->
+  <rect x="732" y="36" width="196" height="112" rx="8" fill="#fffdf8" stroke="#776956" stroke-width="1.5"/>
+  <text x="830" y="72" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" fill="#152529">@azohra/meteo.briefing</text>
+  <text x="830" y="96" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">Validates the documents,</text>
+  <text x="830" y="110" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">derives, analyzes, compares,</text>
+  <text x="830" y="124" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">draws the Meteogram.</text>
+
+  <!-- bottom lane source -->
+  <text x="130" y="236" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a">weather-station</text>
+  <text x="130" y="252" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a">hardware</text>
+
+  <!-- station -->
+  <rect x="732" y="196" width="196" height="88" rx="8" fill="#fffdf8" stroke="#776956" stroke-width="1.5"/>
+  <text x="830" y="222" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="700" fill="#152529">@azohra/meteo.station</text>
+  <text x="830" y="244" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">Adapters, feed handler, and</text>
+  <text x="830" y="258" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">display over its own live wire</text>
+  <text x="830" y="272" text-anchor="middle" font-family="'IBM Plex Sans', sans-serif" font-size="10.5" fill="#2f454a">contract.</text>
+
+  <!-- operator column: both lanes end here -->
+  <rect x="956" y="36" width="132" height="248" rx="8" fill="#fffdf8" stroke="#152529" stroke-width="1.5"/>
+  <text x="1022" y="106" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="700" letter-spacing="0.5" fill="#743008">THE OPERATOR</text>
+  <path d="M992 118 H1052" stroke="#776956" stroke-width="0.8" fill="none"/>
+  <text x="1022" y="140" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10.5" fill="#2f454a">hosting</text>
+  <text x="1022" y="158" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10.5" fill="#2f454a">schedule</text>
+  <text x="1022" y="176" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10.5" fill="#2f454a">access</text>
+  <text x="1022" y="194" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10.5" fill="#2f454a">presentation</text>
+  <text x="1022" y="212" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10.5" fill="#2f454a">safety language</text>
+
+  <!-- shared foundation: under the packages only -->
+  <rect x="152" y="304" width="776" height="30" rx="6" fill="#fffdf8" stroke="#776956" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="540" y="323" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#2f454a">@azohra/meteo.core: units · one wind sign · failure vocabulary (imported by briefing and station)</text>
+
+  <!-- arrows last: the hand-off visibly crosses the band; the wire never
+       touches it -->
+  <path d="M136 92 H148" stroke="#2f454a" stroke-width="1.6" fill="none" marker-end="url(#platb-flow)"/>
+  <path d="M344 92 H368" stroke="#2f454a" stroke-width="1.6" fill="none" marker-end="url(#platb-flow)"/>
+  <path d="M568 92 H728" stroke="#2f454a" stroke-width="1.6" fill="none" marker-end="url(#platb-flow)"/>
+  <path d="M928 92 H952" stroke="#2f454a" stroke-width="1.6" fill="none" marker-end="url(#platb-flow)"/>
+  <path d="M136 240 H728" stroke="#2f454a" stroke-width="1.6" fill="none" marker-end="url(#platb-flow)"/>
+  <path d="M928 240 H952" stroke="#2f454a" stroke-width="1.6" fill="none" marker-end="url(#platb-flow)"/>
+  <text x="650" y="228" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a">never crosses</text>
+</svg>

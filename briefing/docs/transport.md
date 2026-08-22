@@ -10,7 +10,7 @@ different runs. `loadForecast()` performs the consistency check a consumer
 would otherwise have to hand-write; `loadSiteSet()` extends it to a whole
 set of sites.
 
-![A sequence diagram of the transport's reference-time skew dance. A publish refreshes the manifest cache entry before the profile cache entry, so a consumer fetching both receives a manifest from the 06Z run and a profile from the 00Z run. loadForecast compares the pair's reference times with runsConsistent, waits 1.5 seconds, refetches, and returns either a consistent pair, the freshest complete pair marked stale, or a discriminated DocumentMiss.](figures/torn-read.svg)
+![A sequence diagram of the transport's reference-time skew dance, with three lifelines: the loadForecast consumer and the two independently cached static files, the model manifest and the site profile. A publish refreshes the manifest cache entry before the profile cache entry, so the parallel fetch returns a manifest from the 06Z run and a profile from the 00Z run. loadForecast compares the pair's reference times with runsConsistent, waits 1.5 seconds inside a single retry frame, refetches the pair once, and a bottom row lists every resolution: a consistent pair to render, the freshest complete pair marked stale, or a discriminated DocumentMiss.](figures/torn-read.svg)
 
 ## Load a manifest/profile pair
 

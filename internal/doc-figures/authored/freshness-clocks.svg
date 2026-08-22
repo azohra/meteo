@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 524">
+  <defs>
+    <marker id="fresh-arrowhead" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#2f454a"/>
+    </marker>
+  </defs>
+
+  <!-- shared true-time gridlines (hidden where lane bands cover them) -->
+  <line x1="180" y1="16" x2="180" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+  <line x1="310" y1="16" x2="310" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+  <line x1="440" y1="16" x2="440" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+  <line x1="570" y1="16" x2="570" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+  <line x1="700" y1="16" x2="700" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+  <line x1="830" y1="16" x2="830" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+  <line x1="960" y1="16" x2="960" y2="240" stroke="rgba(119,105,86,0.35)" stroke-width="1"/>
+
+  <!-- lane bands -->
+  <rect x="160" y="24" width="832" height="56" fill="#f2f4f1"/>
+  <rect x="160" y="88" width="832" height="56" fill="#f2f4f1"/>
+  <rect x="160" y="152" width="832" height="60" fill="#f2f4f1"/>
+
+  <!-- axis header -->
+  <text x="0" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#2f454a">true clock · UTC</text>
+  <text x="180" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:00:40</text>
+  <text x="310" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:00:50</text>
+  <text x="440" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:01:00</text>
+  <text x="570" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:01:10</text>
+  <text x="700" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:01:20</text>
+  <text x="830" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:01:30</text>
+  <text x="960" y="12" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">12:01:40</text>
+
+  <!-- lane rail labels -->
+  <text x="0" y="44" font-family="'Big Shoulders', sans-serif" font-size="16" font-weight="800" letter-spacing="0.4" fill="#152529">STATION</text>
+  <text x="0" y="60" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a">stamps the reading</text>
+  <text x="0" y="108" font-family="'Big Shoulders', sans-serif" font-size="16" font-weight="800" letter-spacing="0.4" fill="#152529">SERVER</text>
+  <text x="0" y="124" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a">stamps the response</text>
+  <text x="0" y="172" font-family="'Big Shoulders', sans-serif" font-size="16" font-weight="800" letter-spacing="0.4" fill="#152529">CLIENT</text>
+  <text x="0" y="188" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a">wall clock 4 min fast</text>
+
+  <!-- dashed drops from events to the measure brackets -->
+  <line x1="245" y1="78" x2="245" y2="240" stroke="rgba(119,105,86,0.8)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="440" y1="142" x2="440" y2="240" stroke="rgba(119,105,86,0.8)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="531" y1="188" x2="531" y2="240" stroke="rgba(119,105,86,0.8)" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="921" y1="188" x2="921" y2="240" stroke="rgba(119,105,86,0.8)" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- handoff arrows: the reading rides to the server, the response rides to the client -->
+  <path d="M250.5 52 H396 Q404 52 404 60 V108 Q404 116 412 116 H432" fill="none" stroke="#2f454a" stroke-width="1.1" marker-end="url(#fresh-arrowhead)"/>
+  <path d="M446 116 H468 Q476 116 476 124 V178 Q476 186 484 186 H520" fill="none" stroke="#2f454a" stroke-width="1.1" marker-end="url(#fresh-arrowhead)"/>
+  <text x="324" y="42" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a" text-anchor="middle">reading</text>
+  <text x="484" y="140" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#40565a">response</text>
+
+  <!-- the two age terms, each inside one clock domain -->
+  <path d="M245 244 V252 H440 V244" fill="none" stroke="#743008" stroke-width="1.6"/>
+  <path d="M531 244 V252 H921 V244" fill="none" stroke="#743008" stroke-width="1.6"/>
+  <text x="342" y="270" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#743008" text-anchor="middle">servedAt - observedAt = 15 s</text>
+  <text x="342" y="286" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#40565a" text-anchor="middle">both stamps ride the wire</text>
+  <text x="726" y="270" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#743008" text-anchor="middle">now - receivedAtMs = 30 s</text>
+  <text x="726" y="286" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#40565a" text-anchor="middle">both read on the client</text>
+
+  <!-- event dots -->
+  <circle cx="245" cy="52" r="5.5" fill="#152529" stroke="#fffdf8" stroke-width="1.5"/>
+  <circle cx="440" cy="116" r="5.5" fill="#152529" stroke="#fffdf8" stroke-width="1.5"/>
+  <circle cx="531" cy="182" r="5.5" fill="#152529" stroke="#fffdf8" stroke-width="1.5"/>
+  <circle cx="921" cy="182" r="5.5" fill="#152529" stroke="#fffdf8" stroke-width="1.5"/>
+
+  <!-- event labels -->
+  <text x="245" y="39" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">observedAt</text>
+  <text x="245" y="71" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#2f454a" text-anchor="middle">12:00:45Z</text>
+  <text x="440" y="103" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">servedAt</text>
+  <text x="440" y="135" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#2f454a" text-anchor="middle">12:01:00Z</text>
+  <text x="531" y="169" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">receivedAtMs</text>
+  <text x="543" y="186" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" fill="#743008">reads 12:05:07</text>
+  <text x="921" y="169" font-family="'IBM Plex Mono', monospace" font-size="10.5" font-weight="700" fill="#152529" text-anchor="middle">now</text>
+  <text x="909" y="186" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" fill="#743008" text-anchor="end">reads 12:05:37</text>
+
+  <!-- verdict strip -->
+  <rect x="0" y="304" width="1000" height="84" fill="#f2f4f1" stroke="#913b0c" stroke-width="1.8"/>
+  <text x="500" y="334" font-family="'Big Shoulders', sans-serif" font-size="19" font-weight="800" letter-spacing="0.4" fill="#152529" text-anchor="middle">AGE = (SERVEDAT - OBSERVEDAT) + (NOW - RECEIVEDATMS) = 45 S</text>
+  <text x="500" y="356" font-family="'IBM Plex Sans', sans-serif" font-size="11" fill="#2f454a" text-anchor="middle">the naive now - observedAt on this client's wall clock reads 4 min 52 s, a live station misread as stale</text>
+  <text x="500" y="374" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#40565a" text-anchor="middle">each difference stays inside one clock domain, so the client's 4-minute error never enters the sum</text>
+
+  <!-- footer panels -->
+  <rect x="0" y="404" width="492" height="112" fill="#fffdf8" stroke="rgba(119,105,86,0.6)" stroke-width="1"/>
+  <text x="16" y="424" font-family="'Big Shoulders', sans-serif" font-size="13" font-weight="800" letter-spacing="0.5" fill="#152529">THE GRADE</text>
+  <rect x="16" y="434" width="40" height="18" fill="#f2f4f1" stroke="rgba(119,105,86,0.9)" stroke-width="1"/>
+  <text x="36" y="447" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" fill="#2f454a" text-anchor="middle">live</text>
+  <text x="68" y="447" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#40565a" text-anchor="middle">-&gt;</text>
+  <rect x="78" y="434" width="48" height="18" fill="#f2f4f1" stroke="rgba(119,105,86,0.9)" stroke-width="1"/>
+  <text x="102" y="447" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" fill="#2f454a" text-anchor="middle">aging</text>
+  <text x="134" y="447" font-family="'IBM Plex Mono', monospace" font-size="9.5" fill="#40565a" text-anchor="middle">-&gt;</text>
+  <rect x="144" y="434" width="48" height="18" fill="#f2f4f1" stroke="rgba(119,105,86,0.9)" stroke-width="1"/>
+  <text x="168" y="447" font-family="'IBM Plex Mono', monospace" font-size="9.5" font-weight="600" fill="#2f454a" text-anchor="middle">stale</text>
+  <text x="16" y="470" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#152529">freshness() grades the age into "live" | "aging" | "stale"; between polls</text>
+  <text x="16" y="486" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#152529">every binding re-judges the same reading every 30 s, so a dead feed ages</text>
+  <text x="16" y="502" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#152529">visibly</text>
+
+  <rect x="508" y="404" width="492" height="112" fill="#fffdf8" stroke="rgba(119,105,86,0.6)" stroke-width="1"/>
+  <text x="524" y="424" font-family="'Big Shoulders', sans-serif" font-size="13" font-weight="800" letter-spacing="0.5" fill="#152529">THE CUTOFFS</text>
+  <text x="524" y="450" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#152529">stationFreshnessThresholds() scales them to the station's own cadence:</text>
+  <text x="524" y="466" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#152529">ten minutes of silence is routine for a five-minute logger and a dead</text>
+  <text x="524" y="482" font-family="'IBM Plex Mono', monospace" font-size="10" fill="#152529">feed for a three-second one</text>
+</svg>
