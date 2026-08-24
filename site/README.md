@@ -12,7 +12,7 @@ not fetch the launch catalogue, current manifests, or current profiles in the br
 pnpm install
 pnpm dev      # http://localhost:4321
 pnpm check    # typecheck
-pnpm build    # -> dist/
+mise run build && (cd site && pnpm exec astro build)   # -> site/dist/
 ```
 
 ## Source map
@@ -39,6 +39,6 @@ pnpm build    # -> dist/
 
 ## Deploying
 
-`pnpm build` writes the static site to `dist/`; [`wrangler.jsonc`](wrangler.jsonc)
+`astro build` (run via `mise run site:build`) writes the static site to `dist/`; [`wrangler.jsonc`](wrangler.jsonc)
 describes serving it as Worker static assets. Where and how a deployment
 hosts it is the operator's business, not this README's.

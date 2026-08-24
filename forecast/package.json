@@ -41,11 +41,6 @@
     "./models.json": "./models.json",
     "./package.json": "./package.json"
   },
-  "scripts": {
-    "build": "tsdown",
-    "test": "pnpm --dir ../briefing build && pnpm --dir ../grib build && vitest run",
-    "typecheck": "pnpm --dir ../briefing build && pnpm --dir ../grib build && tsc -p tsconfig.json --noEmit"
-  },
   "dependencies": {
     "@azohra/meteo.briefing": "workspace:*",
     "@azohra/meteo.core": "workspace:*",

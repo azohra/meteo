@@ -1,0 +1,195 @@
+[tools]
+node = "24"
+
+[env]
+_.path = ["./node_modules/.bin"]
+
+[tasks.setup]
+description = "Make a fresh checkout workable; installs the commit gate"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+if [ ! -d node_modules ]; then
+  seat=$(dirname "$(git rev-parse --git-common-dir)")
+  if [ -d "$seat/node_modules" ]; then cp -Rc "$seat/node_modules" node_modules 2>/dev/null || true; fi
+fi
+pnpm install --frozen-lockfile
+git config --unset-all core.hooksPath 2>/dev/null || true
+mise generate git-pre-commit --write --task=pre-commit
+"""
+
+[tasks.build]
+description = "Build every package, then the workspace shell (skips when fresh)"
+sources = [
+  "core/src/**/*",
+  "briefing/src/**/*",
+  "station/src/**/*",
+  "forecast/src/**/*",
+  "grib/src/**/*",
+  "j2k/src/**/*",
+  "*/tsdown.config.ts",
+  "tsdown.config.ts",
+  "capabilities.ts",
+  "internal/emit-schemas.ts",
+]
+outputs = { auto = true }
+run = "pnpm --filter '!meteo-site' -r exec tsdown && tsdown"
+
+[tasks.lint]
+description = "Format and lint gate (source readers; no build needed)"
+run = "oxfmt --check . && oxlint ."
+
+[tasks."figures:check"]
+description = "Doc figures match their authored sources"
+depends = ["build"]
+run = "node internal/generate-doc-figures.mjs --check"
+
+[tasks.figures]
+description = "Regenerate the authored doc figures"
+depends = ["build"]
+run = "node internal/generate-doc-figures.mjs"
+
+[tasks."station-assets:check"]
+description = "Station assets match their sources"
+depends = ["build"]
+run = "node internal/generate-station-assets.mjs --check"
+
+[tasks."station-assets"]
+description = "Regenerate station assets"
+depends = ["build"]
+run = "node internal/generate-station-assets.mjs"
+
+[tasks."doc-fences:check"]
+description = "Doc code fences compile against the built packages"
+depends = ["build"]
+run = "node internal/check-doc-fences.mjs"
+
+[tasks.content]
+description = "Doc links, structure, and prose rules (source readers)"
+run = [
+  "node internal/check-doc-links.mjs",
+  "node internal/check-docs-structure.mjs",
+  "node internal/check-prose-rules.mjs",
+]
+
+[tasks.typecheck]
+description = "Typecheck the shell and every package (serial: shared dist readers)"
+depends = ["build"]
+run = [
+  "tsc -p tsconfig.json --noEmit",
+  "pnpm --dir core exec tsc -p tsconfig.json --noEmit",
+  "pnpm --dir briefing exec tsc -p tsconfig.json --noEmit",
+  "pnpm --dir station exec tsc -p tsconfig.json --noEmit",
+  "pnpm --dir forecast exec tsc -p tsconfig.json --noEmit",
+  "pnpm --dir grib exec tsc -p tsconfig.json --noEmit",
+  "pnpm --dir j2k exec tsc -p tsconfig.json --noEmit",
+]
+
+# grib's oracle corpus and j2k's decoder are the two long suites; each is
+# its own task so neither queues behind the other.
+[tasks."test:grib"]
+depends = ["build"]
+dir = "grib"
+run = "vitest run"
+
+[tasks."test:j2k"]
+depends = ["build"]
+dir = "j2k"
+run = "vitest run"
+
+[tasks.test]
+description = "Shell and package suites"
+depends = ["build"]
+run = [
+  "vitest run",
+  "pnpm --dir core exec vitest run",
+  "pnpm --dir briefing exec vitest run",
+  "pnpm --dir station exec vitest run",
+  "pnpm --dir forecast exec vitest run",
+]
+
+[tasks."site:build"]
+depends = ["build"]
+dir = "site"
+sources = ["src/**/*", "public/**/*", "astro.config.mjs"]
+outputs = { auto = true }
+run = "pnpm exec astro build"
+
+[tasks."site:check"]
+depends = ["site:build"]
+dir = "site"
+run = "pnpm exec astro check"
+
+[tasks."site:test"]
+depends = ["site:build"]
+dir = "site"
+run = "pnpm exec playwright test"
+
+[tasks.check]
+description = "The definition of green: every gate, one verb"
+depends = [
+  "lint",
+  "content",
+  "figures:check",
+  "station-assets:check",
+  "doc-fences:check",
+  "typecheck",
+  "test",
+  "test:grib",
+  "test:j2k",
+  "site:check",
+  "site:test",
+]
+
+[tasks.dev]
+description = "Site dev server; port derived per checkout"
+dir = "site"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+# Every checkout derives its port from its path — stable per checkout,
+# no fixed ports, no registry.
+n=$(pwd | cksum | cut -d' ' -f1)
+port=$((4400 + n % 4000))
+unsafe=" 4045 5060 5061 6000 6566 6665 6666 6667 6668 6669 6679 6697 "
+while [[ "$unsafe" == *" $port "* ]]; do port=$((port + 1)); done
+exec pnpm exec astro dev --port "$port"
+"""
+
+[tasks."schemas:check"]
+description = "Emitted schemas match their sources"
+depends = ["build"]
+run = "node dist/internal/emit-schemas.js --check"
+
+[tasks.schemas]
+description = "Re-emit the schema artifacts"
+depends = ["build"]
+run = "node dist/internal/emit-schemas.js"
+
+[tasks."scenarios:generate"]
+depends = ["build"]
+run = "node internal/scenarios.mjs generate"
+
+[tasks."scenarios:check"]
+depends = ["build"]
+run = "node internal/scenarios.mjs check"
+
+[tasks.pre-commit]
+description = "Commit gate: the full battery; proven trees skip"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+# Proofs are content-addressed by tree hash in the common git dir: a tree
+# proven in any worktree is proven for every checkout. The marker is
+# earned only when the disk IS the commit — the battery proves the disk.
+ledger="$(git rev-parse --path-format=absolute --git-common-dir)/proven-trees.d"
+tree=$(git write-tree)
+[ ! -f "$ledger/$tree" ] || { echo "gates: tree already proven green; skipping"; exit 0; }
+mise run check
+if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+  mkdir -p "$ledger"
+  : > "$ledger/$tree"
+  ls -t "$ledger" | tail -n +33 | while read -r stale; do rm -f "$ledger/$stale"; done
+fi
+"""
+

@@ -35,7 +35,7 @@ export default defineConfig({
   webServer: {
     // Astro backgrounds preview automatically in detected agent environments.
     // Playwright must own a foreground process so teardown is deterministic.
-    command: `ASTRO_PREVIEW_BACKGROUND=0 pnpm preview --host 127.0.0.1 --port ${port}`,
+    command: `ASTRO_PREVIEW_BACKGROUND=0 pnpm exec astro preview --host 127.0.0.1 --port ${port}`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
     stdout: "pipe",

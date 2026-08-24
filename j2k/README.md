@@ -24,7 +24,7 @@ is the GRIB section 7 payload (DRT 5.40). This decodes one and reads a
 sample:
 
 ```js
-// decode-fixture.mjs — run inside j2k/ after `pnpm build` (and a grib build)
+// decode-fixture.mjs — run inside j2k/ after `mise run build`
 import { readFileSync } from "node:fs";
 import { parseFields, splitMessages } from "../grib/dist/index.js";
 import { decodeJ2k } from "./dist/index.js";

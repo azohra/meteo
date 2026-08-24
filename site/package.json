@@ -2,15 +2,6 @@
   "name": "meteo-site",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "pnpm run build:deps && astro dev",
-    "build": "pnpm run build:deps && astro build",
-    "build:deps": "pnpm --dir ../core build && pnpm --dir ../briefing build && pnpm --dir ../station build && pnpm --dir ../forecast build",
-    "preview": "astro preview",
-    "check": "pnpm run build:deps && astro check",
-    "test": "pnpm run build && pnpm run test:built",
-    "test:built": "playwright test"
-  },
   "dependencies": {
     "@astrojs/mdx": "^7.0.5",
     "@astrojs/sitemap": "^3.7.3",
