@@ -1,5 +1,7 @@
 {
-  "name": "meteo",
+  "name": "meteo-azohra-com",
+  "account_id": "075fc545fdb23bfb095addc959d84052",
+  "routes": [{ "pattern": "meteo.azohra.com", "custom_domain": true }],
   "compatibility_date": "2026-08-07",
   "workers_dev": false,
   "preview_urls": false,
