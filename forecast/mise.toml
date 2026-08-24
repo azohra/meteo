@@ -1,0 +1,53 @@
+# forecast tasks. The engine: depends on core, briefing, and grib;
+# models.json is the provider declaration the builders are held to.
+
+[tasks.build]
+extends = "pkg:build"
+depends = ["//core:build", "//briefing:build", "//grib:build"]
+sources = [
+  "src/**",
+  "models.json",
+  "tsdown.config.ts",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+  "../briefing/dist/**",
+  "../grib/dist/**",
+]
+
+[tasks.typecheck]
+extends = "pkg:typecheck"
+sources = [
+  "src/**",
+  "test/**",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+  "../briefing/dist/**",
+  "../grib/dist/**",
+]
+
+[tasks.tests]
+extends = "pkg:tests"
+hide = true
+sources = [
+  "src/**",
+  "test/**",
+  "models.json",
+  "vitest.config.ts",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+  "../briefing/dist/**",
+  "../grib/dist/**",
+]
+
+[tasks.test]
+extends = "pkg:test"
+raw_args = true
+
+[tasks.check]
+description = "forecast typecheck + tests"
+depends = ["typecheck", "tests"]

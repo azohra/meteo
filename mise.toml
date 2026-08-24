@@ -1,8 +1,87 @@
+# mise is the command surface for this repo: `mise tasks` lists the root
+# verbs, `mise tasks --all` every package's.
+#
+# This is a mise MONOREPO ROOT: each package (core/, briefing/, station/,
+# forecast/, grib/, j2k/) and the site (site/) carries its own mise.toml
+# with its build/typecheck/test/check tasks, addressed as //core:build,
+# //site:check, etc. — `cd core && mise run check` resolves the package's
+# own check. Root tasks are the aggregates, the workspace shell's own
+# gates, and the repo-wide doc gates.
+#
+#   mise run setup — frozen install + the commit gate hook
+#   mise run build — every package dist, then the workspace shell
+#   mise run check — the definition of green: every gate, one verb
+#   mise run dev   — the site dev server (port derived per checkout)
+#
+# deploy and release are operator verbs and are not tracked here.
+
+min_version = { soft = "2026.8.12" }
+monorepo_root = true
+
+# Secret-shaped env never appears in task output.
+redactions = ["*_TOKEN", "*_API_KEY", "*_SECRET*"]
+
+[monorepo]
+config_roots = ["core", "briefing", "station", "forecast", "grib", "j2k", "site"]
+
+[settings]
+# Required for task result caching. NOTE the sharp edge: [settings] are
+# invocation-global — this also enables experimental features for global
+# tool resolution while running inside this repo.
+experimental = true
+# The check DAG fans out across seven package checks plus the doc gates;
+# tasks are subprocess-bound, not mise-bound.
+jobs = 8
+
+[tool_config]
+# Tools in this config root must resolve from the committed mise.lock.
+# Scoped to this root only — unlike `settings.locked`, this cannot leak
+# policy onto other repos.
+locked = true
+
 [tools]
 node = "24"
+# Must stay equal to package.json's packageManager field, which pnpm
+# itself enforces at install time.
+pnpm = "11.20.0"
 
 [env]
 _.path = ["./node_modules/.bin"]
+
+# --- templates: the shared task shapes packages extend -----------------------
+#
+# Extenders with workspace dependencies restate `sources` in full (sources
+# override wholesale) and add the dependency dists — a dependency's rebuild
+# must invalidate this package's results. Checks declare outputs = [] with
+# cache: a green result is stored content-addressed, so an unchanged
+# package's gate is a cache hit, not a rerun.
+
+[task_templates."pkg:build"]
+description = "Build this package's dist with tsdown"
+run = "pnpm exec tsdown"
+sources = ["src/**", "tsdown.config.ts", "package.json", "../pnpm-lock.yaml"]
+outputs = ["dist/**"]
+
+[task_templates."pkg:typecheck"]
+description = "Typecheck"
+depends = ["build"]
+run = "pnpm exec tsc -p tsconfig.json --noEmit"
+outputs = []
+cache = { enabled = true }
+
+[task_templates."pkg:tests"]
+description = "Test suite (cached green result)"
+depends = ["build"]
+run = "pnpm exec vitest run"
+outputs = []
+cache = { enabled = true }
+
+[task_templates."pkg:test"]
+description = "vitest with filters passing through (e.g. src/host.unit.test.ts)"
+depends = ["build"]
+run = "pnpm exec vitest run"
+
+# --- setup and build ---------------------------------------------------------
 
 [tasks.setup]
 description = "Make a fresh checkout workable; installs the commit gate"
@@ -20,29 +99,190 @@ mise generate git-pre-commit --write --task=pre-commit
 
 [tasks.build]
 description = "Build every package, then the workspace shell (skips when fresh)"
+depends = [
+  "//core:build",
+  "//briefing:build",
+  "//station:build",
+  "//forecast:build",
+  "//grib:build",
+  "//j2k:build",
+]
+run = "tsdown"
 sources = [
-  "core/src/**/*",
-  "briefing/src/**/*",
-  "station/src/**/*",
-  "forecast/src/**/*",
-  "grib/src/**/*",
-  "j2k/src/**/*",
-  "*/tsdown.config.ts",
-  "tsdown.config.ts",
   "capabilities.ts",
   "internal/emit-schemas.ts",
+  "tsdown.config.ts",
+  "package.json",
+  "pnpm-lock.yaml",
 ]
-outputs = { auto = true }
-run = "pnpm --filter '!meteo-site' -r exec tsdown && tsdown"
+outputs = ["dist/**"]
+
+# --- the shell's own gates ---------------------------------------------------
 
 [tasks.lint]
 description = "Format and lint gate (source readers; no build needed)"
 run = "oxfmt --check . && oxlint ."
+sources = [
+  "*.ts",
+  "*.mjs",
+  "mise.toml",
+  "*/mise.toml",
+  ".oxlintrc.json",
+  ".prettierignore",
+  "core/src/**",
+  "core/test/**",
+  "briefing/src/**",
+  "briefing/test/**",
+  "station/src/**",
+  "station/test/**",
+  "forecast/src/**",
+  "forecast/test/**",
+  "grib/src/**",
+  "grib/test/**",
+  "j2k/src/**",
+  "j2k/test/**",
+  "*/tsdown.config.ts",
+  "*/vitest.config.ts",
+  "internal/**",
+  "site/src/**",
+  "site/test/**",
+  "site/*.ts",
+  "site/*.mjs",
+  "scenarios/**",
+]
+outputs = []
+cache = { enabled = true }
+
+[tasks.typecheck]
+description = "Typecheck the shell and every package"
+depends = [
+  "//core:typecheck",
+  "//briefing:typecheck",
+  "//station:typecheck",
+  "//forecast:typecheck",
+  "//grib:typecheck",
+  "//j2k:typecheck",
+]
+run = "tsc -p tsconfig.json --noEmit"
+sources = [
+  "capabilities.ts",
+  "tsconfig.json",
+  "internal/**/*.ts",
+  "package.json",
+  "pnpm-lock.yaml",
+  "core/dist/**",
+  "briefing/dist/**",
+  "station/dist/**",
+  "forecast/dist/**",
+]
+outputs = []
+cache = { enabled = true }
+
+# The shell suite (internal/: boundaries, palette parity) reads package
+# sources and manifests directly — they are inputs, not just the dists.
+[tasks.tests]
+hide = true
+description = "Shell suite (cached green result)"
+depends = ["build"]
+run = "vitest run"
+sources = [
+  "internal/**",
+  "capabilities.ts",
+  "vitest.config.ts",
+  "tsconfig.json",
+  "package.json",
+  "pnpm-lock.yaml",
+  "*/package.json",
+  "core/src/**",
+  "briefing/src/**",
+  "station/src/**",
+  "forecast/src/**",
+  "grib/src/**",
+  "j2k/src/**",
+  "station/styles.css",
+  "site/src/**",
+  "dist/**",
+]
+outputs = []
+cache = { enabled = true }
+
+[tasks.test]
+description = "Shell and package suites (grib, j2k, and the site run in their own lanes)"
+depends = ["tests", "//core:tests", "//briefing:tests", "//station:tests", "//forecast:tests"]
+
+# --- repo-wide doc gates -------------------------------------------------------
+
+# Links, structure, and prose are separate tasks so the two file-input
+# gates cache; `content` stays the verb the battery names.
+[tasks."content:links"]
+hide = true
+description = "Internal-link integrity across every reader-facing source"
+run = "node internal/check-doc-links.mjs"
+sources = [
+  "internal/check-doc-links.mjs",
+  "internal/lib/**",
+  "site/src/**",
+  "site/public/**",
+  "README.md",
+  "*/README.md",
+  "*/CHANGELOG.md",
+  "*/docs/**",
+]
+outputs = []
+cache = { enabled = true }
+
+# NOT cached: the style lane reads machine-local git config
+# (meteo.styleDeny), which a content-addressed key cannot see.
+[tasks."content:structure"]
+hide = true
+description = "Docs structure, labels, orphans, and the style lane"
+run = "node internal/check-docs-structure.mjs"
+
+[tasks."content:prose"]
+hide = true
+description = "Mechanical prose rules across every reader-facing source"
+run = "node internal/check-prose-rules.mjs"
+sources = [
+  "internal/check-prose-rules.mjs",
+  "internal/lib/**",
+  "site/src/**",
+  "README.md",
+  "*/README.md",
+  "*/CHANGELOG.md",
+  "*/docs/**",
+]
+outputs = []
+cache = { enabled = true }
+
+[tasks.content]
+description = "Doc links, structure, and prose rules (source readers)"
+depends = ["content:links", "content:structure", "content:prose"]
 
 [tasks."figures:check"]
 description = "Doc figures match their authored sources"
 depends = ["build"]
 run = "node internal/generate-doc-figures.mjs --check"
+sources = [
+  "internal/**",
+  "scenarios/**",
+  "site/assets/**",
+  "site/public/**",
+  "site/src/assets/**",
+  "site/package.json",
+  "readme-hero.svg",
+  "readme-meteogram.svg",
+  "package.json",
+  "pnpm-lock.yaml",
+  "dist/**",
+  "core/dist/**",
+  "briefing/dist/**",
+  "station/dist/**",
+  "forecast/dist/**",
+  "grib/dist/**",
+  "j2k/dist/**",
+]
+outputs = []
+cache = { enabled = true }
 
 [tasks.figures]
 description = "Regenerate the authored doc figures"
@@ -53,6 +293,18 @@ run = "node internal/generate-doc-figures.mjs"
 description = "Station assets match their sources"
 depends = ["build"]
 run = "node internal/generate-station-assets.mjs --check"
+sources = [
+  "internal/generate-station-assets.mjs",
+  "internal/lib/**",
+  "station/styles.css",
+  "station/docs/figures/**",
+  "station/dist/**",
+  "core/dist/**",
+  "package.json",
+  "pnpm-lock.yaml",
+]
+outputs = []
+cache = { enabled = true }
 
 [tasks."station-assets"]
 description = "Regenerate station assets"
@@ -63,67 +315,81 @@ run = "node internal/generate-station-assets.mjs"
 description = "Doc code fences compile against the built packages"
 depends = ["build"]
 run = "node internal/check-doc-fences.mjs"
-
-[tasks.content]
-description = "Doc links, structure, and prose rules (source readers)"
-run = [
-  "node internal/check-doc-links.mjs",
-  "node internal/check-docs-structure.mjs",
-  "node internal/check-prose-rules.mjs",
+sources = [
+  "internal/check-doc-fences.mjs",
+  "internal/lib/**",
+  "site/src/content/**",
+  "README.md",
+  "*/README.md",
+  "*/docs/**",
+  "*/package.json",
+  "tsconfig.json",
+  "package.json",
+  "pnpm-lock.yaml",
+  "dist/**",
+  "core/dist/**",
+  "briefing/dist/**",
+  "station/dist/**",
+  "forecast/dist/**",
+  "grib/dist/**",
+  "j2k/dist/**",
 ]
+outputs = []
+cache = { enabled = true }
 
-[tasks.typecheck]
-description = "Typecheck the shell and every package (serial: shared dist readers)"
+[tasks."schemas:check"]
+description = "Emitted schemas match their sources"
 depends = ["build"]
-run = [
-  "tsc -p tsconfig.json --noEmit",
-  "pnpm --dir core exec tsc -p tsconfig.json --noEmit",
-  "pnpm --dir briefing exec tsc -p tsconfig.json --noEmit",
-  "pnpm --dir station exec tsc -p tsconfig.json --noEmit",
-  "pnpm --dir forecast exec tsc -p tsconfig.json --noEmit",
-  "pnpm --dir grib exec tsc -p tsconfig.json --noEmit",
-  "pnpm --dir j2k exec tsc -p tsconfig.json --noEmit",
+run = "node dist/internal/emit-schemas.js --check"
+sources = [
+  "internal/emit-schemas.ts",
+  "capabilities.ts",
+  "*/schema/**",
+  "package.json",
+  "pnpm-lock.yaml",
+  "dist/**",
+  "core/dist/**",
+  "briefing/dist/**",
+  "station/dist/**",
+  "forecast/dist/**",
+  "grib/dist/**",
+  "j2k/dist/**",
 ]
+outputs = []
+cache = { enabled = true }
 
-# grib's oracle corpus and j2k's decoder are the two long suites; each is
-# its own task so neither queues behind the other.
-[tasks."test:grib"]
+[tasks.schemas]
+description = "Re-emit the schema artifacts"
 depends = ["build"]
-dir = "grib"
-run = "vitest run"
+run = "node dist/internal/emit-schemas.js"
 
-[tasks."test:j2k"]
+[tasks."scenarios:check"]
+description = "Scenario outputs match their definitions"
 depends = ["build"]
-dir = "j2k"
-run = "vitest run"
-
-[tasks.test]
-description = "Shell and package suites"
-depends = ["build"]
-run = [
-  "vitest run",
-  "pnpm --dir core exec vitest run",
-  "pnpm --dir briefing exec vitest run",
-  "pnpm --dir station exec vitest run",
-  "pnpm --dir forecast exec vitest run",
+run = "node internal/scenarios.mjs check"
+sources = [
+  "internal/scenarios.mjs",
+  "internal/lib/**",
+  "scenarios/**",
+  "package.json",
+  "pnpm-lock.yaml",
+  "dist/**",
+  "core/dist/**",
+  "briefing/dist/**",
+  "station/dist/**",
+  "forecast/dist/**",
+  "grib/dist/**",
+  "j2k/dist/**",
 ]
+outputs = []
+cache = { enabled = true }
 
-[tasks."site:build"]
+[tasks."scenarios:generate"]
+description = "Regenerate scenario outputs"
 depends = ["build"]
-dir = "site"
-sources = ["src/**/*", "public/**/*", "astro.config.mjs"]
-outputs = { auto = true }
-run = "pnpm exec astro build"
+run = "node internal/scenarios.mjs generate"
 
-[tasks."site:check"]
-depends = ["site:build"]
-dir = "site"
-run = "pnpm exec astro check"
-
-[tasks."site:test"]
-depends = ["site:build"]
-dir = "site"
-run = "pnpm exec playwright test"
+# --- aggregates ----------------------------------------------------------------
 
 [tasks.check]
 description = "The definition of green: every gate, one verb"
@@ -135,15 +401,31 @@ depends = [
   "doc-fences:check",
   "typecheck",
   "test",
-  "test:grib",
-  "test:j2k",
-  "site:check",
-  "site:test",
+  { task = "//...:check" },
 ]
 
+# Doctrine-facing lanes: the documented standalone commands for the long
+# suites and the site gates, resolving to the package tasks that own them.
+[tasks."test:grib"]
+hide = true
+run = [{ task = "//grib:tests" }]
+
+[tasks."test:j2k"]
+hide = true
+run = [{ task = "//j2k:tests" }]
+
+[tasks."site:check"]
+hide = true
+run = [{ task = "//site:check" }]
+
+[tasks."site:test"]
+hide = true
+run = [{ task = "//site:e2e" }]
+
 [tasks.dev]
-description = "Site dev server; port derived per checkout"
+description = "Site dev server; port derived per checkout (flags pass through)"
 dir = "site"
+raw_args = true
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
@@ -153,26 +435,8 @@ n=$(pwd | cksum | cut -d' ' -f1)
 port=$((4400 + n % 4000))
 unsafe=" 4045 5060 5061 6000 6566 6665 6666 6667 6668 6669 6679 6697 "
 while [[ "$unsafe" == *" $port "* ]]; do port=$((port + 1)); done
-exec pnpm exec astro dev --port "$port"
+exec pnpm exec astro dev --port "$port" "$@"
 """
-
-[tasks."schemas:check"]
-description = "Emitted schemas match their sources"
-depends = ["build"]
-run = "node dist/internal/emit-schemas.js --check"
-
-[tasks.schemas]
-description = "Re-emit the schema artifacts"
-depends = ["build"]
-run = "node dist/internal/emit-schemas.js"
-
-[tasks."scenarios:generate"]
-depends = ["build"]
-run = "node internal/scenarios.mjs generate"
-
-[tasks."scenarios:check"]
-depends = ["build"]
-run = "node internal/scenarios.mjs check"
 
 [tasks.pre-commit]
 description = "Commit gate: the full battery; proven trees skip"
@@ -192,4 +456,3 @@ if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; the
   ls -t "$ledger" | tail -n +33 | while read -r stale; do rm -f "$ledger/$stale"; done
 fi
 """
-

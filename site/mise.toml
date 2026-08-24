@@ -1,0 +1,79 @@
+# site tasks. The documentation site builds against the four packages it
+# imports; the docs collection symlinks each package's docs/ in, and the
+# labs read scenario outputs — all of those are build inputs.
+
+[tasks.build]
+description = "Build the static site"
+depends = ["//core:build", "//briefing:build", "//station:build", "//forecast:build"]
+run = "pnpm exec astro build"
+sources = [
+  "src/**",
+  "public/**",
+  "assets/**",
+  "astro.config.mjs",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+  "../briefing/dist/**",
+  "../station/dist/**",
+  "../forecast/dist/**",
+  "../*/docs/**",
+  "../scenarios/**",
+]
+outputs = ["dist/**"]
+
+[tasks."check:types"]
+description = "astro check against the built site's generated types"
+depends = ["build"]
+run = "pnpm exec astro check"
+outputs = []
+cache = { enabled = true }
+sources = [
+  "src/**",
+  "public/**",
+  "astro.config.mjs",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+  "../briefing/dist/**",
+  "../station/dist/**",
+  "../forecast/dist/**",
+  "../*/docs/**",
+  "../scenarios/**",
+]
+
+[tasks.e2e]
+description = "Playwright suite against the built site (cached green)"
+depends = ["build"]
+run = "pnpm exec playwright test"
+outputs = []
+cache = { enabled = true }
+sources = [
+  "src/**",
+  "public/**",
+  "assets/**",
+  "astro.config.mjs",
+  "playwright.config.ts",
+  "test/**",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+  "../briefing/dist/**",
+  "../station/dist/**",
+  "../forecast/dist/**",
+  "../*/docs/**",
+  "../scenarios/**",
+]
+
+[tasks.test]
+description = "Playwright with filters passing through (e.g. gallery.spec.ts)"
+depends = ["build"]
+raw_args = true
+run = "pnpm exec playwright test"
+
+[tasks.check]
+description = "Site green: astro check + the browser suite"
+depends = ["check:types", "e2e"]

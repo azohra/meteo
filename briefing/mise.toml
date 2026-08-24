@@ -1,0 +1,40 @@
+# briefing tasks. Depends on core: its dist (types included) is a build
+# and check input, so a core change invalidates this package's results.
+
+[tasks.build]
+extends = "pkg:build"
+depends = ["//core:build"]
+sources = ["src/**", "tsdown.config.ts", "package.json", "../pnpm-lock.yaml", "../core/dist/**"]
+
+[tasks.typecheck]
+extends = "pkg:typecheck"
+sources = [
+  "src/**",
+  "test/**",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+]
+
+[tasks.tests]
+extends = "pkg:tests"
+hide = true
+sources = [
+  "src/**",
+  "test/**",
+  "schema/**",
+  "vitest.config.ts",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../core/dist/**",
+]
+
+[tasks.test]
+extends = "pkg:test"
+raw_args = true
+
+[tasks.check]
+description = "briefing typecheck + tests"
+depends = ["typecheck", "tests"]

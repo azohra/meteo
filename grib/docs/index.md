@@ -32,7 +32,7 @@ combination that motivated the package) and samples one launch:
 
 <!-- meteo-doc-fence: run -->
 ```js
-// decode-fixture.mjs — run inside grib/ after `pnpm build`
+// decode-fixture.mjs — run inside grib/ after `mise run build`
 import { readFileSync } from "node:fs";
 import {
   decodeFieldValues,

@@ -1,0 +1,40 @@
+# grib tasks. Depends on j2k (the one decoder import edge). The test
+# suite includes the oracle corpus — the long lane; it parallelizes
+# against the other packages under the root check DAG.
+
+[tasks.build]
+extends = "pkg:build"
+depends = ["//j2k:build"]
+sources = ["src/**", "tsdown.config.ts", "package.json", "../pnpm-lock.yaml", "../j2k/dist/**"]
+
+[tasks.typecheck]
+extends = "pkg:typecheck"
+sources = [
+  "src/**",
+  "test/**",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../j2k/dist/**",
+]
+
+[tasks.tests]
+extends = "pkg:tests"
+hide = true
+sources = [
+  "src/**",
+  "test/**",
+  "vitest.config.ts",
+  "tsconfig.json",
+  "package.json",
+  "../pnpm-lock.yaml",
+  "../j2k/dist/**",
+]
+
+[tasks.test]
+extends = "pkg:test"
+raw_args = true
+
+[tasks.check]
+description = "grib typecheck + tests (includes the oracle corpus)"
+depends = ["typecheck", "tests"]

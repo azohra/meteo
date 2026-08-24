@@ -9,10 +9,10 @@ not fetch the launch catalogue, current manifests, or current profiles in the br
 ## Developing
 
 ```sh
-pnpm install
-pnpm dev      # http://localhost:4321
-pnpm check    # typecheck
-mise run build && (cd site && pnpm exec astro build)   # -> site/dist/
+mise run setup                # frozen install + the commit gate
+mise run dev                  # dev server; port derived per checkout
+mise run //site:check:types   # astro check
+mise run //site:build         # -> site/dist/
 ```
 
 ## Source map
@@ -39,6 +39,6 @@ mise run build && (cd site && pnpm exec astro build)   # -> site/dist/
 
 ## Deploying
 
-`astro build` (run via `mise run site:build`) writes the static site to `dist/`; [`wrangler.jsonc`](wrangler.jsonc)
+`astro build` (run via `mise run //site:build`) writes the static site to `dist/`; [`wrangler.jsonc`](wrangler.jsonc)
 describes serving it as Worker static assets. Where and how a deployment
 hosts it is the operator's business, not this README's.
