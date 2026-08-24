@@ -63,8 +63,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "pnpm --dir ../core build && vp pack",
-    "test": "pnpm --dir ../core build && vp test",
+    "build": "pnpm --dir ../core build && tsdown",
+    "test": "pnpm --dir ../core build && vitest run",
     "typecheck": "pnpm --dir ../core build && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

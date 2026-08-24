@@ -37,8 +37,8 @@
     }
   },
   "scripts": {
-    "build": "pnpm --dir ../j2k build && vp pack",
-    "test": "pnpm --dir ../j2k build && vp test",
+    "build": "pnpm --dir ../j2k build && tsdown",
+    "test": "pnpm --dir ../j2k build && vitest run",
     "typecheck": "pnpm run build && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

@@ -982,13 +982,11 @@ export function buildMeteogramScene(
   const windWindow = windWindowRow
     ? {
         y: plotBottom + WIND_WINDOW_ROW_PX / 2 + 1,
-        marks: hours.map(
-          (hour, index): WindWindowMark => ({
-            hourIndex: index,
-            x: xCenter(index),
-            inWindow: inDirectionArcs(hour.surface.windDirectionDeg, launchWindows),
-          }),
-        ),
+        marks: hours.map((hour, index): WindWindowMark => ({
+          hourIndex: index,
+          x: xCenter(index),
+          inWindow: inDirectionArcs(hour.surface.windDirectionDeg, launchWindows),
+        })),
       }
     : null;
 

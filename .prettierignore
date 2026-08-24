@@ -1,0 +1,16 @@
+dist/
+site/dist/
+site/.astro/
+*.md
+*.mdx
+*.json
+*.jsonc
+*.css
+*.yml
+*.yaml
+site/src/**/*.mjs
+site/*.ts
+site/*.mjs
+site/*.cjs
+site/test/
+site/public/

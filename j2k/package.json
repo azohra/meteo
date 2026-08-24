@@ -28,8 +28,8 @@
     }
   },
   "scripts": {
-    "build": "vp pack",
-    "test": "vp test",
+    "build": "tsdown",
+    "test": "vitest run",
     "typecheck": "pnpm run build && tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

@@ -16,8 +16,8 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const lanes = {
   static: [
-    ["lint", ["pnpm", "exec", "vp", "lint"]],
-    ["fmt:check", ["pnpm", "exec", "vp", "fmt", "--check"]],
+    ["lint", ["pnpm", "exec", "oxlint", "."]],
+    ["fmt:check", ["pnpm", "exec", "oxfmt", "--check", "."]],
   ],
   figures: [["figures:check", ["node", "internal/generate-doc-figures.mjs", "--check"]]],
   "station-assets": [
@@ -40,14 +40,14 @@ const lanes = {
   ],
   // grib's oracle corpus and j2k's decoder are the two long suites; each
   // gets its own lane so neither queues behind the other.
-  "test-grib": [["test grib", ["pnpm", "exec", "vp", "test"], "grib"]],
-  "test-j2k": [["test j2k", ["pnpm", "exec", "vp", "test"], "j2k"]],
+  "test-grib": [["test grib", ["pnpm", "exec", "vitest", "run"], "grib"]],
+  "test-j2k": [["test j2k", ["pnpm", "exec", "vitest", "run"], "j2k"]],
   tests: [
-    ["test root", ["pnpm", "exec", "vp", "test"]],
-    ["test core", ["pnpm", "exec", "vp", "test"], "core"],
-    ["test briefing", ["pnpm", "exec", "vp", "test"], "briefing"],
-    ["test station", ["pnpm", "exec", "vp", "test"], "station"],
-    ["test forecast", ["pnpm", "exec", "vp", "test"], "forecast"],
+    ["test root", ["pnpm", "exec", "vitest", "run"]],
+    ["test core", ["pnpm", "exec", "vitest", "run"], "core"],
+    ["test briefing", ["pnpm", "exec", "vitest", "run"], "briefing"],
+    ["test station", ["pnpm", "exec", "vitest", "run"], "station"],
+    ["test forecast", ["pnpm", "exec", "vitest", "run"], "forecast"],
   ],
   // After astro build, check reads src/ and Playwright serves dist/ —
   // disjoint surfaces, so the two run as a fork (a parallel step group).
