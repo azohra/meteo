@@ -439,20 +439,10 @@ exec pnpm exec astro dev --port "$port" "$@"
 """
 
 [tasks.pre-commit]
-description = "Commit gate: the full battery; proven trees skip"
+description = "Commit gate: branches author, main never does; check must be green"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
-# Proofs are content-addressed by tree hash in the common git dir: a tree
-# proven in any worktree is proven for every checkout. The marker is
-# earned only when the disk IS the commit — the battery proves the disk.
-ledger="$(git rev-parse --path-format=absolute --git-common-dir)/proven-trees.d"
-tree=$(git write-tree)
-[ ! -f "$ledger/$tree" ] || { echo "gates: tree already proven green; skipping"; exit 0; }
+[ "$(git branch --show-current)" != "main" ] || { echo "pre-commit: refusing — commits are authored on branches, never on main" >&2; exit 1; }
 mise run check
-if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
-  mkdir -p "$ledger"
-  : > "$ledger/$tree"
-  ls -t "$ledger" | tail -n +33 | while read -r stale; do rm -f "$ledger/$stale"; done
-fi
 """
