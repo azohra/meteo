@@ -231,12 +231,21 @@ sources = [
 outputs = []
 cache = { enabled = true }
 
-# NOT cached: the style lane reads machine-local git config
-# (meteo.styleDeny), which a content-addressed key cannot see.
 [tasks."content:structure"]
 hide = true
-description = "Docs structure, labels, orphans, and the style lane"
+description = "Docs structure, labels, and orphans"
 run = "node internal/check-docs-structure.mjs"
+sources = [
+  "internal/check-docs-structure.mjs",
+  "internal/lib/**",
+  "site/src/**",
+  "README.md",
+  "*/README.md",
+  "*/CHANGELOG.md",
+  "*/docs/**",
+]
+outputs = []
+cache = { enabled = true }
 
 [tasks."content:prose"]
 hide = true

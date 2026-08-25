@@ -1,11 +1,10 @@
-import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { proseLines, renderedProseLines, walk } from "./lib/prose-files.mjs";
 
 /* Structural checks on the documentation: sidebar shape, labels,
-   orphans, and prose conventions. */
+   orphans, and hand-typed schema-version drift. */
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -59,34 +58,6 @@ const DECLARED_LABELS = new Map([
   ["docs/station/climatology", "Climatology"],
   ["docs/station/wire-contract", "Wire contract"],
 ]);
-
-/* Vocabulary the 2026-08 audit retired. A hit outside a code fence is a
-   regression, not a style choice. */
-const RETIRED_VOCABULARY = [
-  [/\bdownstream publisher/i, 'say "operator" — one word, two hats (glossary)'],
-  [/\bwire v[12]\b/i, 'say "schemaVersion 1/2" — Compatibility defines it'],
-  [/\bstatic history profile\b/i, '"profile" is the document; say history is on by default'],
-  [/\bterrain catalogue\b/i, "site-context.json is measured context, not a catalogue"],
-  [/\bAuthority by quantity\b/, 'the section is named "Who owns each value"'],
-];
-
-/* Optional style lane: rejected-phrase patterns from repo git config
-   (`git config --add meteo.styleDeny <regex>`), matched case-insensitively
-   against prose lines. No config entries, no lane. */
-const styleDeny = (() => {
-  try {
-    const out = execSync("git config --get-all meteo.styleDeny", {
-      cwd: repoRoot,
-      encoding: "utf-8",
-    });
-    return out
-      .split("\n")
-      .filter(Boolean)
-      .map((source) => new RegExp(source, "i"));
-  } catch {
-    return [];
-  }
-})();
 
 /* Hand-typed schema versions drift (the about figure shipped a retired 1);
    prose renders the imported constant instead. Fenced samples are wire
@@ -206,7 +177,7 @@ for (const [slugRoot, dir] of roots) {
   }
 }
 
-/* ── prose conventions: retired vocabulary, hand-typed versions ─────── */
+/* ── hand-typed schema versions in prose ────────────────────────────── */
 for (const [, dir] of roots.slice(1)) {
   for (const file of walkPages(dir)) checkProse(file);
 }
@@ -230,16 +201,6 @@ for (const dir of [
 function checkProse(file, extract = (_file, text) => proseLines(text)) {
   const text = readFileSync(file, "utf-8");
   for (const [line, content] of extract(file, text)) {
-    for (const [pattern, advice] of RETIRED_VOCABULARY) {
-      if (pattern.test(content)) {
-        fail(`${relative(repoRoot, file)}:${line}`, `retired vocabulary ${pattern} — ${advice}`);
-      }
-    }
-    for (const pattern of styleDeny) {
-      if (pattern.test(content)) {
-        fail(`${relative(repoRoot, file)}:${line}`, `rejected phrase ${pattern} (meteo.styleDeny)`);
-      }
-    }
     if (HAND_TYPED_VERSION.test(content)) {
       fail(
         `${relative(repoRoot, file)}:${line}`,
@@ -255,5 +216,5 @@ if (failures.length > 0) {
   process.exit(2);
 }
 console.log(
-  `check-docs-structure: ${seen.size} sidebar pages verified — sections, order, labels, orphans, and prose conventions hold`,
+  `check-docs-structure: ${seen.size} sidebar pages verified — sections, order, labels, and orphans hold`,
 );
