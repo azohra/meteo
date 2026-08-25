@@ -212,7 +212,7 @@ depends = ["tests", "//core:tests", "//briefing:tests", "//station:tests", "//fo
 
 # --- repo-wide doc gates -------------------------------------------------------
 
-# Links, structure, and prose are separate tasks so the two file-input
+# Links, structure, and quotes are separate tasks so the file-input
 # gates cache; `content` stays the verb the battery names.
 [tasks."content:links"]
 hide = true
@@ -247,12 +247,12 @@ sources = [
 outputs = []
 cache = { enabled = true }
 
-[tasks."content:prose"]
+[tasks."content:quotes"]
 hide = true
-description = "Mechanical prose rules across every reader-facing source"
-run = "node internal/check-prose-rules.mjs"
+description = "Straight-quote convention across every reader-facing source"
+run = "node internal/check-quotes.mjs"
 sources = [
-  "internal/check-prose-rules.mjs",
+  "internal/check-quotes.mjs",
   "internal/lib/**",
   "site/src/**",
   "README.md",
@@ -264,8 +264,8 @@ outputs = []
 cache = { enabled = true }
 
 [tasks.content]
-description = "Doc links, structure, and prose rules (source readers)"
-depends = ["content:links", "content:structure", "content:prose"]
+description = "Doc links, structure, and the quote convention (source readers)"
+depends = ["content:links", "content:structure", "content:quotes"]
 
 [tasks."figures:check"]
 description = "Doc figures match their authored sources"
