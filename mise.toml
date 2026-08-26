@@ -401,7 +401,7 @@ run = "node internal/scenarios.mjs generate"
 # --- aggregates ----------------------------------------------------------------
 
 [tasks.check]
-description = "The definition of green: every gate, one verb"
+description = "The definition of green: every gate, one command"
 depends = [
   "lint",
   "content",
