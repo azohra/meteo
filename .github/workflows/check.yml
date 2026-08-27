@@ -23,4 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
+      # install is a prerequisite verb, not something check pulls: check fans
+      # out across the package suites in parallel, and a dependency shared by
+      # that fan-out cannot be ordered ahead of it.
+      - run: mise run install
       - run: mise run check

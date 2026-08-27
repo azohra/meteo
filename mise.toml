@@ -83,6 +83,21 @@ run = "pnpm exec vitest run"
 
 # --- setup and build ---------------------------------------------------------
 
+[tasks.install]
+description = "Dependencies from the lockfile"
+run = """
+#!/usr/bin/env bash
+# Clone the seat's dependency tree first (APFS copy-on-write, isolated per
+# worktree) so the frozen install becomes a fast verify; anywhere the clone
+# cannot happen, the plain install does the whole job.
+set -euo pipefail
+if [ ! -d node_modules ]; then
+  seat=$(dirname "$(git rev-parse --git-common-dir)")
+  if [ -d "$seat/node_modules" ]; then cp -Rc "$seat/node_modules" node_modules 2>/dev/null || true; fi
+fi
+pnpm install --frozen-lockfile
+"""
+
 [tasks.build]
 description = "Build every package, then the workspace shell (skips when fresh)"
 depends = [
@@ -399,8 +414,6 @@ depends = [
   { task = "//...:check" },
 ]
 
-# Doctrine-facing lanes: the documented standalone commands for the long
-# suites and the site gates, resolving to the package tasks that own them.
 [tasks."test:grib"]
 hide = true
 run = [{ task = "//grib:tests" }]
@@ -447,6 +460,7 @@ set -euo pipefail
 git fetch -q origin main
 # FETCH_HEAD, not origin/main: a CI checkout has no remote-tracking ref.
 [ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ] || { echo "deploy: refusing — HEAD is not landed origin/main" >&2; exit 1; }
+mise run install
 mise run check
 # The worker is site/; everything below runs there so the deploy and the
 # question that verifies it address the same wrangler config.
