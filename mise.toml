@@ -25,6 +25,9 @@ redactions = ["*_TOKEN", "*_API_KEY", "*_SECRET*"]
 config_roots = ["core", "briefing", "station", "forecast", "grib", "j2k", "site"]
 
 [settings]
+# package.json's packageManager is the one home for the pnpm version; a
+# runner and anyone else's clone need this to read it.
+idiomatic_version_file_enable_tools = ["pnpm"]
 # Required for task result caching. NOTE the sharp edge: [settings] are
 # invocation-global — this also enables experimental features for global
 # tool resolution while running inside this repo.
@@ -41,9 +44,6 @@ locked = true
 
 [tools]
 node = "24"
-# Must stay equal to package.json's packageManager field, which pnpm
-# itself enforces at install time.
-pnpm = "11.20.0"
 
 [env]
 _.path = ["./node_modules/.bin"]
@@ -82,20 +82,6 @@ depends = ["build"]
 run = "pnpm exec vitest run"
 
 # --- setup and build ---------------------------------------------------------
-
-[tasks.setup]
-description = "Make a fresh checkout workable; installs the commit gate"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-if [ ! -d node_modules ]; then
-  seat=$(dirname "$(git rev-parse --git-common-dir)")
-  if [ -d "$seat/node_modules" ]; then cp -Rc "$seat/node_modules" node_modules 2>/dev/null || true; fi
-fi
-pnpm install --frozen-lockfile
-git config --unset-all core.hooksPath 2>/dev/null || true
-mise generate git-pre-commit --write --task=pre-commit
-"""
 
 [tasks.build]
 description = "Build every package, then the workspace shell (skips when fresh)"
@@ -447,11 +433,48 @@ while [[ "$unsafe" == *" $port "* ]]; do port=$((port + 1)); done
 exec pnpm exec astro dev --port "$port" "$@"
 """
 
-[tasks.pre-commit]
-description = "Commit gate: branches author, main never does; check must be green"
+[tasks.deploy]
+description = "Deploy the site at merged main"
+confirm = "Deploy meteo.azohra.com to production?"
+timeout = "10m"
+usage = 'flag "--dry-run" help="Validate without shipping"'
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
-[ "$(git branch --show-current)" != "main" ] || { echo "pre-commit: refusing — commits are authored on branches, never on main" >&2; exit 1; }
+[ -n "${CLOUDFLARE_API_TOKEN:-}" ] || { echo "deploy: refusing — CLOUDFLARE_API_TOKEN is unset" >&2; exit 1; }
+[ "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" ] || { echo "deploy: refusing — deploy runs only from the main checkout" >&2; exit 1; }
+[ -z "$(git status --porcelain)" ] || { echo "deploy: refusing — tree is dirty" >&2; exit 1; }
+git fetch -q origin main
+# FETCH_HEAD, not origin/main: a CI checkout has no remote-tracking ref.
+[ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ] || { echo "deploy: refusing — HEAD is not landed origin/main" >&2; exit 1; }
 mise run check
+# The worker is site/; everything below runs there so the deploy and the
+# question that verifies it address the same wrangler config.
+cd site
+if [ "${usage_dry_run:-false}" = "true" ]; then
+  pnpm exec wrangler deploy --dry-run
+  echo "deploy: dry run complete — nothing shipped"
+  exit 0
+fi
+tag="$(git rev-parse --short HEAD)"
+pnpm exec wrangler deploy --tag "$tag" --message "$(git log -1 --pretty=%s)"
+# Cloudflare is the authority on which version serves traffic. The public URL
+# cannot answer it: bot protection 403s a datacenter IP on some zones and not
+# others, so a status code there means nothing consistent.
+python3 - "$tag" <<'VERIFY'
+import json, subprocess, sys
+
+def wrangler(*args):
+    r = subprocess.run(["pnpm", "exec", "wrangler", *args, "--json"], capture_output=True, text=True)
+    if r.returncode:
+        sys.exit(f"deploy: {' '.join(args)} failed — {r.stderr.strip()[:200]}")
+    return json.loads(r.stdout)
+
+want = sys.argv[1]
+active = wrangler("deployments", "list")[-1]["versions"][0]["version_id"]
+got = next((v["annotations"].get("workers/tag", "") for v in wrangler("versions", "list") if v["id"] == active), "")
+if got != want:
+    sys.exit(f"deploy: refusing — version {active} serving traffic carries tag {got!r}, expected {want!r}")
+print(f"deploy: live — {active} serving 100%, tagged {want}")
+VERIFY
 """

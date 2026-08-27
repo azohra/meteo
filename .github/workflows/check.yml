@@ -1,0 +1,26 @@
+name: Check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A superseded check has nothing to protect; cancel it. Deploys are the
+# opposite and say so in their own workflow.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    # Wider than the static repos on purpose: this check fans out across seven
+    # package suites plus the doc, figure, schema and scenario gates.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v4
+      - run: mise run check
