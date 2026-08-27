@@ -438,8 +438,6 @@ raw_args = true
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
-# Every checkout derives its port from its path — stable per checkout,
-# no fixed ports, no registry.
 n=$(pwd | cksum | cut -d' ' -f1)
 port=$((4400 + n % 4000))
 unsafe=" 4045 5060 5061 6000 6566 6665 6666 6667 6668 6669 6679 6697 "

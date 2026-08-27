@@ -6,3 +6,6 @@ site/playwright-report/
 site/test-results/
 .wrangler/
 /data/
+
+# mise
+mise.local.toml
