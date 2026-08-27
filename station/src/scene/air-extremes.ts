@@ -2,64 +2,60 @@ import type { Station } from "../contract.js";
 import { lastNightLowC, pressureDeltaHpa } from "../derive.js";
 import { temperatureValue } from "../format.js";
 import type { StationStrings } from "../strings.js";
+import { el, keyed, type SceneNode } from "./node.js";
 
 export const AIR_EXTREMES_CLASS = "meteo-air-extremes";
 
 const PRESSURE_DELTA_WINDOW_HOURS = 3;
 
-export type AirExtremesGate =
-  | { kind: "draw"; station: Extract<Station, { status: "ok" }> }
-  | { kind: "hidden" };
-
-/** hidden without served history — the tiles are functions of it; each tile
+/** Null without served history — the tiles are functions of it; each tile
  * additionally stays absent when its own inputs are (no coordinates, no
  * night; no carried pressure, no delta). */
-export function airExtremesGate(station: Station | undefined): AirExtremesGate {
-  if (station == null || station.status !== "ok" || station.history == null) {
-    return { kind: "hidden" };
-  }
-  return { kind: "draw", station };
-}
-
-export type AirExtremesScene = {
-  className: string;
-  ariaLabel: string;
-  tiles: Array<{ key: string; className: string; label: string; value: string }>;
-} | null;
-
 export function airExtremesScene(input: {
   nowMs: number;
-  station: Extract<Station, { status: "ok" }>;
+  station: Station | undefined;
   words: StationStrings;
-}): AirExtremesScene {
+}): SceneNode | null {
   const { nowMs, station, words } = input;
-  const points = station.history?.points ?? [];
-  const tiles: Array<{ key: string; className: string; label: string; value: string }> = [];
+  if (station == null || station.status !== "ok" || station.history == null) return null;
 
+  const points = station.history.points;
+  const tile = (key: string, label: string, value: string) =>
+    keyed(
+      key,
+      "div",
+      { class: "meteo-air-extremes-tile" },
+      el("dt", { class: "meteo-microlabel" }, label),
+      el("dd", { class: "meteo-air-extremes-value" }, value),
+    );
+
+  const tiles: SceneNode[] = [];
   const night = lastNightLowC(points, station.latitude, station.longitude, nowMs);
   if (night != null) {
-    tiles.push({
-      key: "last-night-low",
-      className: "meteo-air-extremes-tile",
-      label: words.lastNightLowLabel,
-      value: `${temperatureValue(night.lowC)} ${words.degC}`,
-    });
+    tiles.push(
+      tile(
+        "last-night-low",
+        words.lastNightLowLabel,
+        `${temperatureValue(night.lowC)} ${words.degC}`,
+      ),
+    );
   }
 
   const delta = pressureDeltaHpa(points, { windowHours: PRESSURE_DELTA_WINDOW_HOURS });
   if (delta != null) {
-    tiles.push({
-      key: "pressure-delta",
-      className: "meteo-air-extremes-tile",
-      label: words.pressureDeltaLabel(PRESSURE_DELTA_WINDOW_HOURS),
-      value: `${delta >= 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)} ${words.air.unitHpa}`,
-    });
+    tiles.push(
+      tile(
+        "pressure-delta",
+        words.pressureDeltaLabel(PRESSURE_DELTA_WINDOW_HOURS),
+        `${delta >= 0 ? "+" : "−"}${Math.abs(delta).toFixed(1)} ${words.air.unitHpa}`,
+      ),
+    );
   }
 
   if (tiles.length === 0) return null;
-  return {
-    className: AIR_EXTREMES_CLASS,
-    ariaLabel: words.aria.airExtremes(station.name),
+  return el(
+    "dl",
+    { "aria-label": words.aria.airExtremes(station.name), class: AIR_EXTREMES_CLASS },
     tiles,
-  };
+  );
 }

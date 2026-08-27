@@ -9,6 +9,7 @@ import {
   trendGate,
   trendScene,
 } from "../../scene/index.js";
+import { renderScene } from "./SceneTree.js";
 import type { History, Station } from "../../index.js";
 import type { TrendSeries } from "../../geometry.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
@@ -112,81 +113,13 @@ function MeasuredTrend({
         <strong>{readout.strong}</strong>
         <span>{readout.span}</span>
       </output>
-      <svg
-        aria-label={scene.svg.ariaLabel}
-        className={scene.svg.className}
-        height={scene.svg.height}
-        role="img"
-        viewBox={scene.svg.viewBox}
-        width={scene.svg.width}
-      >
-        {scene.grid.map(({ key, line, label }) => (
-          <g key={key}>
-            <line className={line.className} x1={line.x1} x2={line.x2} y1={line.y1} y2={line.y2} />
-            <text className={label.className} textAnchor={label.anchor} x={label.x} y={label.y}>
-              {label.text}
-            </text>
-          </g>
-        ))}
-        {scene.segments.map((segment) =>
-          segment.kind === "dot" ? (
-            <circle
-              className={segment.className}
-              cx={segment.cx}
-              cy={segment.cy}
-              key={segment.startedAt}
-              r={segment.r}
-            />
-          ) : (
-            <polyline
-              className={segment.className}
-              key={segment.startedAt}
-              points={segment.points}
-            />
-          ),
-        )}
-        {scene.ticks.map((tick) => (
-          <text
-            className={tick.className}
-            key={tick.key}
-            textAnchor={tick.anchor}
-            x={tick.x}
-            y={tick.y}
-          >
-            {tick.text}
-          </text>
-        ))}
-        {cursor && (
-          <>
-            <line
-              className={cursor.line.className}
-              x1={cursor.line.x1}
-              x2={cursor.line.x2}
-              y1={cursor.line.y1}
-              y2={cursor.line.y2}
-            />
-            {cursor.dot && (
-              <circle
-                className={cursor.dot.className}
-                cx={cursor.dot.cx}
-                cy={cursor.dot.cy}
-                r={cursor.dot.r}
-              />
-            )}
-          </>
-        )}
-        <rect
-          className={scene.hit.className}
-          fill={scene.hit.fill}
-          height={scene.hit.height}
-          onClick={pinned.handleClick}
-          onPointerLeave={pinned.handlePointerLeave}
-          onPointerMove={pinned.handlePointerMove}
-          width={scene.hit.width}
-          x={scene.hit.x}
-          y={scene.hit.y}
-        />
-      </svg>
+      {renderScene(
+        scene.draw(cursor, {
+          onClick: pinned.handleClick,
+          onPointerLeave: pinned.handlePointerLeave,
+          onPointerMove: pinned.handlePointerMove,
+        }),
+      )}
     </>
   );
 }

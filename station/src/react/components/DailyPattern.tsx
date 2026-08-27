@@ -1,10 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  DAILY_PATTERN_DEFAULT_SLOT_MINUTES,
-  compassDirection,
-  resolveDisplay,
-} from "../../index.js";
+import { DAILY_PATTERN_DEFAULT_SLOT_MINUTES, resolveDisplay } from "../../index.js";
 import { CHART_FALLBACK_WIDTH } from "../../geometry.js";
 import {
   DAILY_PATTERN_CLASS,
@@ -13,12 +9,11 @@ import {
   dailyPatternSource,
   measuredChartWidth,
 } from "../../scene/index.js";
-import type { DailyPatternScene } from "../../scene/index.js";
+import { renderChildren } from "./SceneTree.js";
 import type { FavorableDirection, HistoryPoint, SpeedUnit, Station } from "../../index.js";
 import type { StationStringOverrides, StationStrings } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
 import { resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
-import { WindArrow } from "./WindArrow.js";
 
 export function DailyPattern({
   station: stationProp,
@@ -144,184 +139,5 @@ function MeasuredDailyPattern({
     words,
   });
 
-  return <DailyPatternSceneView scene={scene} />;
+  return renderChildren(scene);
 }
-
-/** One scene, one drawing — shared by the history-fed pattern above and the
- * climatology-fed twin. */
-export function DailyPatternSceneView({ scene }: { scene: DailyPatternScene }) {
-  return (
-    <>
-      <output className={scene.caption.className}>{scene.caption.text}</output>
-      <svg
-        aria-label={scene.svg.ariaLabel}
-        className={scene.svg.className}
-        height={scene.svg.height}
-        role="img"
-        viewBox={scene.svg.viewBox}
-        width={scene.svg.width}
-      >
-        <defs>
-          <pattern
-            height={scene.defs.pattern.height}
-            id={scene.defs.pattern.id}
-            patternTransform={scene.defs.pattern.transform}
-            patternUnits={scene.defs.pattern.units}
-            width={scene.defs.pattern.width}
-          >
-            <line
-              className={scene.defs.pattern.line.className}
-              x1={scene.defs.pattern.line.x1}
-              x2={scene.defs.pattern.line.x2}
-              y1={scene.defs.pattern.line.y1}
-              y2={scene.defs.pattern.line.y2}
-            />
-          </pattern>
-        </defs>
-        {scene.zones.map((zone) => (
-          <rect
-            className={zone.className}
-            height={zone.height}
-            key={zone.key}
-            width={zone.width}
-            x={zone.x}
-            y={zone.y}
-          />
-        ))}
-        {scene.grid.map(({ key, line, label }) => (
-          <g key={key}>
-            <line className={line.className} x1={line.x1} x2={line.x2} y1={line.y1} y2={line.y2} />
-            <text className={label.className} textAnchor={label.anchor} x={label.x} y={label.y}>
-              {label.text}
-            </text>
-          </g>
-        ))}
-        {scene.thresholdGuides.map(({ key, line, label }) => (
-          <g key={key}>
-            <line className={line.className} x1={line.x1} x2={line.x2} y1={line.y1} y2={line.y2} />
-            <text className={label.className} textAnchor={label.anchor} x={label.x} y={label.y}>
-              {label.text}
-            </text>
-          </g>
-        ))}
-        {scene.vaneGuides.map((guide) => (
-          <line
-            className={guide.className}
-            key={`guide-${guide.key}`}
-            x1={guide.x1}
-            x2={guide.x2}
-            y1={guide.y1}
-            y2={guide.y2}
-          />
-        ))}
-        {scene.gaps.map((gap) => (
-          <rect
-            className={gap.className}
-            fill={gap.fill}
-            height={gap.height}
-            key={gap.key}
-            width={gap.width}
-            x={gap.x}
-            y={gap.y}
-          />
-        ))}
-        {scene.mean.kind === "polyline" ? (
-          <polyline className={scene.mean.className} points={scene.mean.points} />
-        ) : (
-          scene.mean.segments.map((segment) => (
-            <line
-              className={segment.className}
-              key={segment.key}
-              x1={segment.x1}
-              x2={segment.x2}
-              y1={segment.y1}
-              y2={segment.y2}
-            />
-          ))
-        )}
-        {scene.calmNote && (
-          <text
-            className={scene.calmNote.className}
-            textAnchor={scene.calmNote.anchor}
-            x={scene.calmNote.x}
-            y={scene.calmNote.y}
-          >
-            {scene.calmNote.text}
-          </text>
-        )}
-        <text
-          className={scene.rowLabels.to.className}
-          textAnchor={scene.rowLabels.to.anchor}
-          x={scene.rowLabels.to.x}
-          y={scene.rowLabels.to.y}
-        >
-          {scene.rowLabels.to.text}
-        </text>
-        {scene.vanes.map((vane) =>
-          vane.mark.kind === "calm" ? (
-            <text
-              className={vane.mark.text.className}
-              key={vane.key}
-              textAnchor={vane.mark.text.anchor}
-              x={vane.mark.text.x}
-              y={vane.mark.text.y}
-            >
-              {vane.mark.text.text}
-            </text>
-          ) : (
-            <path className={vane.mark.className} d={vane.mark.d} key={vane.key} />
-          ),
-        )}
-        {scene.vanes.map(
-          (vane) =>
-            vane.label && (
-              <text
-                className={vane.label.className}
-                key={`label-${vane.key}`}
-                textAnchor={vane.label.anchor}
-                x={vane.label.x}
-                y={vane.label.y}
-              >
-                {vane.label.text}
-              </text>
-            ),
-        )}
-        <text
-          className={scene.rowLabels.avg.className}
-          textAnchor={scene.rowLabels.avg.anchor}
-          x={scene.rowLabels.avg.x}
-          y={scene.rowLabels.avg.y}
-        >
-          {scene.rowLabels.avg.text}
-        </text>
-        {scene.vanes.map(
-          (vane) =>
-            vane.value && (
-              <text
-                className={vane.value.className}
-                key={`value-${vane.key}`}
-                textAnchor={vane.value.anchor}
-                x={vane.value.x}
-                y={vane.value.y}
-              >
-                {vane.value.text}
-              </text>
-            ),
-        )}
-        {scene.ticks.map((tick) => (
-          <text
-            className={tick.className}
-            key={tick.key}
-            textAnchor={tick.anchor}
-            x={tick.x}
-            y={tick.y}
-          >
-            {tick.text}
-          </text>
-        ))}
-      </svg>
-    </>
-  );
-}
-
-export { compassDirection, WindArrow };

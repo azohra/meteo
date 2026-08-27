@@ -19,7 +19,8 @@ import { numberAttribute } from "../lib/attributes.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { windArrowSvg } from "../lib/fragments.js";
 import { PinnedCursor } from "../lib/pinned-cursor.js";
-import { h, hs } from "../lib/h.js";
+import { h } from "../lib/h.js";
+import { renderChildren, renderScene } from "../lib/render.js";
 import type { ElementChild } from "../lib/h.js";
 
 let hatchCounter = 0;
@@ -47,11 +48,10 @@ export class WindHistoryChartElement extends MeteoStationElement {
   #observer: ResizeObserver | null = null;
   #scene: WindChartScene | null = null;
   #readout: HTMLElement | null = null;
-  #svg: SVGElement | null = null;
-  #hit: SVGElement | null = null;
+  #wrap: HTMLElement | null = null;
   readonly #cursor = new PinnedCursor({
     scene: () => this.#scene,
-    svg: () => this.#svg,
+    svg: () => this.#wrap?.querySelector("svg") ?? null,
     onChange: () => this.#updateCursor(),
   });
 
@@ -148,239 +148,29 @@ export class WindHistoryChartElement extends MeteoStationElement {
       class: scene.readout.className,
     });
     this.#readout = readout;
+    this.#wrap = wrap;
 
-    const hit = hs("rect", {
-      class: scene.hit.className,
-      fill: scene.hit.fill,
-      height: scene.hit.height,
-      onclick: (event: Event) => this.#cursor.handleClick(event as MouseEvent),
-      onpointerleave: () => this.#cursor.handlePointerLeave(),
-      onpointermove: (event: Event) => this.#cursor.handlePointerMove(event as PointerEvent),
-      width: scene.hit.width,
-      x: scene.hit.x,
-      y: scene.hit.y,
-    });
-    this.#hit = hit;
-
-    const svg = hs(
-      "svg",
-      {
-        "aria-label": scene.svg.ariaLabel,
-        class: scene.svg.className,
-        height: scene.svg.height,
-        role: "img",
-        viewBox: scene.svg.viewBox,
-        width: scene.svg.width,
-      },
-      hs(
-        "defs",
-        null,
-        hs(
-          "pattern",
-          {
-            height: scene.defs.pattern.height,
-            id: scene.defs.pattern.id,
-            patternTransform: scene.defs.pattern.transform,
-            patternUnits: scene.defs.pattern.units,
-            width: scene.defs.pattern.width,
-          },
-          hs("line", {
-            class: scene.defs.pattern.line.className,
-            x1: scene.defs.pattern.line.x1,
-            x2: scene.defs.pattern.line.x2,
-            y1: scene.defs.pattern.line.y1,
-            y2: scene.defs.pattern.line.y2,
-          }),
-        ),
-        hs(
-          "clipPath",
-          { id: scene.defs.clip.id },
-          hs("rect", {
-            height: scene.defs.clip.rect.height,
-            width: scene.defs.clip.rect.width,
-            x: scene.defs.clip.rect.x,
-            y: scene.defs.clip.rect.y,
-          }),
-        ),
-      ),
-      scene.zones.map((zone) =>
-        hs("rect", {
-          class: zone.className,
-          height: zone.height,
-          width: zone.width,
-          x: zone.x,
-          y: zone.y,
-        }),
-      ),
-      scene.nightRects.map((rect) =>
-        hs("rect", {
-          class: rect.className,
-          height: rect.height,
-          width: rect.width,
-          x: rect.x,
-          y: rect.y,
-        }),
-      ),
-      scene.grid.map(({ line, label }) =>
-        hs(
-          "g",
-          null,
-          hs("line", { class: line.className, x1: line.x1, x2: line.x2, y1: line.y1, y2: line.y2 }),
-          hs(
-            "text",
-            { class: label.className, "text-anchor": label.anchor, x: label.x, y: label.y },
-            label.text,
-          ),
-        ),
-      ),
-      scene.thresholdGuides.map(({ line, label }) =>
-        hs(
-          "g",
-          null,
-          hs("line", { class: line.className, x1: line.x1, x2: line.x2, y1: line.y1, y2: line.y2 }),
-          hs(
-            "text",
-            { class: label.className, "text-anchor": label.anchor, x: label.x, y: label.y },
-            label.text,
-          ),
-        ),
-      ),
-      scene.vaneGuides.map((guide) =>
-        hs("line", {
-          class: guide.className,
-          x1: guide.x1,
-          x2: guide.x2,
-          y1: guide.y1,
-          y2: guide.y2,
-        }),
-      ),
-      scene.gaps.map((gap) =>
-        hs("rect", {
-          class: gap.className,
-          fill: gap.fill,
-          height: gap.height,
-          width: gap.width,
-          x: gap.x,
-          y: gap.y,
-        }),
-      ),
-      scene.band != null &&
-        hs("polygon", { class: scene.band.className, points: scene.band.points }),
-      scene.compare != null &&
-        hs("polyline", {
-          class: scene.compare.className,
-          "clip-path": scene.compare.clipPath,
-          points: scene.compare.points,
-        }),
-      scene.mean.kind === "polyline"
-        ? hs("polyline", { class: scene.mean.className, points: scene.mean.points })
-        : scene.mean.segments.map((segment) =>
-            hs("line", {
-              class: segment.className,
-              x1: segment.x1,
-              x2: segment.x2,
-              y1: segment.y1,
-              y2: segment.y2,
-            }),
-          ),
-      scene.calmNote != null &&
-        hs(
-          "text",
-          {
-            class: scene.calmNote.className,
-            "text-anchor": scene.calmNote.anchor,
-            x: scene.calmNote.x,
-            y: scene.calmNote.y,
-          },
-          scene.calmNote.text,
-        ),
-      hs(
-        "text",
-        {
-          class: scene.rowLabels.to.className,
-          "text-anchor": scene.rowLabels.to.anchor,
-          x: scene.rowLabels.to.x,
-          y: scene.rowLabels.to.y,
-        },
-        scene.rowLabels.to.text,
-      ),
-      scene.vanes.map((vane) =>
-        vane.mark.kind === "calm"
-          ? hs(
-              "text",
-              {
-                class: vane.mark.text.className,
-                "text-anchor": vane.mark.text.anchor,
-                x: vane.mark.text.x,
-                y: vane.mark.text.y,
-              },
-              vane.mark.text.text,
-            )
-          : hs("path", { class: vane.mark.className, d: vane.mark.d }),
-      ),
-      scene.vanes.flatMap((vane) =>
-        vane.label == null
-          ? []
-          : [
-              hs(
-                "text",
-                {
-                  class: vane.label.className,
-                  "text-anchor": vane.label.anchor,
-                  x: vane.label.x,
-                  y: vane.label.y,
-                },
-                vane.label.text,
-              ),
-            ],
-      ),
-      hs(
-        "text",
-        {
-          class: scene.rowLabels.avg.className,
-          "text-anchor": scene.rowLabels.avg.anchor,
-          x: scene.rowLabels.avg.x,
-          y: scene.rowLabels.avg.y,
-        },
-        scene.rowLabels.avg.text,
-      ),
-      scene.vanes.flatMap((vane) =>
-        vane.value == null
-          ? []
-          : [
-              hs(
-                "text",
-                {
-                  class: vane.value.className,
-                  "text-anchor": vane.value.anchor,
-                  x: vane.value.x,
-                  y: vane.value.y,
-                },
-                vane.value.text,
-              ),
-            ],
-      ),
-      scene.ticks.map((tick) =>
-        hs(
-          "text",
-          { class: tick.className, "text-anchor": tick.anchor, x: tick.x, y: tick.y },
-          tick.text,
-        ),
-      ),
-      hit,
-    );
-    this.#svg = svg;
-
-    wrap.replaceChildren(readout, svg);
+    wrap.replaceChildren(readout, this.#drawSvg());
     this.#updateCursor();
+  }
+
+  #drawSvg(): Element {
+    const scene = this.#scene;
+    if (scene == null) throw new Error("meteo-wind-history-chart: no scene to draw");
+    return renderScene(
+      scene.draw([], {
+        onClick: (event: Event) => this.#cursor.handleClick(event as MouseEvent),
+        onPointerLeave: () => this.#cursor.handlePointerLeave(),
+        onPointerMove: (event: Event) => this.#cursor.handlePointerMove(event as PointerEvent),
+      }),
+    );
   }
 
   #updateCursor(): void {
     const scene = this.#scene;
     const readout = this.#readout;
-    const svg = this.#svg;
-    const hit = this.#hit;
-    if (scene == null || readout == null || svg == null || hit == null) return;
+    const wrap = this.#wrap;
+    if (scene == null || readout == null || wrap == null) return;
     const inspection = scene.inspect(this.#cursor.activeIndex());
 
     readout.setAttribute("aria-live", readoutAriaLive(this.#cursor.previewIndex));
@@ -388,29 +178,12 @@ export class WindHistoryChartElement extends MeteoStationElement {
       h("strong", null, inspection.readout.strong),
       readoutSpan(inspection.readout.span),
     );
-
+    /* The cursor splices in above the hit area, which must keep its
+       identity across a gesture — replacing it would drop the pointer. */
+    const svg = wrap.querySelector("svg");
+    const hit = svg?.querySelector(".meteo-hit") ?? null;
+    if (svg == null) return;
     for (const mark of [...svg.querySelectorAll(".meteo-cursor, .meteo-cursor-dot")]) mark.remove();
-    const cursor = inspection.cursor;
-    if (cursor != null) {
-      svg.insertBefore(
-        hs("line", {
-          class: cursor.line.className,
-          x1: cursor.line.x1,
-          x2: cursor.line.x2,
-          y1: cursor.line.y1,
-          y2: cursor.line.y2,
-        }),
-        hit,
-      );
-      svg.insertBefore(
-        hs("circle", {
-          class: cursor.dot.className,
-          cx: cursor.dot.cx,
-          cy: cursor.dot.cy,
-          r: cursor.dot.r,
-        }),
-        hit,
-      );
-    }
+    for (const node of renderChildren(inspection.cursor)) svg.insertBefore(node as Node, hit);
   }
 }

@@ -1,8 +1,9 @@
 "use client";
 import { resolveDisplay } from "../../index.js";
-import { airExtremesGate, airExtremesScene } from "../../scene/index.js";
+import { airExtremesScene } from "../../scene/index.js";
 import type { Station } from "../../index.js";
 import type { StationStringOverrides } from "../../index.js";
+import { renderOptional } from "./SceneTree.js";
 import { resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 
 /** Derived atmo tiles from served history: the last completed night's low
@@ -23,23 +24,5 @@ export function AirExtremes({
   const context = useStationFeedContext();
   const station = stationProp ?? resolveStation(context, stationId) ?? undefined;
   const { words } = resolveDisplay(context, { strings: stringsProp });
-  const gate = airExtremesGate(station);
-  if (gate.kind === "hidden") return null;
-
-  const scene = airExtremesScene({
-    nowMs: nowMs ?? Date.now(),
-    station: gate.station,
-    words,
-  });
-  if (scene == null) return null;
-  return (
-    <dl aria-label={scene.ariaLabel} className={scene.className}>
-      {scene.tiles.map((tile) => (
-        <div className={tile.className} key={tile.key}>
-          <dt className="meteo-microlabel">{tile.label}</dt>
-          <dd className="meteo-air-extremes-value">{tile.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return renderOptional(airExtremesScene({ nowMs: nowMs ?? Date.now(), station, words }));
 }

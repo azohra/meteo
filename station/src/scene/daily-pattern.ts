@@ -3,11 +3,11 @@ import { isCalm, thresholdsToMps } from "../derive.js";
 import type { SpeedThresholds, SpeedUnit } from "../derive.js";
 import { roundSpeed } from "../format.js";
 import { dailyPattern, thinVanes } from "../geometry.js";
-import type { ChartFrame, ChartScales, DailyPatternSlot } from "../geometry.js";
+import type { DailyPatternSlot } from "../geometry.js";
 import type { FavorableDirection } from "../instruments.js";
 import { EM_DASH } from "../strings.js";
 import type { StationStrings } from "../strings.js";
-import type { TickAnchor } from "./chart.js";
+import { el, type SceneChild } from "./node.js";
 import {
   calmNoteText,
   displaySpeedScales,
@@ -22,13 +22,6 @@ import {
   windRowLabels,
   windThresholdGuides,
   windZoneRects,
-} from "./wind-plot.js";
-import type {
-  GapHatchPattern,
-  GradedMeanTrace,
-  SceneLine,
-  SceneText,
-  VaneCell,
 } from "./wind-plot.js";
 
 export const DAILY_PATTERN_CLASS = "meteo-daily-pattern";
@@ -82,53 +75,6 @@ function formatMinuteOfDay(minuteOfDay: number): string {
   return `${hours}:${minutes}`;
 }
 
-export type DailyPatternScene = {
-  frame: ChartFrame;
-  scales: ChartScales;
-  caption: { className: string; text: string };
-  svg: { ariaLabel: string; className: string; height: number; viewBox: string; width: number };
-  defs: { pattern: GapHatchPattern };
-  zones: Array<{
-    key: number;
-    className: string;
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  }>;
-  grid: Array<{ key: number; line: SceneLine; label: SceneText }>;
-  thresholdGuides: Array<{ key: number; line: SceneLine; label: SceneText }>;
-  vaneGuides: Array<{
-    key: number;
-    className: string;
-    x1: number;
-    x2: number;
-    y1: number;
-    y2: number;
-  }>;
-  gaps: Array<{
-    key: number;
-    className: string;
-    fill: string;
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  }>;
-  mean: GradedMeanTrace;
-  calmNote: SceneText | null;
-  rowLabels: { to: SceneText; avg: SceneText };
-  vanes: VaneCell[];
-  ticks: Array<{
-    key: number;
-    className: string;
-    anchor: TickAnchor;
-    x: number;
-    y: number;
-    text: string;
-  }>;
-};
-
 export function dailyPatternScene(input: {
   favorableDirections?: FavorableDirection[] | undefined;
   hatchId: string;
@@ -142,7 +88,7 @@ export function dailyPatternScene(input: {
   utcOffsetMinutes: number;
   width: number;
   words: StationStrings;
-}): DailyPatternScene {
+}): SceneChild[] {
   const { periodMinutes, points, slotMinutes, utcOffsetMinutes } = input;
   const slots = dailyPattern(points, { slotMinutes, utcOffsetMinutes });
   const totalSamples = slots.reduce((sum, slot) => sum + slot.sampleCount, 0);
@@ -183,7 +129,7 @@ export function dailyPatternSlotsScene(input: {
   unit: SpeedUnit;
   width: number;
   words: StationStrings;
-}): DailyPatternScene {
+}): SceneChild[] {
   const {
     coverage,
     hatchId,
@@ -214,48 +160,59 @@ export function dailyPatternSlotsScene(input: {
       scales.xAtMs(SYNTHETIC_EPOCH_MS + (slot.startMinuteOfDay + slotMinutes) * 60_000),
     ]);
 
-  return {
+  const vaneCellList = vaneCells(
+    vanes,
     frame,
     scales,
-    caption: {
-      className: "meteo-daily-pattern-caption",
-      text:
-        percent != null
-          ? words.dailyPatternCoverage(totalSamples, percent)
-          : words.dailyPatternSamples(totalSamples),
-    },
-    svg: {
-      ariaLabel: stationName
-        ? words.aria.dailyPattern(stationName)
-        : words.aria.dailyPatternGeneric,
-      className: "meteo-daily-pattern-svg",
-      height: frame.height,
-      viewBox: `0 0 ${frame.width} ${frame.height}`,
-      width: frame.width,
-    },
-    defs: { pattern: gapHatchPattern(hatchId) },
-    zones: windZoneRects(boundsMps, frame, scales),
-    grid: speedGridLines(frame, scales, shown),
-    thresholdGuides: windThresholdGuides(thresholds, boundsMps, unit, frame, scales, shown),
-    vaneGuides: vaneGuideLines(vanes, frame, scales),
-    gaps: voidSpans.map(([startX, endX]) =>
-      gapHatchRect(hatchId, frame, startX, startX, endX - startX),
+    (vane) =>
+      slots.slice(vane.startIndex, vane.endIndex).every((slot) => slot.sampleCount === 0)
+        ? EM_DASH
+        : String(shown(vane.windAvgMps)),
+    input.favorableDirections,
+  );
+
+  return [
+    el(
+      "output",
+      { class: "meteo-daily-pattern-caption" },
+      percent != null
+        ? words.dailyPatternCoverage(totalSamples, percent)
+        : words.dailyPatternSamples(totalSamples),
     ),
-    mean: gradedMeanTrace(synthetic, scales, boundsMps),
-    calmNote: calm ? calmNoteText(frame, words) : null,
-    rowLabels: windRowLabels(frame, words),
-    vanes: vaneCells(
-      vanes,
-      frame,
-      scales,
-      (vane) =>
-        slots.slice(vane.startIndex, vane.endIndex).every((slot) => slot.sampleCount === 0)
-          ? EM_DASH
-          : String(shown(vane.windAvgMps)),
-      input.favorableDirections,
+    el(
+      "svg",
+      {
+        "aria-label": stationName
+          ? words.aria.dailyPattern(stationName)
+          : words.aria.dailyPatternGeneric,
+        class: "meteo-daily-pattern-svg",
+        height: frame.height,
+        role: "img",
+        viewBox: `0 0 ${frame.width} ${frame.height}`,
+        width: frame.width,
+      },
+      el("defs", undefined, gapHatchPattern(hatchId)),
+      windZoneRects(boundsMps, frame, scales),
+      speedGridLines(frame, scales, shown),
+      windThresholdGuides(thresholds, boundsMps, unit, frame, scales, shown),
+      vaneGuideLines(vanes, frame, scales),
+      voidSpans.map(([startX, endX]) =>
+        gapHatchRect(hatchId, frame, startX, startX, endX - startX),
+      ),
+      gradedMeanTrace(synthetic, scales, boundsMps),
+      calm ? calmNoteText(frame, words) : null,
+      windRowLabels(frame, words)[0],
+      vaneCellList.map((vane) => ({ ...vane.mark, key: String(vane.key) })),
+      vaneCellList.flatMap((vane) =>
+        vane.label == null ? [] : [{ ...vane.label, key: String(vane.key) }],
+      ),
+      windRowLabels(frame, words)[1],
+      vaneCellList.flatMap((vane) =>
+        vane.value == null ? [] : [{ ...vane.value, key: String(vane.key) }],
+      ),
+      vaneTickTexts(vanes, frame, scales, (timeMs) =>
+        formatMinuteOfDay((timeMs - SYNTHETIC_EPOCH_MS) / 60_000),
+      ),
     ),
-    ticks: vaneTickTexts(vanes, frame, scales, (timeMs) =>
-      formatMinuteOfDay((timeMs - SYNTHETIC_EPOCH_MS) / 60_000),
-    ),
-  };
+  ];
 }

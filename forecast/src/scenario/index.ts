@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { ErrorObject, ValidateFunction } from "ajv/dist/2020.js";
 
@@ -16,29 +17,8 @@ import { deriveSiteForecast, type SourceProfile } from "../derive.js";
 import { aggregateMemberProfiles, type MemberProfile } from "../ensemble.js";
 import { packagedModelsPath } from "../catalogue.js";
 import { roundDocument } from "../publish.js";
-import {
-  JsonConstantError,
-  PyFloat,
-  type TaggedValue,
-  cloneTagged,
-  isPyFloat,
-  isTaggedNumber,
-  numberValue,
-  parseTaggedJson,
-  pyDumps,
-  pyNumberText,
-  taggedNumber,
-  untag,
-} from "./json.js";
 import { randomFromMaterial } from "./rng.js";
-import {
-  applyRoundingTags,
-  reconcile,
-  shadowAggregateMemberProfiles,
-  shadowDeriveSiteForecast,
-} from "./shadow.js";
 
-type TaggedRecord = { [key: string]: TaggedValue };
 type PlainRecord = Record<string, unknown>;
 
 const SURFACE_OPTIONAL_CAPABILITIES: Record<string, keyof ScenarioCapabilities> = {
@@ -96,7 +76,7 @@ export interface ScenarioRepositoryOptions {
   repositoryRoot: string;
 }
 
-export function loadScenarioJson(path: string): TaggedValue {
+export function loadScenarioJson(path: string): unknown {
   let text: string;
   try {
     text = readFileSync(path, "utf-8");
@@ -104,17 +84,14 @@ export function loadScenarioJson(path: string): TaggedValue {
     throw new ScenarioError(`cannot read ${path}: ${(error as Error).message}`);
   }
   try {
-    return parseTaggedJson(text);
+    return JSON.parse(text) as unknown;
   } catch (error) {
-    if (error instanceof JsonConstantError) {
-      throw new ScenarioError(error.message);
-    }
     throw new ScenarioError(`invalid JSON in ${path}: ${(error as Error).message}`);
   }
 }
 
-function jsonBytes(value: TaggedValue): Buffer {
-  return Buffer.from(pyDumps(value, { indent: 2 }) + "\n", "utf-8");
+function jsonBytes(value: unknown): Buffer {
+  return Buffer.from(JSON.stringify(value, null, 2) + "\n", "utf-8");
 }
 
 /** Python repr() for the error messages that quote values. */
@@ -138,31 +115,10 @@ function isRecord(value: unknown): value is PlainRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isTaggedRecord(value: TaggedValue | undefined): value is TaggedRecord {
+function isPlainRecord(value: unknown | undefined): value is PlainRecord {
   return (
-    value !== null &&
-    value !== undefined &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    !isPyFloat(value)
+    value !== null && value !== undefined && typeof value === "object" && !Array.isArray(value)
   );
-}
-
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((item, index) => deepEqual(item, b[index]));
-  }
-  if (isRecord(a) && isRecord(b)) {
-    const aKeys = Object.keys(a);
-    const bKeys = Object.keys(b);
-    return (
-      aKeys.length === bKeys.length && aKeys.every((key) => key in b && deepEqual(a[key], b[key]))
-    );
-  }
-  return false;
 }
 
 const ISO_INSTANT =
@@ -232,7 +188,7 @@ function validatorFor(schemaPath: string): ValidateFunction {
   if (cached !== undefined) {
     return cached;
   }
-  const schema = untag(loadScenarioJson(schemaPath));
+  const schema = loadScenarioJson(schemaPath);
   const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
   let validate: ValidateFunction;
   try {
@@ -265,7 +221,7 @@ function contractErrorLines(error: ZodError): string[] {
 }
 
 export function validateScenarioIndex(index: unknown, source: string): void {
-  const result = scenarioIndexSchema.safeParse(untag(index as TaggedValue));
+  const result = scenarioIndexSchema.safeParse(index as unknown);
   if (!result.success) {
     const details = contractErrorLines(result.error).join("\n  ");
     throw new ScenarioError(
@@ -295,7 +251,7 @@ export function validateDefinition(
   }: ScenarioRepositoryOptions & { source?: string },
 ): void {
   const root = repositoryRoot;
-  const plain = untag(definition as TaggedValue) as PlainRecord;
+  const plain = definition as unknown as PlainRecord;
   const schemaPath = join(root, "scenarios", "scenario.schema.json");
   const validate = validatorFor(schemaPath);
   if (!validate(plain)) {
@@ -304,7 +260,7 @@ export function validateDefinition(
   }
 
   const scenarioId = plain["id"] as string;
-  const models = untag(loadScenarioJson(packagedModelsPath())) as {
+  const models = loadScenarioJson(packagedModelsPath()) as {
     models: Array<{ slug: string }>;
   };
   if (models.models.some((model) => model.slug === scenarioId)) {
@@ -420,8 +376,8 @@ function validatePoints(points: readonly PlainRecord[], hourCount: number, label
   );
 }
 
-function containsKey(value: TaggedValue, prohibited: string): boolean {
-  if (isTaggedRecord(value)) {
+function containsKey(value: unknown, prohibited: string): boolean {
+  if (isPlainRecord(value)) {
     return (
       prohibited in value || Object.values(value).some((item) => containsKey(item, prohibited))
     );
@@ -432,24 +388,24 @@ function containsKey(value: TaggedValue, prohibited: string): boolean {
   return false;
 }
 
-function requireFields(value: TaggedRecord, fields: readonly string[], label: string): void {
+function requireFields(value: PlainRecord, fields: readonly string[], label: string): void {
   const missing = fields.filter((field) => !(field in value));
   if (missing.length > 0) {
     throw new ScenarioError(`${label}: missing required source fields ['${missing.join("', '")}']`);
   }
 }
 
-export function loadBaseline(definition: TaggedValue, repositoryRoot: string): TaggedRecord {
-  const def = definition as TaggedRecord;
+export function loadBaseline(definition: unknown, repositoryRoot: string): PlainRecord {
+  const def = definition as PlainRecord;
   const scenarioId = (def["id"] as string) ?? "<unknown>";
-  const baselineBlock = def["baseline"] as TaggedRecord;
+  const baselineBlock = def["baseline"] as PlainRecord;
   const scenariosRoot = join(repositoryRoot, "scenarios");
   const path = join(scenariosRoot, baselineBlock["path"] as string);
   if (relative(resolve(scenariosRoot), resolve(path)).startsWith("..")) {
     throw new ScenarioError(`scenario ${scenarioId}: baseline escapes scenarios/`);
   }
   const baseline = loadScenarioJson(path);
-  if (!isTaggedRecord(baseline)) {
+  if (!isPlainRecord(baseline)) {
     throw new ScenarioError(`scenario ${scenarioId}: baseline must be a JSON object`);
   }
   if (containsKey(baseline, "derived")) {
@@ -483,10 +439,10 @@ export function loadBaseline(definition: TaggedValue, repositoryRoot: string): T
   return baseline;
 }
 
-export function prepareSource(definition: TaggedValue, baseline: TaggedValue): TaggedRecord {
-  const def = definition as TaggedRecord;
+export function prepareSource(definition: unknown, baseline: unknown): PlainRecord {
+  const def = definition as PlainRecord;
   const scenarioId = def["id"] as string;
-  const baselineRecord = baseline as TaggedRecord;
+  const baselineRecord = baseline as PlainRecord;
   requireFields(
     baselineRecord,
     [
@@ -502,8 +458,8 @@ export function prepareSource(definition: TaggedValue, baseline: TaggedValue): T
     `scenario ${scenarioId} baseline`,
   );
   const baselineHours = baselineRecord["hours"];
-  const clock = def["clock"] as TaggedRecord;
-  const hourCount = numberValue(clock["hourCount"] as number | PyFloat);
+  const clock = def["clock"] as PlainRecord;
+  const hourCount = clock["hourCount"] as number;
   if (!Array.isArray(baselineHours) || baselineHours.length !== hourCount) {
     const count = Array.isArray(baselineHours) ? baselineHours.length : "non-array";
     throw new ScenarioError(
@@ -511,10 +467,10 @@ export function prepareSource(definition: TaggedValue, baseline: TaggedValue): T
     );
   }
 
-  const site = def["site"] as TaggedRecord;
+  const site = def["site"] as PlainRecord;
   const start = utcEpochMs(clock["startAt"], `scenario ${scenarioId} clock.startAt`);
-  const stepMs = numberValue(clock["stepHours"] as number | PyFloat) * 3600_000;
-  const source = cloneTagged(baseline) as TaggedRecord;
+  const stepMs = (clock["stepHours"] as number) * 3600_000;
+  const source = structuredClone(baseline) as PlainRecord;
   Object.assign(source, {
     referenceTime: clock["referenceTime"],
     generatedAt: clock["generatedAt"],
@@ -525,8 +481,8 @@ export function prepareSource(definition: TaggedValue, baseline: TaggedValue): T
     modelElevationM: site["modelElevationM"],
     siteTimeZone: def["timeZone"],
   });
-  (source["hours"] as TaggedValue[]).forEach((hour, index) => {
-    if (!isTaggedRecord(hour)) {
+  (source["hours"] as unknown[]).forEach((hour, index) => {
+    if (!isPlainRecord(hour)) {
       throw new ScenarioError(`scenario ${scenarioId} baseline hour ${index}: must be an object`);
     }
     hour["validAt"] = utcText(start + index * stepMs);
@@ -534,17 +490,15 @@ export function prepareSource(definition: TaggedValue, baseline: TaggedValue): T
   return source;
 }
 
-function scheduledValue(schedule: TaggedValue, hour: number): number {
-  if (!isTaggedRecord(schedule)) {
-    return numberValue(schedule as number | PyFloat);
+function scheduledValue(schedule: unknown, hour: number): number {
+  if (!isPlainRecord(schedule)) {
+    return schedule as number;
   }
-  const points = [...(schedule["byHour"] as TaggedRecord[])].sort(
-    (a, b) =>
-      numberValue(a["hourOffset"] as number | PyFloat) -
-      numberValue(b["hourOffset"] as number | PyFloat),
+  const points = [...(schedule["byHour"] as PlainRecord[])].sort(
+    (a, b) => (a["hourOffset"] as number) - (b["hourOffset"] as number),
   );
-  const offsetOf = (point: TaggedRecord) => numberValue(point["hourOffset"] as number | PyFloat);
-  const valueOf = (point: TaggedRecord) => numberValue(point["value"] as number | PyFloat);
+  const offsetOf = (point: PlainRecord) => point["hourOffset"] as number;
+  const valueOf = (point: PlainRecord) => point["value"] as number;
   if (hour <= offsetOf(points[0])) {
     return valueOf(points[0]);
   }
@@ -562,21 +516,16 @@ function scheduledValue(schedule: TaggedValue, hour: number): number {
   throw new Error("scheduled points did not bracket the validated hour");
 }
 
-function isSelected(transform: TaggedRecord, hour: number): boolean {
+function isSelected(transform: PlainRecord, hour: number): boolean {
   if (!("atHours" in transform)) {
     return true;
   }
-  return (transform["atHours"] as TaggedValue[]).some(
-    (offset) => numberValue(offset as number | PyFloat) === hour,
-  );
+  return (transform["atHours"] as unknown[]).some((offset) => (offset as number) === hour);
 }
 
-function inBand(altitudeM: number, transform: TaggedRecord): boolean {
-  const band = transform["altitudeBandM"] as TaggedRecord;
-  return (
-    numberValue(band["bottomM"] as number | PyFloat) <= altitudeM &&
-    altitudeM <= numberValue(band["topM"] as number | PyFloat)
-  );
+function inBand(altitudeM: number, transform: PlainRecord): boolean {
+  const band = transform["altitudeBandM"] as PlainRecord;
+  return (band["bottomM"] as number) <= altitudeM && altitudeM <= (band["topM"] as number);
 }
 
 const LEVEL_TRANSFORM_FIELDS: Record<string, [string, string]> = {
@@ -586,58 +535,53 @@ const LEVEL_TRANSFORM_FIELDS: Record<string, [string, string]> = {
   "wind-direction-rotate": ["windDirectionDeg", "degrees"],
 };
 
-function applyLevelTransform(transform: TaggedRecord, source: TaggedRecord): void {
+function applyLevelTransform(transform: PlainRecord, source: PlainRecord): void {
   const operation = transform["type"] as string;
   const [field, operand] = LEVEL_TRANSFORM_FIELDS[operation];
-  (source["hours"] as TaggedRecord[]).forEach((hour, index) => {
+  (source["hours"] as PlainRecord[]).forEach((hour, index) => {
     if (!isSelected(transform, index)) {
       return;
     }
     const amount = scheduledValue(transform[operand], index);
-    const apply = (container: TaggedRecord) => {
-      const current = numberValue(container[field] as number | PyFloat);
-      container[field] = new PyFloat(
-        operation === "wind-speed-scale" ? current * amount : current + amount,
-      );
+    const apply = (container: PlainRecord) => {
+      const current = container[field] as number;
+      container[field] = operation === "wind-speed-scale" ? current * amount : current + amount;
     };
-    for (const level of hour["levels"] as TaggedRecord[]) {
-      if (inBand(numberValue(level["heightM"] as number | PyFloat), transform)) {
+    for (const level of hour["levels"] as PlainRecord[]) {
+      if (inBand(level["heightM"] as number, transform)) {
         apply(level);
       }
     }
-    if (
-      transform["includeSurface"] &&
-      inBand(numberValue(source["modelElevationM"] as number | PyFloat), transform)
-    ) {
+    if (transform["includeSurface"] && inBand(source["modelElevationM"] as number, transform)) {
       apply(hour);
     }
   });
 }
 
 function applyCapabilityField(
-  transform: TaggedRecord,
-  definition: TaggedRecord,
-  source: TaggedRecord,
+  transform: PlainRecord,
+  definition: PlainRecord,
+  source: PlainRecord,
 ): void {
   const path = transform["field"] as string;
   const dot = path.indexOf(".");
   const block = path.slice(0, dot);
   const field = path.slice(dot + 1);
-  const capabilities = definition["capabilities"] as TaggedRecord;
+  const capabilities = definition["capabilities"] as PlainRecord;
   const verticalLevels = new Set(
-    ((capabilities["verticalVelocityLevels"] as TaggedValue[] | undefined) ?? []).map((level) =>
-      numberValue(level as number | PyFloat),
+    ((capabilities["verticalVelocityLevels"] as unknown[] | undefined) ?? []).map(
+      (level) => level as number,
     ),
   );
-  (source["hours"] as TaggedRecord[]).forEach((hour, index) => {
+  (source["hours"] as PlainRecord[]).forEach((hour, index) => {
     if (!isSelected(transform, index)) {
       return;
     }
-    const containers = block === "surface" ? [hour] : (hour["levels"] as TaggedRecord[]);
+    const containers = block === "surface" ? [hour] : (hour["levels"] as PlainRecord[]);
     for (const container of containers) {
       if (
         field === "verticalVelocityPaS" &&
-        !verticalLevels.has(numberValue(container["pressureHpa"] as number | PyFloat))
+        !verticalLevels.has(container["pressureHpa"] as number)
       ) {
         delete container[field];
         continue;
@@ -645,71 +589,66 @@ function applyCapabilityField(
       if (transform["action"] === "omit") {
         delete container[field];
       } else {
-        container[field] = new PyFloat(scheduledValue(transform["value"], index));
+        container[field] = scheduledValue(transform["value"], index);
       }
     }
   });
 }
 
-export function applyTransforms(definition: TaggedValue, source: TaggedRecord): void {
-  const def = definition as TaggedRecord;
-  for (const transformValue of def["transforms"] as TaggedValue[]) {
-    const transform = transformValue as TaggedRecord;
+export function applyTransforms(definition: unknown, source: PlainRecord): void {
+  const def = definition as PlainRecord;
+  for (const transformValue of def["transforms"] as unknown[]) {
+    const transform = transformValue as PlainRecord;
     const operation = transform["type"] as string;
     if (operation === "surface-field-curve") {
-      (source["hours"] as TaggedRecord[]).forEach((hour, index) => {
-        hour[transform["field"] as string] = new PyFloat(
-          scheduledValue({ byHour: transform["points"] } as TaggedValue, index),
+      (source["hours"] as PlainRecord[]).forEach((hour, index) => {
+        hour[transform["field"] as string] = scheduledValue(
+          { byHour: transform["points"] } as unknown,
+          index,
         );
       });
     } else if (operation in LEVEL_TRANSFORM_FIELDS) {
       applyLevelTransform(transform, source);
     } else if (operation === "pressure-tendency") {
-      const clock = def["clock"] as TaggedRecord;
-      const stepHours = clock["stepHours"] as number | PyFloat;
-      const hpaPerHour = transform["hpaPerHour"] as number | PyFloat;
-      (source["hours"] as TaggedRecord[]).forEach((hour, index) => {
-        const current = hour["seaLevelPressureHpa"] as number | PyFloat;
-        const delta = numberValue(hpaPerHour) * index * numberValue(stepHours);
-        hour["seaLevelPressureHpa"] = taggedNumber(
-          numberValue(current) + delta,
-          isPyFloat(current) || isPyFloat(hpaPerHour) || isPyFloat(stepHours),
-        );
+      const clock = def["clock"] as PlainRecord;
+      const stepHours = clock["stepHours"] as number;
+      const hpaPerHour = transform["hpaPerHour"] as number;
+      (source["hours"] as PlainRecord[]).forEach((hour, index) => {
+        const current = hour["seaLevelPressureHpa"] as number;
+        const delta = hpaPerHour * index * stepHours;
+        hour["seaLevelPressureHpa"] = current + delta;
       });
     } else if (operation === "capability-field") {
       applyCapabilityField(transform, def, source);
     } else if (operation === "time-shift") {
-      const deltaMs = numberValue(transform["hours"] as number | PyFloat) * 3600_000;
+      const deltaMs = (transform["hours"] as number) * 3600_000;
       source["referenceTime"] = utcText(
         utcEpochMs(source["referenceTime"], "referenceTime") + deltaMs,
       );
       source["generatedAt"] = utcText(utcEpochMs(source["generatedAt"], "generatedAt") + deltaMs);
-      for (const hour of source["hours"] as TaggedRecord[]) {
+      for (const hour of source["hours"] as PlainRecord[]) {
         hour["validAt"] = utcText(utcEpochMs(hour["validAt"], "validAt") + deltaMs);
       }
     } else if (operation === "elevation-adjustment") {
-      const current = source["modelElevationM"] as number | PyFloat;
-      const delta = transform["modelElevationDeltaM"] as number | PyFloat;
-      source["modelElevationM"] = taggedNumber(
-        numberValue(current) + numberValue(delta),
-        isPyFloat(current) || isPyFloat(delta),
-      );
+      const current = source["modelElevationM"] as number;
+      const delta = transform["modelElevationDeltaM"] as number;
+      source["modelElevationM"] = current + delta;
     } else {
       throw new Error(`unhandled validated transform ${operation}`);
     }
   }
 }
 
-function definitionForVariant(definition: TaggedRecord, variantId: string): TaggedRecord {
-  const selected = cloneTagged(definition) as TaggedRecord;
-  const transforms: TaggedValue[] = [];
-  for (const transformValue of definition["transforms"] as TaggedValue[]) {
-    const transform = transformValue as TaggedRecord;
+function definitionForVariant(definition: PlainRecord, variantId: string): PlainRecord {
+  const selected = structuredClone(definition) as PlainRecord;
+  const transforms: unknown[] = [];
+  for (const transformValue of definition["transforms"] as unknown[]) {
+    const transform = transformValue as PlainRecord;
     const target = transform["target"];
     if (target !== undefined && target !== variantId) {
       continue;
     }
-    const operation = cloneTagged(transform) as TaggedRecord;
+    const operation = structuredClone(transform) as PlainRecord;
     delete operation["target"];
     transforms.push(operation);
   }
@@ -720,7 +659,7 @@ function definitionForVariant(definition: TaggedRecord, variantId: string): Tagg
 function perturbationGroup(
   correlation: string,
   hourIndex: number,
-  level: TaggedRecord | null,
+  level: PlainRecord | null,
 ): string {
   if (correlation === "whole-column") {
     return "column";
@@ -729,21 +668,19 @@ function perturbationGroup(
     return `hour:${hourIndex}`;
   }
   if (correlation === "by-level") {
-    return level === null
-      ? "surface"
-      : `level:${pyNumberText(level["pressureHpa"] as number | PyFloat)}`;
+    return level === null ? "surface" : `level:${String(level["pressureHpa"] as number)}`;
   }
   return level === null
     ? `surface:${hourIndex}`
-    : `level:${hourIndex}:${pyNumberText(level["pressureHpa"] as number | PyFloat)}`;
+    : `level:${hourIndex}:${String(level["pressureHpa"] as number)}`;
 }
 
-function stableRandom(seed: TaggedValue, ...coordinates: TaggedValue[]) {
-  return randomFromMaterial(pyDumps([seed, ...coordinates]));
+function stableRandom(seed: unknown, ...coordinates: unknown[]) {
+  return randomFromMaterial(JSON.stringify([seed, ...coordinates]));
 }
 
 function symmetricCoordinate(
-  seed: TaggedValue,
+  seed: unknown,
   perturbationIndex: number,
   group: string,
   memberIndex: number,
@@ -756,15 +693,15 @@ function symmetricCoordinate(
 }
 
 function perturbationDelta(
-  perturbation: TaggedRecord,
-  seed: TaggedValue,
+  perturbation: PlainRecord,
+  seed: unknown,
   perturbationIndex: number,
   group: string,
   memberIndex: number,
   memberCount: number,
 ): number {
   const distribution = perturbation["distribution"] as string;
-  const spread = numberValue(perturbation["spread"] as number | PyFloat);
+  const spread = perturbation["spread"] as number;
   let coordinate: number;
   if (distribution === "symmetric") {
     coordinate = symmetricCoordinate(seed, perturbationIndex, group, memberIndex, memberCount);
@@ -776,21 +713,21 @@ function perturbationDelta(
 }
 
 export function applyMemberPerturbations(
-  definition: TaggedValue,
-  source: TaggedRecord,
+  definition: unknown,
+  source: PlainRecord,
   memberIndex: number,
 ): void {
-  const def = definition as TaggedRecord;
-  const ensemble = def["ensemble"] as TaggedRecord;
-  const memberCount = numberValue(ensemble["members"] as number | PyFloat);
-  const seed = (def["clock"] as TaggedRecord)["seed"] as TaggedValue;
-  (ensemble["perturbations"] as TaggedRecord[]).forEach((perturbation, perturbationIndex) => {
+  const def = definition as PlainRecord;
+  const ensemble = def["ensemble"] as PlainRecord;
+  const memberCount = ensemble["members"] as number;
+  const seed = (def["clock"] as PlainRecord)["seed"] as unknown;
+  (ensemble["perturbations"] as PlainRecord[]).forEach((perturbation, perturbationIndex) => {
     const path = perturbation["field"] as string;
     const dot = path.indexOf(".");
     const block = path.slice(0, dot);
     const field = path.slice(dot + 1);
-    (source["hours"] as TaggedRecord[]).forEach((hour, hourIndex) => {
-      const containers = block === "surface" ? [hour] : (hour["levels"] as TaggedRecord[]);
+    (source["hours"] as PlainRecord[]).forEach((hour, hourIndex) => {
+      const containers = block === "surface" ? [hour] : (hour["levels"] as PlainRecord[]);
       for (const container of containers) {
         const group = perturbationGroup(
           perturbation["correlation"] as string,
@@ -805,25 +742,23 @@ export function applyMemberPerturbations(
           memberIndex,
           memberCount,
         );
-        container[field] = new PyFloat(numberValue(container[field] as number | PyFloat) + delta);
+        container[field] = (container[field] as number) + delta;
       }
     });
   });
 }
 
-function finiteNumber(value: TaggedValue | undefined, label: string): number {
+function finiteNumber(value: unknown | undefined, label: string): number {
   if (
     typeof value === "boolean" ||
     value === null ||
     value === undefined ||
-    !isTaggedNumber(value) ||
-    !Number.isFinite(numberValue(value))
+    typeof value !== "number" ||
+    !Number.isFinite(value)
   ) {
-    throw new ScenarioError(
-      `${label}: expected a finite number, got ${pyRepr(untag(value ?? null))}`,
-    );
+    throw new ScenarioError(`${label}: expected a finite number, got ${pyRepr(value ?? null)}`);
   }
-  return numberValue(value);
+  return value;
 }
 
 function controlledSupersaturation(definition: PlainRecord): boolean {
@@ -831,8 +766,8 @@ function controlledSupersaturation(definition: PlainRecord): boolean {
   return exceptions.some((exception) => exception["type"] === "controlled-supersaturation");
 }
 
-export function validateSource(definition: unknown, source: TaggedRecord): void {
-  const plainDefinition = untag(definition as TaggedValue) as PlainRecord;
+export function validateSource(definition: unknown, source: PlainRecord): void {
+  const plainDefinition = definition as unknown as PlainRecord;
   const scenarioId = plainDefinition["id"] as string;
   const modelElevation = finiteNumber(
     source["modelElevationM"],
@@ -840,7 +775,7 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
   );
   let previousTime: number | null = null;
   const allowSupersaturation = controlledSupersaturation(plainDefinition);
-  (source["hours"] as TaggedRecord[]).forEach((hour, hourIndex) => {
+  (source["hours"] as PlainRecord[]).forEach((hour, hourIndex) => {
     const label = `scenario ${scenarioId} hour ${hourIndex}`;
     requireFields(hour, BASE_SOURCE_FIELDS, label);
     const validAt = utcEpochMs(hour["validAt"], `${label}.validAt`);
@@ -851,13 +786,13 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
     for (const field of BASE_SOURCE_FIELDS.slice(0, -1)) {
       finiteNumber(hour[field], `${label}.${field}`);
     }
-    if (numberValue(hour["seaLevelPressureHpa"] as number | PyFloat) <= 0) {
+    if ((hour["seaLevelPressureHpa"] as number) <= 0) {
       throw new ScenarioError(`${label}.seaLevelPressureHpa: pressure must be positive`);
     }
-    if (numberValue(hour["windSpeedMps"] as number | PyFloat) < 0) {
+    if ((hour["windSpeedMps"] as number) < 0) {
       throw new ScenarioError(`${label}.windSpeedMps: wind speed must be non-negative`);
     }
-    if (numberValue(hour["dewPointDepressionC"] as number | PyFloat) < 0 && !allowSupersaturation) {
+    if ((hour["dewPointDepressionC"] as number) < 0 && !allowSupersaturation) {
       throw new ScenarioError(
         `${label}: dew point exceeds temperature; declare controlled-supersaturation to test this edge case`,
       );
@@ -865,9 +800,9 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
     if (!Array.isArray(hour["levels"])) {
       throw new ScenarioError(`${label}.levels: expected an array`);
     }
-    const ordered = [...(hour["levels"] as TaggedRecord[])].sort((a, b) => {
-      const heightOf = (level: TaggedRecord) =>
-        isTaggedNumber(level["heightM"]) ? numberValue(level["heightM"]) : Infinity;
+    const ordered = [...(hour["levels"] as PlainRecord[])].sort((a, b) => {
+      const heightOf = (level: PlainRecord) =>
+        typeof level["heightM"] === "number" ? level["heightM"] : Infinity;
       return heightOf(a) - heightOf(b);
     });
     let previousHeight: number | null = null;
@@ -878,19 +813,16 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
       for (const field of BASE_LEVEL_FIELDS) {
         finiteNumber(level[field], `${levelLabel}.${field}`);
       }
-      if (numberValue(level["windSpeedMps"] as number | PyFloat) < 0) {
+      if ((level["windSpeedMps"] as number) < 0) {
         throw new ScenarioError(`${levelLabel}.windSpeedMps: wind speed must be non-negative`);
       }
-      if (
-        numberValue(level["dewPointDepressionC"] as number | PyFloat) < 0 &&
-        !allowSupersaturation
-      ) {
+      if ((level["dewPointDepressionC"] as number) < 0 && !allowSupersaturation) {
         throw new ScenarioError(
           `${levelLabel}: dew point exceeds temperature; declare controlled-supersaturation to test this edge case`,
         );
       }
-      const heightM = numberValue(level["heightM"] as number | PyFloat);
-      const pressureHpa = numberValue(level["pressureHpa"] as number | PyFloat);
+      const heightM = level["heightM"] as number;
+      const pressureHpa = level["pressureHpa"] as number;
       if (
         previousHeight !== null &&
         (heightM <= previousHeight || pressureHpa >= (previousPressure as number))
@@ -904,11 +836,7 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
       previousHeight = heightM;
       previousPressure = pressureHpa;
     });
-    if (
-      !ordered.some(
-        (level) => numberValue(level["heightM"] as number | PyFloat) > modelElevation + 20,
-      )
-    ) {
+    if (!ordered.some((level) => (level["heightM"] as number) > modelElevation + 20)) {
       throw new ScenarioError(
         `${label}: no pressure level remains above model terrain after filtering`,
       );
@@ -917,23 +845,19 @@ export function validateSource(definition: unknown, source: TaggedRecord): void 
   validateCapabilities(plainDefinition, source);
 }
 
-function validateCapabilities(definition: PlainRecord, source: TaggedRecord): void {
+function validateCapabilities(definition: PlainRecord, source: PlainRecord): void {
   const scenarioId = definition["id"] as string;
   const capabilities = declaredCapabilities(definition);
-  const modelElevation = numberValue(source["modelElevationM"] as number | PyFloat);
-  (source["hours"] as TaggedRecord[]).forEach((hour, hourIndex) => {
+  const modelElevation = source["modelElevationM"] as number;
+  (source["hours"] as PlainRecord[]).forEach((hour, hourIndex) => {
     const label = `scenario ${scenarioId} hour ${hourIndex} capability`;
-    const retained = (hour["levels"] as TaggedRecord[]).filter(
-      (level) => numberValue(level["heightM"] as number | PyFloat) > modelElevation + 20,
+    const retained = (hour["levels"] as PlainRecord[]).filter(
+      (level) => (level["heightM"] as number) > modelElevation + 20,
     );
     const expectedPressures = capabilities.levels ? capabilities.pressureLevels : [];
     const actualPressures = [...retained]
-      .sort(
-        (a, b) =>
-          numberValue(b["pressureHpa"] as number | PyFloat) -
-          numberValue(a["pressureHpa"] as number | PyFloat),
-      )
-      .map((level) => numberValue(level["pressureHpa"] as number | PyFloat));
+      .sort((a, b) => (b["pressureHpa"] as number) - (a["pressureHpa"] as number))
+      .map((level) => level["pressureHpa"] as number);
     if (
       actualPressures.length !== expectedPressures.length ||
       actualPressures.some((pressure, index) => pressure !== expectedPressures[index])
@@ -968,7 +892,7 @@ function validateCapabilities(definition: PlainRecord, source: TaggedRecord): vo
     }
     const verticalExpected = new Set(capabilities.verticalVelocityLevels ?? []);
     for (const level of retained) {
-      const pressureHpa = numberValue(level["pressureHpa"] as number | PyFloat);
+      const pressureHpa = level["pressureHpa"] as number;
       const expected = capabilities.verticalVelocity !== false && verticalExpected.has(pressureHpa);
       if ("verticalVelocityPaS" in level !== expected) {
         throw new ScenarioError(
@@ -1001,7 +925,7 @@ function validateProfile(definition: PlainRecord, profile: PlainRecord): void {
       `scenario ${scenarioId}: generated profile has unexpected model identity`,
     );
   }
-  if (!deepEqual(profile["semantics"], definition["semantics"])) {
+  if (!isDeepStrictEqual(profile["semantics"], definition["semantics"])) {
     throw new ScenarioError(
       `scenario ${scenarioId}: generated profile does not preserve declared transport semantics`,
     );
@@ -1392,48 +1316,24 @@ export function evaluateAssertions(definition: PlainRecord, profiles: PlainRecor
   }
 }
 
-interface GeneratedProfile {
-  plain: PlainRecord;
-  tagged: TaggedValue;
-}
-
-function derivedAndShadowed(
-  definitionTagged: TaggedRecord,
-  definitionPlain: PlainRecord,
-  source: TaggedRecord,
-): { raw: PlainRecord; taggedRaw: TaggedValue } {
-  const model = definitionPlain["id"] as string;
-  const semantics = definitionPlain["semantics"] as ForecastSemantics;
-  const raw = deriveSiteForecast(
-    untag(source) as unknown as SourceProfile,
-    model,
-    semantics,
+function deriveRaw(definition: PlainRecord, source: PlainRecord): PlainRecord {
+  return deriveSiteForecast(
+    source as unknown as SourceProfile,
+    definition["id"] as string,
+    definition["semantics"] as ForecastSemantics,
   ) as unknown as PlainRecord;
-  const shadow = shadowDeriveSiteForecast(
-    source,
-    model,
-    definitionTagged["semantics"] as TaggedValue,
-  );
-  return { raw, taggedRaw: reconcile(raw, shadow) };
-}
-
-function roundedProfile(raw: PlainRecord, taggedRaw: TaggedValue): GeneratedProfile {
-  const plain = roundDocument(raw) as PlainRecord;
-  return { plain, tagged: applyRoundingTags(plain, taggedRaw) };
 }
 
 function generateDeterministicProfile(
-  definitionTagged: TaggedRecord,
-  definitionPlain: PlainRecord,
+  definition: PlainRecord,
   repositoryRoot: string,
-): GeneratedProfile {
-  const baseline = loadBaseline(definitionTagged, repositoryRoot);
-  const source = prepareSource(definitionTagged, baseline);
-  applyTransforms(definitionTagged, source);
-  validateSource(definitionPlain, source);
-  const { raw, taggedRaw } = derivedAndShadowed(definitionTagged, definitionPlain, source);
-  const profile = roundedProfile(raw, taggedRaw);
-  validateProfile(definitionPlain, profile.plain);
+): PlainRecord {
+  const baseline = loadBaseline(definition, repositoryRoot);
+  const source = prepareSource(definition, baseline);
+  applyTransforms(definition, source);
+  validateSource(definition, source);
+  const profile = roundDocument(deriveRaw(definition, source)) as PlainRecord;
+  validateProfile(definition, profile);
   return profile;
 }
 
@@ -1448,33 +1348,25 @@ function declaredOptionalSurfaceScalars(definition: PlainRecord): string[] {
   return declared;
 }
 
-function generateEnsembleProfile(
-  definitionTagged: TaggedRecord,
-  definitionPlain: PlainRecord,
-  repositoryRoot: string,
-): GeneratedProfile {
-  const baseline = loadBaseline(definitionTagged, repositoryRoot);
-  const source = prepareSource(definitionTagged, baseline);
-  applyTransforms(definitionTagged, source);
-  const memberCount = (definitionPlain["ensemble"] as PlainRecord)["members"] as number;
+function generateEnsembleProfile(definition: PlainRecord, repositoryRoot: string): PlainRecord {
+  const baseline = loadBaseline(definition, repositoryRoot);
+  const source = prepareSource(definition, baseline);
+  applyTransforms(definition, source);
+  const memberCount = (definition["ensemble"] as PlainRecord)["members"] as number;
   const rawMembers: PlainRecord[] = [];
-  const taggedMembers: TaggedValue[] = [];
   for (let memberIndex = 0; memberIndex < memberCount; memberIndex += 1) {
-    const memberSource = cloneTagged(source) as TaggedRecord;
-    applyMemberPerturbations(definitionTagged, memberSource, memberIndex);
-    validateSource(definitionPlain, memberSource);
-    const { raw, taggedRaw } = derivedAndShadowed(definitionTagged, definitionPlain, memberSource);
-    rawMembers.push(raw);
-    taggedMembers.push(taggedRaw);
+    const memberSource = structuredClone(source) as PlainRecord;
+    applyMemberPerturbations(definition, memberSource, memberIndex);
+    validateSource(definition, memberSource);
+    rawMembers.push(deriveRaw(definition, memberSource));
   }
 
   const first = rawMembers[0];
-  const firstTagged = taggedMembers[0] as TaggedRecord;
-  const optionalScalars = declaredOptionalSurfaceScalars(definitionPlain);
+  const optionalScalars = declaredOptionalSurfaceScalars(definition);
   const surfaceScalars = [...ENSEMBLE_SURFACE_SCALARS, ...optionalScalars];
   const rawDoc: PlainRecord = {
     schemaVersion: first["schemaVersion"],
-    model: definitionPlain["id"],
+    model: definition["id"],
     run: { ...(first["run"] as PlainRecord), members: memberCount },
     site: first["site"],
     semantics: first["semantics"],
@@ -1483,80 +1375,51 @@ function generateEnsembleProfile(
       optionalSurfaceScalars: optionalScalars,
     }),
   };
-  const shadowDoc: TaggedValue = {
-    schemaVersion: firstTagged["schemaVersion"],
-    model: firstTagged["model"],
-    run: {
-      ...(firstTagged["run"] as TaggedRecord),
-      members: (definitionTagged["ensemble"] as TaggedRecord)["members"],
-    },
-    site: firstTagged["site"],
-    semantics: firstTagged["semantics"],
-    hours: shadowAggregateMemberProfiles(taggedMembers as TaggedRecord[], {
-      surfaceScalars,
-      optionalSurfaceScalars: optionalScalars,
-    }),
-  };
-  const profile = roundedProfile(rawDoc, reconcile(rawDoc, shadowDoc));
-  validateProfile(definitionPlain, profile.plain);
-  evaluateAssertions(definitionPlain, profile.plain);
+  const profile = roundDocument(rawDoc) as PlainRecord;
+  validateProfile(definition, profile);
+  evaluateAssertions(definition, profile);
   return profile;
 }
 
 function generateComparisonProfiles(
-  definitionTagged: TaggedRecord,
-  definitionPlain: PlainRecord,
+  definition: PlainRecord,
   repositoryRoot: string,
-): Map<string, GeneratedProfile> {
-  const baseline = loadBaseline(definitionTagged, repositoryRoot);
-  const profiles = new Map<string, GeneratedProfile>();
-  const variants = (definitionPlain["comparison"] as PlainRecord)["variants"] as PlainRecord[];
+): Map<string, PlainRecord> {
+  const baseline = loadBaseline(definition, repositoryRoot);
+  const profiles = new Map<string, PlainRecord>();
+  const variants = (definition["comparison"] as PlainRecord)["variants"] as PlainRecord[];
   for (const variant of variants) {
     const variantId = variant["id"] as string;
-    const variantTagged = definitionForVariant(definitionTagged, variantId);
-    const variantPlain = untag(variantTagged) as PlainRecord;
-    const source = prepareSource(variantTagged, baseline);
-    applyTransforms(variantTagged, source);
-    validateSource(variantPlain, source);
-    const { raw, taggedRaw } = derivedAndShadowed(definitionTagged, definitionPlain, source);
-    const profile = roundedProfile(raw, taggedRaw);
-    validateProfile(definitionPlain, profile.plain);
+    const variantDefinition = definitionForVariant(definition, variantId);
+    const source = prepareSource(variantDefinition, baseline);
+    applyTransforms(variantDefinition, source);
+    validateSource(variantDefinition, source);
+    const profile = roundDocument(deriveRaw(definition, source)) as PlainRecord;
+    validateProfile(definition, profile);
     profiles.set(variantId, profile);
   }
-  evaluateAssertions(
-    definitionPlain,
-    Object.fromEntries([...profiles.entries()].map(([id, profile]) => [id, profile.plain])),
-  );
+  evaluateAssertions(definition, Object.fromEntries(profiles));
   return profiles;
 }
 
 export function generateScenario(
-  definition: TaggedValue,
+  definition: unknown,
   { repositoryRoot }: ScenarioRepositoryOptions,
 ): PlainRecord {
-  return generateScenarioTagged(definition, { repositoryRoot }).plain;
-}
-
-export function generateScenarioTagged(
-  definition: TaggedValue,
-  { repositoryRoot }: ScenarioRepositoryOptions,
-): GeneratedProfile {
-  const root = repositoryRoot;
-  const definitionTagged = definition as TaggedRecord;
-  const definitionPlain = untag(definition) as PlainRecord;
-  const scenarioId = (definitionPlain["id"] as string | undefined) ?? "<unknown>";
-  if (definitionPlain["kind"] === "comparison") {
+  const record = definition as PlainRecord;
+  const scenarioId = (record["id"] as string | undefined) ?? "<unknown>";
+  if (record["kind"] === "comparison") {
     throw new ScenarioError(
       `scenario ${scenarioId}: comparison recipes produce multiple profiles; ` +
         "use generateScenarioRepository() (`pnpm scenarios:generate`)",
     );
   }
-  validateDefinition(definitionPlain, { repositoryRoot: root, source: `scenario ${scenarioId}` });
-  if (definitionPlain["kind"] === "ensemble") {
-    return generateEnsembleProfile(definitionTagged, definitionPlain, root);
+  validateDefinition(record, { repositoryRoot, source: `scenario ${scenarioId}` });
+  if (record["kind"] === "ensemble") {
+    return generateEnsembleProfile(record, repositoryRoot);
   }
-  const profile = generateDeterministicProfile(definitionTagged, definitionPlain, root);
-  evaluateAssertions(definitionPlain, profile.plain);
+  const profile = generateDeterministicProfile(record, repositoryRoot);
+  evaluateAssertions(record, profile);
   return profile;
 }
 
@@ -1566,27 +1429,26 @@ interface OutputPayload {
   metadata: { [key: string]: string };
 }
 
-function outputPayloads(
-  definitionTagged: TaggedRecord,
-  definitionPlain: PlainRecord,
-  repositoryRoot: string,
-): OutputPayload[] {
-  const scenarioId = definitionPlain["id"] as string;
-  if (definitionPlain["kind"] === "comparison") {
-    const profiles = generateComparisonProfiles(definitionTagged, definitionPlain, repositoryRoot);
-    const variants = (definitionPlain["comparison"] as PlainRecord)["variants"] as PlainRecord[];
+function outputPayloads(definition: PlainRecord, repositoryRoot: string): OutputPayload[] {
+  const scenarioId = definition["id"] as string;
+  if (definition["kind"] === "comparison") {
+    const profiles = generateComparisonProfiles(definition, repositoryRoot);
+    const variants = (definition["comparison"] as PlainRecord)["variants"] as PlainRecord[];
     return variants.map((variant) => {
       const variantId = variant["id"] as string;
       return {
         filename: `${scenarioId}.${variantId}.profile.json`,
-        payload: jsonBytes(profiles.get(variantId)!.tagged),
+        payload: jsonBytes(profiles.get(variantId)!),
         metadata: { variant: variantId, title: variant["title"] as string },
       };
     });
   }
-  const profile = generateScenarioTagged(definitionTagged, { repositoryRoot });
   return [
-    { filename: `${scenarioId}.profile.json`, payload: jsonBytes(profile.tagged), metadata: {} },
+    {
+      filename: `${scenarioId}.profile.json`,
+      payload: jsonBytes(generateScenario(definition, { repositoryRoot })),
+      metadata: {},
+    },
   ];
 }
 
@@ -1596,7 +1458,7 @@ export function buildScenarioArtifacts(repositoryRoot: string): {
 } {
   const definitionsDir = join(repositoryRoot, "scenarios", "definitions");
   const artifacts = new Map<string, Buffer>();
-  const entries: Array<{ entry: TaggedRecord; kind: string; id: string }> = [];
+  const entries: Array<{ entry: PlainRecord; kind: string; id: string }> = [];
   const seenIds = new Set<string>();
   const definitionFiles = readdirSync(definitionsDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
@@ -1605,18 +1467,18 @@ export function buildScenarioArtifacts(repositoryRoot: string): {
   for (const filename of definitionFiles) {
     const definitionPath = join(definitionsDir, filename);
     const definitionTagged = loadScenarioJson(definitionPath);
-    if (!isTaggedRecord(definitionTagged)) {
+    if (!isPlainRecord(definitionTagged)) {
       throw new ScenarioError(`${definitionPath}: definition must be a JSON object`);
     }
-    const definitionPlain = untag(definitionTagged) as PlainRecord;
+    const definitionPlain = definitionTagged as PlainRecord;
     validateDefinition(definitionPlain, { repositoryRoot, source: definitionPath });
     const scenarioId = definitionPlain["id"] as string;
     if (seenIds.has(scenarioId)) {
       throw new ScenarioError(`duplicate scenario id ${pyRepr(scenarioId)}`);
     }
     seenIds.add(scenarioId);
-    const payloads = outputPayloads(definitionTagged, definitionPlain, repositoryRoot);
-    const outputs: TaggedValue[] = [];
+    const payloads = outputPayloads(definitionTagged, repositoryRoot);
+    const outputs: unknown[] = [];
     for (const { filename: outputName, payload, metadata } of payloads) {
       artifacts.set(outputName, payload);
       outputs.push({
@@ -1625,7 +1487,7 @@ export function buildScenarioArtifacts(repositoryRoot: string): {
         sha256: createHash("sha256").update(payload).digest("hex"),
       });
     }
-    const representative = parseTaggedJson(payloads[0].payload.toString("utf-8")) as TaggedRecord;
+    const representative = JSON.parse(payloads[0].payload.toString("utf-8")) as PlainRecord;
     entries.push({
       kind: definitionPlain["kind"] as string,
       id: scenarioId,

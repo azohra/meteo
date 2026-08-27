@@ -21,12 +21,12 @@
       "validAt": "2000-01-01T12:00:00Z",
       "surface": {
         "seaLevelPressureHpa": 900,
-        "temperatureC": 10.0,
-        "dewPointC": 5.0,
+        "temperatureC": 10,
+        "dewPointC": 5,
         "windSpeedMps": 3,
         "windDirectionDeg": 240,
         "cloudCoverPercent": 10,
-        "precipitationMmHr": 0.0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 80,
         "latentHeatFluxWm2": 30
       },
@@ -67,12 +67,12 @@
       "validAt": "2000-01-01T13:00:00Z",
       "surface": {
         "seaLevelPressureHpa": 899.8,
-        "temperatureC": 12.0,
-        "dewPointC": 7.0,
+        "temperatureC": 12,
+        "dewPointC": 7,
         "windSpeedMps": 3.5,
         "windDirectionDeg": 240,
         "cloudCoverPercent": 10,
-        "precipitationMmHr": 0.0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 100,
         "latentHeatFluxWm2": 35
       },
@@ -103,10 +103,10 @@
         }
       ],
       "derived": {
-        "boundaryLayerTopM": 2029.0,
+        "boundaryLayerTopM": 2029,
         "thermalVelocityMps": 1.44,
-        "cloudBaseM": 1523.0,
-        "usableLiftTopM": 1523.0
+        "cloudBaseM": 1523,
+        "usableLiftTopM": 1523
       }
     }
   ]

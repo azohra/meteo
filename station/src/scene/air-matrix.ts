@@ -2,44 +2,17 @@ import type { Station } from "../contract.js";
 import { airRows, airSummary, lastStrikeWords } from "../air.js";
 import { EM_DASH } from "../strings.js";
 import type { FormatTime, StationStrings } from "../strings.js";
+import { el, keyed, type SceneChild } from "./node.js";
 
-export type AirMatrixRow = {
-  key: string;
-  className: string;
-  labelClassName: string;
-  label: string;
-  unit: string;
-  cells: Array<{ key: string; className: string; text: string }>;
-};
+type AirRowCells = SceneChild[];
 
-export type AirMatrixScene = {
-  className: string;
-  trigger: {
-    className: string;
-    title: { className: string; text: string };
-    summary: { className: string; text: string };
-  };
-  panelClassName: string;
-  matrix: {
-    ariaLabel: string;
-    className: string;
-    gridTemplateColumns: string;
-    head: {
-      className: string;
-      corner: { className: string };
-      columnClassName: string;
-      columns: Array<{ key: string; text: string }>;
-    };
-    rows: AirMatrixRow[];
-  };
-  note: { className: string; text: string };
-};
-
+/** The disclosure's own words, plus the panel it opens. The shell stays
+ * with each binding: the trigger owns expansion state and its handler. */
 export function airMatrixScene(input: {
   formatTime: FormatTime;
   stations: ReadonlyArray<Station>;
   words: StationStrings;
-}): AirMatrixScene | null {
+}): { title: string; summary: string; panel: SceneChild[] } | null {
   const { formatTime, stations, words } = input;
   const capable = stations.filter((station) => station.capabilities.conditions);
   if (capable.length === 0) return null;
@@ -49,77 +22,99 @@ export function airMatrixScene(input: {
       .map((station) => station.reading?.conditions ?? null)
       .find((conditions) => conditions != null) ?? null;
 
-  const cellsOf = (value: (station: Station) => string | null): AirMatrixRow["cells"] =>
-    capable.map((station) => ({
-      key: station.id,
-      className: "meteo-air-cell",
-      text: value(station) ?? EM_DASH,
-    }));
+  const rowTemplate = {
+    gridTemplateColumns: `minmax(7.5rem, 1.4fr) repeat(${capable.length}, minmax(4.5rem, 1fr))`,
+  };
 
-  const feelsLikeRows: AirMatrixRow[] = capable.some(
-    (station) => station.reading?.windChillC != null,
-  )
+  const cellsOf = (value: (station: Station) => string | null): AirRowCells =>
+    capable.map((station) =>
+      keyed(
+        station.id,
+        "span",
+        { class: "meteo-air-cell", role: "cell" },
+        value(station) ?? EM_DASH,
+      ),
+    );
+
+  const row = (label: string, unit: string, cells: AirRowCells) => ({
+    ...keyed(
+      label,
+      "div",
+      { class: "meteo-air-row", role: "row" },
+      el(
+        "span",
+        { class: "meteo-air-label", role: "rowheader" },
+        label,
+        el("small", undefined, unit),
+      ),
+      cells,
+    ),
+    style: rowTemplate,
+  });
+
+  const feelsLikeRows = capable.some((station) => station.reading?.windChillC != null)
     ? [
-        {
-          key: words.air.feelsLike,
-          className: "meteo-air-row",
-          labelClassName: "meteo-air-label",
-          label: words.air.feelsLike,
-          unit: words.degC,
-          cells: cellsOf((station) => station.reading?.windChillC?.toFixed(1) ?? null),
-        },
+        row(
+          words.air.feelsLike,
+          words.degC,
+          cellsOf((station) => station.reading?.windChillC?.toFixed(1) ?? null),
+        ),
       ]
     : [];
 
-  const conditionRows: AirMatrixRow[] = airRows(words)
-    .filter((row) =>
+  const conditionRows = airRows(words)
+    .filter((entry) =>
       capable.some((station) => {
         const conditions = station.reading?.conditions;
-        return conditions != null && row.value(conditions) != null;
+        return conditions != null && entry.value(conditions) != null;
       }),
     )
-    .map((row) => ({
-      key: row.label,
-      className: "meteo-air-row",
-      labelClassName: "meteo-air-label",
-      label: row.label,
-      unit: row.unit,
-      cells: cellsOf((station) => {
-        const conditions = station.reading?.conditions;
-        return conditions == null ? null : row.value(conditions);
-      }),
-    }));
+    .map((entry) =>
+      row(
+        entry.label,
+        entry.unit,
+        cellsOf((station) => {
+          const conditions = station.reading?.conditions;
+          return conditions == null ? null : entry.value(conditions);
+        }),
+      ),
+    );
+
+  const panel: SceneChild[] = [
+    el(
+      "div",
+      { "aria-label": words.aria.air(capable.length), class: "meteo-air-matrix", role: "table" },
+      {
+        ...el(
+          "div",
+          { class: "meteo-air-row meteo-air-head", role: "row" },
+          el("span", { class: "meteo-air-corner", role: "columnheader" }),
+          capable.map((station) =>
+            keyed(
+              station.id,
+              "span",
+              { class: "meteo-microlabel", role: "columnheader" },
+              station.name,
+            ),
+          ),
+        ),
+        style: rowTemplate,
+      },
+      [...feelsLikeRows, ...conditionRows],
+    ),
+    el(
+      "p",
+      { class: "meteo-air-note" },
+      firstConditions == null
+        ? words.air.noStrike
+        : lastStrikeWords(firstConditions, formatTime, words),
+    ),
+  ];
 
   return {
-    className: "meteo-air",
-    trigger: {
-      className: "meteo-air-trigger",
-      title: { className: "meteo-air-title", text: words.air.title },
-      summary: {
-        className: "meteo-air-summary",
-        text:
-          firstConditions == null ? words.air.summaryFallback : airSummary(firstConditions, words),
-      },
-    },
-    panelClassName: "meteo-air-panel",
-    matrix: {
-      ariaLabel: words.aria.air(capable.length),
-      className: "meteo-air-matrix",
-      gridTemplateColumns: `minmax(7.5rem, 1.4fr) repeat(${capable.length}, minmax(4.5rem, 1fr))`,
-      head: {
-        className: "meteo-air-row meteo-air-head",
-        corner: { className: "meteo-air-corner" },
-        columnClassName: "meteo-microlabel",
-        columns: capable.map((station) => ({ key: station.id, text: station.name })),
-      },
-      rows: [...feelsLikeRows, ...conditionRows],
-    },
-    note: {
-      className: "meteo-air-note",
-      text:
-        firstConditions == null
-          ? words.air.noStrike
-          : lastStrikeWords(firstConditions, formatTime, words),
-    },
+    title: words.air.title,
+    summary:
+      firstConditions == null ? words.air.summaryFallback : airSummary(firstConditions, words),
+    panel,
   };
 }

@@ -2,8 +2,8 @@
 import { useId, useState } from "react";
 import { resolveDisplay } from "../../index.js";
 import { airMatrixScene } from "../../scene/index.js";
+import { renderChildren } from "./SceneTree.js";
 import type { Station } from "../../index.js";
-import type { AirMatrixRow } from "../../scene/index.js";
 import type { FormatTime, StationStringOverrides } from "../../index.js";
 import { requireResolved, useStationFeedContext } from "./StationFeedProvider.js";
 
@@ -32,49 +32,20 @@ export function AirMatrix({
   const scene = airMatrixScene({ formatTime, stations, words });
   if (scene == null) return null;
 
-  const rowTemplate = { gridTemplateColumns: scene.matrix.gridTemplateColumns } as const;
-
   return (
-    <section className={scene.className} data-expanded={expanded}>
+    <section className="meteo-air" data-expanded={expanded}>
       <button
         aria-controls={panelId}
         aria-expanded={expanded}
-        className={scene.trigger.className}
+        className="meteo-air-trigger"
         onClick={() => setExpanded((current) => !current)}
         type="button"
       >
-        <strong className={scene.trigger.title.className}>{scene.trigger.title.text}</strong>
-        <span className={scene.trigger.summary.className}>{scene.trigger.summary.text}</span>
+        <strong className="meteo-air-title">{scene.title}</strong>
+        <span className="meteo-air-summary">{scene.summary}</span>
       </button>
-      <div className={scene.panelClassName} hidden={!expanded} id={panelId}>
-        <div aria-label={scene.matrix.ariaLabel} className={scene.matrix.className} role="table">
-          <div className={scene.matrix.head.className} role="row" style={rowTemplate}>
-            <span className={scene.matrix.head.corner.className} role="columnheader" />
-            {scene.matrix.head.columns.map((column) => (
-              <span
-                className={scene.matrix.head.columnClassName}
-                key={column.key}
-                role="columnheader"
-              >
-                {column.text}
-              </span>
-            ))}
-          </div>
-          {scene.matrix.rows.map((row: AirMatrixRow) => (
-            <div className={row.className} key={row.key} role="row" style={rowTemplate}>
-              <span className={row.labelClassName} role="rowheader">
-                {row.label}
-                <small>{row.unit}</small>
-              </span>
-              {row.cells.map((cell) => (
-                <span className={cell.className} key={cell.key} role="cell">
-                  {cell.text}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-        <p className={scene.note.className}>{scene.note.text}</p>
+      <div className="meteo-air-panel" hidden={!expanded} id={panelId}>
+        {renderChildren(scene.panel)}
       </div>
     </section>
   );

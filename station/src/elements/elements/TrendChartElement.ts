@@ -12,7 +12,8 @@ import type { TrendSeries } from "../../geometry.js";
 import type { TrendScene } from "../../scene/index.js";
 import { ELEMENTS_AMBIENT_HINT } from "../lib/ambient.js";
 import { MeteoStationElement } from "../lib/base.js";
-import { h, hs } from "../lib/h.js";
+import { h } from "../lib/h.js";
+import { renderChildren, renderScene } from "../lib/render.js";
 import { PinnedCursor } from "../lib/pinned-cursor.js";
 
 export class TrendChartElement extends MeteoStationElement {
@@ -22,11 +23,10 @@ export class TrendChartElement extends MeteoStationElement {
   #observer: ResizeObserver | null = null;
   #scene: TrendScene | null = null;
   #readout: HTMLElement | null = null;
-  #svg: SVGElement | null = null;
-  #hit: SVGElement | null = null;
+  #wrap: HTMLElement | null = null;
   readonly #cursor = new PinnedCursor({
     scene: () => this.#scene,
-    svg: () => this.#svg,
+    svg: () => this.#wrap?.querySelector("svg") ?? null,
     onChange: () => this.#updateCursor(),
   });
 
@@ -101,73 +101,29 @@ export class TrendChartElement extends MeteoStationElement {
       class: scene.readout.className,
     });
     this.#readout = readout;
+    this.#wrap = wrap;
 
-    const hit = hs("rect", {
-      class: scene.hit.className,
-      fill: scene.hit.fill,
-      height: scene.hit.height,
-      onclick: (event: Event) => this.#cursor.handleClick(event as MouseEvent),
-      onpointerleave: () => this.#cursor.handlePointerLeave(),
-      onpointermove: (event: Event) => this.#cursor.handlePointerMove(event as PointerEvent),
-      width: scene.hit.width,
-      x: scene.hit.x,
-      y: scene.hit.y,
-    });
-    this.#hit = hit;
-
-    const svg = hs(
-      "svg",
-      {
-        "aria-label": scene.svg.ariaLabel,
-        class: scene.svg.className,
-        height: scene.svg.height,
-        role: "img",
-        viewBox: scene.svg.viewBox,
-        width: scene.svg.width,
-      },
-      scene.grid.map(({ line, label }) =>
-        hs(
-          "g",
-          null,
-          hs("line", { class: line.className, x1: line.x1, x2: line.x2, y1: line.y1, y2: line.y2 }),
-          hs(
-            "text",
-            { class: label.className, "text-anchor": label.anchor, x: label.x, y: label.y },
-            label.text,
-          ),
-        ),
-      ),
-      scene.segments.map((segment) =>
-        segment.kind === "dot"
-          ? hs("circle", {
-              class: segment.className,
-              cx: segment.cx,
-              cy: segment.cy,
-              r: segment.r,
-            })
-          : hs("polyline", { class: segment.className, points: segment.points }),
-      ),
-      scene.ticks.map((tick) =>
-        hs(
-          "text",
-          { class: tick.className, "text-anchor": tick.anchor, x: tick.x, y: tick.y },
-          tick.text,
-        ),
-      ),
-      hit,
-    );
-    this.#svg = svg;
-
-    wrap.replaceChildren(readout, svg);
+    wrap.replaceChildren(readout, this.#drawSvg());
     this.#updateCursor();
+  }
+
+  #drawSvg(): Element {
+    const scene = this.#scene;
+    if (scene == null) throw new Error("meteo-trend-chart: no scene to draw");
+    return renderScene(
+      scene.draw([], {
+        onClick: (event: Event) => this.#cursor.handleClick(event as MouseEvent),
+        onPointerLeave: () => this.#cursor.handlePointerLeave(),
+        onPointerMove: (event: Event) => this.#cursor.handlePointerMove(event as PointerEvent),
+      }),
+    );
   }
 
   #updateCursor(): void {
     const scene = this.#scene;
     const readout = this.#readout;
-    const svg = this.#svg;
-    const hit = this.#hit;
-    if (scene == null || readout == null || svg == null || hit == null) return;
+    const wrap = this.#wrap;
+    if (scene == null || readout == null || wrap == null) return;
     const inspection = scene.inspect(this.#cursor.activeIndex());
 
     readout.setAttribute("aria-live", readoutAriaLive(this.#cursor.previewIndex));
@@ -175,31 +131,12 @@ export class TrendChartElement extends MeteoStationElement {
       h("strong", null, inspection.readout.strong),
       h("span", null, inspection.readout.span),
     );
-
+    /* The cursor splices in above the hit area, which must keep its
+       identity across a gesture — replacing it would drop the pointer. */
+    const svg = wrap.querySelector("svg");
+    const hit = svg?.querySelector(".meteo-hit") ?? null;
+    if (svg == null) return;
     for (const mark of [...svg.querySelectorAll(".meteo-cursor, .meteo-cursor-dot")]) mark.remove();
-    const cursor = inspection.cursor;
-    if (cursor != null) {
-      svg.insertBefore(
-        hs("line", {
-          class: cursor.line.className,
-          x1: cursor.line.x1,
-          x2: cursor.line.x2,
-          y1: cursor.line.y1,
-          y2: cursor.line.y2,
-        }),
-        hit,
-      );
-      if (cursor.dot != null) {
-        svg.insertBefore(
-          hs("circle", {
-            class: cursor.dot.className,
-            cx: cursor.dot.cx,
-            cy: cursor.dot.cy,
-            r: cursor.dot.r,
-          }),
-          hit,
-        );
-      }
-    }
+    for (const node of renderChildren(inspection.cursor)) svg.insertBefore(node as Node, hit);
   }
 }

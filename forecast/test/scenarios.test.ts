@@ -19,7 +19,6 @@ import {
   validateScenarioIndex,
   validateSource,
 } from "../src/scenario/index.js";
-import { parseTaggedJson, pyDumps, untag, type TaggedValue } from "../src/scenario/json.js";
 import {
   SCENARIO_INDEX_SCHEMA_PATH,
   renderScenarioIndexSchema,
@@ -39,11 +38,11 @@ const TEACHING_SCENARIOS = [
   "three-hourly-sampling",
 ] as const;
 
-function minimalDefinition(): TaggedValue {
+function minimalDefinition(): unknown {
   return loadScenarioJson(join(ROOT, "scenarios", "definitions", "minimal-valid.json"));
 }
 
-function minimalBaseline(): TaggedValue {
+function minimalBaseline(): unknown {
   return loadScenarioJson(join(ROOT, "scenarios", "baselines", "minimal-hourly-core.source.json"));
 }
 
@@ -91,7 +90,7 @@ describe("byte-identity against the committed scenario artifacts", () => {
     files.push(join(ROOT, "scenarios", "index.json"));
     for (const file of files) {
       const original = readFileSync(file, "utf-8");
-      expect(pyDumps(parseTaggedJson(original), { indent: 2 }) + "\n").toBe(original);
+      expect(JSON.stringify(JSON.parse(original), null, 2) + "\n").toBe(original);
     }
   });
 });
@@ -224,8 +223,8 @@ describe("source transforms", () => {
     applyTransforms(definition, first);
     applyTransforms(definition, second);
 
-    const firstPlain = untag(first) as Doc;
-    expect(firstPlain).toEqual(untag(second));
+    const firstPlain = first as Doc;
+    expect(firstPlain).toEqual(second);
     expect(firstPlain.referenceTime).toBe("2000-01-01T09:00:00Z");
     expect(firstPlain.hours[0].validAt).toBe("2000-01-01T15:00:00Z");
     expect("siteAltitudeM" in firstPlain).toBe(false);
@@ -375,7 +374,7 @@ describe("scenario generation", () => {
     expect(profile.hours.map((hour: Doc) => hour.surface.temperatureC)).toEqual([10, 12]);
     expect(profile.hours[1].derived.thermalVelocityMps).toBe(1.44);
     expect(profile.hours[1].surface.windDirectionDeg).toBe(240);
-    expect(profile.semantics).toEqual(untag(definition.semantics));
+    expect(profile.semantics).toEqual(definition.semantics);
     expect(profile.site.timeZone).toBe(definition.timeZone);
     expect(profile.model).toBe("minimal-valid");
   });
@@ -481,7 +480,7 @@ describe("scenario generation", () => {
 
       expect(definition.assertions.length).toBeGreaterThanOrEqual(3);
       expect(["instantRate", "windowMeanRate"]).toContain(
-        (untag(definition.semantics) as Doc).precipitation,
+        (definition.semantics as Doc).precipitation,
       );
     },
   );
@@ -723,7 +722,7 @@ describe("teaching lessons are visible in the committed artifacts", () => {
 });
 
 describe("loadScenarioJson", () => {
-  it("rejects non-finite JSON constants the way parse_constant does", () => {
+  it("rejects non-finite JSON constants, naming the file that carries one", () => {
     const repository = scenarioRepository();
     const path = join(repository, "scenarios", "baselines", "minimal-hourly-core.source.json");
     const baseline = loadJson(path);
@@ -736,7 +735,7 @@ describe("loadScenarioJson", () => {
       thrown = error;
     }
     expect(thrown).toBeInstanceOf(ScenarioError);
-    expect((thrown as Error).message).toMatch(/JSON contains the non-finite value NaN/);
+    expect((thrown as Error).message).toContain(path);
   });
 
   it("wraps malformed JSON with the file path", () => {

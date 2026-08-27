@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { PythonRandom, randomFromMaterial } from "../src/scenario/rng.js";
-import { pyDumps } from "../src/scenario/json.js";
 
 const MATERIAL = '[42,"symmetric",0,"column"]';
 
 describe("PythonRandom parity with CPython", () => {
   it("builds the exact compact-JSON seed material", () => {
-    expect(pyDumps([42, "symmetric", 0, "column"])).toBe(MATERIAL);
+    expect(JSON.stringify([42, "symmetric", 0, "column"])).toBe(MATERIAL);
   });
 
   it("random() reproduces genrand_res53", () => {

@@ -88,6 +88,7 @@ stylesheet.
 | `meteo-station-card-identity` / `-elevation` / `-source` | The station card's header regions |
 | `meteo-station-table-time` / `meteo-strip-time` | Time cells in the table and the strip |
 | `meteo-air-corner` | The air matrix's corner cell |
+| `meteo-compass-fan` | The compass fan's wrapper, beside its styled state classes |
 
 Unstyled by design: style them from your own CSS, or leave them be; the
 default look does not depend on them. The SVG text seams

@@ -4,61 +4,48 @@ import type { SpeedUnit } from "../derive.js";
 import { optionalSpeed, roundSpeed } from "../format.js";
 import type { FavorableDirection } from "../instruments.js";
 import type { StationStrings } from "../strings.js";
+import { windArrowNode } from "./glyphs.js";
+import { el, keyed, type SceneNode } from "./node.js";
 
 export const RECENT_SUMMARIES_CLASS = "meteo-recent-summaries";
 
-export type RecentSummariesGate =
-  | { kind: "draw"; summaries: RecentSummary[] }
-  | { kind: "hidden" }
-  | { kind: "note"; className: string; text: string };
-
-/** hidden unless the source declares the capability; the no-samples words
+/** Null unless the source declares the capability; the no-samples words
  * when the declared block is dark. */
-export function recentSummariesGate(
-  station: Station | undefined,
-  summaries: RecentSummary[] | null | undefined,
-  words: StationStrings,
-): RecentSummariesGate {
-  const source = summaries ?? (station?.status === "ok" ? (station.recentSummaries ?? null) : null);
-  if (station != null && station.capabilities.recentSummaries !== true) return { kind: "hidden" };
-  if (source == null || source.length === 0) {
-    return {
-      kind: "note",
-      className: `${RECENT_SUMMARIES_CLASS} meteo-recent-summaries-na`,
-      text: words.noSamples,
-    };
-  }
-  return { kind: "draw", summaries: source };
-}
-
-export type RecentSummaryPanel = {
-  key: number;
-  className: string;
-  label: { className: string; text: string };
-  stats: Array<{ key: string; className: string; label: string; value: string }>;
-  /** One small arrow per filled step, oldest first; a calm step is absent. */
-  ghosts: Array<{ key: string; className: string; deg: number }>;
-};
-
-export type RecentSummariesScene = {
-  className: string;
-  ariaLabel: string;
-  panels: RecentSummaryPanel[];
-};
-
 export function recentSummariesScene(input: {
   favorableDirections: FavorableDirection[] | undefined;
-  stationName: string | undefined;
-  summaries: RecentSummary[];
+  station: Station | undefined;
+  summaries: RecentSummary[] | null | undefined;
   unit: SpeedUnit;
   words: StationStrings;
-}): RecentSummariesScene {
-  const { favorableDirections, stationName, summaries, unit, words } = input;
+}): SceneNode | null {
+  const { favorableDirections, station, summaries, unit, words } = input;
+  const source = summaries ?? (station?.status === "ok" ? (station.recentSummaries ?? null) : null);
+  if (station != null && station.capabilities.recentSummaries !== true) return null;
+  if (source == null || source.length === 0) {
+    return el(
+      "div",
+      { class: "meteo-recent-summaries meteo-recent-summaries-na", role: "note" },
+      words.noSamples,
+    );
+  }
   const arcs = favorableDirections ?? [];
-  return {
-    className: RECENT_SUMMARIES_CLASS,
-    ariaLabel: words.aria.recentSummaries(stationName ?? ""),
-    panels: summaries.map((block) => {
+
+  const stat = (key: string, label: string, value: string) =>
+    keyed(
+      key,
+      "div",
+      { class: "meteo-recent-summary-stat" },
+      el("dt", { class: "meteo-microlabel" }, label),
+      el("dd", undefined, value),
+    );
+
+  return el(
+    "div",
+    {
+      "aria-label": words.aria.recentSummaries(station?.name ?? ""),
+      class: RECENT_SUMMARIES_CLASS,
+    },
+    source.map((block) => {
       const points = block.points;
       const avgMps =
         points.length === 0
@@ -66,50 +53,52 @@ export function recentSummariesScene(input: {
           : points.reduce((sum, point) => sum + point.windAvgMps, 0) / points.length;
       const gusts = points.map((point) => point.windGustMps).filter((gust) => gust != null);
       const lulls = points.map((point) => point.windLullMps).filter((lull) => lull != null);
-      return {
-        key: block.windowMinutes,
-        className: "meteo-recent-summary",
-        label: {
-          className: "meteo-microlabel",
-          text: words.recentWindowLabel(block.windowMinutes),
-        },
-        stats: [
-          {
-            key: "avg",
-            className: "meteo-recent-summary-stat",
-            label: words.avgLabel,
-            value: avgMps == null ? "—" : `${roundSpeed(avgMps, unit)} ${words.speedUnits[unit]}`,
-          },
-          {
-            key: "gust",
-            className: "meteo-recent-summary-stat",
-            label: words.gustLabel,
-            value: optionalSpeed(gusts.length === 0 ? null : Math.max(...gusts), unit),
-          },
-          {
-            key: "lull",
-            className: "meteo-recent-summary-stat",
-            label: words.lullLabel,
-            value: optionalSpeed(lulls.length === 0 ? null : Math.min(...lulls), unit),
-          },
-        ],
-        ghosts: points.flatMap((point) => {
-          if (point.windDirectionDeg == null) return [];
-          const verdict =
-            arcs.length === 0
-              ? ""
-              : inDirectionArcs(point.windDirectionDeg, arcs)
-                ? " meteo-direction-favorable"
-                : " meteo-direction-unfavorable";
-          return [
-            {
-              key: point.observedAt,
-              className: `meteo-recent-summary-ghost${verdict}`,
-              deg: point.windDirectionDeg,
-            },
-          ];
-        }),
-      };
+      return keyed(
+        String(block.windowMinutes),
+        "section",
+        { class: "meteo-recent-summary" },
+        el("h4", { class: "meteo-microlabel" }, words.recentWindowLabel(block.windowMinutes)),
+        el(
+          "div",
+          { class: "meteo-recent-summary-ghosts" },
+          points.flatMap((point) => {
+            if (point.windDirectionDeg == null) return [];
+            const verdict =
+              arcs.length === 0
+                ? ""
+                : inDirectionArcs(point.windDirectionDeg, arcs)
+                  ? " meteo-direction-favorable"
+                  : " meteo-direction-unfavorable";
+            return [
+              keyed(
+                point.observedAt,
+                "span",
+                { class: `meteo-recent-summary-ghost${verdict}` },
+                windArrowNode(point.windDirectionDeg, 12),
+              ),
+            ];
+          }),
+        ),
+        el(
+          "dl",
+          { class: "meteo-recent-summary-stats" },
+          stat(
+            "avg",
+            words.avgLabel,
+            avgMps == null ? "\u2014" : `${roundSpeed(avgMps, unit)} ${words.speedUnits[unit]}`,
+          ),
+          stat(
+            "gust",
+            words.gustLabel,
+            optionalSpeed(gusts.length === 0 ? null : Math.max(...gusts), unit),
+          ),
+          stat(
+            "lull",
+            words.lullLabel,
+            optionalSpeed(lulls.length === 0 ? null : Math.min(...lulls), unit),
+          ),
+        ),
+      );
     }),
-  };
+  );
 }

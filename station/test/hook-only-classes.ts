@@ -22,4 +22,5 @@ export const HOOK_ONLY_CLASSES = [
   "meteo-station-table-time",
   "meteo-strip-time",
   "meteo-air-corner",
+  "meteo-compass-fan",
 ] as const;

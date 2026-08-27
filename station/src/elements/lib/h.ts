@@ -1,6 +1,9 @@
 export type ElementChild = Node | string | number | null | undefined | false | ElementChild[];
 
-type Attrs = Record<string, string | number | boolean | null | undefined | EventListener> | null;
+export type Attrs = Record<
+  string,
+  string | number | boolean | null | undefined | EventListener
+> | null;
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -9,7 +12,7 @@ function apply(element: Element, attrs: Attrs, children: ElementChild[]): void {
     for (const [name, value] of Object.entries(attrs)) {
       if (value == null || value === false) continue;
       if (typeof value === "function") {
-        element.addEventListener(name.slice(2), value);
+        element.addEventListener(name.slice(2).toLowerCase(), value);
         continue;
       }
       element.setAttribute(name, value === true ? "" : String(value));

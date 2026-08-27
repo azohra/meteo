@@ -3,19 +3,19 @@ import { useEffect, useState } from "react";
 import { subscribeTicker } from "../../client/index.js";
 import { resolveDisplay } from "../../index.js";
 import {
-  bandChipScene,
-  directionAtomScene,
+  bandChipNode,
+  directionAtomNode,
   pressureAtomScene,
   speedAtomScene,
   temperatureAtomScene,
-  updatedAtScene,
+  updatedAtNode,
+  valueAtomNode,
 } from "../../scene/index.js";
 import type { FavorableDirection, SpeedUnit, Station } from "../../index.js";
 import type { SpeedKind } from "../../format.js";
-import type { ValueAtomScene } from "../../scene/index.js";
-import { DirectionCell } from "../lib/cells.js";
 import type { FormatTime, StationStringOverrides } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
+import { renderScene } from "./SceneTree.js";
 import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 import type { StationFeedContextValue } from "./StationFeedProvider.js";
 
@@ -43,21 +43,6 @@ function useResolvedStation(
   return { context, station };
 }
 
-function ValueAtom({ scene }: { scene: ValueAtomScene }) {
-  return (
-    <data className={scene.className} value={scene.value}>
-      {scene.content.kind === "dash" ? (
-        scene.content.text
-      ) : (
-        <>
-          {scene.content.text}
-          <span className={scene.content.unit.className}>{scene.content.unit.text}</span>
-        </>
-      )}
-    </data>
-  );
-}
-
 function SpeedValue({
   component,
   kind,
@@ -68,7 +53,7 @@ function SpeedValue({
 }: SpeedAtomProps & { component: string; kind: SpeedKind }) {
   const { context, station } = useResolvedStation(component, stationProp, stationId);
   const { unit, words } = resolveDisplay(context, { strings: stringsProp, unit: unitProp });
-  return <ValueAtom scene={speedAtomScene(station, kind, unit, words)} />;
+  return renderScene(valueAtomNode(speedAtomScene(station, kind, unit, words)));
 }
 
 export function Speed(props: SpeedAtomProps) {
@@ -86,13 +71,13 @@ export function Lull(props: SpeedAtomProps) {
 export function Temperature({ station: stationProp, stationId, strings: stringsProp }: AtomProps) {
   const { context, station } = useResolvedStation("Temperature", stationProp, stationId);
   const { words } = resolveDisplay(context, { strings: stringsProp });
-  return <ValueAtom scene={temperatureAtomScene(station, words)} />;
+  return renderScene(valueAtomNode(temperatureAtomScene(station, words)));
 }
 
 export function Pressure({ station: stationProp, stationId, strings: stringsProp }: AtomProps) {
   const { context, station } = useResolvedStation("Pressure", stationProp, stationId);
   const { words } = resolveDisplay(context, { strings: stringsProp });
-  return <ValueAtom scene={pressureAtomScene(station, words)} />;
+  return renderScene(valueAtomNode(pressureAtomScene(station, words)));
 }
 
 export function Direction({
@@ -106,19 +91,7 @@ export function Direction({
     strings: stringsProp,
     favorableDirections: favorableDirectionsProp,
   });
-  const scene = directionAtomScene(station, words, favorableDirections);
-  if (scene.cell == null) {
-    return <span className={scene.className}>{scene.dashText}</span>;
-  }
-  return (
-    <span aria-label={scene.ariaLabel} className={scene.className}>
-      <DirectionCell
-        windAvgMps={scene.cell.windAvgMps}
-        windDirectionDeg={scene.cell.windDirectionDeg}
-        words={words}
-      />
-    </span>
-  );
+  return renderScene(directionAtomNode(station, words, favorableDirections));
 }
 
 export function UpdatedAt({
@@ -149,15 +122,7 @@ export function UpdatedAt({
     setNowMs(Date.now());
     return subscribeTicker(() => setNowMs(Date.now()));
   }, []);
-  const scene = updatedAtScene({ formatTime, nowMs, receivedAtMs, servedAt, station, words });
-  if (scene.kind === "dash") {
-    return <span className={scene.className}>{scene.text}</span>;
-  }
-  return (
-    <time className={scene.className} dateTime={scene.dateTime}>
-      {scene.text}
-    </time>
-  );
+  return renderScene(updatedAtNode({ formatTime, nowMs, receivedAtMs, servedAt, station, words }));
 }
 
 export function BandChip({
@@ -177,10 +142,5 @@ export function BandChip({
     thresholds: thresholdsProp,
     unit: unitProp,
   });
-  const scene = bandChipScene({ labels, station, thresholds, unit, words });
-  return (
-    <span className={scene.className} data-band={scene.band}>
-      {scene.text}
-    </span>
-  );
+  return renderScene(bandChipNode({ labels, station, thresholds, unit, words }));
 }

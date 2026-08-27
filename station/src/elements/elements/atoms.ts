@@ -1,30 +1,17 @@
 import {
-  bandChipScene,
-  directionAtomScene,
+  bandChipNode,
+  directionAtomNode,
   pressureAtomScene,
   speedAtomScene,
   temperatureAtomScene,
-  updatedAtScene,
+  updatedAtNode,
+  valueAtomNode,
 } from "../../scene/index.js";
 import type { SpeedKind } from "../../format.js";
-import type { ValueAtomScene } from "../../scene/index.js";
 import { MeteoStationElement } from "../lib/base.js";
-import { directionCellNodes } from "../lib/fragments.js";
-import { h } from "../lib/h.js";
-import type { ElementChild } from "../lib/h.js";
+import { renderScene } from "../lib/render.js";
 
 const STATION_ATTRIBUTES = ["station-id", "unit"] as const;
-
-function valueAtomNode(scene: ValueAtomScene): HTMLElement {
-  const children: ElementChild[] =
-    scene.content.kind === "dash"
-      ? [scene.content.text]
-      : [
-          scene.content.text,
-          h("span", { class: scene.content.unit.className }, scene.content.unit.text),
-        ];
-  return h("data", { class: scene.className, value: scene.value }, ...children);
-}
 
 abstract class SpeedAtomElement extends MeteoStationElement {
   static readonly observedAttributes = [...STATION_ATTRIBUTES];
@@ -34,7 +21,9 @@ abstract class SpeedAtomElement extends MeteoStationElement {
   protected override render(): void {
     const station = this.requiredStation(this.component);
     const { unit, words } = this.display();
-    this.replaceChildren(valueAtomNode(speedAtomScene(station, this.kind, unit, words)));
+    this.replaceChildren(
+      renderScene(valueAtomNode(speedAtomScene(station, this.kind, unit, words))),
+    );
   }
 }
 
@@ -59,7 +48,7 @@ export class TemperatureElement extends MeteoStationElement {
   protected override render(): void {
     const station = this.requiredStation("meteo-temperature");
     const { words } = this.display();
-    this.replaceChildren(valueAtomNode(temperatureAtomScene(station, words)));
+    this.replaceChildren(renderScene(valueAtomNode(temperatureAtomScene(station, words))));
   }
 }
 
@@ -69,7 +58,7 @@ export class PressureElement extends MeteoStationElement {
   protected override render(): void {
     const station = this.requiredStation("meteo-pressure");
     const { words } = this.display();
-    this.replaceChildren(valueAtomNode(pressureAtomScene(station, words)));
+    this.replaceChildren(renderScene(valueAtomNode(pressureAtomScene(station, words))));
   }
 }
 
@@ -79,18 +68,7 @@ export class DirectionElement extends MeteoStationElement {
   protected override render(): void {
     const station = this.requiredStation("meteo-direction");
     const { favorableDirections, words } = this.display();
-    const scene = directionAtomScene(station, words, favorableDirections);
-    if (scene.cell == null) {
-      this.replaceChildren(h("span", { class: scene.className }, scene.dashText));
-      return;
-    }
-    this.replaceChildren(
-      h(
-        "span",
-        { "aria-label": scene.ariaLabel, class: scene.className },
-        ...directionCellNodes(scene.cell.windAvgMps, scene.cell.windDirectionDeg, words),
-      ),
-    );
+    this.replaceChildren(renderScene(directionAtomNode(station, words, favorableDirections)));
   }
 }
 
@@ -104,20 +82,17 @@ export class UpdatedAtElement extends MeteoStationElement {
   protected override render(): void {
     const station = this.requiredStation("meteo-updated-at");
     const { formatTime, words } = this.display();
-    const scene = updatedAtScene({
-      formatTime,
-      nowMs: Date.now(),
-      receivedAtMs: this.receivedAtMsValue(),
-      servedAt: this.servedAtValue(),
-      station,
-      words,
-    });
-    if (scene.kind === "dash") {
-      this.replaceChildren(h("span", { class: scene.className }, scene.text));
-      return;
-    }
     this.replaceChildren(
-      h("time", { class: scene.className, datetime: scene.dateTime }, scene.text),
+      renderScene(
+        updatedAtNode({
+          formatTime,
+          nowMs: Date.now(),
+          receivedAtMs: this.receivedAtMsValue(),
+          servedAt: this.servedAtValue(),
+          station,
+          words,
+        }),
+      ),
     );
   }
 }
@@ -143,9 +118,8 @@ export class BandChipElement extends MeteoStationElement {
   protected override render(): void {
     const station = this.requiredStation("meteo-band-chip");
     const { thresholds, unit, words } = this.display();
-    const scene = bandChipScene({ labels: this.#labels, station, thresholds, unit, words });
     this.replaceChildren(
-      h("span", { class: scene.className, "data-band": scene.band }, scene.text),
+      renderScene(bandChipNode({ labels: this.#labels, station, thresholds, unit, words })),
     );
   }
 }

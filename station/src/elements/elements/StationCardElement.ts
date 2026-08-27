@@ -7,10 +7,10 @@ import {
 } from "../../index.js";
 import {
   STATION_CARD_CLASS,
-  cardHeaderScene,
+  cardHeaderNode,
   cardPartThresholds,
   cardPartWiringError,
-  summaryScene,
+  summaryNode,
 } from "../../scene/index.js";
 import type {
   FormatTime,
@@ -23,8 +23,8 @@ import type {
 import { MeteoElement, MeteoStationElement } from "../lib/base.js";
 import { provideContext, requestContext } from "../lib/context.js";
 import type { ContextProvision } from "../lib/context.js";
-import { freshnessBadgeSpan } from "../lib/fragments.js";
 import { h } from "../lib/h.js";
+import { renderOptional, renderScene } from "../lib/render.js";
 import { numberAttribute } from "../lib/attributes.js";
 import { subscribeTicker } from "../../client/index.js";
 import { CurrentConditionsElement } from "./CurrentConditionsElement.js";
@@ -211,38 +211,7 @@ export class StationCardHeaderElement extends StationCardPartElement {
             stationFreshnessThresholds(station),
           );
 
-    const scene = cardHeaderScene(station, words);
-    const { name, meta } = scene.identity;
-
-    this.replaceChildren(
-      h(
-        "header",
-        { class: scene.className },
-        h(
-          "div",
-          { class: scene.identity.className },
-          h(
-            "h3",
-            { class: name.className },
-            name.link
-              ? h(
-                  "a",
-                  { href: name.link.href, rel: name.link.rel, target: name.link.target },
-                  name.link.text,
-                )
-              : name.text,
-          ),
-          h(
-            "p",
-            { class: meta.className },
-            h("span", { class: meta.source.className }, meta.source.text),
-            meta.elevation != null &&
-              h("span", { class: meta.elevation.className }, meta.elevation.text),
-          ),
-        ),
-        status != null && freshnessBadgeSpan(status, words),
-      ),
-    );
+    this.replaceChildren(renderScene(cardHeaderNode(station, status, words)));
   }
 }
 
@@ -299,24 +268,8 @@ export class StationCardSummaryElement extends StationCardPartElement {
   protected override render(): void {
     const context = this.card();
     const words = resolveStrings(context.strings);
-    const summary = summaryScene(context.station, context.unit, words, context.formatTime);
-    if (summary == null) {
-      this.replaceChildren();
-      return;
-    }
     this.replaceChildren(
-      h(
-        "dl",
-        { "aria-label": summary.ariaLabel, class: summary.className },
-        summary.items.map((item) =>
-          h(
-            "div",
-            { class: summary.itemClassName },
-            h("dt", { class: summary.labelClassName }, item.label),
-            h("dd", null, item.value),
-          ),
-        ),
-      ),
+      ...renderOptional(summaryNode(context.station, context.unit, words, context.formatTime)),
     );
   }
 }

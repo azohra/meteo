@@ -4,13 +4,13 @@ import { resolveDisplay } from "../../index.js";
 import { CHART_FALLBACK_WIDTH } from "../../geometry.js";
 import {
   CLIMATOLOGY_PATTERN_CLASS,
-  climatologyPatternGate,
+  hasClimatology,
   climatologyPatternScene,
   measuredChartWidth,
 } from "../../scene/index.js";
+import { renderChildren } from "./SceneTree.js";
 import type { FavorableDirection, SpeedThresholds, StationClimatology } from "../../index.js";
 import type { StationStringOverrides } from "../../index.js";
-import { DailyPatternSceneView } from "./DailyPattern.js";
 import { useStationFeedContext } from "./StationFeedProvider.js";
 
 /** The cube's typical day through the daily-pattern drawing, month-filtered
@@ -45,8 +45,7 @@ export function ClimatologyDailyPattern({
   const [width, setWidth] = useState<number | null>(null);
   const hatchId = `meteo-climatology-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const gate = climatologyPatternGate(document, words);
-  const drawable = gate.kind === "draw";
+  const drawable = hasClimatology(document);
 
   useEffect(() => {
     const element = wrapRef.current;
@@ -62,20 +61,27 @@ export function ClimatologyDailyPattern({
     return () => observer.disconnect();
   }, [drawable]);
 
-  if (gate.kind === "note") {
-    return (
-      <div className={gate.className} role="note">
-        {gate.text}
-      </div>
+  if (!drawable) {
+    return renderChildren(
+      climatologyPatternScene({
+        document,
+        hatchId,
+        plotHeight,
+        stationName,
+        thresholds,
+        unit,
+        width: 0,
+        words,
+      }),
     );
   }
 
   return (
     <div className={CLIMATOLOGY_PATTERN_CLASS} ref={wrapRef}>
-      {width != null && (
-        <DailyPatternSceneView
-          scene={climatologyPatternScene({
-            document: gate.document,
+      {width != null &&
+        renderChildren(
+          climatologyPatternScene({
+            document,
             favorableDirections,
             filters: { months },
             hatchId,
@@ -85,9 +91,8 @@ export function ClimatologyDailyPattern({
             unit,
             width,
             words,
-          })}
-        />
-      )}
+          }),
+        )}
     </div>
   );
 }

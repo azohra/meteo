@@ -2,11 +2,18 @@
 import type { ReactNode } from "react";
 import type { SpeedUnit, Station } from "../../index.js";
 import { resolveDisplay, stationFreshnessThresholds } from "../../index.js";
-import { stationTableRowScene, stationTableScene } from "../../scene/index.js";
+import {
+  TABLE_BODY_CLASS,
+  TABLE_ROW_CLASS,
+  TABLE_STATION_CELL_CLASS,
+  stationTableHeadNode,
+  stationTableRootAttrs,
+  stationTableRowCells,
+} from "../../scene/index.js";
 import { useFreshness } from "../hooks/useFreshness.js";
-import { DirectionCell, StationNameLink } from "../lib/cells.js";
+import { StationNameLink } from "../lib/cells.js";
 import type { FormatTime, StationStringOverrides, StationStrings } from "../../index.js";
-import { FreshnessBadge } from "./FreshnessBadge.js";
+import { renderChildren, renderScene } from "./SceneTree.js";
 import { requireResolved, useStationFeedContext } from "./StationFeedProvider.js";
 
 export type StationMetaRenderer = (station: Station) => ReactNode;
@@ -37,22 +44,16 @@ export function StationTable({
   const servedAt = servedAtProp ?? context?.feed?.servedAt ?? null;
   const receivedAtMs =
     receivedAtMsProp !== undefined ? receivedAtMsProp : (context?.receivedAtMs ?? null);
-  const { formatTime, strings, unit, words } = resolveDisplay(context, {
+  const { formatTime, unit, words } = resolveDisplay(context, {
     formatTime: formatTimeProp,
     strings: stringsProp,
     unit: unitProp,
   });
-  const scene = stationTableScene(stations, words);
+  const root = stationTableRootAttrs(stations, words);
   return (
-    <div aria-label={scene.root.ariaLabel} className={scene.root.className} role="table">
-      <div className={scene.head.className} role="row">
-        {scene.head.columns.map((column) => (
-          <span key={column} role="columnheader">
-            {column}
-          </span>
-        ))}
-      </div>
-      <div className={scene.bodyClassName} role="rowgroup">
+    <div aria-label={root["aria-label"]} className={root["class"]} role="table">
+      {renderScene(stationTableHeadNode(words))}
+      <div className={TABLE_BODY_CLASS} role="rowgroup">
         {stations.map((station) => (
           <TableRow
             formatTime={formatTime}
@@ -61,7 +62,6 @@ export function StationTable({
             servedAt={servedAt}
             station={station}
             stationMeta={stationMeta}
-            strings={strings}
             unit={unit}
             words={words}
           />
@@ -77,7 +77,6 @@ function TableRow({
   servedAt,
   station,
   stationMeta,
-  strings,
   unit,
   words,
 }: {
@@ -86,7 +85,6 @@ function TableRow({
   servedAt: string | null;
   station: Station;
   stationMeta: StationMetaRenderer | undefined;
-  strings: StationStringOverrides | undefined;
   unit: SpeedUnit;
   words: StationStrings;
 }) {
@@ -96,47 +94,16 @@ function TableRow({
     receivedAtMs,
     stationFreshnessThresholds(station),
   );
-  const row = stationTableRowScene({ formatTime, station, unit, words });
-  const { cells } = row;
   return (
-    <div className={row.className} data-status={row.status} role="row">
-      <span className={row.stationCellClassName} role="cell">
+    <div className={TABLE_ROW_CLASS} data-status={station.status} role="row">
+      <span className={TABLE_STATION_CELL_CLASS} role="cell">
         <strong>
           <StationNameLink station={station} />
         </strong>
         <small>{stationMeta ? stationMeta(station) : station.sourceLabel}</small>
       </span>
-      {cells.kind === "reading" ? (
-        <>
-          <span className={cells.wind.className} role="cell">
-            <strong>{cells.wind.value}</strong>
-            <small>{cells.wind.unitLabel}</small>
-          </span>
-          <span className={cells.lull.className} role="cell">
-            {cells.lull.value}
-          </span>
-          <span className={cells.gust.className} role="cell">
-            {cells.gust.value}
-          </span>
-          <span className={cells.from.className} role="cell">
-            <DirectionCell
-              windAvgMps={cells.from.windAvgMps}
-              windDirectionDeg={cells.from.windDirectionDeg}
-              words={words}
-            />
-          </span>
-          <span className={cells.temperature.className} role="cell">
-            {cells.temperature.value}
-          </span>
-          <span className={cells.updated.className} role="cell">
-            <span className={cells.updated.time.className}>{cells.updated.time.text}</span>
-            {status != null && <FreshnessBadge status={status} strings={strings} />}
-          </span>
-        </>
-      ) : (
-        <span className={cells.className} role="cell">
-          {cells.text}
-        </span>
+      {renderChildren(
+        stationTableRowCells({ formatTime, freshness: status, station, unit, words }),
       )}
     </div>
   );

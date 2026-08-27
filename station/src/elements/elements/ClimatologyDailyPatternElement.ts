@@ -1,15 +1,15 @@
 import { CHART_FALLBACK_WIDTH } from "../../geometry.js";
 import {
   CLIMATOLOGY_PATTERN_CLASS,
-  climatologyPatternGate,
+  hasClimatology,
   climatologyPatternScene,
   measuredChartWidth,
 } from "../../scene/index.js";
 import type { StationClimatology } from "../../index.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { h } from "../lib/h.js";
+import { renderChildren } from "../lib/render.js";
 import { numberAttribute, parseMonthsAttribute } from "../lib/attributes.js";
-import { dailyPatternSceneDom } from "./DailyPatternElement.js";
 
 let hatchCounter = 0;
 
@@ -47,11 +47,23 @@ export class ClimatologyDailyPatternElement extends MeteoStationElement {
 
   protected override render(): void {
     const { favorableDirections, thresholds, unit, words } = this.display();
-    const gate = climatologyPatternGate(this.#document, words);
-    if (gate.kind === "note") {
+    if (!hasClimatology(this.#document)) {
       this.#observer?.disconnect();
       this.#observer = null;
-      this.replaceChildren(h("div", { class: gate.className, role: "note" }, gate.text));
+      this.replaceChildren(
+        ...renderChildren(
+          climatologyPatternScene({
+            document: this.#document,
+            hatchId: "",
+            plotHeight: undefined,
+            stationName: undefined,
+            thresholds: undefined,
+            unit,
+            width: 0,
+            words,
+          }),
+        ),
+      );
       return;
     }
 
@@ -61,7 +73,7 @@ export class ClimatologyDailyPatternElement extends MeteoStationElement {
     if (this.#width == null) return;
 
     const scene = climatologyPatternScene({
-      document: gate.document,
+      document: this.#document,
       favorableDirections,
       filters: { months: parseMonthsAttribute(this.getAttribute("months")) },
       hatchId: `meteo-climatology-hatch-e${++hatchCounter}`,
@@ -72,8 +84,7 @@ export class ClimatologyDailyPatternElement extends MeteoStationElement {
       width: this.#width,
       words,
     });
-    const { caption, svg } = dailyPatternSceneDom(scene);
-    wrap.replaceChildren(caption, svg);
+    wrap.replaceChildren(...renderChildren(scene));
   }
 
   #observe(wrap: HTMLElement): void {

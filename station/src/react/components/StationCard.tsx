@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { resolveDisplay, stationFreshnessThresholds } from "../../index.js";
 import {
   STATION_CARD_CLASS,
-  cardHeaderScene,
+  cardHeaderNode,
   cardPartThresholds,
   cardPartWiringError,
-  summaryScene,
+  summaryNode,
 } from "../../scene/index.js";
 import type { SpeedUnit, Station } from "../../index.js";
 import { useFreshness } from "../hooks/useFreshness.js";
@@ -15,7 +15,7 @@ import { mergeStringOverrides } from "../../index.js";
 import type { FormatTime, StationStringOverrides } from "../../index.js";
 import type { SpeedThresholds } from "../../index.js";
 import { CurrentConditions } from "./CurrentConditions.js";
-import { FreshnessBadge } from "./FreshnessBadge.js";
+import { renderOptional, renderScene } from "./SceneTree.js";
 import { requireResolved, resolveStation, useStationFeedContext } from "./StationFeedProvider.js";
 import { WindHistoryChart } from "./WindHistoryChart.js";
 
@@ -102,38 +102,14 @@ export function StationCardHeader({
 } = {}) {
   const context = useStationCardContext("Header");
   const { station, servedAt, receivedAtMs } = context;
-  const { strings: resolvedStrings, words } = resolveDisplay(context, { strings });
+  const { words } = resolveDisplay(context, { strings });
   const status = useFreshness(
     station.reading?.observedAt ?? null,
     servedAt,
     receivedAtMs,
     stationFreshnessThresholds(station),
   );
-  const scene = cardHeaderScene(station, words);
-  const { name, meta } = scene.identity;
-
-  return (
-    <header className={scene.className}>
-      <div className={scene.identity.className}>
-        <h3 className={name.className}>
-          {name.link ? (
-            <a href={name.link.href} rel={name.link.rel} target={name.link.target}>
-              {name.link.text}
-            </a>
-          ) : (
-            name.text
-          )}
-        </h3>
-        <p className={meta.className}>
-          <span className={meta.source.className}>{meta.source.text}</span>
-          {meta.elevation && (
-            <span className={meta.elevation.className}>{meta.elevation.text}</span>
-          )}
-        </p>
-      </div>
-      {status != null && <FreshnessBadge status={status} strings={resolvedStrings} />}
-    </header>
-  );
+  return renderScene(cardHeaderNode(station, status, words));
 }
 
 export function StationCardInstrument({
@@ -208,19 +184,7 @@ export function StationCardSummary({
   });
   const { station } = context;
 
-  const summary = summaryScene(station, resolvedUnit, words, resolvedFormatTime);
-  if (summary == null) return null;
-
-  return (
-    <dl aria-label={summary.ariaLabel} className={summary.className}>
-      {summary.items.map((item) => (
-        <div className={summary.itemClassName} key={item.label}>
-          <dt className={summary.labelClassName}>{item.label}</dt>
-          <dd>{item.value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
+  return renderOptional(summaryNode(station, resolvedUnit, words, resolvedFormatTime));
 }
 
 export const StationCard = Object.assign(StationCardRoot, {

@@ -1,25 +1,15 @@
-import { directionCell } from "../../index.js";
-import { freshnessBadgeSpec, windArrowSpec } from "../../scene/index.js";
+import {
+  directionCellNodes as directionCellSceneNodes,
+  freshnessBadgeNode,
+  stationNameNode as stationNameSceneNode,
+  windArrowNode,
+} from "../../scene/index.js";
 import type { FreshnessStatus, Station, StationStrings } from "../../index.js";
-import { EM_DASH } from "../../strings.js";
-import { h, hs } from "./h.js";
 import type { ElementChild } from "./h.js";
+import { renderScene } from "./render.js";
 
-export function windArrowSvg(deg: number, size = 12): SVGElement {
-  const spec = windArrowSpec(deg, size);
-  const svg = hs(
-    "svg",
-    {
-      "aria-hidden": "true",
-      class: spec.className,
-      height: spec.height,
-      viewBox: spec.viewBox,
-      width: spec.width,
-    },
-    hs("path", { d: spec.path.d, fill: spec.path.fill }),
-  );
-  (svg as SVGElement & { style: CSSStyleDeclaration }).style.transform = spec.transform;
-  return svg;
+export function windArrowSvg(deg: number, size = 12): Element {
+  return renderScene(windArrowNode(deg, size));
 }
 
 export function directionCellNodes(
@@ -27,23 +17,16 @@ export function directionCellNodes(
   windDirectionDeg: number | null,
   words: StationStrings,
 ): ElementChild[] {
-  const cell = directionCell(windAvgMps, windDirectionDeg);
-  if (cell.kind === "calm") return [words.calm];
-  if (cell.kind === "dash") return [EM_DASH];
-  return [windArrowSvg(cell.deg), ` ${cell.compass} ${cell.rounded}°`];
+  return directionCellSceneNodes(windAvgMps, windDirectionDeg, words).map((child) =>
+    typeof child === "object" && child !== null ? renderScene(child) : (child as ElementChild),
+  );
 }
 
 export function stationNameNode(station: Station): ElementChild {
-  if (station.pageUrl == null) return station.name;
-  return h("a", { href: station.pageUrl, rel: "noreferrer", target: "_blank" }, station.name);
+  const node = stationNameSceneNode(station);
+  return typeof node === "object" && node !== null ? renderScene(node) : (node as ElementChild);
 }
 
-export function freshnessBadgeSpan(status: FreshnessStatus, words: StationStrings): HTMLElement {
-  const spec = freshnessBadgeSpec(status, words);
-  return h(
-    "span",
-    { class: spec.className, "data-freshness": spec.status },
-    h("span", { "aria-hidden": "true", class: spec.dot.className }),
-    spec.text,
-  );
+export function freshnessBadgeSpan(status: FreshnessStatus, words: StationStrings): Element {
+  return renderScene(freshnessBadgeNode(status, words));
 }

@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import { deriveSiteForecast, type SourceProfile } from "../src/derive.js";
 import { circularMedian } from "../src/ensemble.js";
 import { roundContract } from "../src/publish.js";
-import { cloneTagged, untag, type TaggedValue } from "../src/scenario/json.js";
 import {
   ScenarioAssertionError,
   ScenarioCheckError,
@@ -31,7 +30,7 @@ import { loadJson, ROOT, scenarioRepository, type Doc } from "./helpers/scenario
 const ENSEMBLE_IDS = ["ensemble-tight", "ensemble-wide", "ensemble-column-censored"] as const;
 const PERCENTILE_KEYS = ["p10", "p25", "p50", "p75", "p90"] as const;
 
-function definition(scenarioId: string): TaggedValue {
+function definition(scenarioId: string): unknown {
   return loadScenarioJson(join(ROOT, "scenarios", "definitions", `${scenarioId}.json`));
 }
 
@@ -39,22 +38,22 @@ function generated(scenarioId: string): Doc {
   return loadJson(join(ROOT, "scenarios", "generated", `${scenarioId}.profile.json`));
 }
 
-function memberProfiles(scenarioDefinition: TaggedValue): Doc[] {
+function memberProfiles(scenarioDefinition: unknown): Doc[] {
   const def = scenarioDefinition as Doc;
   const baseline = loadBaseline(scenarioDefinition, ROOT);
   const source = prepareSource(scenarioDefinition, baseline);
   applyTransforms(scenarioDefinition, source);
   const members: Doc[] = [];
-  const memberCount = untag(def.ensemble.members) as number;
+  const memberCount = def.ensemble.members as number;
   for (let memberIndex = 0; memberIndex < memberCount; memberIndex += 1) {
-    const memberSource = cloneTagged(source) as Doc;
+    const memberSource = structuredClone(source) as Doc;
     applyMemberPerturbations(scenarioDefinition, memberSource, memberIndex);
     validateSource(scenarioDefinition, memberSource);
     members.push(
       deriveSiteForecast(
-        untag(memberSource) as unknown as SourceProfile,
-        untag(def.id) as string,
-        untag(def.semantics) as Doc as never,
+        memberSource as unknown as SourceProfile,
+        def.id as string,
+        def.semantics as Doc as never,
       ) as unknown as Doc,
     );
   }
@@ -71,8 +70,8 @@ describe("deterministic seeded ensemble perturbation", () => {
     const profile = generateScenario(recipe, { repositoryRoot: ROOT }) as Doc;
 
     expect(profile).toEqual(generated("ensemble-tight"));
-    expect(profile.run.members).toBe((untag(recipe) as Doc).ensemble.members);
-    expect(profile.semantics).toEqual((untag(recipe) as Doc).semantics);
+    expect(profile.run.members).toBe((recipe as Doc).ensemble.members);
+    expect(profile.semantics).toEqual((recipe as Doc).semantics);
   });
 
   it("member sources repeat for the declared seed and change with the seed", () => {
@@ -80,8 +79,8 @@ describe("deterministic seeded ensemble perturbation", () => {
 
     const first = memberProfiles(recipe);
     const second = memberProfiles(recipe);
-    const changed = cloneTagged(recipe) as Doc;
-    changed.clock.seed = (untag(changed.clock.seed) as number) + 1;
+    const changed = structuredClone(recipe) as Doc;
+    changed.clock.seed = (changed.clock.seed as number) + 1;
     const third = memberProfiles(changed);
 
     expect(first).toEqual(second);
@@ -105,7 +104,7 @@ describe("deterministic seeded ensemble perturbation", () => {
     });
 
     const profile = generateScenario(recipe, { repositoryRoot: ROOT }) as Doc;
-    const memberCount = untag(recipe.ensemble.members) as number;
+    const memberCount = recipe.ensemble.members as number;
     const conditionalCounts = profile.hours.map((hour: Doc) => hour.derived.usableLiftTopM.members);
 
     expect(conditionalCounts.every((count: number) => 0 < count && count <= memberCount)).toBe(
@@ -124,7 +123,7 @@ describe("committed ensemble artifacts", () => {
   it.each(ENSEMBLE_IDS)(
     "%s holds percentile order and member count at every numeric position",
     (scenarioId) => {
-      const recipe = untag(definition(scenarioId)) as Doc;
+      const recipe = definition(scenarioId) as Doc;
       const blocks = blocksOf(generated(scenarioId).hours);
 
       expect(blocks.length).toBeGreaterThan(0);
@@ -290,7 +289,7 @@ describe("percentile-path metric references", () => {
     validateDefinition(recipe, { repositoryRoot: ROOT });
 
     for (const field of ["surface.windDirectionDeg.p50", "derived.usableLiftTopM.p95"]) {
-      const rejected = cloneTagged(recipe) as Doc;
+      const rejected = structuredClone(recipe) as Doc;
       rejected.assertions[0].actual.field = field;
       expect(() => validateDefinition(rejected, { repositoryRoot: ROOT })).toThrowError(
         ScenarioError,
@@ -317,14 +316,14 @@ describe("optional fields and comparison scenarios", () => {
     expect(profile.semantics.gust).toBe("hourMax");
     for (const hour of profile.hours) {
       const block = hour.surface.windGustMps;
-      expect(block.members).toBe(untag(recipe.ensemble.members));
+      expect(block.members).toBe(recipe.ensemble.members);
       expect(block.p10).toBe(9);
       expect(block.p90).toBe(9);
     }
   });
 
   it("comparison outputs express controlled early and late development", () => {
-    const recipe = untag(definition("model-timing-disagreement")) as Doc;
+    const recipe = definition("model-timing-disagreement") as Doc;
     const earlier = loadJson(
       join(ROOT, "scenarios", "generated", "model-timing-disagreement.earlier.profile.json"),
     );

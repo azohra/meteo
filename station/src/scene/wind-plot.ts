@@ -18,16 +18,29 @@ import type { ChartFrame, ChartScales, Vane } from "../geometry.js";
 import { EM_DASH } from "../strings.js";
 import type { StationStrings } from "../strings.js";
 import { tickAnchor } from "./chart.js";
+import { el, keyed, type SceneChild, type SceneNode } from "./node.js";
 import type { TickAnchor } from "./chart.js";
 
-export type SceneText = {
-  className: string;
-  anchor: TickAnchor;
-  x: number;
-  y: number;
-  text: string;
-};
-export type SceneLine = { className: string; x1: number; x2: number; y1: number; y2: number };
+/** A plot label: the anchor is the SVG attribute, spelled as the DOM does. */
+export function plotText(
+  attrs: { class: string },
+  anchor: TickAnchor,
+  x: number,
+  y: number,
+  text: string,
+): SceneNode {
+  return el("text", { ...attrs, "text-anchor": anchor, x, y }, text);
+}
+
+export function plotLine(
+  attrs: { class: string },
+  x1: number,
+  x2: number,
+  y1: number,
+  y2: number,
+): SceneNode {
+  return el("line", { ...attrs, x1, x2, y1, y2 });
+}
 
 export function stretchedChartFrame(width: number, plotHeight: number | undefined): ChartFrame {
   const core = chartFrame(width);
@@ -56,20 +69,22 @@ export function speedGridLines(
   frame: ChartFrame,
   scales: ChartScales,
   shown: (speedMps: number) => number,
-): Array<{ key: number; line: SceneLine; label: SceneText }> {
+): SceneChild[] {
   return [0, 0.5, 1].map((fraction) => {
     const gridY = frame.plotBottom - fraction * (frame.plotBottom - frame.plotTop);
-    return {
-      key: fraction,
-      line: { className: "meteo-grid-line", x1: frame.left, x2: frame.right, y1: gridY, y2: gridY },
-      label: {
-        className: "meteo-grid-label",
-        anchor: "end" as TickAnchor,
-        x: frame.left - 6,
-        y: gridY + 5,
-        text: String(shown(scales.scaleMax * fraction)),
-      },
-    };
+    return keyed(
+      String(fraction),
+      "g",
+      undefined,
+      plotLine({ class: "meteo-grid-line" }, frame.left, frame.right, gridY, gridY),
+      plotText(
+        { class: "meteo-grid-label" },
+        "end",
+        frame.left - 6,
+        gridY + 5,
+        String(shown(scales.scaleMax * fraction)),
+      ),
+    );
   });
 }
 
@@ -80,7 +95,7 @@ export function windThresholdGuides(
   frame: ChartFrame,
   scales: ChartScales,
   shown: (speedMps: number) => number,
-): Array<{ key: number; line: SceneLine; label: SceneText }> {
+): SceneChild[] {
   if (thresholds == null || boundsMps == null) return [];
   return boundsMps
     .map((boundMps, index) => ({
@@ -88,30 +103,34 @@ export function windThresholdGuides(
       label: unit === thresholds.unit ? String(thresholds.values[index]) : String(shown(boundMps)),
     }))
     .filter(({ boundMps }) => boundMps > 0 && boundMps <= scales.scaleMax)
-    .map(({ boundMps, label }) => ({
-      key: boundMps,
-      line: {
-        className: `meteo-wind-threshold meteo-band-${speedBand(boundMps, boundsMps)}`,
-        x1: frame.left,
-        x2: frame.right,
-        y1: scales.yAt(boundMps),
-        y2: scales.yAt(boundMps),
-      },
-      label: {
-        className: `meteo-wind-threshold-label meteo-band-${speedBand(boundMps, boundsMps)}`,
-        anchor: "end" as TickAnchor,
-        x: frame.right - 3,
-        y: scales.yAt(boundMps) - 3,
-        text: label,
-      },
-    }));
+    .map(({ boundMps, label }) =>
+      keyed(
+        String(boundMps),
+        "g",
+        undefined,
+        plotLine(
+          { class: `meteo-wind-threshold meteo-band-${speedBand(boundMps, boundsMps)}` },
+          frame.left,
+          frame.right,
+          scales.yAt(boundMps),
+          scales.yAt(boundMps),
+        ),
+        plotText(
+          { class: `meteo-wind-threshold-label meteo-band-${speedBand(boundMps, boundsMps)}` },
+          "end",
+          frame.right - 3,
+          scales.yAt(boundMps) - 3,
+          label,
+        ),
+      ),
+    );
 }
 
 export function windZoneRects(
   boundsMps: number[] | null,
   frame: ChartFrame,
   scales: ChartScales,
-): Array<{ key: number; className: string; height: number; width: number; x: number; y: number }> {
+): SceneChild[] {
   if (boundsMps == null) return [];
   const cuts = [
     0,
@@ -120,14 +139,13 @@ export function windZoneRects(
   ];
   return cuts.slice(0, -1).map((lower, index) => {
     const upper = cuts[index + 1] as number;
-    return {
-      key: lower,
-      className: `meteo-wind-zone meteo-band-${speedBand((lower + upper) / 2, boundsMps)}`,
+    return keyed(String(lower), "rect", {
+      class: `meteo-wind-zone meteo-band-${speedBand((lower + upper) / 2, boundsMps)}`,
       height: scales.yAt(lower) - scales.yAt(upper),
       width: frame.right - frame.left,
       x: frame.left,
       y: scales.yAt(upper),
-    };
+    });
   });
 }
 
@@ -135,35 +153,31 @@ export function vaneGuideLines(
   vanes: ReadonlyArray<Vane>,
   frame: ChartFrame,
   scales: ChartScales,
-): Array<{ key: number; className: string; x1: number; x2: number; y1: number; y2: number }> {
+): SceneChild[] {
   return vanes.map((vane) => ({
-    key: vane.midMs,
-    className: "meteo-wind-guide",
-    x1: scales.xAtMs(vane.midMs),
-    x2: scales.xAtMs(vane.midMs),
-    y1: frame.plotTop,
-    y2: frame.vaneRow - 9,
+    ...plotLine(
+      { class: "meteo-wind-guide" },
+      scales.xAtMs(vane.midMs),
+      scales.xAtMs(vane.midMs),
+      frame.plotTop,
+      frame.vaneRow - 9,
+    ),
+    key: String(vane.midMs),
   }));
 }
 
-export type GapHatchPattern = {
-  id: string;
-  width: string;
-  height: string;
-  transform: string;
-  units: string;
-  line: { className: string; x1: string; x2: string; y1: string; y2: string };
-};
-
-export function gapHatchPattern(hatchId: string): GapHatchPattern {
-  return {
-    id: hatchId,
-    width: "6",
-    height: "6",
-    transform: "rotate(45)",
-    units: "userSpaceOnUse",
-    line: { className: "meteo-wind-gap-hatch", x1: "0", x2: "0", y1: "0", y2: "6" },
-  };
+export function gapHatchPattern(hatchId: string): SceneNode {
+  return el(
+    "pattern",
+    {
+      height: "6",
+      id: hatchId,
+      patternTransform: "rotate(45)",
+      patternUnits: "userSpaceOnUse",
+      width: "6",
+    },
+    el("line", { class: "meteo-wind-gap-hatch", x1: "0", x2: "0", y1: "0", y2: "6" }),
+  );
 }
 
 export function gapHatchRect(
@@ -172,101 +186,78 @@ export function gapHatchRect(
   key: number,
   x: number,
   width: number,
-): {
-  key: number;
-  className: string;
-  fill: string;
-  height: number;
-  width: number;
-  x: number;
-  y: number;
-} {
-  return {
-    key,
-    className: "meteo-wind-gap",
+): SceneNode {
+  return keyed(String(key), "rect", {
+    class: "meteo-wind-gap",
     fill: `url(#${hatchId})`,
     height: frame.plotBottom - frame.plotTop,
     width,
     x,
     y: frame.plotTop,
-  };
+  });
 }
-
-export type GradedMeanTrace =
-  | { kind: "polyline"; className: string; points: string }
-  | {
-      kind: "segments";
-      segments: Array<{
-        key: string;
-        className: string;
-        x1: number;
-        x2: number;
-        y1: number;
-        y2: number;
-      }>;
-    };
 
 export function gradedMeanTrace(
   points: ReadonlyArray<HistoryPoint>,
   scales: ChartScales,
   boundsMps: number[] | null,
-): GradedMeanTrace {
+): SceneChild[] {
   if (boundsMps == null) {
-    return {
-      kind: "polyline",
-      className: "meteo-wind-mean",
-      points: averagePoints(points, scales),
-    };
+    return [el("polyline", { class: "meteo-wind-mean", points: averagePoints(points, scales) })];
   }
-  return {
-    kind: "segments",
-    segments: points.slice(1).map((point, index) => {
-      const previous = points[index] as HistoryPoint;
-      return {
-        key: point.observedAt,
-        className: `meteo-wind-mean-segment meteo-band-${speedBand(
-          (previous.windAvgMps + point.windAvgMps) / 2,
-          boundsMps,
-        )}`,
-        x1: scales.xAt(previous.observedAt),
-        x2: scales.xAt(point.observedAt),
-        y1: scales.yAt(previous.windAvgMps),
-        y2: scales.yAt(point.windAvgMps),
-      };
-    }),
-  };
+  return points.slice(1).map((point, index) => {
+    const previous = points[index] as HistoryPoint;
+    return {
+      ...plotLine(
+        {
+          class: `meteo-wind-mean-segment meteo-band-${speedBand(
+            (previous.windAvgMps + point.windAvgMps) / 2,
+            boundsMps,
+          )}`,
+        },
+        scales.xAt(previous.observedAt),
+        scales.xAt(point.observedAt),
+        scales.yAt(previous.windAvgMps),
+        scales.yAt(point.windAvgMps),
+      ),
+      key: point.observedAt,
+    };
+  });
 }
 
-export function calmNoteText(frame: ChartFrame, words: StationStrings): SceneText {
-  return {
-    className: "meteo-wind-calm-note",
-    anchor: "middle",
-    x: (frame.left + frame.right) / 2,
-    y: (frame.plotTop + frame.plotBottom) / 2 + 4,
-    text: words.calmHistory,
-  };
+export function calmNoteText(frame: ChartFrame, words: StationStrings): SceneNode {
+  return plotText(
+    { class: "meteo-wind-calm-note" },
+    "middle",
+    (frame.left + frame.right) / 2,
+    (frame.plotTop + frame.plotBottom) / 2 + 4,
+    words.calmHistory,
+  );
 }
 
-export function windRowLabels(
-  frame: ChartFrame,
-  words: StationStrings,
-): { to: SceneText; avg: SceneText } {
-  return {
-    to: {
-      className: "meteo-wind-row-label",
-      anchor: "end",
-      x: frame.left - 8,
-      y: frame.vaneRow + 4,
-      text: words.toLabel,
+export function windRowLabels(frame: ChartFrame, words: StationStrings): SceneChild[] {
+  return [
+    {
+      ...plotText(
+        { class: "meteo-wind-row-label" },
+        "end",
+        frame.left - 8,
+        frame.vaneRow + 4,
+        words.toLabel,
+      ),
+      key: "to",
     },
-    avg: {
-      className: "meteo-wind-row-label",
-      anchor: "end",
-      x: frame.left - 8,
-      y: frame.valueRow + 4,
-      text: words.avgLabel,
+    {
+      ...plotText(
+        { class: "meteo-wind-row-label" },
+        "end",
+        frame.left - 8,
+        frame.valueRow + 4,
+        words.avgLabel,
+      ),
+      key: "avg",
     },
-  };
+  ];
 }
 
 /* Night shading: gray columns from each sunset to the next sunrise. No
@@ -276,18 +267,11 @@ export function nightRects(
   frame: ChartFrame,
   scales: ChartScales,
   night: { latitude: number | null; longitude: number | null } | null | undefined,
-): Array<{ key: number; className: string; height: number; width: number; x: number; y: number }> {
+): SceneChild[] {
   if (night?.latitude == null || night?.longitude == null || points.length < 2) return [];
   const startMs = Date.parse((points[0] as HistoryPoint).observedAt);
   const endMs = Date.parse((points[points.length - 1] as HistoryPoint).observedAt);
-  const rects: Array<{
-    key: number;
-    className: string;
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  }> = [];
+  const rects: SceneChild[] = [];
   const dayMs = 86_400_000;
   for (
     let dayStart = Math.floor(startMs / dayMs - 1) * dayMs;
@@ -309,24 +293,25 @@ export function nightRects(
     const darkTo = Math.min(tomorrow.sunrise.getTime(), endMs);
     if (darkFrom >= darkTo) continue;
     const x = scales.xAtMs(darkFrom);
-    rects.push({
-      key: dayStart,
-      className: "meteo-night",
-      height: frame.plotBottom - frame.plotTop,
-      width: scales.xAtMs(darkTo) - x,
-      x,
-      y: frame.plotTop,
-    });
+    rects.push(
+      keyed(String(dayStart), "rect", {
+        class: "meteo-night",
+        height: frame.plotBottom - frame.plotTop,
+        width: scales.xAtMs(darkTo) - x,
+        x,
+        y: frame.plotTop,
+      }),
+    );
   }
   return rects;
 }
 
 export type VaneCell = {
   key: number;
-  mark: { kind: "calm"; text: SceneText } | { kind: "vane"; className: string; d: string };
+  mark: SceneNode;
   /** Null when the width cannot seat this vane's label; the arrow still draws. */
-  label: SceneText | null;
-  value: SceneText | null;
+  label: SceneNode | null;
+  value: SceneNode | null;
 };
 
 /* Px one label needs beside its neighbours (TRIAL, measured at shipped sizes). */
@@ -359,38 +344,34 @@ export function vaneCells(
     key: vane.midMs,
     mark:
       vane.windDirectionDeg == null
-        ? {
-            kind: "calm" as const,
-            text: {
-              className: "meteo-wind-vane-calm",
-              anchor: "middle" as TickAnchor,
-              x: scales.xAtMs(vane.midMs),
-              y: frame.vaneRow + 4,
-              text: EM_DASH,
-            },
-          }
-        : {
-            kind: "vane" as const,
-            className: `meteo-wind-vane${verdict(vane.windDirectionDeg)}`,
+        ? plotText(
+            { class: "meteo-wind-vane-calm" },
+            "middle",
+            scales.xAtMs(vane.midMs),
+            frame.vaneRow + 4,
+            EM_DASH,
+          )
+        : el("path", {
+            class: `meteo-wind-vane${verdict(vane.windDirectionDeg)}`,
             d: vanePath(scales.xAtMs(vane.midMs), frame.vaneRow, vane.windDirectionDeg),
-          },
+          }),
     label: speaks(index, labelStep)
-      ? {
-          className: "meteo-wind-vane-label",
-          anchor: "middle" as TickAnchor,
-          x: scales.xAtMs(vane.midMs),
-          y: frame.vaneLabelRow + 4,
-          text: vane.windDirectionDeg == null ? EM_DASH : compassDirection(vane.windDirectionDeg),
-        }
+      ? plotText(
+          { class: "meteo-wind-vane-label" },
+          "middle",
+          scales.xAtMs(vane.midMs),
+          frame.vaneLabelRow + 4,
+          vane.windDirectionDeg == null ? EM_DASH : compassDirection(vane.windDirectionDeg),
+        )
       : null,
     value: speaks(index, valueStep)
-      ? {
-          className: "meteo-wind-vane-value",
-          anchor: "middle" as TickAnchor,
-          x: scales.xAtMs(vane.midMs),
-          y: frame.valueRow + 4,
-          text: valueText(vane),
-        }
+      ? plotText(
+          { class: "meteo-wind-vane-value" },
+          "middle",
+          scales.xAtMs(vane.midMs),
+          frame.valueRow + 4,
+          valueText(vane),
+        )
       : null,
   }));
 }
@@ -400,21 +381,16 @@ export function vaneTickTexts(
   frame: ChartFrame,
   scales: ChartScales,
   labelText: (timeMs: number) => string,
-): Array<{
-  key: number;
-  className: string;
-  anchor: TickAnchor;
-  x: number;
-  y: number;
-  text: string;
-}> {
+): SceneChild[] {
   const ticks = vaneTicks(vanes, scales, Math.floor((frame.right - frame.left) / TIME_LABEL_PX));
   return ticks.map(({ index, timeMs, x }) => ({
-    key: index,
-    className: "meteo-tick",
-    anchor: tickAnchor(index, ticks.length - 1),
-    x,
-    y: frame.labelRow,
-    text: labelText(timeMs),
+    ...plotText(
+      { class: "meteo-tick" },
+      tickAnchor(index, ticks.length - 1),
+      x,
+      frame.labelRow,
+      labelText(timeMs),
+    ),
+    key: String(index),
   }));
 }

@@ -4,6 +4,7 @@ import type { Station } from "../../index.js";
 import { ELEMENTS_AMBIENT_HINT } from "../lib/ambient.js";
 import { MeteoStationElement } from "../lib/base.js";
 import { h } from "../lib/h.js";
+import { renderScene } from "../lib/render.js";
 
 let panelCounter = 0;
 
@@ -43,69 +44,31 @@ export class AirMatrixElement extends MeteoStationElement {
       return;
     }
 
-    const rowStyled = (element: HTMLElement): HTMLElement => {
-      element.style.gridTemplateColumns = scene.matrix.gridTemplateColumns;
-      return element;
-    };
-
     this.replaceChildren(
       h(
         "section",
-        { class: scene.className, "data-expanded": String(expanded) },
+        { class: "meteo-air", "data-expanded": String(expanded) },
         h(
           "button",
           {
             "aria-controls": this.#panelId,
             "aria-expanded": String(expanded),
-            class: scene.trigger.className,
+            class: "meteo-air-trigger",
             onclick: () => {
               this.#expanded = !this.#expanded;
               this.requestRender();
             },
             type: "button",
           },
-          h("strong", { class: scene.trigger.title.className }, scene.trigger.title.text),
-          h("span", { class: scene.trigger.summary.className }, scene.trigger.summary.text),
+          h("strong", { class: "meteo-air-title" }, scene.title),
+          h("span", { class: "meteo-air-summary" }, scene.summary),
         ),
         h(
           "div",
-          { class: scene.panelClassName, hidden: !expanded, id: this.#panelId },
-          h(
-            "div",
-            { "aria-label": scene.matrix.ariaLabel, class: scene.matrix.className, role: "table" },
-            rowStyled(
-              h(
-                "div",
-                { class: scene.matrix.head.className, role: "row" },
-                h("span", { class: scene.matrix.head.corner.className, role: "columnheader" }),
-                scene.matrix.head.columns.map((column) =>
-                  h(
-                    "span",
-                    { class: scene.matrix.head.columnClassName, role: "columnheader" },
-                    column.text,
-                  ),
-                ),
-              ),
-            ),
-            scene.matrix.rows.map((row) =>
-              rowStyled(
-                h(
-                  "div",
-                  { class: row.className, role: "row" },
-                  h(
-                    "span",
-                    { class: row.labelClassName, role: "rowheader" },
-                    row.label,
-                    h("small", null, row.unit),
-                  ),
-                  row.cells.map((cell) =>
-                    h("span", { class: cell.className, role: "cell" }, cell.text),
-                  ),
-                ),
-              ),
-            ),
+          { class: "meteo-air-panel", hidden: !expanded, id: this.#panelId },
+          scene.panel.map((child) =>
+            typeof child === "object" && child !== null ? renderScene(child) : child,
           ),
-          h("p", { class: scene.note.className }, scene.note.text),
         ),
       ),
     );

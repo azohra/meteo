@@ -8,7 +8,6 @@ import type { FavorableDirection } from "../instruments.js";
 import { EM_DASH } from "../strings.js";
 import type { FormatTime, StationStrings } from "../strings.js";
 import type { ReadoutPart } from "./chart.js";
-import type { TickAnchor } from "./chart.js";
 import {
   calmNoteText,
   speedGridLines,
@@ -18,7 +17,8 @@ import {
   vaneTickTexts,
   windRowLabels,
 } from "./wind-plot.js";
-import type { SceneLine, SceneText, VaneCell } from "./wind-plot.js";
+import { plotLine } from "./wind-plot.js";
+import { el, keyed, type SceneAttrValue, type SceneChild, type SceneNode } from "./node.js";
 
 /* The sample strip is the history chart's live sibling: the same frame,
  * grid, labelled vane rows, and edge-anchored ticks, drawn over the rolling
@@ -47,10 +47,8 @@ export function sampleStripGate(
 
 export type SampleStripInspection = {
   readout: { strong: string; span: ReadoutPart[] };
-  cursor: {
-    line: SceneLine;
-    dot: { className: string; cx: number; cy: number; r: number };
-  } | null;
+  /** The cursor line and dot, drawn inside the plot; empty when idle. */
+  cursor: SceneChild[];
 };
 
 export type SampleStripTracePart =
@@ -63,28 +61,8 @@ export type SampleStripScene = {
   points: ReadonlyArray<LiveSample>;
   readout: { ariaLabel: string; className: string };
   svg: { ariaLabel: string; className: string; height: number; viewBox: string; width: number };
-  grid: Array<{ key: number; line: SceneLine; label: SceneText }>;
-  vaneGuides: Array<{
-    key: number;
-    className: string;
-    x1: number;
-    x2: number;
-    y1: number;
-    y2: number;
-  }>;
-  trace: SampleStripTracePart[];
-  calmNote: SceneText | null;
-  rowLabels: { to: SceneText; avg: SceneText };
-  vanes: VaneCell[];
-  ticks: Array<{
-    key: number;
-    className: string;
-    anchor: TickAnchor;
-    x: number;
-    y: number;
-    text: string;
-  }>;
-  hit: { className: string; fill: string; height: number; width: number; x: number; y: number };
+  /** The whole drawing; the cursor from `inspect` slots in above the hit area. */
+  draw: (cursor: SceneChild[], hit: Record<string, SceneAttrValue>) => SceneNode;
   inspect: (activeIndex: number | null) => SampleStripInspection;
 };
 
@@ -109,6 +87,13 @@ export function sampleStripScene(input: {
   });
   const runs = sampleRuns(samples);
   const vanes = thinSampleVanes(points);
+  const vaneCellList = vaneCells(
+    vanes,
+    frame,
+    scales,
+    (vane) => String(shown(vane.windAvgMps)),
+    input.favorableDirections,
+  );
 
   return {
     frame,
@@ -125,43 +110,54 @@ export function sampleStripScene(input: {
       viewBox: `0 0 ${frame.width} ${frame.height}`,
       width: frame.width,
     },
-    grid: speedGridLines(frame, scales, shown),
-    vaneGuides: vaneGuideLines(vanes, frame, scales),
-    trace: runs.map((run) =>
-      run.length === 1
-        ? {
-            kind: "dot" as const,
-            key: (run[0] as LiveSample).observedAt,
-            className: "meteo-sample-dot",
-            cx: scales.xAt((run[0] as LiveSample).observedAt),
-            cy: scales.yAt((run[0] as LiveSample).windMps),
-            r: 2,
-          }
-        : {
-            kind: "polyline" as const,
-            key: (run[0] as LiveSample).observedAt,
-            className: "meteo-sample-trace",
-            points: samplePoints(run, scales),
-          },
-    ),
-    calmNote: points.every((sample) => isCalm(sample.windMps)) ? calmNoteText(frame, words) : null,
-    rowLabels: windRowLabels(frame, words),
-    vanes: vaneCells(
-      vanes,
-      frame,
-      scales,
-      (vane) => String(shown(vane.windAvgMps)),
-      input.favorableDirections,
-    ),
-    ticks: vaneTickTexts(vanes, frame, scales, (timeMs) => formatTime(new Date(timeMs))),
-    hit: {
-      className: "meteo-hit",
-      fill: "transparent",
-      height: frame.height,
-      width: frame.width,
-      x: 0,
-      y: 0,
-    },
+    draw: (cursor, hit) =>
+      el(
+        "svg",
+        {
+          "aria-label": words.aria.sampleStrip(stationName),
+          class: "meteo-sample-strip-svg",
+          height: frame.height,
+          role: "img",
+          viewBox: `0 0 ${frame.width} ${frame.height}`,
+          width: frame.width,
+        },
+        speedGridLines(frame, scales, shown),
+        vaneGuideLines(vanes, frame, scales),
+        runs.map((run) =>
+          run.length === 1
+            ? keyed((run[0] as LiveSample).observedAt, "circle", {
+                class: "meteo-sample-dot",
+                cx: scales.xAt((run[0] as LiveSample).observedAt),
+                cy: scales.yAt((run[0] as LiveSample).windMps),
+                r: 2,
+              })
+            : keyed((run[0] as LiveSample).observedAt, "polyline", {
+                class: "meteo-sample-trace",
+                points: samplePoints(run, scales),
+              }),
+        ),
+        points.every((sample) => isCalm(sample.windMps)) ? calmNoteText(frame, words) : null,
+        windRowLabels(frame, words)[0],
+        vaneCellList.map((vane) => ({ ...vane.mark, key: String(vane.key) })),
+        vaneCellList.flatMap((vane) =>
+          vane.label == null ? [] : [{ ...vane.label, key: String(vane.key) }],
+        ),
+        windRowLabels(frame, words)[1],
+        vaneCellList.flatMap((vane) =>
+          vane.value == null ? [] : [{ ...vane.value, key: String(vane.key) }],
+        ),
+        vaneTickTexts(vanes, frame, scales, (timeMs) => formatTime(new Date(timeMs))),
+        cursor,
+        el("rect", {
+          class: "meteo-hit",
+          fill: "transparent",
+          height: frame.height,
+          width: frame.width,
+          x: 0,
+          y: 0,
+          ...hit,
+        }),
+      ),
     inspect: (activeIndex) => {
       const active = activeIndex == null ? undefined : points[activeIndex];
       if (active == null) {
@@ -170,7 +166,7 @@ export function sampleStripScene(input: {
             strong: `${formatTime(new Date(scales.startMs))}–${formatTime(new Date(scales.endMs))}`,
             span: [{ kind: "text", text: words.inspectHint }],
           },
-          cursor: null,
+          cursor: [],
         };
       }
       const lead = `${shown(active.windMps)} ${words.speedUnits[unit]} · `;
@@ -189,16 +185,10 @@ export function sampleStripScene(input: {
       const x = scales.xAt(active.observedAt);
       return {
         readout: { strong: formatTime(new Date(active.observedAt)), span },
-        cursor: {
-          line: {
-            className: "meteo-cursor",
-            x1: x,
-            x2: x,
-            y1: frame.plotTop,
-            y2: frame.vaneRow + 9,
-          },
-          dot: { className: "meteo-cursor-dot", cx: x, cy: scales.yAt(active.windMps), r: 3 },
-        },
+        cursor: [
+          plotLine({ class: "meteo-cursor" }, x, x, frame.plotTop, frame.vaneRow + 9),
+          el("circle", { class: "meteo-cursor-dot", cx: x, cy: scales.yAt(active.windMps), r: 3 }),
+        ],
       };
     },
   };

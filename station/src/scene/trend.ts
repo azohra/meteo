@@ -11,7 +11,8 @@ import type { ChartFrame, ChartScales, TrendSeries } from "../geometry.js";
 import { EM_DASH } from "../strings.js";
 import type { FormatTime, StationStrings } from "../strings.js";
 import { tickAnchor } from "./chart.js";
-import type { TickAnchor } from "./chart.js";
+import { el, keyed, type SceneAttrValue, type SceneChild, type SceneNode } from "./node.js";
+import { plotLine, plotText } from "./wind-plot.js";
 
 export const TREND_CLASS = "meteo-trend";
 
@@ -43,16 +44,10 @@ export function trendFrame(width: number): ChartFrame {
   };
 }
 
-export type TrendSegment =
-  | { kind: "dot"; className: string; startedAt: string; cx: number; cy: number; r: number }
-  | { kind: "polyline"; className: string; startedAt: string; points: string };
-
 export type TrendInspection = {
   readout: { strong: string; span: string };
-  cursor: {
-    line: { className: string; x1: number; x2: number; y1: number; y2: number };
-    dot: { className: string; cx: number; cy: number; r: number } | null;
-  } | null;
+  /** The cursor line and dot, drawn inside the plot; empty when idle. */
+  cursor: SceneChild[];
 };
 
 export type TrendScene = {
@@ -61,21 +56,8 @@ export type TrendScene = {
   points: ReadonlyArray<HistoryPoint>;
   readout: { ariaLabel: string; className: string };
   svg: { ariaLabel: string; className: string; height: number; viewBox: string; width: number };
-  grid: Array<{
-    key: number;
-    line: { className: string; x1: number; x2: number; y1: number; y2: number };
-    label: { className: string; anchor: TickAnchor; x: number; y: number; text: string };
-  }>;
-  segments: TrendSegment[];
-  ticks: Array<{
-    key: number;
-    className: string;
-    anchor: TickAnchor;
-    x: number;
-    y: number;
-    text: string;
-  }>;
-  hit: { className: string; fill: string; height: number; width: number; x: number; y: number };
+  /** The whole drawing; the cursor from `inspect` slots in above the hit area. */
+  draw: (cursor: SceneChild[], hit: Record<string, SceneAttrValue>) => SceneNode;
   inspect: (activeIndex: number | null) => TrendInspection;
 };
 
@@ -98,59 +80,60 @@ export function trendScene(input: {
     { paddingMin: trendSeriesPad(series) },
   );
 
-  const segments = trendRuns(points, series, history.periodMinutes).map((run): TrendSegment => {
+  const segments: SceneChild[] = trendRuns(points, series, history.periodMinutes).map((run) => {
     const coords = run.samples.map(([ms, value]) => [scales.xAtMs(ms), scale.yAt(value)] as const);
     const only = coords[0];
     return coords.length === 1 && only != null
-      ? {
-          kind: "dot",
-          className: "meteo-trend-dot",
-          startedAt: run.startedAt,
+      ? keyed(run.startedAt, "circle", {
+          class: "meteo-trend-dot",
           cx: only[0],
           cy: only[1],
           r: 2.5,
-        }
-      : {
-          kind: "polyline",
-          className: "meteo-trend-line",
-          startedAt: run.startedAt,
+        })
+      : keyed(run.startedAt, "polyline", {
+          class: "meteo-trend-line",
           points: coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" "),
-        };
+        });
   });
 
   const seriesLabel = series === "temperature" ? words.trendTemperature : words.trendPressure;
   const unitWord = series === "temperature" ? words.degC : words.air.unitHpa;
 
-  const grid = [0, 0.5, 1].map((fraction) => {
+  const grid: SceneChild[] = [0, 0.5, 1].map((fraction) => {
     const gridY = frame.plotBottom - fraction * (frame.plotBottom - frame.plotTop);
-    return {
-      key: fraction,
-      line: { className: "meteo-grid-line", x1: frame.left, x2: frame.right, y1: gridY, y2: gridY },
-      label: {
-        className: "meteo-grid-label",
-        anchor: "end" as TickAnchor,
-        x: frame.left - 6,
-        y: gridY + 5,
-        text: String(Math.round(scale.min + fraction * (scale.max - scale.min))),
-      },
-    };
+    return keyed(
+      String(fraction),
+      "g",
+      undefined,
+      plotLine({ class: "meteo-grid-line" }, frame.left, frame.right, gridY, gridY),
+      plotText(
+        { class: "meteo-grid-label" },
+        "end",
+        frame.left - 6,
+        gridY + 5,
+        String(Math.round(scale.min + fraction * (scale.max - scale.min))),
+      ),
+    );
   });
 
   /* Floor 2 time labels (the ends), ceiling 5 — what the width seats. */
   const tickCount = Math.max(2, Math.min(5, Math.floor((frame.right - frame.left) / 76)));
-  const ticks = Array.from({ length: tickCount }, (_, at) => at / (tickCount - 1)).map(
-    (fraction, index) => {
-      const timeMs = scales.startMs + fraction * scales.durationMs;
-      return {
-        key: index,
-        className: "meteo-tick",
-        anchor: tickAnchor(index, 4),
-        x: scales.xAtMs(timeMs),
-        y: frame.labelRow,
-        text: formatTime(new Date(timeMs)),
-      };
-    },
-  );
+  const ticks: SceneChild[] = Array.from(
+    { length: tickCount },
+    (_, at) => at / (tickCount - 1),
+  ).map((fraction, index) => {
+    const timeMs = scales.startMs + fraction * scales.durationMs;
+    return {
+      ...plotText(
+        { class: "meteo-tick" },
+        tickAnchor(index, 4),
+        scales.xAtMs(timeMs),
+        frame.labelRow,
+        formatTime(new Date(timeMs)),
+      ),
+      key: String(index),
+    };
+  });
 
   return {
     frame,
@@ -164,17 +147,31 @@ export function trendScene(input: {
       viewBox: `0 0 ${frame.width} ${frame.height}`,
       width: frame.width,
     },
-    grid,
-    segments,
-    ticks,
-    hit: {
-      className: "meteo-hit",
-      fill: "transparent",
-      height: frame.height,
-      width: frame.width,
-      x: 0,
-      y: 0,
-    },
+    draw: (cursor, hit) =>
+      el(
+        "svg",
+        {
+          "aria-label": words.aria.trend(stationName, seriesLabel),
+          class: "meteo-trend-svg",
+          height: frame.height,
+          role: "img",
+          viewBox: `0 0 ${frame.width} ${frame.height}`,
+          width: frame.width,
+        },
+        grid,
+        segments,
+        ticks,
+        cursor,
+        el("rect", {
+          class: "meteo-hit",
+          fill: "transparent",
+          height: frame.height,
+          width: frame.width,
+          x: 0,
+          y: 0,
+          ...hit,
+        }),
+      ),
     inspect: (activeIndex) => {
       const active = activeIndex == null ? undefined : points[activeIndex];
       if (active == null) {
@@ -183,7 +180,7 @@ export function trendScene(input: {
             strong: `${formatTime(new Date(scales.startMs))}–${formatTime(new Date(scales.endMs))}`,
             span: words.inspectHint,
           },
-          cursor: null,
+          cursor: [],
         };
       }
       const activeValue = trendValueOf(active, series);
@@ -193,19 +190,12 @@ export function trendScene(input: {
           strong: formatTime(new Date(active.observedAt)),
           span: `${seriesLabel} ${activeValue == null ? EM_DASH : `${activeValue.toFixed(1)} ${unitWord}`}`,
         },
-        cursor: {
-          line: {
-            className: "meteo-cursor",
-            x1: x,
-            x2: x,
-            y1: frame.plotTop,
-            y2: frame.plotBottom + 4,
-          },
-          dot:
-            activeValue == null
-              ? null
-              : { className: "meteo-cursor-dot", cx: x, cy: scale.yAt(activeValue), r: 3 },
-        },
+        cursor: [
+          plotLine({ class: "meteo-cursor" }, x, x, frame.plotTop, frame.plotBottom + 4),
+          activeValue == null
+            ? null
+            : el("circle", { class: "meteo-cursor-dot", cx: x, cy: scale.yAt(activeValue), r: 3 }),
+        ],
       };
     },
   };

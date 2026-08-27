@@ -9,6 +9,8 @@ export * from "./climatology-rose.js";
 export * from "./current.js";
 export * from "./dial.js";
 export * from "./favorable-share.js";
+export * from "./cells.js";
+export * from "./dial-parts.js";
 export * from "./glyphs.js";
 export * from "./daily-pattern.js";
 export * from "./recent-summaries.js";

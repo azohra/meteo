@@ -1,8 +1,7 @@
 "use client";
-import { directionCell } from "../../index.js";
-import { EM_DASH } from "../../strings.js";
+import { directionCellNodes, stationNameNode } from "../../scene/index.js";
 import type { Station, StationStrings } from "../../index.js";
-import { WindArrow } from "../components/WindArrow.js";
+import { renderChildren, renderChild } from "../components/SceneTree.js";
 
 export function DirectionCell({
   windAvgMps,
@@ -13,21 +12,9 @@ export function DirectionCell({
   windDirectionDeg: number | null;
   words: StationStrings;
 }) {
-  const cell = directionCell(windAvgMps, windDirectionDeg);
-  if (cell.kind === "calm") return <>{words.calm}</>;
-  if (cell.kind === "dash") return <>{EM_DASH}</>;
-  return (
-    <>
-      <WindArrow deg={cell.deg} /> {cell.compass} {cell.rounded}°
-    </>
-  );
+  return renderChildren(directionCellNodes(windAvgMps, windDirectionDeg, words));
 }
 
 export function StationNameLink({ station }: { station: Station }) {
-  if (station.pageUrl == null) return <>{station.name}</>;
-  return (
-    <a href={station.pageUrl} rel="noreferrer" target="_blank">
-      {station.name}
-    </a>
-  );
+  return renderChild(stationNameNode(station), 0);
 }

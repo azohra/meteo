@@ -15,7 +15,7 @@ import type { ChartFrame, ChartScales } from "../geometry.js";
 import { EM_DASH } from "../strings.js";
 import type { FavorableDirection } from "../instruments.js";
 import type { FormatTime, StationStrings } from "../strings.js";
-import type { ReadoutPart, TickAnchor } from "./chart.js";
+import type { ReadoutPart } from "./chart.js";
 import {
   calmNoteText,
   displaySpeedScales,
@@ -32,13 +32,8 @@ import {
   windThresholdGuides,
   windZoneRects,
 } from "./wind-plot.js";
-import type {
-  GapHatchPattern,
-  GradedMeanTrace,
-  SceneLine,
-  SceneText,
-  VaneCell,
-} from "./wind-plot.js";
+import { plotLine } from "./wind-plot.js";
+import { el, type SceneAttrValue, type SceneChild, type SceneNode } from "./node.js";
 
 export const WIND_CHART_CLASS = "meteo-wind-chart";
 
@@ -62,10 +57,8 @@ export function windChartGate(station: Station, words: StationStrings): WindChar
 
 export type WindChartInspection = {
   readout: { strong: string; span: ReadoutPart[] };
-  cursor: {
-    line: SceneLine;
-    dot: { className: string; cx: number; cy: number; r: number };
-  } | null;
+  /** The cursor line and dot, drawn inside the plot; empty when idle. */
+  cursor: SceneChild[];
 };
 
 export type WindChartScene = {
@@ -74,60 +67,8 @@ export type WindChartScene = {
   points: ReadonlyArray<HistoryPoint>;
   readout: { ariaLabel: string; className: string };
   svg: { ariaLabel: string; className: string; height: number; viewBox: string; width: number };
-  defs: {
-    pattern: GapHatchPattern;
-    clip: { id: string; rect: { height: number; width: number; x: number; y: number } };
-  };
-  zones: Array<{
-    key: number;
-    className: string;
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  }>;
-  nightRects: Array<{
-    key: number;
-    className: string;
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  }>;
-  grid: Array<{ key: number; line: SceneLine; label: SceneText }>;
-  thresholdGuides: Array<{ key: number; line: SceneLine; label: SceneText }>;
-  vaneGuides: Array<{
-    key: number;
-    className: string;
-    x1: number;
-    x2: number;
-    y1: number;
-    y2: number;
-  }>;
-  gaps: Array<{
-    key: number;
-    className: string;
-    fill: string;
-    height: number;
-    width: number;
-    x: number;
-    y: number;
-  }>;
-  band: { className: string; points: string } | null;
-  compare: { className: string; clipPath: string; points: string } | null;
-  mean: GradedMeanTrace;
-  calmNote: SceneText | null;
-  rowLabels: { to: SceneText; avg: SceneText };
-  vanes: VaneCell[];
-  ticks: Array<{
-    key: number;
-    className: string;
-    anchor: TickAnchor;
-    x: number;
-    y: number;
-    text: string;
-  }>;
-  hit: { className: string; fill: string; height: number; width: number; x: number; y: number };
+  /** The whole drawing; the cursor from `inspect` slots in above the hit area. */
+  draw: (cursor: SceneChild[], hit: Record<string, SceneAttrValue>) => SceneNode;
   inspect: (activeIndex: number | null) => WindChartInspection;
 };
 
@@ -167,6 +108,13 @@ export function windChartScene(input: {
   const scales = displaySpeedScales(points, frame, unit);
   const band = bandPoints(points, scales);
   const vanes = thinVanes(points);
+  const vaneCellList = vaneCells(
+    vanes,
+    frame,
+    scales,
+    (vane) => String(shown(vane.windAvgMps)),
+    input.favorableDirections,
+  );
   const gaps = historyGaps({ ...history, points: points as HistoryPoint[] });
 
   const comparePoints =
@@ -192,60 +140,77 @@ export function windChartScene(input: {
       viewBox: `0 0 ${frame.width} ${frame.height}`,
       width: frame.width,
     },
-    defs: {
-      pattern: gapHatchPattern(hatchId),
-      clip: {
-        id: `${hatchId}-plot`,
-        rect: {
-          height: frame.plotBottom - frame.plotTop,
-          width: frame.right - frame.left,
-          x: frame.left,
-          y: frame.plotTop,
+    draw: (cursor, hit) =>
+      el(
+        "svg",
+        {
+          "aria-label": words.aria.chart(stationName),
+          class: "meteo-wind-chart-svg",
+          height: frame.height,
+          role: "img",
+          viewBox: `0 0 ${frame.width} ${frame.height}`,
+          width: frame.width,
         },
-      },
-    },
-    zones: windZoneRects(boundsMps, frame, scales),
-    nightRects: nightRects(points, frame, scales, input.night),
-    grid: speedGridLines(frame, scales, shown),
-    thresholdGuides: windThresholdGuides(thresholds, boundsMps, unit, frame, scales, shown),
-    vaneGuides: vaneGuideLines(vanes, frame, scales),
-    gaps: gaps.map(([startMs, endMs]) =>
-      gapHatchRect(
-        hatchId,
-        frame,
-        startMs,
-        scales.xAtMs(startMs),
-        scales.xAtMs(endMs) - scales.xAtMs(startMs),
+        el(
+          "defs",
+          undefined,
+          gapHatchPattern(hatchId),
+          el(
+            "clipPath",
+            { id: `${hatchId}-plot` },
+            el("rect", {
+              height: frame.plotBottom - frame.plotTop,
+              width: frame.right - frame.left,
+              x: frame.left,
+              y: frame.plotTop,
+            }),
+          ),
+        ),
+        windZoneRects(boundsMps, frame, scales),
+        nightRects(points, frame, scales, input.night),
+        speedGridLines(frame, scales, shown),
+        windThresholdGuides(thresholds, boundsMps, unit, frame, scales, shown),
+        vaneGuideLines(vanes, frame, scales),
+        gaps.map(([startMs, endMs]) =>
+          gapHatchRect(
+            hatchId,
+            frame,
+            startMs,
+            scales.xAtMs(startMs),
+            scales.xAtMs(endMs) - scales.xAtMs(startMs),
+          ),
+        ),
+        band == null ? null : el("polygon", { class: "meteo-wind-band", points: band }),
+        compareTrace == null
+          ? null
+          : el("polyline", {
+              class: "meteo-wind-compare",
+              "clip-path": `url(#${hatchId}-plot)`,
+              points: compareTrace,
+            }),
+        gradedMeanTrace(points, scales, boundsMps),
+        isCalmHistory(points) ? calmNoteText(frame, words) : null,
+        windRowLabels(frame, words)[0],
+        vaneCellList.map((vane) => ({ ...vane.mark, key: String(vane.key) })),
+        vaneCellList.flatMap((vane) =>
+          vane.label == null ? [] : [{ ...vane.label, key: String(vane.key) }],
+        ),
+        windRowLabels(frame, words)[1],
+        vaneCellList.flatMap((vane) =>
+          vane.value == null ? [] : [{ ...vane.value, key: String(vane.key) }],
+        ),
+        vaneTickTexts(vanes, frame, scales, (timeMs) => formatTime(new Date(timeMs))),
+        cursor,
+        el("rect", {
+          class: "meteo-hit",
+          fill: "transparent",
+          height: frame.height,
+          width: frame.width,
+          x: 0,
+          y: 0,
+          ...hit,
+        }),
       ),
-    ),
-    band: band == null ? null : { className: "meteo-wind-band", points: band },
-    compare:
-      compareTrace == null
-        ? null
-        : {
-            className: "meteo-wind-compare",
-            clipPath: `url(#${hatchId}-plot)`,
-            points: compareTrace,
-          },
-    mean: gradedMeanTrace(points, scales, boundsMps),
-    calmNote: isCalmHistory(points) ? calmNoteText(frame, words) : null,
-    rowLabels: windRowLabels(frame, words),
-    vanes: vaneCells(
-      vanes,
-      frame,
-      scales,
-      (vane) => String(shown(vane.windAvgMps)),
-      input.favorableDirections,
-    ),
-    ticks: vaneTickTexts(vanes, frame, scales, (timeMs) => formatTime(new Date(timeMs))),
-    hit: {
-      className: "meteo-hit",
-      fill: "transparent",
-      height: frame.height,
-      width: frame.width,
-      x: 0,
-      y: 0,
-    },
     inspect: (activeIndex) => {
       const active = activeIndex == null ? undefined : points[activeIndex];
       if (active == null) {
@@ -254,7 +219,7 @@ export function windChartScene(input: {
             strong: `${formatTime(new Date(scales.startMs))}–${formatTime(new Date(scales.endMs))}`,
             span: [{ kind: "text", text: words.inspectHint }],
           },
-          cursor: null,
+          cursor: [],
         };
       }
       const lead = `${words.avgLabel} ${shown(active.windAvgMps)} · ${words.lullLabel} ${
@@ -277,16 +242,15 @@ export function windChartScene(input: {
       const x = scales.xAt(active.observedAt);
       return {
         readout: { strong: formatTime(new Date(active.observedAt)), span },
-        cursor: {
-          line: {
-            className: "meteo-cursor",
-            x1: x,
-            x2: x,
-            y1: frame.plotTop,
-            y2: frame.vaneRow + 9,
-          },
-          dot: { className: "meteo-cursor-dot", cx: x, cy: scales.yAt(active.windAvgMps), r: 3 },
-        },
+        cursor: [
+          plotLine({ class: "meteo-cursor" }, x, x, frame.plotTop, frame.vaneRow + 9),
+          el("circle", {
+            class: "meteo-cursor-dot",
+            cx: x,
+            cy: scales.yAt(active.windAvgMps),
+            r: 3,
+          }),
+        ],
       };
     },
   };

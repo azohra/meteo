@@ -1,10 +1,18 @@
 import { requireResolved } from "../../index.js";
-import { stationTableRowScene, stationTableScene } from "../../scene/index.js";
+import {
+  TABLE_BODY_CLASS,
+  TABLE_ROW_CLASS,
+  TABLE_STATION_CELL_CLASS,
+  stationTableHeadNode,
+  stationTableRootAttrs,
+  stationTableRowCells,
+} from "../../scene/index.js";
 import type { FormatTime, SpeedUnit, Station, StationStrings } from "../../index.js";
 import { ELEMENTS_AMBIENT_HINT } from "../lib/ambient.js";
 import { MeteoStationElement } from "../lib/base.js";
-import { directionCellNodes, freshnessBadgeSpan, stationNameNode } from "../lib/fragments.js";
+import { stationNameNode } from "../lib/fragments.js";
 import { h } from "../lib/h.js";
+import { renderScene } from "../lib/render.js";
 
 export type StationMetaRenderer = (station: Station) => string | Node | null;
 
@@ -47,20 +55,14 @@ export class StationTableElement extends MeteoStationElement {
       ELEMENTS_AMBIENT_HINT,
     );
     const { formatTime, unit, words } = this.display();
-    const scene = stationTableScene(stations, words);
-
     this.replaceChildren(
       h(
         "div",
-        { "aria-label": scene.root.ariaLabel, class: scene.root.className, role: "table" },
+        stationTableRootAttrs(stations, words),
+        renderScene(stationTableHeadNode(words)),
         h(
           "div",
-          { class: scene.head.className, role: "row" },
-          scene.head.columns.map((column) => h("span", { role: "columnheader" }, column)),
-        ),
-        h(
-          "div",
-          { class: scene.bodyClassName, role: "rowgroup" },
+          { class: TABLE_BODY_CLASS, role: "rowgroup" },
           stations.map((station) => this.#row(station, unit, words, formatTime)),
         ),
       ),
@@ -75,45 +77,18 @@ export class StationTableElement extends MeteoStationElement {
   ): HTMLElement {
     const status = this.freshnessOf(station);
     const meta = this.#stationMeta ? this.#stationMeta(station) : station.sourceLabel;
-    const row = stationTableRowScene({ formatTime, station, unit, words });
-    const { cells } = row;
     return h(
       "div",
-      { class: row.className, "data-status": row.status, role: "row" },
+      { class: TABLE_ROW_CLASS, "data-status": station.status, role: "row" },
       h(
         "span",
-        { class: row.stationCellClassName, role: "cell" },
+        { class: TABLE_STATION_CELL_CLASS, role: "cell" },
         h("strong", null, stationNameNode(station)),
         h("small", null, meta),
       ),
-      cells.kind === "reading"
-        ? [
-            h(
-              "span",
-              { class: cells.wind.className, role: "cell" },
-              h("strong", null, cells.wind.value),
-              h("small", null, cells.wind.unitLabel),
-            ),
-            h("span", { class: cells.lull.className, role: "cell" }, cells.lull.value),
-            h("span", { class: cells.gust.className, role: "cell" }, cells.gust.value),
-            h(
-              "span",
-              { class: cells.from.className, role: "cell" },
-              ...directionCellNodes(cells.from.windAvgMps, cells.from.windDirectionDeg, words),
-            ),
-            h(
-              "span",
-              { class: cells.temperature.className, role: "cell" },
-              cells.temperature.value,
-            ),
-            h(
-              "span",
-              { class: cells.updated.className, role: "cell" },
-              h("span", { class: cells.updated.time.className }, cells.updated.time.text),
-              status != null && freshnessBadgeSpan(status, words),
-            ),
-          ]
-        : h("span", { class: cells.className, role: "cell" }, cells.text),
+      stationTableRowCells({ formatTime, freshness: status, station, unit, words }).map((child) =>
+        typeof child === "object" && child !== null ? renderScene(child) : child,
+      ),
     );
   }
 }

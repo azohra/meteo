@@ -26,8 +26,8 @@
         "dewPointC": 10.76,
         "windSpeedMps": 1.78,
         "windDirectionDeg": 135,
-        "cloudCoverPercent": 100.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 100,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 250,
         "latentHeatFluxWm2": 80,
         "windGustMps": 2.08,
@@ -35,8 +35,8 @@
         "cinJkg": -260,
         "pblHeightM": 499,
         "lowCloudPercent": 6,
-        "midCloudPercent": 100.0,
-        "highCloudPercent": 100.0
+        "midCloudPercent": 100,
+        "highCloudPercent": 100
       },
       "levels": [
         {
@@ -83,7 +83,7 @@
           "pressureHpa": 650,
           "heightM": 3757.7,
           "temperatureC": 3.54,
-          "dewPointC": -11.0,
+          "dewPointC": -11,
           "windSpeedMps": 7.53,
           "windDirectionDeg": 262
         },
@@ -100,7 +100,7 @@
         "boundaryLayerTopM": 1703.5,
         "thermalVelocityMps": 1.45,
         "cloudBaseM": 2416.4,
-        "usableLiftTopM": 1679.0
+        "usableLiftTopM": 1679
       }
     },
     {
@@ -111,17 +111,17 @@
         "dewPointC": 10.42,
         "windSpeedMps": 2.02,
         "windDirectionDeg": 130,
-        "cloudCoverPercent": 100.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 100,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 250,
         "latentHeatFluxWm2": 90,
         "windGustMps": 2.52,
         "capeJkg": 170,
         "cinJkg": -240,
         "pblHeightM": 700.8,
-        "lowCloudPercent": 0.0,
+        "lowCloudPercent": 0,
         "midCloudPercent": 35,
-        "highCloudPercent": 100.0
+        "highCloudPercent": 100
       },
       "levels": [
         {
@@ -196,8 +196,8 @@
         "dewPointC": 10.4,
         "windSpeedMps": 2.11,
         "windDirectionDeg": 149,
-        "cloudCoverPercent": 100.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 100,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 260,
         "latentHeatFluxWm2": 100,
         "windGustMps": 3.21,
@@ -205,8 +205,8 @@
         "cinJkg": -220,
         "pblHeightM": 1220.5,
         "lowCloudPercent": 4,
-        "midCloudPercent": 100.0,
-        "highCloudPercent": 100.0
+        "midCloudPercent": 100,
+        "highCloudPercent": 100
       },
       "levels": [
         {
@@ -281,8 +281,8 @@
         "dewPointC": 9.35,
         "windSpeedMps": 2.76,
         "windDirectionDeg": 169,
-        "cloudCoverPercent": 100.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 100,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 230,
         "latentHeatFluxWm2": 110,
         "windGustMps": 4.98,
@@ -291,7 +291,7 @@
         "pblHeightM": 1612,
         "lowCloudPercent": 1,
         "midCloudPercent": 85,
-        "highCloudPercent": 100.0
+        "highCloudPercent": 100
       },
       "levels": [
         {
@@ -366,17 +366,17 @@
         "dewPointC": 6.35,
         "windSpeedMps": 2.05,
         "windDirectionDeg": 186,
-        "cloudCoverPercent": 100.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 100,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 140,
         "latentHeatFluxWm2": 100,
         "windGustMps": 4.71,
         "capeJkg": 900,
         "cinJkg": -140,
         "pblHeightM": 2043.3,
-        "lowCloudPercent": 0.0,
-        "midCloudPercent": 100.0,
-        "highCloudPercent": 100.0
+        "lowCloudPercent": 0,
+        "midCloudPercent": 100,
+        "highCloudPercent": 100
       },
       "levels": [
         {
@@ -452,14 +452,14 @@
         "windSpeedMps": 2.2,
         "windDirectionDeg": 243,
         "cloudCoverPercent": 33,
-        "precipitationMmHr": 0.0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 90,
         "latentHeatFluxWm2": 90,
         "windGustMps": 3.42,
         "capeJkg": 1000,
         "cinJkg": -80,
         "pblHeightM": 2229.5,
-        "lowCloudPercent": 0.0,
+        "lowCloudPercent": 0,
         "midCloudPercent": 33,
         "highCloudPercent": 15
       },
@@ -537,14 +537,14 @@
         "windSpeedMps": 2.17,
         "windDirectionDeg": 273,
         "cloudCoverPercent": 1,
-        "precipitationMmHr": 0.0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": 30,
         "latentHeatFluxWm2": 70,
         "windGustMps": 3.46,
         "capeJkg": 1100,
         "cinJkg": -20,
         "pblHeightM": 2106.2,
-        "lowCloudPercent": 0.0,
+        "lowCloudPercent": 0,
         "midCloudPercent": 1,
         "highCloudPercent": 1
       },
@@ -622,15 +622,15 @@
         "windSpeedMps": 1.82,
         "windDirectionDeg": 285,
         "cloudCoverPercent": 2,
-        "precipitationMmHr": 0.0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": -14,
         "latentHeatFluxWm2": 20,
         "windGustMps": 3.95,
         "capeJkg": 900,
         "cinJkg": -15,
         "pblHeightM": 1996.7,
-        "lowCloudPercent": 0.0,
-        "midCloudPercent": 0.0,
+        "lowCloudPercent": 0,
+        "midCloudPercent": 0,
         "highCloudPercent": 2
       },
       "levels": [
@@ -693,7 +693,7 @@
       ],
       "derived": {
         "boundaryLayerTopM": 1257.7,
-        "thermalVelocityMps": 0.0,
+        "thermalVelocityMps": 0,
         "cloudBaseM": 3877.8,
         "usableLiftTopM": null
       }
@@ -706,17 +706,17 @@
         "dewPointC": 1.86,
         "windSpeedMps": 3.57,
         "windDirectionDeg": 284,
-        "cloudCoverPercent": 0.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": -81,
         "latentHeatFluxWm2": 20,
         "windGustMps": 5.58,
         "capeJkg": 700,
         "cinJkg": -10,
         "pblHeightM": 1469.5,
-        "lowCloudPercent": 0.0,
-        "midCloudPercent": 0.0,
-        "highCloudPercent": 0.0
+        "lowCloudPercent": 0,
+        "midCloudPercent": 0,
+        "highCloudPercent": 0
       },
       "levels": [
         {
@@ -778,7 +778,7 @@
       ],
       "derived": {
         "boundaryLayerTopM": 1259.3,
-        "thermalVelocityMps": 0.0,
+        "thermalVelocityMps": 0,
         "cloudBaseM": 3618.5,
         "usableLiftTopM": null
       }
@@ -791,17 +791,17 @@
         "dewPointC": 3.16,
         "windSpeedMps": 3.04,
         "windDirectionDeg": 283,
-        "cloudCoverPercent": 0.0,
-        "precipitationMmHr": 0.0,
+        "cloudCoverPercent": 0,
+        "precipitationMmHr": 0,
         "sensibleHeatFluxWm2": -40,
         "latentHeatFluxWm2": 4,
         "windGustMps": 3.51,
         "capeJkg": 500,
         "cinJkg": -5,
         "pblHeightM": 1150.7,
-        "lowCloudPercent": 0.0,
-        "midCloudPercent": 0.0,
-        "highCloudPercent": 0.0
+        "lowCloudPercent": 0,
+        "midCloudPercent": 0,
+        "highCloudPercent": 0
       },
       "levels": [
         {
@@ -863,8 +863,8 @@
       ],
       "derived": {
         "boundaryLayerTopM": 1260.4,
-        "thermalVelocityMps": 0.0,
-        "cloudBaseM": 3334.0,
+        "thermalVelocityMps": 0,
+        "cloudBaseM": 3334,
         "usableLiftTopM": null
       }
     }
