@@ -23,7 +23,7 @@ sources = [
 ]
 outputs = ["dist/**"]
 
-[tasks."check:types"]
+[tasks.typecheck]
 description = "astro check against the built site's generated types"
 depends = ["build"]
 run = "pnpm exec astro check"
@@ -76,4 +76,4 @@ run = "pnpm exec playwright test"
 
 [tasks.check]
 description = "Site green: astro check + the browser suite"
-depends = ["check:types", "e2e"]
+depends = ["typecheck", "e2e"]

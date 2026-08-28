@@ -11,7 +11,7 @@ not fetch the launch catalogue, current manifests, or current profiles in the br
 ```sh
 mise run setup                # frozen install + the commit gate
 mise run dev                  # dev server; port derived per checkout
-mise run //site:check:types   # astro check
+mise run //site:typecheck    # astro check
 mise run //site:build         # -> site/dist/
 ```
 
