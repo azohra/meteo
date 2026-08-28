@@ -1,5 +1,6 @@
 # forecast tasks. The engine: depends on core, briefing, and grib;
 # models.json is the provider declaration the builders are held to.
+# The scenario suites byte-compare the root scenarios/ tree — a test input.
 
 [tasks.build]
 extends = "pkg:build"
@@ -38,6 +39,7 @@ sources = [
   "vitest.config.ts",
   "tsconfig.json",
   "package.json",
+  "../scenarios/**",
   "../pnpm-lock.yaml",
   "../core/dist/**",
   "../briefing/dist/**",

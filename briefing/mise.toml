@@ -1,5 +1,6 @@
 # briefing tasks. Depends on core: its dist (types included) is a build
 # and check input, so a core change invalidates this package's results.
+# The scenario suite reads the root scenarios/ tree — also a test input.
 
 [tasks.build]
 extends = "pkg:build"
@@ -27,6 +28,7 @@ sources = [
   "vitest.config.ts",
   "tsconfig.json",
   "package.json",
+  "../scenarios/**",
   "../pnpm-lock.yaml",
   "../core/dist/**",
 ]
