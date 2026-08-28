@@ -2,7 +2,7 @@
 
 The forecast capability's wire contract in language-neutral form: JSON
 Schemas emitted from the zod contract (`@azohra/meteo.briefing/contract`).
-Never edited by hand — regenerate with `pnpm schemas` at the workspace
+Never edited by hand — regenerate with `mise run schemas` at the workspace
 root, which must reproduce every file byte-identical (the drift guard is
 this package's own test suite).
 

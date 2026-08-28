@@ -78,7 +78,7 @@ as `MeteogramOptions.launch`), the generated output path or paths, and the
 SHA-256 output hash. A definition without generated output must not be advertised
 through the index. Its shape is the zod scenario-index contract in
 `forecast/src/scenario/contract.ts`: the generator validates through it, the
-site's registry reads through its guard, and `pnpm schemas` emits it as the
+site's registry reads through its guard, and `mise run schemas` emits it as the
 neighbouring `index.schema.json`.
 
 ## Definition fields
@@ -218,5 +218,5 @@ The fixtures below `definitions/invalid/` each isolate a required rejection:
 Run the schema, fixture, generated-output, and registry checks together:
 
 ```sh
-pnpm scenarios:check
+mise run scenarios:check
 ```

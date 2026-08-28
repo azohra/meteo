@@ -194,7 +194,7 @@ export const scenarioIndexSchema = z
     scenarios: z.array(scenarioIndexEntrySchema),
   })
   .describe(
-    "The public index of generated teaching scenarios (scenarios/index.json), emitted by `pnpm scenarios:generate` and consumed by the site's scenario registry. Every entry pairs a definition's teaching metadata with the generated profiles' provenance (path + SHA-256), the representative profile's site block, and the launch renderers pass as MeteogramOptions.launch.",
+    "The public index of generated teaching scenarios (scenarios/index.json), emitted by `mise run scenarios:generate` and consumed by the site's scenario registry. Every entry pairs a definition's teaching metadata with the generated profiles' provenance (path + SHA-256), the representative profile's site block, and the launch renderers pass as MeteogramOptions.launch.",
   );
 
 export type ScenarioIndex = z.infer<typeof scenarioIndexSchema>;

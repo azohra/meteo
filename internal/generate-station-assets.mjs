@@ -650,7 +650,7 @@ if (check) {
   }
   if (drift.length > 0) {
     console.error(`\nStation assets drifted from the renderer: ${drift.join(", ")}`);
-    console.error("Regenerate with: pnpm station-assets");
+    console.error("Regenerate with: mise run station-assets");
     process.exit(1);
   }
 } else {

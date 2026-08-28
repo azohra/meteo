@@ -1,4 +1,4 @@
-// Opt-in (network): TERRAIN_LIVE=1 pnpm --dir forecast test terrain-regenerate
+// Opt-in (network): TERRAIN_LIVE=1 mise run //forecast:test terrain-regenerate
 
 import { readFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";

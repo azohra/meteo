@@ -30,7 +30,7 @@ const horizonHours = modelBySlug("hrdps-continental")?.horizonHours ?? 48;
 
       <div class="fc-term">
         <p class="fc-term-title">the build behind the sample dataset</p>
-        <pre class="fc-term-body"><code><span class="t-prompt">$</span> pnpm --dir forecast build
+        <pre class="fc-term-body"><code><span class="t-prompt">$</span> mise run //forecast:build
 <span class="t-prompt">$</span> node forecast/dist/cli.js forecast build --model hrdps-continental \
     --sites scenarios/catalog/sites.json \
     --output site/public/data-sample --max-steps 8</code></pre>

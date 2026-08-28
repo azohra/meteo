@@ -211,7 +211,7 @@ function schemaErrorLines(errors: readonly ErrorObject[]): string[] {
 }
 
 /* The scenario-index contract (contract.ts) is the authority here;
-   scenarios/index.schema.json is emitted FROM it by `pnpm schemas`. */
+   scenarios/index.schema.json is emitted FROM it by `mise run schemas`. */
 function contractErrorLines(error: ZodError): string[] {
   const unique = new Set<string>();
   for (const issue of error.issues) {
@@ -1411,7 +1411,7 @@ export function generateScenario(
   if (record["kind"] === "comparison") {
     throw new ScenarioError(
       `scenario ${scenarioId}: comparison recipes produce multiple profiles; ` +
-        "use generateScenarioRepository() (`pnpm scenarios:generate`)",
+        "use generateScenarioRepository() (`mise run scenarios:generate`)",
     );
   }
   validateDefinition(record, { repositoryRoot, source: `scenario ${scenarioId}` });
@@ -1596,7 +1596,7 @@ export function checkScenarioRepository({ repositoryRoot }: ScenarioRepositoryOp
     throw new ScenarioCheckError(
       "generated scenarios do not match their definitions:\n  " +
         problems.join("\n  ") +
-        "\nrun `pnpm scenarios:generate`",
+        "\nrun `mise run scenarios:generate`",
     );
   }
 }

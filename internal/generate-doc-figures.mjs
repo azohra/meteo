@@ -136,7 +136,7 @@ if (check) {
   }
   if (drift.length > 0) {
     console.error(`\nDoc figures drifted from the renderer: ${drift.join(", ")}`);
-    console.error("Regenerate with: pnpm figures");
+    console.error("Regenerate with: mise run figures");
     process.exit(1);
   }
 } else {

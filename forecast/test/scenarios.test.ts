@@ -446,7 +446,7 @@ describe("scenario generation", () => {
     }
     expect(message).toContain("stale scenarios/generated/minimal-valid.profile.json");
     expect(message).toContain("unmanaged scenarios/generated/old.profile.json");
-    expect(message).toContain("pnpm scenarios:generate");
+    expect(message).toContain("mise run scenarios:generate");
 
     generateScenarioRepository({ repositoryRoot: repository });
     expect(
@@ -487,7 +487,7 @@ describe("scenario generation", () => {
 });
 
 describe("scenario index contract validation", () => {
-  it("emits scenarios/index.schema.json byte-identically — regenerate with pnpm schemas", () => {
+  it("emits scenarios/index.schema.json byte-identically — regenerate with mise run schemas", () => {
     const onDisk = readFileSync(join(ROOT, SCENARIO_INDEX_SCHEMA_PATH), "utf-8");
     expect(onDisk).toBe(renderScenarioIndexSchema());
   });

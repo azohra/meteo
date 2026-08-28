@@ -76,6 +76,6 @@ if (existsSync(forecastTablePath)) {
 
 if (drift.length > 0) {
   console.error(`\nSchema artifacts drifted from the zod contracts: ${drift.join(", ")}`);
-  console.error("Regenerate with: pnpm schemas");
+  console.error("Regenerate with: mise run schemas");
   process.exit(1);
 }

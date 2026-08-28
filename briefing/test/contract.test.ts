@@ -658,7 +658,7 @@ describe("JSON Schema generation", () => {
     expect(siteBlock.properties!["modelElevationM"]!.description).toContain("model's own");
   });
 
-  it("matches the shipped schema/*.json artifacts — regenerate with pnpm schemas", () => {
+  it("matches the shipped schema/*.json artifacts — regenerate with mise run schemas", () => {
     expect(schemaArtifacts.length).toBeGreaterThan(0);
     for (const artifact of schemaArtifacts) {
       const onDisk = readFileSync(join(__dirname, "..", "schema", artifact.fileName), "utf-8");

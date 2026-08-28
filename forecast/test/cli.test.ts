@@ -534,7 +534,7 @@ describe("meteo forecast scenarios (removed from the published CLI)", () => {
   it("is an unknown command: scenario tooling lives in the source checkout", async () => {
     // The scenario core stays exported from the package; the CLI verb and
     // the repo-root discovery moved to the checkout's own wiring
-    // (`pnpm scenarios:generate` / `pnpm scenarios:check`).
+    // (`mise run scenarios:generate` / `mise run scenarios:check`).
     const io = capture();
     expect(await main(["forecast", "scenarios", "check"], io)).toBe(2);
     expect(io.err.join("\n")).toContain("unknown forecast command 'scenarios'");

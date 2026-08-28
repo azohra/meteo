@@ -17,7 +17,7 @@ export async function importDist(root, subpath) {
   } catch (error) {
     throw new Error(
       `Cannot load ${head}/dist/${rest.join("/") || "index"} — build the workspace first ` +
-        `(pnpm build). ${error.message}`,
+        `(mise run build). ${error.message}`,
     );
   }
 }

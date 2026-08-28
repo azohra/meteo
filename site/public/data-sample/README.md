@@ -11,7 +11,7 @@ published contract guards).
 ## How it was generated
 
 ```sh
-pnpm --dir forecast build
+mise run //forecast:build
 node forecast/dist/cli.js forecast build --model hrdps-continental \
   --sites scenarios/catalog/sites.json --output site/public/data-sample --max-steps 8
 ```

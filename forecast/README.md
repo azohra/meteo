@@ -39,4 +39,4 @@ pnpm exec meteo forecast terrain --sites ./club-sites.json
 ```
 
 From a workspace checkout, the same commands run as
-`node forecast/dist/cli.js forecast ...` after `pnpm --dir forecast build`.
+`node forecast/dist/cli.js forecast ...` after `mise run //forecast:build`.

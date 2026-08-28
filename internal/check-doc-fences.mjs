@@ -26,7 +26,7 @@ function fail(message) {
 async function packageHomes() {
   const manifestModule = join(repoRoot, "dist", "capabilities.js");
   if (!existsSync(manifestModule)) {
-    fail(`built capability manifest not found at ${manifestModule} — run: pnpm build`);
+    fail(`built capability manifest not found at ${manifestModule} — run: mise run build`);
   }
   const { platformPackages } = await import(manifestModule);
   const homes = new Map(
@@ -121,7 +121,7 @@ if (docFiles.length === 0) fail("no documentation files to scan");
 
 const distMarker = join(repoRoot, "briefing", "dist", "contract.d.ts");
 if (!existsSync(distMarker)) {
-  fail(`built package types not found at ${distMarker} — run: pnpm build`);
+  fail(`built package types not found at ${distMarker} — run: mise run build`);
 }
 
 // The temp project lives under the package's node_modules so tsc's upward

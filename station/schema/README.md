@@ -3,7 +3,7 @@
 The station capability's wire contract in language-neutral form: JSON
 Schemas emitted from the zod contract (`station/contract.ts`), plus an
 annotated example document beside each schema. Never edited by hand — regenerate with
-`pnpm schemas` at the workspace root, which must reproduce every file
+`mise run schemas` at the workspace root, which must reproduce every file
 byte-identical (the drift guard is this package's own test suite).
 
 They are committed rather than build-generated so contract changes appear
