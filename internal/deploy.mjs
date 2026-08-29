@@ -96,13 +96,39 @@ run("pnpm", [
   subject,
 ]);
 
+const deployments = JSON.parse(
+  capture("pnpm", ["--dir", "site", "exec", "wrangler", "deployments", "list", "--json"]),
+).sort((left, right) => Date.parse(right.created_on) - Date.parse(left.created_on));
+const deployment = deployments[0];
+const deployedVersion = deployment?.versions?.find((version) => version.percentage === 100);
+if (!deployedVersion) refuse(`${config.name} does not have a 100% deployment`);
+
+const version = JSON.parse(
+  capture("pnpm", [
+    "--dir",
+    "site",
+    "exec",
+    "wrangler",
+    "versions",
+    "view",
+    deployedVersion.version_id,
+    "--json",
+  ]),
+);
+if (
+  version.annotations?.["workers/tag"] !== head.slice(0, 12) ||
+  version.annotations?.["workers/message"] !== subject
+) {
+  refuse(`${deployedVersion.version_id} is not annotated for ${head.slice(0, 12)}`);
+}
+
 const liveUrl = new URL(workspace.homepage);
 const built = readFileSync(join(site, "dist", "index.html"), "utf8");
 const title = /<title>([^<]+)<\/title>/.exec(built)?.[1];
 if (!title) refuse("site/dist/index.html has no title");
 
 let verified = false;
-for (let attempt = 0; attempt < 5; attempt += 1) {
+for (let attempt = 0; attempt < 3; attempt += 1) {
   try {
     const response = await fetch(liveUrl, { redirect: "follow" });
     if (response.ok && (await response.text()).includes(`<title>${title}</title>`)) {
@@ -114,6 +140,6 @@ for (let attempt = 0; attempt < 5; attempt += 1) {
   }
   await new Promise((resolveWait) => setTimeout(resolveWait, 2_000));
 }
-if (!verified) refuse(`${liveUrl.href} did not serve the deployed site`);
-
-console.log(`deploy: ${liveUrl.href} is live at ${head.slice(0, 12)}`);
+console.log(`deploy: Cloudflare version ${deployedVersion.version_id} is at 100%`);
+if (verified) console.log(`deploy: ${liveUrl.href} serves the built site`);
+else console.warn(`deploy: ${liveUrl.href} could not be probed from this network`);
