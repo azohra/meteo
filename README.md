@@ -193,8 +193,10 @@ forecasts. The full story is on
 
 ## Contributing
 
-meteo by Azohra is solo-maintained. If a change looks worth making, open an
-issue to discuss it before sending a pull request.
+meteo by Azohra is solo-maintained. Read the [contributor guide](CONTRIBUTING.md)
+for setup, repository checks, generated files, documentation rules, and
+changesets. Discuss substantial changes in an issue before sending a pull
+request.
 
 ## Licence
 

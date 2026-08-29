@@ -12,8 +12,6 @@
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
-#
-# deploy and release are operator verbs and are not tracked here.
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -223,7 +221,8 @@ sources = [
   "internal/lib/**",
   "site/src/**",
   "site/public/**",
-  "README.md",
+  "*.md",
+  "*.mdx",
   "*/README.md",
   "*/CHANGELOG.md",
   "*/docs/**",
@@ -239,7 +238,8 @@ sources = [
   "internal/check-docs-structure.mjs",
   "internal/lib/**",
   "site/src/**",
-  "README.md",
+  "*.md",
+  "*.mdx",
   "*/README.md",
   "*/CHANGELOG.md",
   "*/docs/**",
@@ -255,7 +255,8 @@ sources = [
   "internal/check-quotes.mjs",
   "internal/lib/**",
   "site/src/**",
-  "README.md",
+  "*.md",
+  "*.mdx",
   "*/README.md",
   "*/CHANGELOG.md",
   "*/docs/**",
@@ -328,7 +329,8 @@ sources = [
   "internal/check-doc-fences.mjs",
   "internal/lib/**",
   "site/src/content/**",
-  "README.md",
+  "*.md",
+  "*.mdx",
   "*/README.md",
   "*/docs/**",
   "*/package.json",

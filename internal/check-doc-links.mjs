@@ -1,11 +1,11 @@
-import { readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ignoredLine, stripFences, walk, workspaceReadmes } from "./lib/prose-files.mjs";
+import { ignoredLine, repositoryMarkdownFiles, stripFences, walk } from "./lib/prose-files.mjs";
 
 /* Internal-link integrity for every reader-facing source: the docs
    collection (including the package-docs symlinks), the logbook, the
-   narrative .astro/.mdx components, and the repository READMEs. Routes
+   narrative .astro/.mdx components, root guides, and workspace READMEs. Routes
    are derived from the same sources Astro derives them from — content
    files, pages, and public/ — so the gate needs no build and no network.
    External links are out of scope, except that meteo.azohra.com links
@@ -95,14 +95,48 @@ function checkTarget(target, sourceFile) {
   if (link.startsWith("https://meteo.azohra.com")) {
     link = link.slice("https://meteo.azohra.com".length) || "/";
   }
-  if (/^(https?:|mailto:|data:)/.test(link)) return null; // external: out of scope
+  if (/^[a-z][a-z\d+.-]*:/i.test(link) || link.startsWith("//")) return null;
   if (link.startsWith("#")) {
     const anchor = link.slice(1);
     return anchorsOf(sourceFile).has(anchor)
       ? null
       : `#${anchor} — no such heading or id in this file`;
   }
-  if (!link.startsWith("/")) return null; // relative imports/srcs are the bundler's problem
+  if (!link.startsWith("/")) {
+    const [relativePath, anchor] = link.split("#");
+    const encodedPath = relativePath.split("?")[0];
+    let decodedPath;
+    try {
+      decodedPath = decodeURIComponent(encodedPath);
+    } catch {
+      return `${link} — invalid URL encoding`;
+    }
+    const resolved = resolve(dirname(sourceFile), decodedPath);
+    const repoRelative = relative(repoRoot, resolved);
+    if (repoRelative === ".." || repoRelative.startsWith(`..${sep}`) || isAbsolute(repoRelative)) {
+      return `${link} — relative target leaves the repository`;
+    }
+    if (!existsSync(resolved)) return `${link} — no file or directory relative to this source`;
+
+    let anchorSource = resolved;
+    if (statSync(resolved).isDirectory()) anchorSource = join(resolved, "README.md");
+    if (anchor) {
+      if (!existsSync(anchorSource))
+        return `${link} — target has no document for anchor #${anchor}`;
+      if (/\.mdx?$/.test(anchorSource)) {
+        let decodedAnchor;
+        try {
+          decodedAnchor = decodeURIComponent(anchor);
+        } catch {
+          return `${link} — invalid anchor encoding`;
+        }
+        if (!anchorsOf(anchorSource).has(decodedAnchor)) {
+          return `${link} — target exists but anchor #${anchor} matches no heading or id`;
+        }
+      }
+    }
+    return null;
+  }
   const [path, anchor] = link.split("#");
   if (BUILD_EMITTED_PREFIXES.some((prefix) => path.startsWith(prefix))) return null;
   const normalized = path.endsWith("/") || path.includes(".") ? path : `${path}/`;
@@ -121,7 +155,7 @@ function checkTarget(target, sourceFile) {
 const scanFiles = [...docFiles, ...logbookFiles];
 walk(join(repoRoot, "site", "src", "components"), [".astro", ".mdx"], scanFiles);
 walk(join(repoRoot, "site", "src", "layouts"), [".astro"], scanFiles);
-scanFiles.push(...pageFiles, ...workspaceReadmes(repoRoot));
+scanFiles.push(...pageFiles, ...repositoryMarkdownFiles(repoRoot));
 
 let failedFiles = 0;
 let checked = 0;

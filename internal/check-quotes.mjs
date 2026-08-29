@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ignoredLine, proseLines, walk, workspaceReadmes } from "./lib/prose-files.mjs";
+import { ignoredLine, proseLines, repositoryMarkdownFiles, walk } from "./lib/prose-files.mjs";
 
 /* Straight quotes are the convention: the 2026-08 sweep normalized the
    corpus and this keeps curly characters out of every reader-facing
@@ -18,7 +18,7 @@ const files = [];
 walk(join(repoRoot, "site", "src", "content"), [".md", ".mdx"], files);
 walk(join(repoRoot, "site", "src", "components"), [".astro", ".mdx"], files);
 walk(join(repoRoot, "site", "src", "pages"), [".astro"], files);
-files.push(...workspaceReadmes(repoRoot));
+files.push(...repositoryMarkdownFiles(repoRoot));
 for (const pkg of ["briefing", "core", "forecast", "grib", "j2k", "station"]) {
   walk(join(repoRoot, pkg, "docs"), [".md", ".mdx"], files);
 }

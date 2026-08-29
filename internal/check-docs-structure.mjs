@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { proseLines, renderedProseLines, walk } from "./lib/prose-files.mjs";
+import { proseLines, renderedProseLines, rootMarkdownFiles, walk } from "./lib/prose-files.mjs";
 
 /* Structural checks on the documentation: sidebar shape, labels,
    orphans, and hand-typed schema-version drift. */
@@ -197,6 +197,7 @@ for (const dir of [
     checkProse(file, renderedProseLines);
   }
 }
+for (const file of rootMarkdownFiles(repoRoot)) checkProse(file);
 
 function checkProse(file, extract = (_file, text) => proseLines(text)) {
   const text = readFileSync(file, "utf-8");

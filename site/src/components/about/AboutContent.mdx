@@ -45,6 +45,32 @@ downstream experiences. In publishing open soaring forecasts at all, it
 also follows [soaringmeteo](https://soaringmeteo.org/), which has done that
 job for the wider free-flight world for years.
 
+## How the pieces came together
+
+The work predates this repository. Forecast tooling first lived in the
+archived [`azohra/meteo.forecast`](https://github.com/azohra/meteo.forecast)
+repository, which retains the windgram releases and the original publication
+pipeline. The live-station library grew out of acrophobia.ca and has its own
+archive at
+[`azohra/meteo.station`](https://github.com/azohra/meteo.station). Their
+commit histories and changelogs carry the release details.
+
+Bringing them together exposed a shared foundation: units, wind-vector math,
+transport failures, schema tooling, and presentation rules. The forecast
+pipeline then moved from Python to TypeScript. Real provider fixtures and
+side-by-side builds established parity before the Python implementation was
+removed. The [GRIB correctness record](/docs/grib/correctness/) and
+[JPEG 2000 correctness record](/docs/j2k/correctness/) explain how the byte
+decoders are checked against independent implementations.
+
+The repository now separates the reusable engine from any operating instance.
+Publishers choose their sites, schedule, storage, credentials, and public
+surface in their own repositories. The
+[`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts)
+repository is the public reference instance; the
+[compatibility guide](/docs/compatibility/) owns the current version and
+migration rules.
+
 ## Learning in public
 
 The platform grows as I learn enough to take on another part of the

@@ -42,7 +42,7 @@ function LiveWind() {
 Station's reference lives in [`docs/`](docs/) and is served at
 <https://meteo.azohra.com/docs/station/>.
 
-JSON Schema for the wire documents lives in [`../schema/`](../schema/).
+JSON Schema for the wire documents lives in [`schema/`](schema/).
 
 ## Stability
 

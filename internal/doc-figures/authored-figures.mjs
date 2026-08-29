@@ -4,12 +4,10 @@ import { fileURLToPath } from "node:url";
 
 import { frame } from "./page-figures.mjs";
 
-/* Authored figures are drawn as standalone SVG bodies in authored/ (with
-   the diagram-design tool; `.diagram-design` at the repo root binds its
-   azohra-meteo brand profile) and normalized here into the
-   same committed artifact the composed figures produce: chrome colors become
-   var(--meteo-gram-*) tokens with light fallbacks, the house frame supplies
-   title, lesson, caption, and units, and the generator outlines text. The
+/* Authored figures are standalone SVG bodies in authored/. This module turns
+   them into the same committed artifact the composed figures produce. Chrome
+   colors become var(--meteo-gram-*) tokens with light fallbacks. The house frame
+   supplies title, lesson, caption, and units, and the generator outlines text. The
    accent family stays a resolved literal — it pairs with itself, not with
    the page theme. A source may use only the colors named below; anything
    else fails the build rather than shipping an untokenized pigment. */

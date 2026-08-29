@@ -18,17 +18,24 @@ export function walk(dir, extensions, out = [], { skip = [] } = {}) {
   return out;
 }
 
-/** Every workspace member's README.md plus the repository root's. */
-export function workspaceReadmes(repoRoot) {
-  const readmes = [];
+/** Markdown guides at the repository root. */
+export function rootMarkdownFiles(repoRoot) {
+  return readdirSync(repoRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.mdx?$/.test(entry.name))
+    .map((entry) => join(repoRoot, entry.name))
+    .sort();
+}
+
+/** Root Markdown guides plus every workspace member's README.md. */
+export function repositoryMarkdownFiles(repoRoot) {
+  const files = rootMarkdownFiles(repoRoot);
   for (const entry of readdirSync(repoRoot, { withFileTypes: true })) {
     const readme = join(repoRoot, entry.name, "README.md");
     if (entry.isDirectory() && !entry.name.startsWith(".") && existsSync(readme)) {
-      readmes.push(readme);
+      files.push(readme);
     }
   }
-  readmes.push(join(repoRoot, "README.md"));
-  return readmes;
+  return files.sort();
 }
 
 /** The gates' opt-out convention: the marker on the same or preceding line. */

@@ -33,8 +33,7 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    // Astro backgrounds preview automatically in detected agent environments.
-    // Playwright must own a foreground process so teardown is deterministic.
+    // Keep preview in the foreground so Playwright owns teardown.
     command: `ASTRO_PREVIEW_BACKGROUND=0 pnpm exec astro preview --host 127.0.0.1 --port ${port}`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,

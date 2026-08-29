@@ -12,7 +12,7 @@ import {
 import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { walk } from "./lib/prose-files.mjs";
+import { repositoryMarkdownFiles, walk } from "./lib/prose-files.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageDir = repoRoot;
@@ -45,12 +45,9 @@ async function packageHomes() {
   return homes;
 }
 
-function defaultDocFiles(homes) {
+function defaultDocFiles() {
   const files = walk(join(repoRoot, "site", "src", "content", "docs", "docs"), [".md", ".mdx"]);
-  for (const directory of ["", ...homes.values()]) {
-    const readme = join(repoRoot, directory, "README.md");
-    if (existsSync(readme)) files.push(readme);
-  }
+  files.push(...repositoryMarkdownFiles(repoRoot));
   return files;
 }
 
@@ -116,7 +113,7 @@ function extractFences(text) {
 
 const homes = await packageHomes();
 const docFiles =
-  process.argv.length > 2 ? docFilesFromArgs(process.argv.slice(2)) : defaultDocFiles(homes);
+  process.argv.length > 2 ? docFilesFromArgs(process.argv.slice(2)) : defaultDocFiles();
 if (docFiles.length === 0) fail("no documentation files to scan");
 
 const distMarker = join(repoRoot, "briefing", "dist", "contract.d.ts");
