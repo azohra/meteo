@@ -97,6 +97,9 @@ Name every affected package and write the short consumer-facing entry that
 belongs in its changelog. Documentation-only, test-only, and internal refactors
 usually need no changeset.
 
+Maintainers publish pending changesets with `mise run release`. The verb runs
+the complete proof before publishing package versions and tags.
+
 ## Submit the change
 
 Keep commits focused and write their subjects as plain imperatives. A pull

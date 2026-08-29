@@ -13,6 +13,8 @@
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
+#   mise run deploy — prove and deploy the site from origin/main
+#   mise run release — version and publish pending package changesets
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -457,6 +459,25 @@ unsafe=" 4045 5060 5061 6000 6566 6665 6666 6667 6668 6669 6679 6697 "
 while [[ "$unsafe" == *" $port "* ]]; do port=$((port + 1)); done
 exec pnpm exec astro dev --port "$port" "$@"
 """
+
+[tasks."env:contract"]
+hide = true
+run = """
+printf '%s\n' \
+  'secret  CLOUDFLARE_API_TOKEN' \
+  'secret  NPM_TOKEN'
+"""
+
+[tasks.deploy]
+description = "Prove and deploy meteo.azohra.com from origin/main"
+confirm = "Deploy origin/main to meteo.azohra.com?"
+raw_args = true
+run = "node internal/deploy.mjs"
+
+[tasks.release]
+description = "Version and publish pending package changesets"
+confirm = "Version and publish Meteo's pending package changesets?"
+run = "node internal/release.mjs"
 
 [tasks.pre-commit]
 description = "Commit gate: branches author, main never does; check must be green"

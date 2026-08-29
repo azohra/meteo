@@ -39,6 +39,6 @@ mise run //site:build         # -> site/dist/
 
 ## Deploying
 
-`astro build` (run via `mise run //site:build`) writes the static site to `dist/`; [`wrangler.jsonc`](wrangler.jsonc)
-describes serving it as Worker static assets. Where and how a deployment
-hosts it is the operator's business, not this README's.
+`mise run deploy` runs the repository proof and deploys the static site from a
+clean `origin/main`. Pushes to `main` call the same verb through GitHub Actions.
+[`wrangler.jsonc`](wrangler.jsonc) owns the Worker static-assets target.
