@@ -8,7 +8,8 @@
 # own check. Root tasks are the aggregates, the workspace shell's own
 # gates, and the repo-wide doc gates.
 #
-#   mise run setup — frozen install + the commit gate hook
+#   mise run install — frozen dependencies + the test browser
+#   mise run setup — install + the commit gate hook
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
@@ -81,8 +82,8 @@ run = "pnpm exec vitest run"
 
 # --- setup and build ---------------------------------------------------------
 
-[tasks.setup]
-description = "Make a fresh checkout workable; installs the commit gate"
+[tasks.install]
+description = "Install dependencies from the lockfile and the test browser"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
@@ -91,6 +92,15 @@ if [ ! -d node_modules ]; then
   if [ -d "$seat/node_modules" ]; then cp -Rc "$seat/node_modules" node_modules 2>/dev/null || true; fi
 fi
 pnpm install --frozen-lockfile
+pnpm --dir site exec playwright install chromium
+"""
+
+[tasks.setup]
+description = "Make a fresh checkout workable; installs the commit gate"
+depends = ["install"]
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
 git config --unset-all core.hooksPath 2>/dev/null || true
 mise generate git-pre-commit --write --task=pre-commit
 """
@@ -125,6 +135,7 @@ sources = [
   "*.mjs",
   "mise.toml",
   "*/mise.toml",
+  ".github/**",
   ".oxlintrc.json",
   ".prettierignore",
   "core/src/**",

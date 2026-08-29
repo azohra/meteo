@@ -13,7 +13,8 @@ mise run setup
 ```
 
 mise supplies the pinned toolchain. The setup task installs workspace
-dependencies and the repository's pre-commit check.
+dependencies, Chromium for the browser suite, and the repository's pre-commit
+check.
 
 ## Prove a change
 
@@ -28,8 +29,8 @@ mise run check      # the complete repository proof
 ```
 
 `mise tasks ls` lists the available root tasks. Before committing,
-`mise run check` must pass. The repository runs this proof locally rather than
-duplicating it in a hosted workflow.
+`mise run check` must pass. GitHub Actions runs the same proof on pull requests
+and pushes to main.
 
 Tests must be deterministic. Use committed provider fixtures, fixed clocks,
 explicit time zones, and synthetic scenarios. Keep network checks and live
