@@ -195,7 +195,7 @@ forecasts. The full story is on
 
 meteo by Azohra is solo-maintained. Read the [contributor guide](CONTRIBUTING.md)
 for setup, repository checks, generated files, documentation rules, and
-changesets. Discuss substantial changes in an issue before sending a pull
+change intents. Discuss substantial changes in an issue before sending a pull
 request.
 
 ## Licence

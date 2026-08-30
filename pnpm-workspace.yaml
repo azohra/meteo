@@ -11,6 +11,13 @@ packages:
   - forecast
   - site
 
+versioning:
+  ignore:
+    - meteo-platform
+    - meteo-site
+  changelog:
+    storage: repository
+
 allowBuilds:
   esbuild: true
   # Cloudflare's runtime binary, installed by wrangler (the site deploys

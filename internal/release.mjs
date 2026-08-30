@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -99,30 +99,36 @@ if (startingHead !== main) {
   refuse(`HEAD ${startingHead.slice(0, 7)} is not origin/main ${main.slice(0, 7)}`);
 }
 
-if (capture("npm", ["config", "get", "registry"]) !== registry) {
-  refuse(`npm registry is not ${registry}`);
+if (capture("pnpm", ["config", "get", "registry"]) !== registry) {
+  refuse(`pnpm registry is not ${registry}`);
 }
 const npmUser = capture("npm", ["whoami", `--registry=${registry}`]);
 if (npmUser !== "azohra") refuse(`NPM_TOKEN authenticates as ${npmUser}, not azohra`);
 
-const changesets = readdirSync(resolve(root, ".changeset")).filter(
-  (file) => file.endsWith(".md") && file.toLowerCase() !== "readme.md",
-);
+const changeIntentDirectory = resolve(root, ".changeset");
+const changeIntents = existsSync(changeIntentDirectory)
+  ? readdirSync(changeIntentDirectory).filter(
+      (file) => file.endsWith(".md") && file.toLowerCase() !== "readme.md",
+    )
+  : [];
 let packages = publicPackages();
 if (packages.length === 0) refuse("the workspace contains no public packages");
 
 let candidates = [];
-if (changesets.length > 0) {
+if (changeIntents.length > 0) {
   const before = new Map(packages.map((pkg) => [pkg.name, pkg.version]));
-  run("pnpm", ["exec", "changeset", "version"]);
+  run("pnpm", ["version", "-r"]);
   packages = publicPackages();
-  candidates = packages.filter((pkg) => before.get(pkg.name) !== pkg.version);
-  if (candidates.length === 0) refuse("changeset version did not change a public package");
+  candidates = packages.filter(
+    (pkg) =>
+      before.get(pkg.name) !== pkg.version || !publishedVersions(pkg.name).includes(pkg.version),
+  );
+  if (candidates.length === 0) refuse("change intents produced no release candidate");
 
   run("mise", ["run", "check"]);
   run("git", ["add", "-A"]);
   if (!capture("git", ["diff", "--cached", "--name-only"])) {
-    refuse("changeset version produced no staged files");
+    refuse("pnpm version produced no staged files");
   }
   const subject = `Version packages: ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")}`;
   run("git", ["commit", "--no-verify", "-m", subject]);
@@ -149,7 +155,9 @@ if (unpublished.length === 0 && tagsToPush.length === 0) {
   refuse("there are no pending package versions or release tags");
 }
 
-if (unpublished.length > 0) run("pnpm", ["exec", "changeset", "publish"]);
+if (unpublished.length > 0) {
+  run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks"]);
+}
 
 for (const pkg of candidates) {
   const tag = `${pkg.name}@${pkg.version}`;

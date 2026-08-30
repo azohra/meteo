@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -189,11 +190,22 @@ describe("manifest parity (the publishable six and the shell)", () => {
     expect(shell.engines?.node).toBeTruthy();
   });
 
-  it("the changeset config declares public access — without it a scoped publish to npmjs defaults to restricted", () => {
-    const changesets = JSON.parse(
-      readFileSync(join(ROOT, ".changeset", "config.json"), "utf-8"),
-    ) as { access?: string };
-    expect(changesets.access).toBe("public");
+  it("pnpm ignores private workspaces during versioning and commits package changelogs", () => {
+    const versioning = JSON.parse(
+      execFileSync("pnpm", ["config", "get", "versioning", "--json"], {
+        cwd: ROOT,
+        encoding: "utf-8",
+      }),
+    ) as { ignore?: string[]; changelog?: { storage?: string } };
+    expect(versioning.ignore).toEqual(["meteo-platform", "meteo-site"]);
+    expect(versioning.changelog?.storage).toBe("repository");
+  });
+
+  it("the release command declares public access — without it a scoped publish to npmjs defaults to restricted", () => {
+    const release = readFileSync(join(ROOT, "internal", "release.mjs"), "utf-8");
+    expect(release).toContain(
+      'run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks"]);',
+    );
   });
 
   for (const [directory, manifest] of publishable) {
@@ -213,7 +225,7 @@ describe("manifest parity (the publishable six and the shell)", () => {
         expect(manifest.repository?.directory).toBe(directory);
       });
 
-      it("carries no publishConfig — the packages publish to npmjs, and public access is declared once for all of them in .changeset/config.json", () => {
+      it("carries no publishConfig — the release command declares public access once for the workspace", () => {
         expect(manifest.publishConfig).toBeUndefined();
       });
 

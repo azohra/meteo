@@ -14,7 +14,7 @@
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
 #   mise run deploy — prove and deploy the site from origin/main
-#   mise run release — version and publish pending package changesets
+#   mise run release — version and publish pending change intents
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -461,6 +461,6 @@ raw_args = true
 run = "node internal/deploy.mjs"
 
 [tasks.release]
-description = "Version and publish pending package changesets"
-confirm = "Version and publish Meteo's pending package changesets?"
+description = "Version and publish pending change intents"
+confirm = "Version and publish Meteo's pending change intents?"
 run = "node internal/release.mjs"

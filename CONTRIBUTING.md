@@ -85,22 +85,22 @@ scientific language.
 
 ## Package changes
 
-Published packages version independently. Add a changeset when a change affects
+Published packages version independently. Add a change intent when a change affects
 a package's public API or behaviour:
 
 ```sh
-pnpm exec changeset
+pnpm change
 ```
 
 Name every affected package and write the short consumer-facing entry that
 belongs in its changelog. Documentation-only, test-only, and internal refactors
-usually need no changeset.
+usually need no change intent.
 
-Maintainers publish pending changesets with `mise run release`. The verb runs
+Maintainers publish pending change intents with `mise run release`. The verb runs
 the complete proof before publishing package versions and tags.
 
 ## Submit the change
 
 Keep commits focused and write their subjects as plain imperatives. A pull
 request should explain the user-visible change, identify the proof that passed,
-and include a changeset when the published surface moved.
+and include a change intent when the published surface moved.

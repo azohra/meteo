@@ -15,7 +15,6 @@
     "@azohra/meteo.core": "workspace:*",
     "@azohra/meteo.forecast": "workspace:*",
     "@azohra/meteo.station": "workspace:*",
-    "@changesets/cli": "^3.0.0",
     "@fontsource/big-shoulders": "^5.0.0",
     "@fontsource/ibm-plex-mono": "^5.0.0",
     "@fontsource/ibm-plex-sans": "^5.0.0",
