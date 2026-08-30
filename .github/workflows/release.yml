@@ -34,6 +34,3 @@ jobs:
       - run: mise run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: mise run deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
