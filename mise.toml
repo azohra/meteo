@@ -81,10 +81,6 @@ description = "Install dependencies from the lockfile and the test browser"
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
-if [ ! -d node_modules ]; then
-  seat=$(dirname "$(git rev-parse --git-common-dir)")
-  if [ -d "$seat/node_modules" ]; then cp -Rc "$seat/node_modules" node_modules 2>/dev/null || true; fi
-fi
 pnpm install --frozen-lockfile
 pnpm --dir site exec playwright install chromium
 """
