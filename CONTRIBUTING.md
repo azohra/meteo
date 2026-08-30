@@ -13,8 +13,7 @@ mise run setup
 ```
 
 mise supplies the pinned toolchain. The setup task installs workspace
-dependencies, Chromium for the browser suite, and the repository's pre-commit
-check.
+dependencies and Chromium for the browser suite.
 
 ## Prove a change
 

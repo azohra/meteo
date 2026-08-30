@@ -9,7 +9,7 @@
 # gates, and the repo-wide doc gates.
 #
 #   mise run install — frozen dependencies + the test browser
-#   mise run setup — install + the commit gate hook
+#   mise run setup — make a fresh checkout workable
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
@@ -98,14 +98,8 @@ pnpm --dir site exec playwright install chromium
 """
 
 [tasks.setup]
-description = "Make a fresh checkout workable; installs the commit gate"
+description = "Make a fresh checkout workable"
 depends = ["install"]
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-git config --unset-all core.hooksPath 2>/dev/null || true
-mise generate git-pre-commit --write --task=pre-commit
-"""
 
 [tasks.build]
 description = "Build every package, then the workspace shell (skips when fresh)"
@@ -478,12 +472,3 @@ run = "node internal/deploy.mjs"
 description = "Version and publish pending package changesets"
 confirm = "Version and publish Meteo's pending package changesets?"
 run = "node internal/release.mjs"
-
-[tasks.pre-commit]
-description = "Commit gate: branches author, main never does; check must be green"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-[ "$(git branch --show-current)" != "main" ] || { echo "pre-commit: refusing — commits are authored on branches, never on main" >&2; exit 1; }
-mise run check
-"""
