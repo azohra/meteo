@@ -142,6 +142,9 @@ sources = [
   "site/*.ts",
   "site/*.mjs",
   "scenarios/**",
+  "pnpm-lock.yaml",
+  "grib/tools/**",
+  "j2k/tools/**",
 ]
 outputs = []
 cache = { enabled = true }
