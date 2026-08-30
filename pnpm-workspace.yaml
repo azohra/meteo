@@ -1,3 +1,7 @@
+# mise selects the packageManager-declared pnpm; keep pnpm's overlapping
+# self-switcher off so the dependency lockfile stays a single YAML document.
+pmOnFail: ignore
+
 packages:
   - core
   - briefing

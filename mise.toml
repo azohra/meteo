@@ -30,21 +30,13 @@ config_roots = ["core", "briefing", "station", "forecast", "grib", "j2k", "site"
 # invocation-global — this also enables experimental features for global
 # tool resolution while running inside this repo.
 experimental = true
+idiomatic_version_file_enable_tools = ["pnpm"]
 # The check DAG fans out across seven package checks plus the doc gates;
 # tasks are subprocess-bound, not mise-bound.
 jobs = 8
 
-[tool_config]
-# Tools in this config root must resolve from the committed mise.lock.
-# Scoped to this root only — unlike `settings.locked`, this cannot leak
-# policy onto other repos.
-locked = true
-
 [tools]
 node = "24"
-# Must stay equal to package.json's packageManager field, which pnpm
-# itself enforces at install time.
-pnpm = "11.20.0"
 
 [env]
 _.path = ["./node_modules/.bin"]

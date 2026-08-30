@@ -9,4 +9,4 @@ site/test-results/
 
 # mise
 /mise.local.toml
-/mise.local.lock
+mise*.lock
