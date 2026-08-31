@@ -30,7 +30,7 @@ export function windRoseSource(
   points: HistoryPoint[] | undefined,
   station: Station | undefined,
 ): ReadonlyArray<HistoryPoint> {
-  return points ?? (station?.status === "ok" ? (station.history?.points ?? null) : null) ?? [];
+  return points ?? (station?.status === "ok" ? station.history?.points : null) ?? [];
 }
 
 export function windRoseScene(

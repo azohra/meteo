@@ -32,8 +32,7 @@ export function dailyPatternSource(
   points: HistoryPoint[] | undefined,
   station: Station | undefined,
 ): { source: HistoryPoint[]; periodMinutes: number | null } {
-  const source =
-    points ?? (station?.status === "ok" ? (station.history?.points ?? null) : null) ?? [];
+  const source = points ?? (station?.status === "ok" ? station.history?.points : null) ?? [];
   const periodMinutes =
     points == null && station?.status === "ok" ? (station.history?.periodMinutes ?? null) : null;
   return { source: source as HistoryPoint[], periodMinutes };

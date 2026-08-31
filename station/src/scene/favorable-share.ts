@@ -10,7 +10,7 @@ export function favorableShareSource(
   points: HistoryPoint[] | undefined,
   station: Station | undefined,
 ): ReadonlyArray<HistoryPoint> {
-  return points ?? (station?.status === "ok" ? (station.history?.points ?? null) : null) ?? [];
+  return points ?? (station?.status === "ok" ? station.history?.points : null) ?? [];
 }
 
 /* Null without arcs — favorable is a judgment the consumer must supply, so

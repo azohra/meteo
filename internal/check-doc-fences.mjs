@@ -159,7 +159,6 @@ const tsconfig = {
     skipLibCheck: true,
     types: ["node"],
     lib: ["es2022"],
-    baseUrl: ".",
     // Flat subpaths (dist/*.d.ts) resolve before dist/*/index.d.ts so a
     // stale directory ghost can never shadow them.
     paths: Object.fromEntries(
@@ -177,7 +176,11 @@ const tsconfig = {
 writeFileSync(join(tempDir, "tsconfig.json"), `${JSON.stringify(tsconfig, null, 2)}\n`);
 
 const requireFromPackage = createRequire(join(packageDir, "package.json"));
-const tscBin = requireFromPackage.resolve("typescript/bin/tsc");
+const typescriptManifest = requireFromPackage.resolve("typescript/package.json");
+const tscBin = join(
+  dirname(typescriptManifest),
+  JSON.parse(readFileSync(typescriptManifest, "utf-8")).bin.tsc,
+);
 
 const result = spawnSync(process.execPath, [tscBin, "-p", "tsconfig.json", "--pretty", "false"], {
   cwd: tempDir,

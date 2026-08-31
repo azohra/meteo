@@ -19,7 +19,7 @@
     "@astrojs/check": "^0.9.4",
     "@playwright/test": "^1.62.1",
     "@types/node": "^22.10.0",
-    "typescript": "^5.6.0",
+    "typescript": "^6.0.3",
     "wrangler": "^4.121.0"
   }
 }

@@ -23,6 +23,9 @@ sources = [
 ]
 outputs = ["dist/**"]
 
+# The site holds TypeScript 6 while the packages run 7: astro check reads the
+# compiler API through @astrojs/check, which peers on 5 or 6 and has no release
+# that runs against 7.
 [tasks.typecheck]
 description = "astro check against the built site's generated types"
 depends = ["build"]
