@@ -1,10 +1,15 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const registry = "https://registry.npmjs.org/";
+const planPath = "internal/release-plan.json";
+const prepare = process.argv[2] === "--prepare";
+if (process.argv.slice(2).some((arg) => arg !== "--prepare")) {
+  throw new Error("The only supported release option is --prepare");
+}
 
 process.chdir(root);
 
@@ -56,25 +61,39 @@ function publishedVersions(name) {
   return Array.isArray(parsed) ? parsed : [parsed];
 }
 
-function versionChangedAtHead(pkg) {
-  const manifest = `${pkg.path}/package.json`;
-  const result = spawnSync("git", ["show", `HEAD^:${manifest}`], { encoding: "utf8" });
-  if (result.status !== 0) return false;
-  return JSON.parse(result.stdout).version !== pkg.version;
-}
-
 function localTagTarget(tag) {
   const result = spawnSync("git", ["rev-list", "-n", "1", tag], { encoding: "utf8" });
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
 function remoteTagTarget(tag) {
-  const result = capture("git", ["ls-remote", "--tags", "origin", `refs/tags/${tag}^{}`]);
-  return result ? result.split(/\s/)[0] : null;
+  const result = capture("git", [
+    "ls-remote",
+    "--tags",
+    "origin",
+    `refs/tags/${tag}`,
+    `refs/tags/${tag}^{}`,
+  ]);
+  const refs = new Map(
+    result
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => line.split(/\s+/).reverse()),
+  );
+  if (refs.has(`refs/tags/${tag}`) && !refs.has(`refs/tags/${tag}^{}`)) {
+    refuse(`${tag} on origin is not annotated`);
+  }
+  return refs.get(`refs/tags/${tag}^{}`) ?? null;
 }
 
-if (!process.env.NPM_TOKEN) refuse("NPM_TOKEN is unset");
-process.env["npm_config_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
+for (const direction of [[], ["--push"]]) {
+  const remote = capture("git", ["remote", "get-url", ...direction, "--all", "origin"]);
+  if (
+    !["https://github.com/azohra/meteo.git", "git@github.com:azohra/meteo.git"].includes(remote)
+  ) {
+    refuse("origin must point only to azohra/meteo for fetch and push");
+  }
+}
 
 const repository = JSON.parse(
   capture("gh", ["repo", "view", "--json", "nameWithOwner,visibility"]),
@@ -86,7 +105,7 @@ if (repository.nameWithOwner !== "azohra/meteo" || repository.visibility !== "PU
 }
 
 const branch = capture("git", ["branch", "--show-current"]);
-if (!branch || branch === "main")
+if (prepare && (!branch || branch === "main"))
   refuse("run from a release branch based on origin/main, never from main");
 if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
   refuse("the worktree is not clean");
@@ -95,15 +114,13 @@ if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
 run("git", ["fetch", "--quiet", "origin", "main", "--tags"]);
 const startingHead = capture("git", ["rev-parse", "HEAD"]);
 const main = capture("git", ["rev-parse", "origin/main"]);
-if (startingHead !== main) {
+if (prepare && startingHead !== main) {
   refuse(`HEAD ${startingHead.slice(0, 7)} is not origin/main ${main.slice(0, 7)}`);
 }
-
+if (!prepare) run("git", ["merge-base", "--is-ancestor", startingHead, main]);
 if (capture("pnpm", ["config", "get", "registry"]) !== registry) {
   refuse(`pnpm registry is not ${registry}`);
 }
-const npmUser = capture("npm", ["whoami", `--registry=${registry}`]);
-if (npmUser !== "azohra") refuse(`NPM_TOKEN authenticates as ${npmUser}, not azohra`);
 
 const changeIntentDirectory = resolve(root, ".changeset");
 const changeIntents = existsSync(changeIntentDirectory)
@@ -114,72 +131,99 @@ const changeIntents = existsSync(changeIntentDirectory)
 let packages = publicPackages();
 if (packages.length === 0) refuse("the workspace contains no public packages");
 
-let candidates = [];
-if (changeIntents.length > 0) {
+if (prepare) {
+  if (changeIntents.length === 0) refuse("there are no pending change intents");
   const before = new Map(packages.map((pkg) => [pkg.name, pkg.version]));
   run("pnpm", ["version", "-r"]);
   packages = publicPackages();
-  candidates = packages.filter(
+  const candidates = packages.filter(
     (pkg) =>
       before.get(pkg.name) !== pkg.version || !publishedVersions(pkg.name).includes(pkg.version),
   );
   if (candidates.length === 0) refuse("change intents produced no release candidate");
-
+  writeFileSync(
+    planPath,
+    `${JSON.stringify(
+      candidates.map(({ name, version }) => ({ name, version })),
+      null,
+      2,
+    )}\n`,
+  );
   run("mise", ["run", "check"]);
-  run("git", ["add", "-A"]);
-  if (!capture("git", ["diff", "--cached", "--name-only"])) {
-    refuse("pnpm version produced no staged files");
-  }
-  const subject = `Version packages: ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")}`;
-  run("git", ["commit", "--no-verify", "-m", subject]);
-  run("git", ["push", "origin", "HEAD:main"]);
-} else {
-  candidates = packages.filter(versionChangedAtHead);
-  run("mise", ["run", "check"]);
-  if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
-    refuse("the repository proof changed the worktree");
-  }
+  console.log(
+    "release: prepared versions, changelogs, and release plan; review and commit them together, then merge through a pull request",
+  );
+  process.exit(0);
 }
 
-const releaseHead = capture("git", ["rev-parse", "HEAD"]);
-const unpublished = packages.filter((pkg) => !publishedVersions(pkg.name).includes(pkg.version));
-for (const pkg of unpublished) {
-  if (!candidates.some((candidate) => candidate.name === pkg.name)) candidates.push(pkg);
-}
-
-const tagsToPush = candidates.filter((pkg) => {
-  const tag = `${pkg.name}@${pkg.version}`;
-  return remoteTagTarget(tag) !== releaseHead;
+if (changeIntents.length > 0) refuse("prepare and merge pending change intents before publishing");
+if (!existsSync(planPath)) refuse("no release plan; run mise run release:prepare first");
+const releaseHead = capture("git", ["log", "-1", "--format=%H", "--", planPath]);
+if (releaseHead !== startingHead)
+  refuse("check out the merged commit that last changed the release plan");
+const plan = JSON.parse(readFileSync(planPath, "utf8"));
+if (!Array.isArray(plan) || plan.length === 0) refuse("the release plan is empty or invalid");
+const candidates = plan.map((entry) => {
+  const pkg = packages.find(
+    (candidate) => candidate.name === entry?.name && candidate.version === entry.version,
+  );
+  if (!pkg) refuse("the release plan does not match the workspace");
+  return pkg;
 });
-if (unpublished.length === 0 && tagsToPush.length === 0) {
-  refuse("there are no pending package versions or release tags");
+if (new Set(candidates.map((pkg) => pkg.name)).size !== candidates.length)
+  refuse("duplicate release candidate");
+if (!process.env.NPM_TOKEN) refuse("NPM_TOKEN is unset");
+process.env["npm_config_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
+const npmUser = capture("npm", ["whoami", `--registry=${registry}`]);
+if (npmUser !== "azohra") refuse(`NPM_TOKEN authenticates as ${npmUser}, not azohra`);
+
+run("mise", ["run", "check"]);
+if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
+  refuse("the repository proof changed the worktree");
+}
+const unpublished = packages.filter((pkg) => !publishedVersions(pkg.name).includes(pkg.version));
+if (unpublished.some((pkg) => !candidates.includes(pkg)))
+  refuse("an unpublished package is outside the release plan");
+
+function checkTags() {
+  for (const pkg of candidates) {
+    const tag = `${pkg.name}@${pkg.version}`;
+    const remoteTarget = remoteTagTarget(tag);
+    const localTarget = localTagTarget(tag);
+    if (
+      (remoteTarget && remoteTarget !== releaseHead) ||
+      (localTarget && localTarget !== releaseHead)
+    ) {
+      refuse(`${tag} already points to another commit`);
+    }
+    if (localTarget && capture("git", ["cat-file", "-t", `refs/tags/${tag}`]) !== "tag") {
+      refuse(`${tag} is not annotated`);
+    }
+  }
 }
 
+// Tag conflicts must stop the release before the first irreversible npm upload.
+checkTags();
 if (unpublished.length > 0) {
   run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks"]);
 }
-
-for (const pkg of candidates) {
-  const tag = `${pkg.name}@${pkg.version}`;
-  const remoteTarget = remoteTagTarget(tag);
-  let localTarget = localTagTarget(tag);
-  if (!localTarget && !remoteTarget && publishedVersions(pkg.name).includes(pkg.version)) {
-    run("git", ["tag", "-a", tag, "-m", tag, releaseHead]);
-    localTarget = releaseHead;
-  }
-  if (localTarget !== releaseHead) refuse(`${tag} does not point to ${releaseHead.slice(0, 7)}`);
-  if (capture("git", ["cat-file", "-t", tag]) !== "tag") refuse(`${tag} is not annotated`);
-}
-
-run("git", ["push", "--follow-tags", "origin", "HEAD:main"]);
-
+checkTags();
 for (const pkg of candidates) {
   const tag = `${pkg.name}@${pkg.version}`;
   if (!publishedVersions(pkg.name).includes(pkg.version))
     refuse(`${tag} is not available from npm`);
+  if (!localTagTarget(tag)) run("git", ["tag", "-a", tag, "-m", tag, releaseHead]);
+}
+run("git", [
+  "push",
+  "--no-follow-tags",
+  "origin",
+  ...candidates.map((pkg) => `refs/tags/${pkg.name}@${pkg.version}`),
+]);
+for (const pkg of candidates) {
+  const tag = `${pkg.name}@${pkg.version}`;
   if (remoteTagTarget(tag) !== releaseHead) refuse(`${tag} is not on origin`);
 }
-
 console.log(
-  `release: published ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")}`,
+  `release: verified ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")} at ${releaseHead}`,
 );

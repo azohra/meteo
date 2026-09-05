@@ -14,7 +14,8 @@
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
 #   mise run deploy — prove and deploy the site from origin/main
-#   mise run release — version and publish pending change intents
+#   mise run release:prepare — prepare versions for a release PR
+#   mise run release — publish a merged release plan
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -36,6 +37,7 @@ idiomatic_version_file_enable_tools = ["pnpm"]
 jobs = 8
 
 [tools]
+actionlint = "1.7.12"
 node = "24"
 
 [env]
@@ -113,7 +115,7 @@ outputs = ["dist/**"]
 
 [tasks.lint]
 description = "Format and lint gate (source readers; no build needed)"
-run = "oxfmt --check . && oxlint ."
+run = "oxfmt --check . && oxlint . && actionlint"
 sources = [
   "*.ts",
   "*.mjs",
@@ -459,7 +461,11 @@ confirm = "Deploy origin/main to meteo.azohra.com?"
 raw_args = true
 run = "node internal/deploy.mjs"
 
+[tasks."release:prepare"]
+description = "Prepare versions, changelogs, and a release plan for review"
+run = "node internal/release.mjs --prepare"
+
 [tasks.release]
-description = "Version and publish pending change intents"
-confirm = "Version and publish Meteo's pending change intents?"
+description = "Publish the merged release plan and its package tags"
+confirm = "Publish Meteo's merged release plan?"
 run = "node internal/release.mjs"
