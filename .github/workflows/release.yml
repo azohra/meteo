@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: meteo-production
@@ -16,13 +16,23 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment: bosun-release
     env:
-      GH_TOKEN: ${{ github.token }}
       MISE_JOBS: 1
     steps:
+      - id: bosun
+        name: Mint Bosun release token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ vars.BOSUN_CLIENT_ID }}
+          private-key: ${{ secrets.BOSUN_PRIVATE_KEY }}
+          owner: azohra
+          repositories: meteo
+          permission-contents: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          token: ${{ steps.bosun.outputs.token }}
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         env:
           MISE_GITHUB_TOKEN: ${{ github.token }}
@@ -31,8 +41,9 @@ jobs:
       - run: mise run install
       - name: Configure tag author
         run: |
-          git config user.name "$(node -p 'require("./package.json").author')"
-          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name "azohra-bosun[bot]"
+          git config user.email "325107280+azohra-bosun[bot]@users.noreply.github.com"
       - run: mise run release
         env:
+          GH_TOKEN: ${{ steps.bosun.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
