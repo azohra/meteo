@@ -1303,6 +1303,12 @@ export function evaluateAssertions(definition: PlainRecord, profiles: PlainRecor
       passed = Math.abs(actual - expected) >= threshold;
       expectedRelation = `absolute difference >= ${threshold} from ${pyRepr(expected)}`;
     } else {
+      if (!Object.hasOwn(RELATIONAL_OPERATORS, operator)) {
+        throw new ScenarioAssertionError(
+          `scenario ${scenarioId} assertion ${assertionId} (${context}): ` +
+            `unknown relation ${operator}`,
+        );
+      }
       const tolerance = (assertion["tolerance"] as number | undefined) ?? 0;
       passed = RELATIONAL_OPERATORS[operator](actual, expected, tolerance);
       expectedRelation = `${operator} ${pyRepr(expected)} (tolerance ${tolerance})`;

@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { importDist } from "./lib/import-dist.mjs";
+import { escapeXml } from "./lib/xml.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -234,8 +235,7 @@ const STATION = {
 
 core.stationSchema.parse(STATION);
 
-const esc = (value) =>
-  String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = escapeXml;
 const n = (value) => String(Math.round(value * 10) / 10);
 const text = (x, y, cls, content, anchor) =>
   `<text class="${cls}" x="${n(x)}" y="${n(y)}"${anchor ? ` text-anchor="${anchor}"` : ""}>${esc(content)}</text>`;
