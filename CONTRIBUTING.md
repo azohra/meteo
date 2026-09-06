@@ -101,14 +101,15 @@ Maintainers prepare a release on a clean branch at `origin/main` with
 Review the versions, changelogs, and `internal/release-plan.json`; commit them
 together and merge through a pull request with a passing Check.
 
-After merging, run the manual Release workflow on main, or check out the merged
-version commit and run `mise run release` locally. Publication requires that exact
-commit to be on main's history and runs the complete proof again. It publishes
+After merging, run the manual Release workflow on main with the full merged
+version commit SHA in `commit`, or check out that commit and run `mise run release`
+locally. Publication requires that exact commit to be on main's history and runs the complete proof again. It publishes
 only the prepared versions and pushes their annotated tags without writing main.
 
 A failed publication may have uploaded some packages. Retry from the same merged
 version commit: existing npm versions are skipped and missing tags are repaired.
-If main has advanced, use a local checkout of that commit for the retry. Never
+If main has advanced, pass the original merged version commit SHA to the same
+workflow, or use a local checkout of that commit. Never
 move an existing package tag or regenerate versions to recover a partial release.
 
 ## Submit the change
