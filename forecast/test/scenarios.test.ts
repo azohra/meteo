@@ -11,6 +11,7 @@ import {
   applyTransforms,
   buildScenarioArtifacts,
   checkScenarioRepository,
+  evaluateAssertions,
   generateScenario,
   generateScenarioRepository,
   loadScenarioJson,
@@ -343,6 +344,19 @@ describe("baseline discipline", () => {
 });
 
 describe("scenario generation", () => {
+  it("reports an unknown assertion operator as a scenario error", () => {
+    const definition = minimalDefinition() as Doc;
+    const profile = generateScenario(definition, { repositoryRoot: ROOT }) as Doc;
+    definition.assertions[0].operator = "constructor";
+
+    expect(() => evaluateAssertions(definition, profile)).toThrowError(
+      new ScenarioAssertionError(
+        "scenario minimal-valid assertion surface-warms (hour 1, field surface.temperatureC): " +
+          "unknown relation constructor",
+      ),
+    );
+  });
+
   it("names scenario, hour, field, relation and actual in assertion failures", () => {
     const definition = minimalDefinition() as Doc;
     definition.assertions[0] = {

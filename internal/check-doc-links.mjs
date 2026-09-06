@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sitePathForTarget } from "./lib/doc-links.mjs";
 import { ignoredLine, repositoryMarkdownFiles, stripFences, walk } from "./lib/prose-files.mjs";
 
 /* Internal-link integrity for every reader-facing source: the docs
@@ -91,10 +92,7 @@ function anchorsOf(file) {
 }
 
 function checkTarget(target, sourceFile) {
-  let link = target;
-  if (link.startsWith("https://meteo.azohra.com")) {
-    link = link.slice("https://meteo.azohra.com".length) || "/";
-  }
+  const link = sitePathForTarget(target) ?? target;
   if (/^[a-z][a-z\d+.-]*:/i.test(link) || link.startsWith("//")) return null;
   if (link.startsWith("#")) {
     const anchor = link.slice(1);
