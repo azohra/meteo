@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      commit:
+        description: Full merged release-plan commit SHA (required for retries after main advances)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -33,6 +38,14 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.bosun.outputs.token }}
+      - name: Select merged release source
+        env:
+          RELEASE_COMMIT: ${{ inputs.commit }}
+        run: |
+          [[ "$RELEASE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch -q origin main
+          git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
+          git checkout --detach "$RELEASE_COMMIT"
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         env:
           MISE_GITHUB_TOKEN: ${{ github.token }}
