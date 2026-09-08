@@ -203,9 +203,7 @@ describe("manifest parity (the publishable six and the shell)", () => {
 
   it("the release command declares public access — without it a scoped publish to npmjs defaults to restricted", () => {
     const release = readFileSync(join(ROOT, "internal", "release.mjs"), "utf-8");
-    expect(release).toContain(
-      'run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks"]);',
-    );
+    expect(release).toContain('"--access", "public"');
   });
 
   for (const [directory, manifest] of publishable) {

@@ -13,7 +13,7 @@
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
-#   mise run deploy — prove and deploy the site from origin/main
+#   mise run deploy — build and deploy the site from origin/main
 #   mise run release:prepare — prepare versions for a release PR
 #   mise run release — publish a merged release plan
 
@@ -456,7 +456,7 @@ printf '%s\n' \
 """
 
 [tasks.deploy]
-description = "Prove and deploy meteo.azohra.com from origin/main"
+description = "Build and deploy meteo.azohra.com from origin/main"
 confirm = "Deploy origin/main to meteo.azohra.com?"
 raw_args = true
 run = "node internal/deploy.mjs"

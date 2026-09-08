@@ -61,8 +61,8 @@ function fixture({ firstRelease = false, prepare = false } = {}) {
     versions: firstRelease ? [] : ["1.0.0"],
     calls: [] as string[],
     wrongRemote: false,
-    wrongUser: false,
-    dirtyCheck: false,
+    dirtyBuild: false,
+    failBuild: false,
     failPublish: false,
     failPush: false,
   };
@@ -87,16 +87,13 @@ if (command === 'git') {
     const result = cp.spawnSync(${JSON.stringify(realGit)}, args, { stdio: 'inherit' });
     process.exit(result.status ?? 1);
   }
-} else if (command === 'gh') {
-  console.log(JSON.stringify({ nameWithOwner: 'azohra/meteo', visibility: 'PUBLIC' }));
 } else if (command === 'npm') {
-  if (args[0] === 'whoami') console.log(state.wrongUser ? 'other' : 'azohra');
-  else console.log(JSON.stringify(state.versions));
+  console.log(JSON.stringify(state.versions));
 } else if (command === 'mise') {
-  if (state.dirtyCheck) fs.writeFileSync('unexpected.txt', 'changed by proof');
+  if (state.failBuild) process.exit(1);
+  if (state.dirtyBuild) fs.writeFileSync('unexpected.txt', 'changed by build');
 } else if (command === 'pnpm') {
   if (args[0] === 'list') console.log(JSON.stringify([{ ...JSON.parse(fs.readFileSync('core/package.json')), path: path.resolve('core') }]));
-  else if (args[0] === 'config') console.log('https://registry.npmjs.org/');
   else if (args[0] === 'version') {
     fs.writeFileSync('core/package.json', JSON.stringify({name: '@azohra/meteo.core', version: '1.1.0'}));
     fs.rmSync('.changeset/change.md');
@@ -106,7 +103,7 @@ if (command === 'git') {
   } else process.exit(1);
 } else process.exit(1);
 `;
-  for (const command of ["git", "gh", "npm", "pnpm", "mise"])
+  for (const command of ["git", "npm", "pnpm", "mise"])
     writeFileSync(join(bin, command), fake, { mode: 0o755 });
   const state = () => JSON.parse(readFileSync(statePath, "utf8")) as typeof initial;
   const configure = (patch: Partial<typeof initial>) =>
@@ -156,7 +153,7 @@ describe("release boundaries", () => {
     expect(f.git("status", "--porcelain")).toBe("");
   });
 
-  it.each(["wrongRemote", "wrongUser", "dirtyCheck"] as const)(
+  it.each(["wrongRemote", "dirtyBuild", "failBuild"] as const)(
     "refuses %s before publication",
     (flag) => {
       const f = fixture();

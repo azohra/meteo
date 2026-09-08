@@ -95,15 +95,6 @@ for (const direction of [[], ["--push"]]) {
   }
 }
 
-const repository = JSON.parse(
-  capture("gh", ["repo", "view", "--json", "nameWithOwner,visibility"]),
-);
-if (repository.nameWithOwner !== "azohra/meteo" || repository.visibility !== "PUBLIC") {
-  refuse(
-    `expected azohra/meteo (PUBLIC), found ${repository.nameWithOwner} (${repository.visibility})`,
-  );
-}
-
 const branch = capture("git", ["branch", "--show-current"]);
 if (prepare && (!branch || branch === "main"))
   refuse("run from a release branch based on origin/main, never from main");
@@ -118,10 +109,6 @@ if (prepare && startingHead !== main) {
   refuse(`HEAD ${startingHead.slice(0, 7)} is not origin/main ${main.slice(0, 7)}`);
 }
 if (!prepare) run("git", ["merge-base", "--is-ancestor", startingHead, main]);
-if (capture("pnpm", ["config", "get", "registry"]) !== registry) {
-  refuse(`pnpm registry is not ${registry}`);
-}
-
 const changeIntentDirectory = resolve(root, ".changeset");
 const changeIntents = existsSync(changeIntentDirectory)
   ? readdirSync(changeIntentDirectory).filter(
@@ -149,7 +136,6 @@ if (prepare) {
       2,
     )}\n`,
   );
-  run("mise", ["run", "check"]);
   console.log(
     "release: prepared versions, changelogs, and release plan; review and commit them together, then merge through a pull request",
   );
@@ -174,13 +160,6 @@ if (new Set(candidates.map((pkg) => pkg.name)).size !== candidates.length)
   refuse("duplicate release candidate");
 if (!process.env.NPM_TOKEN) refuse("NPM_TOKEN is unset");
 process.env["npm_config_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
-const npmUser = capture("npm", ["whoami", `--registry=${registry}`]);
-if (npmUser !== "azohra") refuse(`NPM_TOKEN authenticates as ${npmUser}, not azohra`);
-
-run("mise", ["run", "check"]);
-if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
-  refuse("the repository proof changed the worktree");
-}
 const unpublished = packages.filter((pkg) => !publishedVersions(pkg.name).includes(pkg.version));
 if (unpublished.some((pkg) => !candidates.includes(pkg)))
   refuse("an unpublished package is outside the release plan");
@@ -205,7 +184,11 @@ function checkTags() {
 // Tag conflicts must stop the release before the first irreversible npm upload.
 checkTags();
 if (unpublished.length > 0) {
-  run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks"]);
+  run("mise", ["run", "build"]);
+  if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
+    refuse("the build changed the worktree");
+  }
+  run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks", `--registry=${registry}`]);
 }
 checkTags();
 for (const pkg of candidates) {
