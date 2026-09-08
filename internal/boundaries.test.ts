@@ -201,11 +201,6 @@ describe("manifest parity (the publishable six and the shell)", () => {
     expect(versioning.changelog?.storage).toBe("repository");
   });
 
-  it("the release command declares public access — without it a scoped publish to npmjs defaults to restricted", () => {
-    const release = readFileSync(join(ROOT, "internal", "release.mjs"), "utf-8");
-    expect(release).toContain('"--access", "public"');
-  });
-
   for (const [directory, manifest] of publishable) {
     describe(`${manifest.name} (${directory}/)`, () => {
       it("declares the same engines as the shell — one Node floor for the platform", () => {

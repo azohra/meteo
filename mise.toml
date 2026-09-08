@@ -15,7 +15,7 @@
 #   mise run dev   — the site dev server (port derived per checkout)
 #   mise run deploy — build and deploy the site from origin/main
 #   mise run release:prepare — prepare versions for a release PR
-#   mise run release — publish a merged release plan
+#   mise run release — publish merged package versions
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -406,6 +406,7 @@ run = "node internal/scenarios.mjs generate"
 description = "The definition of green: every gate, one command"
 depends = [
   "lint",
+  "changes:check",
   "content",
   "figures:check",
   "station-assets:check",
@@ -461,11 +462,15 @@ confirm = "Deploy origin/main to meteo.azohra.com?"
 raw_args = true
 run = "node internal/deploy.mjs"
 
+[tasks."changes:check"]
+description = "Validate PR package impacts and preview pnpm releases"
+run = "node internal/check-changes.mjs"
+
 [tasks."release:prepare"]
-description = "Prepare versions, changelogs, and a release plan for review"
-run = "node internal/release.mjs --prepare"
+description = "Apply pnpm change intents for a release PR"
+run = "pnpm version -r"
 
 [tasks.release]
-description = "Publish the merged release plan and its package tags"
-confirm = "Publish Meteo's merged release plan?"
+description = "Publish merged package versions and their tags"
+confirm = "Publish Meteo's merged package versions?"
 run = "node internal/release.mjs"

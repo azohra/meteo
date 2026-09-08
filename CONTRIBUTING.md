@@ -85,38 +85,43 @@ scientific language.
 
 ## Package changes
 
-Published packages version independently. Add a change intent when a change affects
-a package's public API or behaviour:
+Published packages version independently. Record the affected packages, version
+impact and consumer-facing summary with `pnpm change`, alongside the code.
+A package change that needs no release uses `--bump none` with a short reason.
+The PR Check requires an intent for each changed public package and previews the
+result with pnpm. Shared build or dependency changes still need review for their
+impact on package consumers.
+
+While packages are below v1, use `minor` for features and breaking changes, and
+`patch` for compatible fixes. Describe breaking changes and their migration in
+the summary. The native `versioning.maxBump: minor` setting rejects major releases;
+remove that limit deliberately when introducing a stable v1 package.
+
+Prepare a release on a branch based on current main:
 
 ```sh
-pnpm change
+mise run release:prepare
+mise run check
 ```
 
-Name every affected package and write the short consumer-facing entry that
-belongs in its changelog. Documentation-only, test-only, and internal refactors
-usually need no change intent.
+pnpm updates versions, dependent packages, changelogs and `.changeset/ledger.yaml`.
+Review and commit those files together, then merge the release PR. There is no
+separate release-plan file. A release PR changes generated version records; put
+new package code and its intents in preceding PRs.
 
-Maintainers prepare a release on a clean branch at `origin/main` with
-`mise run release:prepare`. This consumes the intents and prepares the package
-versions and changelogs. Run `mise run check` before submitting the result.
-Review the versions, changelogs, and `internal/release-plan.json`; commit them
-together and merge through a pull request with a passing Check.
+After merging, run the manual Release workflow with the full merged version
+commit SHA in `commit`, or check out that commit and run `mise run release`
+locally with `NPM_TOKEN`. Publication reads the new ledger entries and package
+version changes from that commit, builds the packages, publishes to npm and pushes
+matching package tags. It never writes main.
 
-After merging, run the manual Release workflow on main with the full merged
-version commit SHA in `commit`, or check out that commit and run `mise run release`
-locally. Publication requires that exact commit to be on main's history. It builds
-and publishes the prepared packages, then pushes their annotated tags without
-writing main.
-
-A failed publication may have uploaded some packages. Retry from the same merged
-version commit: existing npm versions are skipped and missing tags are repaired.
-If main has advanced, pass the original merged version commit SHA to the same
-workflow, or use a local checkout of that commit. Never
-move an existing package tag or regenerate versions to recover a partial release.
+If publication stops partway through, retry the same merged commit. pnpm skips
+versions already on npm and the release task repairs missing tags. This also
+works after main advances. Existing tags are never moved.
 
 The required PR Check runs the complete proof against an up-to-date base.
-Deployment builds the site from main; publication builds the prepared packages.
-Neither repeats the test suite.
+Deployment builds the site from main independently of package releases.
+Deployment and publication do not repeat the test suite.
 
 ## Submit the change
 

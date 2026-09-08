@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       commit:
-        description: Full merged release-plan commit SHA (required for retries after main advances)
+        description: Full merged package-version commit SHA (required for retries after main advances)
         required: true
         type: string
 

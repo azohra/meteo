@@ -12,6 +12,8 @@ packages:
   - site
 
 versioning:
+  # Packages remain pre-v1 until a deliberate stable release.
+  maxBump: minor
   ignore:
     - meteo-platform
     - meteo-site

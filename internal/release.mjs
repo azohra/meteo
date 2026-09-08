@@ -1,212 +1,123 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "yaml";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+process.chdir(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const registry = "https://registry.npmjs.org/";
-const planPath = "internal/release-plan.json";
-const prepare = process.argv[2] === "--prepare";
-if (process.argv.slice(2).some((arg) => arg !== "--prepare")) {
-  throw new Error("The only supported release option is --prepare");
-}
+const ledgerPath = ".changeset/ledger.yaml";
+const capture = (command, args) => execFileSync(command, args, { encoding: "utf8" }).trim();
+const run = (command, args) => execFileSync(command, args, { stdio: "inherit" });
+const refuse = (message) => {
+  throw new Error(`release: ${message}`);
+};
+const read = (path) => (existsSync(path) ? readFileSync(path, "utf8") : "");
+const previous = (path) => {
+  const result = spawnSync("git", ["show", `HEAD^:${path}`], { encoding: "utf8" });
+  return result.status === 0 ? result.stdout : "";
+};
 
-process.chdir(root);
-
-function refuse(message) {
-  console.error(`release: refusing — ${message}`);
-  process.exit(1);
-}
-
-function capture(command, args) {
-  try {
-    return execFileSync(command, args, { encoding: "utf8" }).trim();
-  } catch {
-    refuse(`${command} ${args[0] ?? ""} failed`);
-  }
-}
-
-function run(command, args) {
-  try {
-    execFileSync(command, args, { stdio: "inherit" });
-  } catch {
-    refuse(`${command} ${args[0] ?? ""} failed`);
-  }
-}
-
-function publicPackages() {
-  const workspaces = JSON.parse(capture("pnpm", ["list", "-r", "--depth", "-1", "--json"]));
-  const packages = workspaces
-    .filter((workspace) => !workspace.private && workspace.name && workspace.version)
-    .map((workspace) => ({
-      name: workspace.name,
-      path: relative(root, workspace.path),
-      version: workspace.version,
-    }))
-    .sort((left, right) => left.name.localeCompare(right.name));
-  const unexpected = packages.find((pkg) => !pkg.name.startsWith("@azohra/meteo."));
-  if (unexpected) refuse(`public package ${unexpected.name} is outside the @azohra/meteo scope`);
-  return packages;
-}
-
-function publishedVersions(name) {
-  const result = spawnSync("npm", ["view", name, "versions", "--json", `--registry=${registry}`], {
-    encoding: "utf8",
-  });
-  if (result.status !== 0) {
-    if (result.stderr.includes("E404")) return [];
-    refuse(`could not read ${name} from npm`);
-  }
-  const parsed = JSON.parse(result.stdout);
-  return Array.isArray(parsed) ? parsed : [parsed];
-}
-
-function localTagTarget(tag) {
-  const result = spawnSync("git", ["rev-list", "-n", "1", tag], { encoding: "utf8" });
-  return result.status === 0 ? result.stdout.trim() : null;
-}
-
-function remoteTagTarget(tag) {
-  const result = capture("git", [
-    "ls-remote",
-    "--tags",
-    "origin",
-    `refs/tags/${tag}`,
-    `refs/tags/${tag}^{}`,
-  ]);
-  const refs = new Map(
-    result
-      .split("\n")
-      .filter(Boolean)
-      .map((line) => line.split(/\s+/).reverse()),
-  );
-  if (refs.has(`refs/tags/${tag}`) && !refs.has(`refs/tags/${tag}^{}`)) {
-    refuse(`${tag} on origin is not annotated`);
-  }
-  return refs.get(`refs/tags/${tag}^{}`) ?? null;
-}
-
+if (process.argv.length > 2)
+  refuse("release takes no arguments; check out the merged version commit");
 for (const direction of [[], ["--push"]]) {
-  const remote = capture("git", ["remote", "get-url", ...direction, "--all", "origin"]);
+  const origin = capture("git", ["remote", "get-url", ...direction, "--all", "origin"]);
+  if (!["https://github.com/azohra/meteo.git", "git@github.com:azohra/meteo.git"].includes(origin))
+    refuse("origin must point to azohra/meteo");
+}
+if (capture("git", ["status", "--porcelain"])) refuse("the worktree is not clean");
+run("git", ["fetch", "--quiet", "origin", "main"]);
+const head = capture("git", ["rev-parse", "HEAD"]);
+capture("git", ["rev-parse", "HEAD^"]);
+run("git", ["merge-base", "--is-ancestor", head, "origin/main"]);
+if (
+  existsSync(".changeset") &&
+  readdirSync(".changeset").some(
+    (file) => file.endsWith(".md") && file.toLowerCase() !== "readme.md",
+  )
+)
+  refuse("prepare and merge pending change intents before publishing");
+
+const packages = JSON.parse(capture("pnpm", ["list", "-r", "--depth", "-1", "--json"])).filter(
+  (pkg) => !pkg.private && pkg.name && pkg.version,
+);
+const ledger = parse(read(ledgerPath)) ?? {};
+const oldLedger = parse(previous(ledgerPath)) ?? {};
+const added = Object.keys(ledger).filter((tag) => !Object.hasOwn(oldLedger, tag));
+for (const tag of added) {
   if (
-    !["https://github.com/azohra/meteo.git", "git@github.com:azohra/meteo.git"].includes(remote)
-  ) {
-    refuse("origin must point only to azohra/meteo for fetch and push");
-  }
-}
-
-const branch = capture("git", ["branch", "--show-current"]);
-if (prepare && (!branch || branch === "main"))
-  refuse("run from a release branch based on origin/main, never from main");
-if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
-  refuse("the worktree is not clean");
-}
-
-run("git", ["fetch", "--quiet", "origin", "main", "--tags"]);
-const startingHead = capture("git", ["rev-parse", "HEAD"]);
-const main = capture("git", ["rev-parse", "origin/main"]);
-if (prepare && startingHead !== main) {
-  refuse(`HEAD ${startingHead.slice(0, 7)} is not origin/main ${main.slice(0, 7)}`);
-}
-if (!prepare) run("git", ["merge-base", "--is-ancestor", startingHead, main]);
-const changeIntentDirectory = resolve(root, ".changeset");
-const changeIntents = existsSync(changeIntentDirectory)
-  ? readdirSync(changeIntentDirectory).filter(
-      (file) => file.endsWith(".md") && file.toLowerCase() !== "readme.md",
+    !packages.some(
+      (pkg) =>
+        tag === `${pkg.name}@${pkg.version}` &&
+        ledger[tag].dir === relative(process.cwd(), pkg.path),
     )
-  : [];
-let packages = publicPackages();
-if (packages.length === 0) refuse("the workspace contains no public packages");
-
-if (prepare) {
-  if (changeIntents.length === 0) refuse("there are no pending change intents");
-  const before = new Map(packages.map((pkg) => [pkg.name, pkg.version]));
-  run("pnpm", ["version", "-r"]);
-  packages = publicPackages();
-  const candidates = packages.filter(
-    (pkg) =>
-      before.get(pkg.name) !== pkg.version || !publishedVersions(pkg.name).includes(pkg.version),
-  );
-  if (candidates.length === 0) refuse("change intents produced no release candidate");
-  writeFileSync(
-    planPath,
-    `${JSON.stringify(
-      candidates.map(({ name, version }) => ({ name, version })),
-      null,
-      2,
-    )}\n`,
-  );
-  console.log(
-    "release: prepared versions, changelogs, and release plan; review and commit them together, then merge through a pull request",
-  );
-  process.exit(0);
+  )
+    refuse(`${tag} in the ledger does not match a workspace package`);
 }
-
-if (changeIntents.length > 0) refuse("prepare and merge pending change intents before publishing");
-if (!existsSync(planPath)) refuse("no release plan; run mise run release:prepare first");
-const releaseHead = capture("git", ["log", "-1", "--format=%H", "--", planPath]);
-if (releaseHead !== startingHead)
-  refuse("check out the merged commit that last changed the release plan");
-const plan = JSON.parse(readFileSync(planPath, "utf8"));
-if (!Array.isArray(plan) || plan.length === 0) refuse("the release plan is empty or invalid");
-const candidates = plan.map((entry) => {
-  const pkg = packages.find(
-    (candidate) => candidate.name === entry?.name && candidate.version === entry.version,
+// pnpm records direct intents in its ledger; dependency-only releases also
+// change package versions. Both belong to this merged release commit.
+const candidates = packages.filter((pkg) => {
+  const before = JSON.parse(
+    previous(`${relative(process.cwd(), pkg.path)}/package.json`) || "null",
   );
-  if (!pkg) refuse("the release plan does not match the workspace");
-  return pkg;
+  return added.includes(`${pkg.name}@${pkg.version}`) || (before && before.version !== pkg.version);
 });
-if (new Set(candidates.map((pkg) => pkg.name)).size !== candidates.length)
-  refuse("duplicate release candidate");
+if (!candidates.length) refuse("HEAD contains no prepared package releases");
+if (candidates.some((pkg) => !pkg.name.startsWith("@azohra/meteo.")))
+  refuse("release candidates must belong to @azohra/meteo");
 if (!process.env.NPM_TOKEN) refuse("NPM_TOKEN is unset");
 process.env["npm_config_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
-const unpublished = packages.filter((pkg) => !publishedVersions(pkg.name).includes(pkg.version));
-if (unpublished.some((pkg) => !candidates.includes(pkg)))
-  refuse("an unpublished package is outside the release plan");
 
-function checkTags() {
-  for (const pkg of candidates) {
-    const tag = `${pkg.name}@${pkg.version}`;
-    const remoteTarget = remoteTagTarget(tag);
-    const localTarget = localTagTarget(tag);
-    if (
-      (remoteTarget && remoteTarget !== releaseHead) ||
-      (localTarget && localTarget !== releaseHead)
-    ) {
-      refuse(`${tag} already points to another commit`);
-    }
-    if (localTarget && capture("git", ["cat-file", "-t", `refs/tags/${tag}`]) !== "tag") {
-      refuse(`${tag} is not annotated`);
-    }
+function published(pkg) {
+  const result = spawnSync(
+    "npm",
+    ["view", `${pkg.name}@${pkg.version}`, "version", "--json", `--registry=${registry}`],
+    { encoding: "utf8" },
+  );
+  if (result.status === 0) return JSON.parse(result.stdout) === pkg.version;
+  if (result.stderr.includes("E404")) return false;
+  refuse(`could not read ${pkg.name}@${pkg.version} from npm`);
+}
+function remoteTarget(tag) {
+  const refs = capture("git", ["ls-remote", "origin", `refs/tags/${tag}`, `refs/tags/${tag}^{}`]);
+  const lines = refs.split("\n").filter(Boolean);
+  return (lines.find((line) => line.endsWith("^{}")) ?? lines[0])?.split(/\s+/)[0];
+}
+function localTarget(tag) {
+  const result = spawnSync("git", ["rev-list", "-n", "1", `refs/tags/${tag}`], {
+    encoding: "utf8",
+  });
+  return result.status === 0 ? result.stdout.trim() : null;
+}
+for (const pkg of candidates) {
+  const tag = `${pkg.name}@${pkg.version}`;
+  for (const target of [remoteTarget(tag), localTarget(tag)]) {
+    if (target && target !== head) refuse(`${tag} already points to another commit`);
   }
 }
-
-// Tag conflicts must stop the release before the first irreversible npm upload.
-checkTags();
-if (unpublished.length > 0) {
+if (candidates.some((pkg) => !published(pkg))) {
   run("mise", ["run", "build"]);
-  if (capture("git", ["status", "--porcelain=v1", "--untracked-files=all"])) {
-    refuse("the build changed the worktree");
-  }
-  run("pnpm", ["publish", "-r", "--access", "public", "--no-git-checks", `--registry=${registry}`]);
+  if (capture("git", ["status", "--porcelain"])) refuse("the build changed the worktree");
+  run("pnpm", [
+    "publish",
+    "-r",
+    ...candidates.flatMap((pkg) => ["--filter", pkg.name]),
+    "--access",
+    "public",
+    "--no-git-checks",
+    `--registry=${registry}`,
+  ]);
 }
-checkTags();
 for (const pkg of candidates) {
   const tag = `${pkg.name}@${pkg.version}`;
-  if (!publishedVersions(pkg.name).includes(pkg.version))
-    refuse(`${tag} is not available from npm`);
-  if (!localTagTarget(tag)) run("git", ["tag", "-a", tag, "-m", tag, releaseHead]);
-}
-run("git", [
-  "push",
-  "--no-follow-tags",
-  "origin",
-  ...candidates.map((pkg) => `refs/tags/${pkg.name}@${pkg.version}`),
-]);
-for (const pkg of candidates) {
-  const tag = `${pkg.name}@${pkg.version}`;
-  if (remoteTagTarget(tag) !== releaseHead) refuse(`${tag} is not on origin`);
+  if (!published(pkg)) refuse(`${tag} is not available from npm`);
+  const target = remoteTarget(tag);
+  if (target === head) continue;
+  if (target) refuse(`${tag} already points to another commit`);
+  if (!localTarget(tag)) run("git", ["tag", "-a", tag, "-m", tag, head]);
+  run("git", ["push", "--no-follow-tags", "origin", `refs/tags/${tag}`]);
+  if (remoteTarget(tag) !== head) refuse(`${tag} is not on origin`);
 }
 console.log(
-  `release: verified ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")} at ${releaseHead}`,
+  `Released ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")} at ${head}`,
 );
