@@ -89,6 +89,45 @@ function localTarget(tag) {
   });
   return result.status === 0 ? result.stdout.trim() : null;
 }
+function githubRelease(tag) {
+  const result = spawnSync(
+    "gh",
+    ["api", `repos/azohra/meteo/releases/tags/${encodeURIComponent(tag)}`],
+    { encoding: "utf8" },
+  );
+  if (result.status === 0) return JSON.parse(result.stdout);
+  if (result.stderr.includes("HTTP 404")) return null;
+  refuse(`could not read GitHub Release ${tag}: ${result.stderr.trim()}`);
+}
+function releaseNotes(pkg) {
+  const lines = read(`${pkg.path}/CHANGELOG.md`).split("\n");
+  const notes = [];
+  let selected = false;
+  let fence = "";
+  for (const line of lines) {
+    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker) {
+      if (!fence) fence = marker;
+      else if (marker[0] === fence[0] && marker.length >= fence.length && line.trim() === marker)
+        fence = "";
+    } else if (!fence && /^## \d+\.\d+\.\d+(?:[-+][\w.-]+)?\s*$/.test(line)) {
+      if (selected) break;
+      selected = line.trim() === `## ${pkg.version}`;
+      continue;
+    }
+    if (selected) notes.push(line);
+  }
+  if (!notes.join("\n").trim()) refuse(`no changelog entry for ${pkg.name}@${pkg.version}`);
+  return notes.join("\n").trim();
+}
+const releases = candidates.map((pkg) => {
+  const tag = `${pkg.name}@${pkg.version}`;
+  const notes = releaseNotes(pkg);
+  const existing = githubRelease(tag);
+  if (existing && (existing.tag_name !== tag || existing.draft || existing.body?.trim() !== notes))
+    refuse(`GitHub Release ${tag} differs from the prepared release`);
+  return { tag, notes, existing };
+});
 for (const pkg of candidates) {
   const tag = `${pkg.name}@${pkg.version}`;
   for (const target of [remoteTarget(tag), localTarget(tag)]) {
@@ -117,6 +156,32 @@ for (const pkg of candidates) {
   if (!localTarget(tag)) run("git", ["tag", "-a", tag, "-m", tag, head]);
   run("git", ["push", "--no-follow-tags", "origin", `refs/tags/${tag}`]);
   if (remoteTarget(tag) !== head) refuse(`${tag} is not on origin`);
+}
+for (const { tag, notes, existing } of releases) {
+  if (existing) continue;
+  execFileSync(
+    "gh",
+    [
+      "release",
+      "create",
+      tag,
+      "--repo",
+      "azohra/meteo",
+      "--verify-tag",
+      "--title",
+      tag,
+      "--notes-file",
+      "-",
+      "--latest=false",
+    ],
+    {
+      input: notes,
+      stdio: ["pipe", "inherit", "inherit"],
+    },
+  );
+  const created = githubRelease(tag);
+  if (!created || created.draft || created.tag_name !== tag || created.body?.trim() !== notes)
+    refuse(`GitHub Release ${tag} was not verified`);
 }
 console.log(
   `Released ${candidates.map((pkg) => `${pkg.name}@${pkg.version}`).join(", ")} at ${head}`,

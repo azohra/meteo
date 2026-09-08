@@ -39,6 +39,7 @@ jobs = 8
 [tools]
 actionlint = "1.7.12"
 node = "24"
+gh = "2.100.0"
 
 [env]
 _.path = ["./node_modules/.bin"]

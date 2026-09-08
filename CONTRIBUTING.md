@@ -111,13 +111,17 @@ new package code and its intents in preceding PRs.
 
 After merging, run the manual Release workflow with the full merged version
 commit SHA in `commit`, or check out that commit and run `mise run release`
-locally with `NPM_TOKEN`. Publication reads the new ledger entries and package
-version changes from that commit, builds the packages, publishes to npm and pushes
-matching package tags. It never writes main.
+locally with `NPM_TOKEN` and an authenticated `gh` CLI. Publication reads the new
+ledger entries and package version changes from that commit, builds the packages,
+publishes to npm and pushes
+matching package tags. Each package also gets a GitHub Release containing its
+generated changelog section. GitHub Releases are not marked as the repository
+latest because packages version independently. Publication never writes main.
 
 If publication stops partway through, retry the same merged commit. pnpm skips
-versions already on npm and the release task repairs missing tags. This also
-works after main advances. Existing tags are never moved.
+versions already on npm and the release task repairs missing tags and GitHub
+Releases. Existing matching releases are skipped; conflicting notes stop the
+operation without overwriting them. Retries also work after main advances. Existing tags are never moved.
 
 The required PR Check runs the complete proof against an up-to-date base.
 Deployment builds the site from main independently of package releases.

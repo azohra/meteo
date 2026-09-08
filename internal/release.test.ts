@@ -52,6 +52,11 @@ function fixture({ firstRelease = false } = {}) {
   git("add", ".");
   git("commit", "-m", "Initial package");
   manifest("1.1.0");
+  const notes = "### Minor Changes\n\n- Keep **Markdown** and `code`.\n\n```md\n## 9.9.9\n```";
+  writeFileSync(
+    join(repo, "core/CHANGELOG.md"),
+    `# Core\n\n## 1.1.0\n\n${notes}\n\n## 1.0.0\n\nOld notes.\n`,
+  );
   mkdirSync(join(repo, ".changeset"));
   writeFileSync(
     join(repo, ".changeset/ledger.yaml"),
@@ -73,6 +78,10 @@ function fixture({ firstRelease = false } = {}) {
     failBuild: false,
     failPublish: false,
     failPush: false,
+    failRelease: false,
+    lostReply: false,
+    githubError: false,
+    release: null as null | { tag_name: string; body: string; draft: boolean },
   };
   writeFileSync(statePath, JSON.stringify(initial));
   const realGit = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
@@ -95,6 +104,16 @@ if (command === 'git') {
     const result = cp.spawnSync(${JSON.stringify(realGit)}, args, { stdio: 'inherit' });
     process.exit(result.status ?? 1);
   }
+} else if (command === 'gh') {
+  if (args[0] === 'api') {
+    if (state.githubError) { process.stderr.write('HTTP 500'); process.exit(1); }
+    if (!state.release) { process.stderr.write('HTTP 404'); process.exit(1); }
+    console.log(JSON.stringify(state.release));
+  } else if (args[0] === 'release' && args[1] === 'create') {
+    if (state.failRelease) process.exit(1);
+    state.release = { tag_name: args[2], body: fs.readFileSync(0, 'utf8'), draft: false }; save();
+    if (state.lostReply) process.exit(1);
+  } else process.exit(1);
 } else if (command === 'npm') {
   const version = args[1].split("@").at(-1);
   if (state.versions.includes(version)) console.log(JSON.stringify(version));
@@ -111,7 +130,7 @@ if (command === 'git') {
   } else process.exit(1);
 } else process.exit(1);
 `;
-  for (const command of ["git", "npm", "pnpm", "mise"])
+  for (const command of ["git", "npm", "pnpm", "mise", "gh"])
     writeFileSync(join(bin, command), fake, { mode: 0o755 });
   const state = () => JSON.parse(readFileSync(statePath, "utf8")) as typeof initial;
   const configure = (patch: Partial<typeof initial>) =>
@@ -130,7 +149,7 @@ if (command === 'git') {
       env: { ...process.env, CHANGE_BASE: base, PATH: `${bin}:${process.env.PATH}` },
     });
   expect(git("status", "--porcelain")).toBe("");
-  return { repo, git, head, state, configure, run, tag, check };
+  return { repo, git, head, state, configure, run, tag, check, notes };
 }
 
 function expectNoPublication(f: ReturnType<typeof fixture>) {
@@ -154,6 +173,10 @@ describe("release boundaries", () => {
     expect(publish).toContain("--filter @azohra/meteo.core");
     expect(publish).toContain("--access public");
     expect(publish).toContain("--registry=https://registry.npmjs.org/");
+    expect(f.state().release).toEqual({ tag_name: f.tag, body: f.notes, draft: false });
+    expect(f.state().calls.find((call) => call.startsWith("gh release create"))).toContain(
+      "--verify-tag",
+    );
   });
 
   it.each(["wrongRemote", "dirtyBuild", "failBuild"] as const)(
@@ -243,6 +266,45 @@ describe("release boundaries", () => {
     const f = fixture();
     mkdirSync(join(f.repo, ".changeset"), { recursive: true });
     writeFileSync(join(f.repo, ".changeset/pending.md"), "Pending change");
+    f.git("add", ".");
+    f.git("commit", "--amend", "--no-edit");
+    f.git("push", "--force", "origin", "main");
+    expect(f.run().status).not.toBe(0);
+    expectNoPublication(f);
+  });
+});
+
+describe("GitHub Releases", () => {
+  it.each(["failRelease", "lostReply"] as const)(
+    "recovers %s without republishing packages or duplicating releases",
+    (flag) => {
+      const f = fixture();
+      f.configure({ [flag]: true });
+      expect(f.run().status).not.toBe(0);
+      f.configure({ [flag]: false });
+      const retry = f.run();
+      expect(retry.status, retry.stderr).toBe(0);
+      expect(f.state().release?.body).toBe(f.notes);
+      expect(f.state().calls.filter((call) => call.startsWith("pnpm publish"))).toHaveLength(1);
+      expect(f.state().calls.filter((call) => call.startsWith("gh release create"))).toHaveLength(
+        flag === "lostReply" ? 1 : 2,
+      );
+    },
+  );
+
+  it("refuses conflicting notes and API failures before npm publication", () => {
+    const f = fixture();
+    f.configure({ release: { tag_name: f.tag, body: "Different notes", draft: false } });
+    expect(f.run().status).not.toBe(0);
+    expectNoPublication(f);
+    f.configure({ release: null, githubError: true });
+    expect(f.run().status).not.toBe(0);
+    expectNoPublication(f);
+  });
+
+  it("refuses a missing changelog section before npm publication", () => {
+    const f = fixture();
+    writeFileSync(join(f.repo, "core/CHANGELOG.md"), "# Core\n\n## 1.0.0\n\nOld notes.\n");
     f.git("add", ".");
     f.git("commit", "--amend", "--no-edit");
     f.git("push", "--force", "origin", "main");
