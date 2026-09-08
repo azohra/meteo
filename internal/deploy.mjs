@@ -75,7 +75,7 @@ if (!account.includes(config.account_id)) {
 }
 
 console.log(`deploy: targeting ${config.name} at ${hostname} from ${head.slice(0, 7)}`);
-run("mise", ["run", "check"]);
+run("mise", ["run", "//site:build"]);
 
 if (dryRun) {
   run("pnpm", ["--dir", "site", "exec", "wrangler", "deploy", "--dry-run"]);

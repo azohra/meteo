@@ -13,9 +13,9 @@
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (port derived per checkout)
-#   mise run deploy — prove and deploy the site from origin/main
+#   mise run deploy — build and deploy the site from origin/main
 #   mise run release:prepare — prepare versions for a release PR
-#   mise run release — publish a merged release plan
+#   mise run release — publish merged package versions
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -39,6 +39,7 @@ jobs = 8
 [tools]
 actionlint = "1.7.12"
 node = "24"
+gh = "2.100.0"
 
 [env]
 _.path = ["./node_modules/.bin"]
@@ -406,6 +407,7 @@ run = "node internal/scenarios.mjs generate"
 description = "The definition of green: every gate, one command"
 depends = [
   "lint",
+  "changes:check",
   "content",
   "figures:check",
   "station-assets:check",
@@ -456,16 +458,20 @@ printf '%s\n' \
 """
 
 [tasks.deploy]
-description = "Prove and deploy meteo.azohra.com from origin/main"
+description = "Build and deploy meteo.azohra.com from origin/main"
 confirm = "Deploy origin/main to meteo.azohra.com?"
 raw_args = true
 run = "node internal/deploy.mjs"
 
+[tasks."changes:check"]
+description = "Validate PR package impacts and preview pnpm releases"
+run = "node internal/check-changes.mjs"
+
 [tasks."release:prepare"]
-description = "Prepare versions, changelogs, and a release plan for review"
-run = "node internal/release.mjs --prepare"
+description = "Apply pnpm change intents for a release PR"
+run = "pnpm version -r"
 
 [tasks.release]
-description = "Publish the merged release plan and its package tags"
-confirm = "Publish Meteo's merged release plan?"
+description = "Publish merged package versions and their tags"
+confirm = "Publish Meteo's merged package versions?"
 run = "node internal/release.mjs"

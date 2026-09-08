@@ -56,6 +56,9 @@ importers:
       vitest:
         specifier: ^4.0.0
         version: 4.1.10(@types/node@22.20.1)(@vitest/browser-preview@4.1.10)(jsdom@26.1.0(supports-color@10.2.2))(vite@8.2.1(@types/node@22.20.1)(esbuild@0.28.1)(yaml@2.9.0))
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
 
   briefing:
     dependencies:
