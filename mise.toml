@@ -469,7 +469,7 @@ run = "node internal/check-changes.mjs"
 
 [tasks."release:prepare"]
 description = "Apply pnpm change intents for a release PR"
-run = "pnpm version -r"
+run = "pnpm version -r --json"
 
 [tasks.release]
 description = "Publish merged package versions and their tags"
