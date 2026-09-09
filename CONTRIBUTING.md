@@ -29,7 +29,7 @@ mise run check      # the complete repository proof
 
 `mise tasks ls` lists the available root tasks. Before committing,
 `mise run check` must pass. GitHub Actions runs the same proof on pull requests
-and pushes to main.
+and manual dispatches.
 
 Tests must be deterministic. Use committed provider fixtures, fixed clocks,
 explicit time zones, and synthetic scenarios. Keep network checks and live
@@ -97,7 +97,14 @@ While packages are below v1, use `minor` for features and breaking changes, and
 the summary. The native `versioning.maxBump: minor` setting rejects major releases;
 remove that limit deliberately when introducing a stable v1 package.
 
-Prepare a release on a branch based on current main:
+Merges to main run **Prepare release**, which uses `mise run release:prepare`
+to create or update one release PR from `release/main`. Review its package
+versions, internal dependency updates, changelogs and `.changeset/ledger.yaml`
+together. Leave it open while changes accumulate; merge it when ready to publish.
+No release PR is needed when all pending intents specify `none`. The workflow
+can also be run manually to refresh the PR.
+
+To prepare the same files locally, use a branch based on current main:
 
 ```sh
 mise run release:prepare
@@ -109,17 +116,19 @@ Review and commit those files together, then merge the release PR. There is no
 separate release-plan file. A release PR changes generated version records; put
 new package code and its intents in preceding PRs.
 
-After merging, run the manual Release workflow with the full merged version
-commit SHA in `commit`, or check out that commit and run `mise run release`
-locally with `NPM_TOKEN` and an authenticated `gh` CLI. Publication reads the new
-ledger entries and package version changes from that commit, builds the packages,
-publishes to npm and pushes
-matching package tags. Each package also gets a GitHub Release containing its
+Merging the repository's `release/main` PR starts **Release** automatically from
+that exact merge commit. Ordinary development PRs do not publish packages.
+For a locally prepared PR on another branch, run **Release** manually with its
+full merged version commit SHA in `commit`, or check out that commit and run
+`mise run release` locally with `NPM_TOKEN` and an authenticated `gh` CLI.
+Publication reads the new ledger entries and package version changes from that
+commit, builds the packages, publishes to npm and pushes matching package tags. Each package also gets a GitHub Release containing its
 generated changelog section. GitHub Releases are not marked as the repository
 latest because packages version independently. Publication never writes main.
 
-If publication stops partway through, retry the same merged commit. pnpm skips
-versions already on npm and the release task repairs missing tags and GitHub
+If publication stops partway through, run **Release** manually with the same
+merged commit in `commit`. pnpm skips versions already on npm and the release
+task repairs missing tags and GitHub
 Releases. Existing matching releases are skipped; conflicting notes stop the
 operation without overwriting them. Retries also work after main advances. Existing tags are never moved.
 

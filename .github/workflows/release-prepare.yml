@@ -1,0 +1,58 @@
+name: Prepare release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-prepare
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        id: token
+        with:
+          client-id: ${{ vars.BOSUN_CLIENT_ID }}
+          private-key: ${{ secrets.BOSUN_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+        env:
+          MISE_GITHUB_TOKEN: ${{ github.token }}
+        with:
+          minimum_release_age: 24h
+      - run: mise run install
+      - name: Prepare package versions
+        run: |
+          releases=$(mise run release:prepare)
+          if [ "$(jq length <<< "$releases")" -eq 0 ]; then
+            git restore --worktree .
+          fi
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.token.outputs.token }}
+          branch: release/main
+          delete-branch: true
+          commit-message: "chore: version packages"
+          title: "chore: version packages"
+          body: |
+            Apply pending pnpm change intents to package versions, internal dependencies,
+            changelogs and the release ledger.
+
+            Review the generated changes together. Merging this PR publishes these
+            versions to npm and creates their package tags and GitHub releases.

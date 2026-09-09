@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  pull_request:
+    types: [closed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       commit:
@@ -17,7 +20,12 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.merged == true &&
+        github.event.pull_request.head.ref == 'release/main' &&
+        github.event.pull_request.head.repo.full_name == github.repository))
     name: Release
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -29,7 +37,7 @@ jobs:
           fetch-depth: 0
       - name: Select merged release source
         env:
-          RELEASE_COMMIT: ${{ inputs.commit }}
+          RELEASE_COMMIT: ${{ github.event.pull_request.merge_commit_sha || inputs.commit }}
         run: |
           [[ "$RELEASE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || exit 1
           git fetch -q origin main
