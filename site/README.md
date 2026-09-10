@@ -10,7 +10,7 @@ not fetch the launch catalogue, current manifests, or current profiles in the br
 
 ```sh
 mise run setup                # frozen install + the test browser
-mise run dev                  # dev server; port derived per checkout
+mise run dev                  # dev server; automatic port selection
 mise run //site:typecheck    # astro check
 mise run //site:build         # -> site/dist/
 ```

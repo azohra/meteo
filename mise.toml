@@ -12,7 +12,7 @@
 #   mise run setup — make a fresh checkout workable
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
-#   mise run dev   — the site dev server (port derived per checkout)
+#   mise run dev   — the site dev server (automatic port selection)
 #   mise run deploy — build and deploy the site from origin/main
 #   mise run release:prepare — prepare versions for a release PR
 #   mise run release — publish merged package versions
@@ -436,17 +436,13 @@ hide = true
 run = [{ task = "//site:e2e" }]
 
 [tasks.dev]
-description = "Site dev server; port derived per checkout (flags pass through)"
+description = "Site dev server (flags pass through)"
 dir = "site"
 raw_args = true
 run = """
 #!/usr/bin/env bash
 set -euo pipefail
-n=$(pwd | cksum | cut -d' ' -f1)
-port=$((4400 + n % 4000))
-unsafe=" 4045 5060 5061 6000 6566 6665 6666 6667 6668 6669 6679 6697 "
-while [[ "$unsafe" == *" $port "* ]]; do port=$((port + 1)); done
-exec pnpm exec astro dev --port "$port" "$@"
+exec pnpm exec astro dev "$@"
 """
 
 [tasks."env:contract"]
