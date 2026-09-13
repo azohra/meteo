@@ -450,7 +450,9 @@ hide = true
 run = """
 printf '%s\n' \
   'secret  CLOUDFLARE_API_TOKEN' \
-  'secret  NPM_TOKEN'
+  'secret  NPM_TOKEN' \
+  'secret  BOSUN_PRIVATE_KEY' \
+  'value   BOSUN_CLIENT_ID'
 """
 
 [tasks.deploy]
