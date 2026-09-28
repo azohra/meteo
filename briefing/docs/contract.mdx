@@ -14,16 +14,17 @@ import {
   SMOKE_SCHEMA_VERSION,
 } from "@azohra/meteo.briefing/contract";
 
-The `@azohra/meteo.briefing/contract` export is the executable authority for published JSON.
-Its zod schemas, inferred TypeScript types, nullable parse guards, and generated
-JSON Schemas describe the same nine document families. Every guard
-normalizes up: it parses each version its family ever published and
-returns the newest shape, refusing only versions newer than the package.
-Archived documents stay readable forever; only "published by a newer
-writer" reads as invalid
-([Compatibility](/docs/compatibility/) carries the rollout rule).
+`@azohra/meteo.briefing/contract` defines what published JSON may contain,
+in code. Its zod schemas, inferred TypeScript types, parse guards, and
+generated JSON Schemas all describe the same nine document families.
 
-![A profile document block by block: excerpts of a real profile, the schemaVersion and model identity, the run block, the sample-provenance site block with its timezone echo, the semantics tag, and the peak-W* hour's surface, first level, and derived blocks, quoted verbatim from the committed document.](figures/contract-anatomy.svg)
+Every guard normalizes up. It parses each version its family has ever
+published and returns the newest shape. It refuses only versions newer than
+the package. Archived documents stay readable forever, and the only version
+that reads as invalid is one published by a newer writer.
+[Compatibility](/docs/compatibility/) sets out the rollout rule.
+
+![A real profile document shown block by block, from its schemaVersion and model to one hour's surface, level, and derived values.](figures/contract-anatomy.svg)
 
 | Document | Parser | Published location |
 | --- | --- | --- |
@@ -38,9 +39,9 @@ writer" reads as invalid
 | Smoke | `parseSmokeDocumentJson` | `<model>/sites/<site>.json` for smoke models |
 | Observation | `parseObservationDocumentJson` | `<model>/sites/<site>.json` for observation datasets |
 
-Each parser also has an already-parsed counterpart without the `Json` suffix.
-All return the typed document or `null`; rejected input is not patched into
-shape.
+Each parser also has a counterpart without the `Json` suffix that takes an
+already-parsed value. All of them return the typed document or `null`. They
+never patch rejected input into shape.
 
 ```ts title="validate-profile.ts"
 import {
@@ -57,12 +58,10 @@ export function requireProfile(text: string): SiteForecast {
 
 ## Site timezone propagation
 
-The optional `site.timeZone` echo and its semantics (an old document
-simply lacks the echo; that does not put the launch on UTC) are defined in
-the
-[profile reference](/docs/briefing/profile-document/#run-site-and-semantics).
-For an older document without the echo, consumers either supply a known
-fallback or use an API's documented fallback behaviour:
+The [profile reference](/docs/briefing/profile-document/#run-site-and-semantics)
+defines the optional `site.timeZone` echo. An older document simply lacks
+it, and that does not put the launch on UTC. For such a document, supply a
+known timezone yourself or rely on the API's documented fallback:
 
 | API | Timezone behaviour |
 | --- | --- |
@@ -73,27 +72,27 @@ fallback or use an API's documented fallback behaviour:
 
 ## Scalar values
 
-Switch on the value's shape, not a model slug; the
-[profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
-carries the worked narrowing fence.
+Decide how to read a value from its shape. A model slug does not tell you.
+The [profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
+has a worked example of narrowing.
 
 Full ensemble dropout is `members: 0` with every percentile `null`.
-`isEnsembleDropout` distinguishes it from a populated percentile block.
+`isEnsembleDropout` tells it apart from a populated percentile block.
 
-For a consumer that supports only deterministic documents,
-`isDeterministicProfile(profile)` narrows every scalar position to `number`
-after one checked guard. Run it once per document.
+If your code supports only deterministic documents, run
+`isDeterministicProfile(profile)` once per document. After that one check,
+every scalar position is typed as `number`.
 
 ## Unit boundary map
 
-Every document computes in the platform's shared physical vocabulary;
+Every document uses the platform's shared units and conventions.
 [Units, angles, one wind sign](/docs/core/conventions/) defines the wind
-sign convention and conversion helpers each package uses. These are the
-unit boundaries most likely to cause integration errors:
+sign convention and the conversion helpers. These are the unit boundaries
+that most often cause integration errors:
 
 | Quantity family | Contract convention | Common mistake |
 | --- | --- | --- |
-| Sea-level pressure (`surface.seaLevelPressureHpa`) | hPa: one unit for the whole pressure class, shared with station documents | Assuming whole pascals; the wire carries hPa |
+| Sea-level pressure (`surface.seaLevelPressureHpa`) | hPa, the one pressure unit, shared with station documents | Assuming whole pascals; the wire carries hPa |
 | Pressure levels | hPa | Multiplying named isobaric levels by 100 in labels |
 | Heights and elevations | metres; profile altitude values are MSL unless explicitly AGL | Plotting model PBL depth directly on an MSL axis |
 | Model PBL height | metres AGL | Comparing it to `derived.boundaryLayerTopM` without adding `site.modelElevationM` |
@@ -107,23 +106,24 @@ unit boundaries most likely to cause integration errors:
 | Smoke concentrations | µg/m³ at the surface, mg/m² for columns; optical thickness dimensionless | Assuming provider units: RAQDPS GRIBs carry kg/m³ and kg/m² with no units metadata ([verified in the smoke reference](/docs/briefing/smoke-document/)); builders convert at fetch |
 | Measured shortwave (observations) | W/m², instantaneous at the surface | Treating an absent instant as zero output, or provider DQF 0 as validity: night pixels are fill with DQF 0 |
 
-The contract JSDoc and generated schemas define each field. The
-[profile guide](/docs/briefing/profile-document/) maps document blocks;
-[model capabilities](/docs/forecast/model-capabilities/) explains declared
-absence and semantics.
+The contract JSDoc and the generated schemas define each field. The
+[profile guide](/docs/briefing/profile-document/) maps the document blocks,
+and [Model capabilities](/docs/forecast/model-capabilities/) explains
+declared absence and semantics.
 
-A worked height boundary: to place `surface.pblHeightM` beside MSL series,
-add `profile.site.modelElevationM`. Do not add a launch elevation: the
-model's PBL depth is referenced to model terrain. For pure unit
+For example, to plot `surface.pblHeightM` beside MSL series, add
+`profile.site.modelElevationM`. Do not add the launch elevation, because the
+model's PBL depth is measured from the model's own terrain. For plain unit
 conversions, use package exports such as `msToKmh` from
 [`@azohra/meteo.briefing/derive`](/docs/briefing/derive/).
 
 ## Building-block exports
 
-Every block inside the nine document families is itself an exported zod
-schema with an inferred type, so a consumer can validate or type one fragment
-(a single hour, a capability declaration, a manifest stats block) without
-handling a whole document. Each pair feeds exactly one parse entry point.
+Every block inside the nine document families is also exported as a zod
+schema with an inferred type. You can validate or type one fragment, such as
+a single hour, a capability declaration, or a manifest stats block, without
+handling a whole document. Each schema and type pair feeds exactly one parse
+entry point.
 
 The document roots are `siteForecastSchema`/`SiteForecast`,
 `forecastManifestSchema`/`ForecastManifest`,
@@ -136,10 +136,11 @@ The document roots are `siteForecastSchema`/`SiteForecast`,
 `smokeDocumentSchema`/`SmokeDocument`, and
 `observationDocumentSchema`/`ObservationDocument`.
 `manifestSchema`/`Manifest`, parsed by `parseManifest(Json)`, is the
-union of the two manifest roots for callers that read
-`<model>/manifest.json` without knowing the dataset kind. Every document
-family pins its own exported constant, so a breaking change to one family
-never invalidates readers of another: manifests pin
+union of the two manifest roots, for callers that read
+`<model>/manifest.json` without knowing the dataset kind.
+
+Each document family pins its own exported version constant, so a breaking
+change to one family cannot invalidate readers of another. Manifests pin
 `MANIFEST_SCHEMA_VERSION` (<code>{MANIFEST_SCHEMA_VERSION}</code>), the model catalogue
 `MODEL_CATALOGUE_SCHEMA_VERSION` (<code>{MODEL_CATALOGUE_SCHEMA_VERSION}</code>), the run index
 `RUNS_INDEX_SCHEMA_VERSION` (<code>{RUNS_INDEX_SCHEMA_VERSION}</code>), smoke documents
@@ -147,14 +148,14 @@ never invalidates readers of another: manifests pin
 `OBSERVATION_SCHEMA_VERSION` (<code>{OBSERVATION_SCHEMA_VERSION}</code>), the profile
 `SITE_FORECAST_SCHEMA_VERSION` (<code>{SITE_FORECAST_SCHEMA_VERSION}</code>), and sites
 and site context `SITES_SCHEMA_VERSION` (<code>{SITES_SCHEMA_VERSION}</code>) and
-`SITE_CONTEXT_SCHEMA_VERSION` (<code>{SITE_CONTEXT_SCHEMA_VERSION}</code>). Their pieces:
+`SITE_CONTEXT_SCHEMA_VERSION` (<code>{SITE_CONTEXT_SCHEMA_VERSION}</code>). The pieces are:
 
 | Schema (type) | One-line role | Feeds |
 | --- | --- | --- |
 | `scalarSchema` (`Scalar`) | Any numeric position: a number or an ensemble percentile object | every value field below |
 | `ensembleValueSchema` (`EnsembleValue`) | The percentile-object arm of `Scalar`, including full dropout | every value field below |
 | `forecastHourSchema` (`ForecastHour`) | One forecast hour: `validAt` plus the surface, levels, derived, and optional smoke blocks below | `parseSiteForecast(Json)` |
-| `forecastSurfaceSchema` (`ForecastSurface`) | An hour's surface block, optional declared-capability fields absent-not-zero | `parseSiteForecast(Json)` |
+| `forecastSurfaceSchema` (`ForecastSurface`) | An hour's surface block; optional declared-capability fields are absent when unpublished, never zero | `parseSiteForecast(Json)` |
 | `forecastLevelSchema` (`ForecastLevel`) | One pressure-level entry in an hour's ascending `levels` array | `parseSiteForecast(Json)` |
 | `forecastDerivedSchema` (`ForecastDerived`) | The forecast engine's `derived` block of an hour | `parseSiteForecast(Json)` |
 | `forecastSiteSchema` (`ForecastSite`) | Sample provenance: identity, coordinates, the model's own terrain (`modelElevationM`), and the optional timezone echo; no launch elevation | `parseSiteForecast(Json)` |
@@ -174,20 +175,21 @@ and site context `SITES_SCHEMA_VERSION` (<code>{SITES_SCHEMA_VERSION}</code>) an
 
 ## Compatibility rules
 
-- Check `schemaVersion`; do not infer compatibility from filenames.
-- Model identity is an open slug discovered from the catalogue, not a package
-  enum.
-- An absent optional field means not published there, never zero.
-- A stored profile's optional `semantics` and `site.timeZone` keep meaning
-  with the document; neither's absence implies a default
+- Check `schemaVersion`. Filenames say nothing about compatibility.
+- A model is identified by an open slug that you discover from the
+  catalogue. The package has no enum of models.
+- An absent optional field means the value was not published there. It is
+  never zero.
+- A stored profile's optional `semantics` and `site.timeZone` travel with
+  the document, and leaving either out does not imply a default
   ([profile reference](/docs/briefing/profile-document/#run-site-and-semantics)).
-- The zod contract is behavioural authority. For other languages, the
-  generated JSON Schema files ship in the `@azohra/meteo.briefing` tarball's
-  `schema/` directory and in the repository at `briefing/schema/`;
-  the package exports them as `@azohra/meteo.briefing/schema/*.json`
-  (`profile.schema.json` and its siblings), so a resolver can reach them
-  by specifier as well as by path.
+- The zod contract decides behaviour. For other languages, the generated
+  JSON Schema files ship in the `schema/` directory of the
+  `@azohra/meteo.briefing` tarball and live in the repository at
+  `briefing/schema/`. The package also exports them as
+  `@azohra/meteo.briefing/schema/*.json` (`profile.schema.json` and its
+  siblings), so a resolver can reach them by specifier as well as by path.
 
-See [Compatibility](/docs/compatibility/) for the document families and
-the one rule for reading them;
-[Package versioning](/docs/briefing/versioning/) covers the npm axis.
+[Compatibility](/docs/compatibility/) lists the document families and the
+rule for reading across versions.
+[Package versioning](/docs/briefing/versioning/) covers npm versions.

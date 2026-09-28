@@ -1,35 +1,36 @@
 ---
 title: Pure derivations
-description: Use published state for pure quantities, local-day projection, and valid-time alignment.
+description: Compute quantities from a published document, group hours into local days, project documents, and align models by valid time.
 ---
 
-`@azohra/meteo.briefing/derive` owns calculations that are pure functions of published
-documents: moisture conversions, vector wind, lapse and stability, the
-parcel ascent and its thermal index, shear, the B/S ratio, local-day
-grouping, projection, valid-time
-alignment, units, run freshness, parameterized usable lift, the
-smoke-correction chain, measured-irradiance interpretation, and sunrise
-and sunset instants; display
-smoothing belongs to `@azohra/meteo.briefing/meteogram`'s `smooth121`. It does not
-duplicate the engine's stored derivations: the values that require raw
-model inputs and are baked into the published document. That split is
-defined in the [project overview](/docs/#who-owns-each-value).
+`@azohra/meteo.briefing/derive` holds the calculations that depend only on
+published documents. It covers moisture conversions, vector wind, lapse
+and stability, the parcel ascent and its thermal index, shear, the B/S
+ratio, local-day grouping, projection, valid-time alignment, units, run
+freshness, usable lift at a chosen sink rate, the smoke correction,
+measured irradiance, and sunrise and sunset instants. Display smoothing
+lives elsewhere, in `smooth121` from `@azohra/meteo.briefing/meteogram`.
 
-Usable lift shows the boundary at its cleanest:
-`usableLiftTopM(inputs, sinkRateMps)` is the single implementation (the
-forecast engine imports this very function and stores its answer at the fixed
-`1.0` m/s sink rate), so projecting the published inputs for another sink
-rate is the same arithmetic as the stored default, and at `1.0` m/s it
-reproduces the engine's parity fixture exactly. The scene does not apply that p50
-recomputation to ensembles because it would not equal a per-member
-derivation aggregated to percentiles.
+This subpath does not repeat the engine's stored derivations. Those are
+the values that need raw model inputs, so the engine computes them and
+writes them into the published document. The
+[project overview](/docs/#who-owns-each-value) sets out the split.
 
-![A Meteogram whose solid usable-lift line is the forecast engine's stored 1.0 m/s series, overlaid with a dashed line recomputed at 2 m/s sink by the package's usableLiftTopM from the document's own published inputs.](figures/derive-sink-rate.svg)
+Usable lift is the clearest example of the split.
+`usableLiftTopM(inputs, sinkRateMps)` is the only implementation. The
+forecast engine imports this function and stores its result at a fixed
+sink rate of `1.0` m/s. Projecting the published inputs for another sink
+rate therefore runs the same arithmetic as the stored value, and at
+`1.0` m/s it reproduces the engine's parity fixture exactly. The scene
+does not apply this p50 recomputation to ensembles, because it would not
+equal a per-member derivation aggregated to percentiles.
+
+![A Meteogram with the engine's stored usable-lift line at 1.0 m/s sink and a dashed line recomputed at 2 m/s sink from the document's own published inputs.](figures/derive-sink-rate.svg)
 
 ## Deterministic and ensemble inputs
 
-Derivation functions take numbers. Select a percentile before passing an
-ensemble scalar:
+Derivation functions take numbers. For an ensemble value, select a
+percentile first:
 
 ```ts title="median-lapse.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -54,33 +55,35 @@ export function firstStability(profile: SiteForecast): string | null {
 }
 ```
 
-`p50` returns `null` for a full ensemble dropout, so numeric derivations guard
-the selected percentile before use.
+`p50` returns `null` when every ensemble member dropped out, so check the
+selected value before passing it on.
 
 ## Lift one parcel for buoyancy
 
-`parcelAscent(surface, levels)` lifts the hour's surface parcel through the
-published levels: dry adiabatic below the lifting condensation level, moist
-pseudo-adiabatic above it, buoyancy read in virtual temperature so the
-vapour the parcel carries and the vapour the environment holds both
-count toward density. Each sample pairs the parcel and environment
-temperatures with their virtual counterparts and states `buoyancyC`
-(parcel minus environment, positive while the parcel is buoyant); `lclM`
-is the ascent's own condensation height, null when the column never
-saturates below its top published level. Samples come out at exactly the
-published levels, in published order — no resampling. The optional
-`entrainmentPerM` is a TRIAL craft parameter, caller-movable: a bulk
-fractional entrainment rate that mixes the rising parcel toward the
-environment, default `0` (an undiluted parcel).
+`parcelAscent(surface, levels)` lifts the hour's surface parcel through
+the published levels. The parcel rises dry adiabatically below the
+lifting condensation level and moist pseudo-adiabatically above it.
+Buoyancy is read in virtual temperature, so water vapour counts toward
+density in both the parcel and the environment.
 
-The thermal index is this same ascent read in the RASP sign convention:
-`thermalIndexC` and `thermalIndexProfile` return the negated `buoyancyC`,
-negative while thermals still reach the level and crossing zero where
-they stop. There is no second buoyancy quantity; the Meteogram's
-`thermalIndex` field is the parcel-buoyancy layer. Dew points are
-optional on the thermal-index entry points; omitted, the column is
-treated as fully dry, which reproduces the plain dry-adiabatic
-comparison.
+Each sample pairs the parcel and environment temperatures with their
+virtual counterparts and gives `buoyancyC`, the parcel minus the
+environment, which is positive while the parcel is buoyant. `lclM` is the
+ascent's own condensation height. It is null when the column does not
+saturate below its highest published level. Samples come out at exactly
+the published levels, in published order, with no resampling.
+
+The optional `entrainmentPerM` is a trial parameter that the caller can
+change. It is a bulk fractional entrainment rate that mixes the rising
+parcel toward the environment. The default is `0`, an undiluted parcel.
+
+The thermal index is the same ascent in the RASP sign convention.
+`thermalIndexC` and `thermalIndexProfile` return `buoyancyC` negated, so
+the index is negative while thermals still reach a level and crosses
+zero where they stop. There is only one buoyancy quantity, and the
+Meteogram's `thermalIndex` field draws it. Dew points are optional on the
+thermal-index functions. Without them the column is treated as fully
+dry, which reproduces the plain dry-adiabatic comparison.
 
 ```ts title="parcel-buoyancy.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -111,22 +114,23 @@ export function firstHourAscent(profile: SiteForecast) {
 
 ## Choose shear for the terrain
 
-`surfaceToBoundaryLayerShearMps` subtracts the surface and boundary-layer-top
-wind vectors. That construction assumes both vectors sample one air mass. A
-mountain valley can place thermally driven surface flow beneath separate flow
-aloft, making the ratio low even on a deeply convective day.
+`surfaceToBoundaryLayerShearMps` subtracts the surface wind vector from
+the wind vector at the boundary-layer top. This assumes both vectors
+sample one air mass. In a mountain valley, thermally driven surface flow
+can run beneath separate flow aloft, which makes the ratio low even on a
+deeply convective day.
 
-`buoyancyShearRatio` returns `Infinity` when nonzero buoyancy faces zero shear
-and `null` for 0/0. Use the height-resolved `windShear` field when terrain
-separates the surface circulation from the winds aloft. The
-[valley B/S case study](/logbook/bs-ratio-valley/) records the measured case.
+`buoyancyShearRatio` returns `Infinity` when there is buoyancy but no
+shear, and `null` when both are zero. When terrain separates the surface
+circulation from the winds aloft, use the height-resolved `windShear`
+field instead. The [valley B/S case study](/logbook/bs-ratio-valley/)
+records a measured case.
 
 ## Window in the site's timezone
 
-Profiles publish all forecast hours in UTC; the optional
-[`site.timeZone` echo](/docs/briefing/profile-document/#run-site-and-semantics)
-may be absent on an older document, so callers still need an explicit
-fallback.
+Profiles publish every forecast hour in UTC. An older document may lack
+the optional [`site.timeZone` echo](/docs/briefing/profile-document/#run-site-and-semantics),
+so callers still need an explicit fallback.
 
 ```ts title="local-days.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -142,28 +146,31 @@ export function displayDays(profile: SiteForecast, olderProfileTimeZone?: string
 ```
 
 `groupByLocalDay` and `meteogramDisplayHours` are tested across timezones,
-custom bounds, short days, and empty input. Pass a returned day's `hours`
-directly to `buildMeteogramScene`.
+custom bounds, short days, and empty input. You can pass a returned day's
+`hours` straight to `buildMeteogramScene`.
 
 ## Sunrise and sunset
 
-`solarEventsForDate(dateKey, latitude, longitude)` returns a day's sunrise
-and sunset as UTC instants (the NOAA formulation at the official zenith of
-90.833°), or null for polar day and night, an invalid key, or out-of-range
-coordinates. It takes the `YYYY-MM-DD` keys `localDateKey` produces and
-anchors them on longitude rather than civil time, so the result is correct
-wherever the civil date matches the longitudinal solar date, and a full day
-off only where date-line politics divorce the two (UTC+13/+14 zones at
-western longitudes). The package ships the instants; drawing
-them on a Meteogram is the
-[inspector recipe's time-cursor step](/docs/briefing/wire-an-inspector/#time-cursors).
+`solarEventsForDate(dateKey, latitude, longitude)` returns a day's
+sunrise and sunset as UTC instants, using the NOAA formulation at the
+official zenith of 90.833°. It returns null for polar day and night, an
+invalid key, or out-of-range coordinates.
+
+It takes the `YYYY-MM-DD` keys that `localDateKey` produces and anchors
+them on longitude instead of civil time. The result is correct wherever
+the civil date matches the longitudinal solar date. It is a full day off
+only where the date line separates the two, in UTC+13 and UTC+14 zones at
+western longitudes. The package returns the instants, and the
+[inspector recipe's time-cursor step](/docs/briefing/wire-an-inspector/#time-cursors)
+draws them on a Meteogram.
 
 ## Subtract fields with `projectForecast`
 
-`projectForecast` reduces a document to the hours and fields a reader needs.
-It can select one local calendar day, replace every `levels` array with `[]`,
-and keep named field subsets. Every retained value is copied unchanged: the
-function applies no threshold, aggregation, interpolation, or judgment.
+`projectForecast` reduces a document to the hours and fields a reader
+needs. It can select one local calendar day, replace every `levels` array
+with `[]`, and keep named subsets of fields. Every value it keeps is
+copied unchanged. It applies no threshold, aggregation, interpolation, or
+judgment.
 
 ```ts title="project-profile.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -182,23 +189,25 @@ export function compactTeachingInput(profile: SiteForecast, day: string) {
 ```
 
 Day selection uses `options.timeZone` first and `profile.site.timeZone`
-second. If neither exists, `projectForecast` throws instead of guessing which
-UTC hours belong to the requested local day. Projection without a `day` needs
-no timezone.
+second. If neither is set, `projectForecast` throws, because it cannot
+tell which UTC hours belong to the requested local day. Projection
+without a `day` needs no timezone.
 
-With no field selection, the result remains a full contract-shaped document;
-`dropLevels` also remains valid because an empty levels array is allowed.
-Selecting fields produces `ProjectedSiteForecast`, whose hour blocks are
-partial by design. Do not pass that partial projection back through the full
-profile parser or into `buildMeteogramScene`.
+With no field selection, the result is still a full document in the
+contract's shape. `dropLevels` keeps it valid too, because an empty
+levels array is allowed. Selecting fields produces a
+`ProjectedSiteForecast`, whose hour blocks are partial by design. Do not
+pass that partial projection back through the full profile parser or
+into `buildMeteogramScene`.
 
 ## Derate thermals for smoke
 
-`@azohra/meteo.briefing/derive` carries the smoke-correction chain as small pure
-functions over published values, with the physics constants exported as
-named, cited claims (`SMOKE_MASS_EXTINCTION_M2_PER_G`: Reid et al.
-2005; `SMOKE_TRANSMITTANCE_K_MIDDAY` / `K_VERTICAL`: Donaldson 2021,
-Chubarova 2012, McKendry 2019):
+`@azohra/meteo.briefing/derive` implements the smoke correction as small
+pure functions over published values. The physical constants are
+exported under names, each with its source:
+`SMOKE_MASS_EXTINCTION_M2_PER_G` from Reid et al. 2005, and
+`SMOKE_TRANSMITTANCE_K_MIDDAY` and `K_VERTICAL` from Donaldson 2021,
+Chubarova 2012 and McKendry 2019.
 
 ```ts title="smoke-adjusted-w.ts"
 import type { SmokeDocument, SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -236,33 +245,35 @@ export function adjustedWStar(
 }
 ```
 
-The guard comes first for a reason: on models whose fluxes already feel
-their own smoke (`isSmokeAwareProfile`, HRRR), the published w* is
-already derated and applying the correction again double-counts. The
-adjustment itself is one multiply, `w* × ∛f`, because Deardorff's w*
-is the cube root of the heat flux; no flux re-derivation is needed or
-performed. Scope and derivation narrative:
-[Smoke and thermals](/logbook/smoke-and-thermals/).
+The guard runs first. On models whose fluxes already account for their
+own smoke (`isSmokeAwareProfile`, which is true for HRRR), the published
+w* is already derated, and applying the correction again would count the
+smoke twice. The adjustment itself is one multiplication, `w* × ∛f`,
+because Deardorff's w* is the cube root of the heat flux. The flux is not
+re-derived. [Smoke and thermals](/logbook/smoke-and-thermals/) explains
+the scope and the derivation.
 
-A caveat on `smokeAotFromColumn`'s input: the RAQDPS
+One caveat applies to the input of `smokeAotFromColumn`. The RAQDPS
 `smokePlumeColumnMgm2` field is currently
-[quarantined from derived optics](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect):
-the arithmetic is sound (it reproduced HRRR's own optics to 5 %), the
-provider's column content is not. For profiles with their own smoke
-block, prefer the published `aot` directly.
+[kept out of derived optics](/docs/briefing/smoke-document/#the-column-field-carries-a-provider-defect).
+The arithmetic is sound, and it reproduced HRRR's own optics to within
+5 %, but the provider's column content is not. For profiles with their
+own smoke block, use the published `aot` directly.
 
 ## Interpret measured irradiance
 
-Observation documents carry measured W/m²; three functions make that
-number mean something beside a forecast. `clearSkyGhiWm2` is the cited
-expectation (Haurwitz (1945), chosen per Reno, Hansen & Stein 2012
-(SAND2012-2389) as the best clear-sky model needing only the sun's
-zenith), and `observedTransmittance` is measured over expected: 1 is a
-textbook sky, ~0.85 a moderate smoke plume, well under 0.5 serious
-cloud, null near the horizon where the ratio means nothing.
-`nearestObservation` is the join: observations live at the product's
-native cadence (GOES scan starts), so an exact-key match against a
-forecast `validAt` never hits.
+Observation documents carry measured irradiance in W/m², and three
+functions put that number beside a forecast. `clearSkyGhiWm2` gives the
+expected clear-sky value from Haurwitz (1945). Reno, Hansen and Stein
+2012 (SAND2012-2389) identify it as the best clear-sky model that needs
+only the sun's zenith. `observedTransmittance` divides measured by
+expected. A value of 1 is a textbook clear sky, about 0.85 is a moderate
+smoke plume, and well under 0.5 is heavy cloud. It returns null near the
+horizon, where the ratio has no meaning.
+
+`nearestObservation` joins the two. Observations arrive at the product's
+native cadence, which is the GOES scan start times, so an exact match
+against a forecast `validAt` never succeeds.
 
 ```ts title="measured-transmittance.ts"
 import type { ObservationDocument, SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -288,14 +299,15 @@ export function transmittanceAtHour(
 }
 ```
 
-Put that beside `smokeTransmittance(aot)` from the same site's smoke
-document and you are running the comparison the smoke correction's
-constants were fitted from: measurement against claim, per hour.
+Compare the result with `smokeTransmittance(aot)` from the same site's
+smoke document, hour by hour. That is the comparison of measurement
+against forecast that the smoke correction's constants were fitted from.
 
 ## Intersect instants with `alignByValidAt`
 
-`alignByValidAt` returns only the UTC `validAt` instants shared by every input
-profile. Each row keeps each model's original hour, keyed by its slug.
+`alignByValidAt` returns only the UTC `validAt` instants that every input
+profile shares. Each row keeps each model's original hour, keyed by the
+model's slug.
 
 ```ts title="align-hours.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -312,25 +324,31 @@ export function sharedSurfaceWind(profiles: readonly SiteForecast[]) {
 }
 ```
 
-The join performs string equality on published UTC instants and preserves each
-model's original values, elevation, semantics, and run identity. Empty input
-returns no rows; duplicate model slugs throw. Use
-[`compareForecasts`](/docs/briefing/compare/) for cross-model findings.
+The join compares published UTC instants as strings and keeps each
+model's original values, elevation, semantics, and run identity. Empty
+input returns no rows, and duplicate model slugs throw. For findings
+across models, use [`compareForecasts`](/docs/briefing/compare/).
 
 ## Judge run freshness
 
-`runFreshness(runsEntry, model, now, thresholds)` grades one runs.json entry
-`"current" | "delayed" | "stale"`, split along the fact/policy
-line. The facts come from the model's catalogue entry: `runIntervalHours`
-(how often a successor run appears) and `typicalPublicationLagHours` (the
-upper end of normal for this dataset's publish after `referenceTime`);
-the thresholds are the consumer's: both count run intervals of age beyond the
-lag, and they are required parameters because how much lateness a product
-tolerates before warning its users is display policy, not something the
-dataset can know. Age is `now − referenceTime` (`generatedAt` is accepted so a
-runs.json entry drops in unchanged, but a republish of the same run never
-makes the forecast younger), and an unparseable instant throws a `RangeError`
-rather than quietly returning a wrong grade. Observation datasets never
-come here: they have no runs; judge them against their catalogue
-`cadenceMinutes`. The polling loop around this function is the
+`runFreshness(runsEntry, model, now, thresholds)` grades one runs.json
+entry as `"current"`, `"delayed"`, or `"stale"`. It keeps the model's
+facts separate from the consumer's policy.
+
+The facts come from the model's catalogue entry. `runIntervalHours` is
+how often a new run appears, and `typicalPublicationLagHours` is the
+upper end of the normal delay between `referenceTime` and publication.
+The thresholds come from the consumer. Both count run intervals of age
+beyond the lag. They are required parameters, because how late a product
+may run before its users are warned is a display decision the dataset
+cannot make.
+
+Age is `now − referenceTime`. The function accepts `generatedAt` so a
+runs.json entry can be passed in unchanged, but republishing the same
+run does not make the forecast younger. An instant that does not parse
+throws a `RangeError` instead of returning a wrong grade.
+
+Observation datasets have no runs, so they don't use this function.
+Judge them against their catalogue `cadenceMinutes`. The polling loop
+around `runFreshness` is in the
 [ingest recipe](/docs/briefing/run-an-ingest/#judge-freshness-with-runfreshness).

@@ -3,30 +3,30 @@ title: Observation document
 description: "The per-site measured time series from GOES-18 (downward shortwave and aerosol optical depth): the observed window, validity discipline, verified product facts, and what the measurements are for."
 ---
 
-The observation document is the contract's one measured
-[document family](/docs/compatibility/#document-families): a per-site
-time series of satellite observations:
-GOES-18's downward shortwave radiation and aerosol optical depth today.
-Every other document here predicts; this one records. It exists because
-the [smoke-adjusted derivation](/logbook/smoke-and-thermals/) makes a
-physical claim (smoke of a stated optical depth transmits a computable
-fraction of the sun), and measurement tests both halves of it: measured
-irradiance under a known plume tests the transmittance, and measured
-optical depth tests the premise, whether the stated plume is there at
-all. Consumers join an observation series to profile or smoke documents
-by instant;
-[measured against the sky](/logbook/measured-against-the-sky/) is the
-case study that established the kind.
+The observation document is the contract's only measured
+[document family](/docs/compatibility/#document-families). It is a time
+series of satellite observations for one site, which today are GOES-18's
+downward shortwave radiation and aerosol optical depth. Every other document
+here describes forecasts; this one records what was measured.
 
-The live sample dataset publishes no observation documents: the datasets
-this kind was built against stayed with their operator when the engine
-went public, and are private now. The JSON shown here is illustrative:
-a capture from before that split, no longer fetchable. The one committed
-real capture is the
-[history-archive](/docs/briefing/history-archives/) fixture
-`briefing/test/fixtures/goes18-aod-erie-2026-08.jsonl.gz`: a smoked-in
-afternoon of measured AOT entries, in the archive's
-one-observation-per-line grammar rather than this document shape.
+It exists to test the
+[smoke-adjusted derivation](/logbook/smoke-and-thermals/), which claims that
+smoke of a stated optical depth lets through a computable fraction of the
+sun. Measurement tests both parts of that claim. Measured irradiance under a
+known plume tests the transmittance, and measured optical depth tests whether
+the stated plume is there at all. Consumers join an observation series to
+profile or smoke documents by instant.
+[Measured against the sky](/logbook/measured-against-the-sky/) is the case
+study behind this document kind.
+
+The live sample dataset has no observation documents. The datasets this
+document kind was built against stayed with their operator when the engine
+went public, and they are private. The JSON shown here is an illustration,
+captured before that split and no longer fetchable. The one real capture in
+the repository is the [history-archive](/docs/briefing/history-archives/)
+fixture `briefing/test/fixtures/goes18-aod-erie-2026-08.jsonl.gz`, a smoky
+afternoon of measured AOT entries. It uses the archive's format of one
+observation per line, which differs from this document's shape.
 
 ## On the wire
 
@@ -36,19 +36,19 @@ one-observation-per-line grammar rather than this document shape.
 | **Parse** | `parseObservationDocument(Json)` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
 | **Zod authority** | `observationDocumentSchema` |
 | **JSON Schema** | [`observation.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/observation.schema.json) |
-| **Discovery** | the catalogue's `observationModels` array, separate from `models` for the same reason as `smokeModels`, so consumers that predate observations keep parsing the catalogue untouched |
-| **Cadence** | the entries carry no run scheduling: `cadenceMinutes` (10 for both) is the freshness yardstick instead, and `gridKm` (3) is the nominal resolution at the sites, not the instrument's finest |
+| **Discovery** | the catalogue's `observationModels` array. It is kept separate from `models` for the same reason as `smokeModels`, so consumers written before observations existed still parse the catalogue unchanged |
+| **Cadence** | The entries have no run schedule. `cadenceMinutes` (10 for both) is what freshness is judged against, and `gridKm` (3) is the nominal resolution at the sites, which is coarser than the instrument's finest |
 
 ## Shape and units
 
-Measurements have no model initialization, so the `observed` block
-replaces the `run` block, carrying the window this document
-currently holds and the generation instant. The dataset manifest's
+Measurements have no model initialization, so an `observed` block takes the
+place of the `run` block. It records the time window the document currently
+holds and when the document was generated. The dataset manifest's
 `referenceTime` equals `lastObservedAt`, so the shared
-[freshness machinery](/docs/briefing/manifest/) reads it unchanged, though the
-manifest itself is the observation variant (`firstObservedAt`,
-`lastObservedAt`, and `observationCount` in place of the forecast-hour
-extent), which `parseForecastManifestJson` does not accept.
+[freshness code](/docs/briefing/manifest/) reads it without changes. The
+manifest itself is the observation variant, with `firstObservedAt`,
+`lastObservedAt`, and `observationCount` instead of the forecast-hour extent,
+and `parseForecastManifestJson` does not accept it.
 
 ```json
 {
@@ -66,26 +66,26 @@ extent), which `parseForecastManifestJson` does not accept.
 }
 ```
 
-*Captured from the now-private dataset (`dundee`), kept for its real
-measured values; no published dataset serves it today.*
+*Captured from the now-private dataset (`dundee`) and kept because its
+measured values are real. No published dataset serves it today.*
 
 | Field | Unit | Meaning |
 | --- | --- | --- |
 | `observedAt` | UTC instant | The product's own timestamp, at its native 10-minute cadence. |
-| `downwardShortwaveWm2` | W/m² | Instantaneous measured downward shortwave flux at the surface: the irradiance the thermal derivation's transmittance claim is about. DSR entries only. |
-| `aot` | dimensionless | Measured aerosol optical thickness at 550 nm: the same quantity, wavelength, and field name a [profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics) forecasts as `aot`, so forecast and measurement compare with no translation. AOD entries only. |
-| `quality` | provider DQF | The provider's **nonzero** DQF for an accepted retrieval; **absent means the best grade** (DQF 0), so the common case costs nothing. The meaning is per product: DSR's DQF is binary, so `quality: 1` is its lumped "degraded/invalid" state — indicative, not quantitative; AOD's is graded, so `quality: 1` is medium — part of the validated top-two set below. Strict quantitative consumers filter to entries without the field. |
+| `downwardShortwaveWm2` | W/m² | Measured instantaneous downward shortwave flux at the surface. The thermal derivation's transmittance claim is about this irradiance. DSR entries only. |
+| `aot` | dimensionless | Measured aerosol optical thickness at 550 nm. A [profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics) forecasts the same quantity at the same wavelength under the same field name, `aot`, so forecast and measurement compare directly. AOD entries only. |
+| `quality` | provider DQF | The provider's DQF for an accepted retrieval, present only when it is **nonzero**. **A missing field means the best grade** (DQF 0), so the common case adds nothing. The meaning depends on the product. DSR's DQF is binary, so `quality: 1` is its combined "degraded/invalid" state, which is indicative only. AOD's is graded, so `quality: 1` is medium, part of the validated top two grades described below. Consumers who need strictly quantitative values keep only entries without the field. |
 
-`observations[]` is a **union of two entry shapes**: the DSR dataset's
+`observations[]` accepts **two entry shapes**: the DSR dataset's
 `{ observedAt, downwardShortwaveWm2 }` and the AOD dataset's
-`{ observedAt, aot }`. Any one document carries one shape throughout,
-but the schema and the parser accept both, so consumers narrow with a
-key check before reading the value, as the fence below does.
+`{ observedAt, aot }`. A single document uses one shape throughout, but the
+schema and the parser accept both. Consumers therefore check which key is
+present before reading the value, as the example below does.
 
-Observations are chronological, and **gaps are real**: an absent instant
-had no accepted retrieval (night, rejected quality flags, scan
-gaps) and means "not measured", never zero. Both are daytime products;
-a series that goes silent overnight is normal.
+Observations are in time order, and **gaps are real**. A missing instant had
+no accepted retrieval, because of night, rejected quality flags, or scan
+gaps. It means "not measured" and must not be read as zero. Both products
+are daytime products, so a series that goes quiet overnight is normal.
 
 ```ts title="read-observations.ts"
 import { parseObservationDocumentJson } from "@azohra/meteo.briefing/contract";
@@ -105,10 +105,10 @@ export function measuredInstants(text: string): string[] {
 
 ## DSR product facts — verified 2026-08-10
 
-Feed-level facts (cadence, latency, granule sizes, and the April 2024
-product transition every archive consumer must know about) live in the
-[forecast model feed reference](/docs/forecast/forecast-model-feeds/).
-Facts measured live from the granules themselves:
+The [forecast model feed reference](/docs/forecast/forecast-model-feeds/)
+covers the feed itself: cadence, latency, granule sizes, and the April 2024
+product transition that every archive consumer needs to know about. These
+facts were measured live from the granules:
 
 | Fact | Value |
 | --- | --- |
@@ -117,85 +117,83 @@ Facts measured live from the granules themselves:
 | **Encoding** | the DSR variable is uint16, scale factor 0.02289028, spanning 0–1500 W/m² |
 | **Fill** | `_FillValue` (65535) sits **inside** `valid_range`, so range checks alone cannot separate fill from data |
 | **DQF** | only two working states (0 good, 1 degraded/invalid) plus 255 for space |
-| **Navigation** | the files carry no lat/lon arrays: pixels are addressed on the ABI fixed grid (x/y scan angles in radians plus a `goes_imager_projection`), so sites are located through the GOES-R PUG Volume 3 forward equations, using each granule's own projection attributes |
+| **Navigation** | The files carry no lat/lon arrays. Pixels are addressed on the ABI fixed grid (x/y scan angles in radians plus a `goes_imager_projection`), so sites are located with the GOES-R PUG Volume 3 forward equations, using each granule's own projection attributes |
 | **Geometry at the catalogued sites** | at ≈49.3–49.8°N, ≈117.2–117.6°W the view (local) zenith angle is ≈ 59°, inside the ≤ 70° good-quality bound below, and the effective ground cell is ≈ 2.4 km east–west × 4.1 km north–south |
 
 Quirks:
 
-- **DQF = 0 does not imply a retrieval**: night pixels are fill with DQF 0.
-  A value publishes only when the DSR pixel is unmasked **and** DQF ≤ 1;
-  the unmasked half of the gate, not the DQF half, is what keeps night
-  out. The builder
+- **DQF 0 does not mean there was a retrieval.** Night pixels are fill with
+  DQF 0. A value is published only when the DSR pixel is unmasked **and**
+  its DQF is ≤ 1. The unmasked check is the part that keeps night out. The
+  builder
   ([`goes.ts`](https://github.com/azohra/meteo/blob/main/forecast/src/builders/goes.ts))
-  publishes an unmasked DQF-1 retrieval labelled `quality: 1` and
+  publishes an unmasked DQF-1 retrieval labelled `quality: 1`, and
   everything else as absence.
-- **DSR's DQF 1 is a lumped "degraded/invalid" state**, not a graded
-  medium: in practice the sun beyond the 70° good-quality zenith bound
-  (the sunrise and sunset shoulders). Live shoulder values track the
-  clear-sky expectation plausibly, but the provider refuses them a
-  grade, so a labelled entry is indicative ("the sun is on, roughly this
-  strongly"), never quantitative. The reference scene draws them as
-  dimmed dots off the measured line and never lets them shade the
-  dimming cells.
-- **The forward equations' visibility inequality is not optional**: without
-  it, a point on the far side of the earth maps to plausible scan angles.
-- **The oft-quoted 2 km is nadir-nominal**: the measured ground cell above
-  is why the catalogue entry declares `gridKm: 3`.
+- **DSR's DQF 1 is one combined "degraded/invalid" state**, with no graded
+  medium. In practice it covers the sun beyond the 70° good-quality zenith
+  bound, around sunrise and sunset. Live values at those times follow the
+  clear-sky expectation plausibly, but the provider gives them no grade, so a
+  labelled entry only indicates that the sun is out and roughly how strong it
+  is. It is not a quantitative value. The reference scene draws these entries
+  as dimmed dots off the measured line and never lets them shade the dimming
+  cells.
+- **The forward equations' visibility check is required.** Without it, a
+  point on the far side of the earth maps to plausible scan angles.
+- **The often-quoted 2 km resolution applies at nadir.** The measured ground
+  cell above is why the catalogue entry declares `gridKm: 3`.
 
 ## What a published DSR value claims
 
 The quality conditions come from the Enterprise SRB ATBD v5.0 (Laszlo,
-Kim & Liu 2020), Tables 2-1/2-2, matched against the threshold variables
+Kim & Liu 2020), Tables 2-1 and 2-2, checked against the threshold variables
 in the files themselves [verified 2026-08-10]:
 
-- Retrievals are attempted to solar and local zenith angles below 90°,
-  but **good quality is claimed only below 70°**: the catalogued sites
-  sit inside the bound with about 11° to spare.
-- The accuracy specification applies at solar elevation above 25°:
-  65 W/m² in the typical 200–500 W/m² range, 85 above it, 110 below.
-  The ATBD states overall accuracy better than ~2 % with ~17 % precision
-  against SURFRAD/SOLRAD/CERES. For independent tower-scale use of the
-  product, see Losos, Hoffman & Stoy 2024
+- Retrievals are attempted for solar and local zenith angles below 90°, but
+  **good quality is claimed only below 70°**. The catalogued sites are inside
+  that bound with about 11° to spare.
+- The accuracy specification applies when the sun is more than 25° above the
+  horizon: 65 W/m² in the typical 200–500 W/m² range, 85 W/m² above it, and
+  110 W/m² below it. The ATBD states overall accuracy better than about 2 %,
+  with about 17 % precision, against SURFRAD, SOLRAD, and CERES. For an
+  independent, tower-scale use of the product, see Losos, Hoffman & Stoy 2024
   ([doi:10.1038/s41597-024-03071-z](https://doi.org/10.1038/s41597-024-03071-z)).
-- **GOES-18-specific validation** [verified 2026-08-10, NOAA OSPO
-  GOES-18 ABI L2+ SRB Full Data Quality ReadMe, Dec 2024; Full maturity
-  2025-01-04]: against SURFRAD and SOLRAD ground stations, the
-  Enterprise DSR's **bias is generally below 30 W/m²** with a **standard
-  deviation of biases generally below 80 W/m²**, roughly half the
-  legacy Baseline product's error. Two caveats travel with those
-  numbers: Full maturity was granted after two years of operational use
-  without major anomalies rather than by a dedicated validation review,
-  and the retrieval still converts narrowband reflectance to broadband
-  albedo with coefficients derived for GOES-16, an open known issue on
-  GOES-18.
-- **The measurement is attenuation-agnostic**: a dimmed value cannot by
-  itself separate smoke from thin cloud. Attribution needs the smoke
-  documents beside it, which is the join this kind exists for.
+- **GOES-18-specific validation** [verified 2026-08-10, NOAA OSPO GOES-18
+  ABI L2+ SRB Full Data Quality ReadMe, Dec 2024; Full maturity 2025-01-04]:
+  against SURFRAD and SOLRAD ground stations, the Enterprise DSR's **bias is
+  generally below 30 W/m²** and the **standard deviation of its biases is
+  generally below 80 W/m²**, roughly half the error of the older Baseline
+  product. Two caveats apply to those numbers. Full maturity was granted after
+  two years of operational use without major anomalies, rather than through a dedicated
+  validation review. The retrieval also still converts narrowband reflectance
+  to broadband albedo with coefficients derived for GOES-16, which is an open
+  known issue on GOES-18.
+- **The measurement cannot tell what dimmed the sun.** A dimmed value alone
+  cannot separate smoke from thin cloud. Attributing it needs the smoke
+  documents alongside, which is the join this document kind exists for.
 
 ## AOD product facts — verified 2026-08-10
 
-The second dataset measures the plume itself. Feed-level facts (cadence,
-latency, granule sizes, and the February 2024 algorithm transition) live
-in the
-[forecast model feed reference](/docs/forecast/forecast-model-feeds/).
-Facts measured live from the granules themselves:
+The second dataset measures the plume itself. The
+[forecast model feed reference](/docs/forecast/forecast-model-feeds/) covers
+the feed: cadence, latency, granule sizes, and the February 2024 algorithm
+transition. These facts were measured live from the granules:
 
 | Fact | Value |
 | --- | --- |
 | **Product** | GOES-R ABI L2 Aerosol Optical Depth, full disk: `ABI-L2-AODF` on the same anonymous `noaa-goes18` bucket |
 | **Quantity** | aerosol optical thickness at 550 nm, dimensionless |
-| **Grid and navigation** | identical 5424² ABI fixed grid and projection attributes as DSRF: one navigation (the PUG forward equations above, site indices located once) serves both products, and the DSR geometry facts (view zenith, effective ground cell) apply unchanged |
+| **Grid and navigation** | The same 5424² ABI fixed grid and projection attributes as DSRF. One navigation (the PUG forward equations above, with site indices located once) serves both products, and the DSR geometry facts (view zenith, effective ground cell) apply unchanged |
 | **Encoding** | the AOD variable is uint16, scale factor 7.706 × 10⁻⁵, offset −0.05, spanning −0.05 to +5.0 |
 | **Fill** | unlike DSR, `_FillValue` (65535) sits **outside** `valid_range` ([0, 65530]), so range masking alone separates fill from data |
-| **DQF** | graded, not binary: 0 high, 1 medium, 2 low quality, 3 no retrieval |
+| **DQF** | graded: 0 high, 1 medium, 2 low quality, 3 no retrieval |
 
 Quirks:
 
-- **The builder applies the shared unmasked-and-quality gate anyway**,
-  despite the cleanly separable fill: it is one code path for both
-  products, and it can only reject more.
-- **Night pixels are fill with DQF 3**: the explicit no-retrieval flag
-  that DSR's night-fill-with-DQF-0 lacks.
+- **The builder still applies the shared unmasked-and-quality gate**, even
+  though the fill separates cleanly. It is one code path for both products,
+  and the extra check can only reject more.
+- **Night pixels are fill with DQF 3**, an explicit no-retrieval flag. DSR's
+  night pixels, fill with DQF 0, have no such flag.
 
 ![The GOES-18 DSR and AOD products in two panels, showing where each fill value sits against its valid_range, which DQF codes publish, and how a night pixel arrives, with both feeding one shared unmasked-and-quality gate.](figures/observation-quality-gate.svg)
 
@@ -204,68 +202,70 @@ Quirks:
 The quality gate and its accuracy rest on the Enterprise (EPS) aerosol
 algorithm's validation record [verified 2026-08-10]:
 
-- **Published values pass DQF ≤ 1**: high plus medium quality. NOAA's
-  product ReadMe recommends high-only for strict quantitative use, but
-  the operational smoke literature measured high-only as "very
-  conservative": the top-two set scores r = 0.87 with bias 0.04 and
-  RMSE 0.09 against AERONET (Zhang, Kondragunta et al. 2020,
-  [AMT 13:5955](https://doi.org/10.5194/amt-13-5955-2020)), and it is
-  the smoke-event choice. A medium-quality entry carries `quality: 1`, so the
-  strict high-only view is one filter away.
-- **The Enterprise algorithm is why the dataset exists at all.**
-  Operational since 2024-02-06, it raised the quantitative view-zenith
-  limit from the Baseline algorithm's 60° to 78.5°. The catalogued
-  sites' ≈59° view zenith left the old bound no margin (the Baseline
-  cutoff excluded the western-US view geometry), while the Enterprise
-  limit gives the same geometry nearly 20° to spare.
-- **Accuracy over land against AERONET**: bias below 0.06 / 0.04 / 0.12
-  with σ below 0.13 / 0.25 / 0.35 for AOD < 0.04, 0.04–0.8, and > 0.8
-  respectively; smoke events live in the > 0.8 bin.
-- **Rejection is routine, even in daylight**: one live smoky
-  afternoon gave accepted retrievals in 17–58 % of granules per site
-  (pooled ~40 %), winter snow suppresses retrievals over land, and a
-  thick plume core can fail the algorithm's cloud tests: the strongest
-  smoke is exactly what can go unmeasured. An absent instant means "not
-  measured", never clear air. The builder's first live run, at night,
+- **Published values pass DQF ≤ 1**, meaning high and medium quality.
+  NOAA's product ReadMe recommends high quality only for strict quantitative
+  use, but the operational smoke literature found high-only "very
+  conservative". The top two grades together score r = 0.87, with bias 0.04
+  and RMSE 0.09, against AERONET (Zhang, Kondragunta et al. 2020,
+  [AMT 13:5955](https://doi.org/10.5194/amt-13-5955-2020)), and they are the
+  choice for smoke events. A medium-quality entry carries
+  `quality: 1`, so one filter gives the strict high-only view.
+- **The dataset exists because of the Enterprise algorithm.** Operational
+  since 2024-02-06, it raised the quantitative view-zenith limit from the
+  Baseline algorithm's 60° to 78.5°. The catalogued sites' view zenith of
+  about 59° left no margin under the old bound (the Baseline cutoff
+  excluded the western-US view geometry). The Enterprise limit gives the
+  same geometry nearly 20° to spare.
+- **Accuracy over land against AERONET**: bias below 0.06, 0.04, and 0.12,
+  with σ below 0.13, 0.25, and 0.35, for AOD < 0.04, 0.04–0.8, and > 0.8
+  respectively. Smoke events fall in the > 0.8 range.
+- **Retrievals are often rejected, even in daylight.** On one live smoky
+  afternoon, 17–58 % of granules per site gave accepted retrievals (about
+  40 % pooled). Winter snow suppresses retrievals over land, and a thick
+  plume core can fail the algorithm's cloud tests, so the strongest smoke is
+  exactly what can go unmeasured. A missing instant means "not measured"; it
+  does not mean clear air. The builder's first live run was at night and
   correctly published nothing.
 
-The entry shape is `{ observedAt, aot }`: the same field
-name and wavelength the profile's `smoke` block forecasts as `aot` (the
-[smoke document](/docs/briefing/smoke-document/) itself carries no
-optical-depth field), so a measured value sits beside a forecast one with
-no unit, wavelength, or naming translation between them.
+The entry shape is `{ observedAt, aot }`, with the same field name and
+wavelength that the profile's `smoke` block forecasts as `aot`. (The
+[smoke document](/docs/briefing/smoke-document/) itself has no optical-depth
+field.) A measured value can therefore sit next to a forecast one without
+converting units, wavelength, or names.
 
 ## Rolling window, history archive
 
-Each document holds a rolling ~72-hour window; the build is incremental,
-merging granules newer than the published `lastObservedAt`. Behind the
-window, both datasets keep [history archives](/docs/briefing/history-archives/) at
-`<model-slug>/history/<site>/<YYYY-MM>.jsonl.gz`: the same seeded
-gzip-member mechanics as profile history, but a different
-line grammar: **one observation object per line**, archived exactly once,
-when the instant first enters the window (the history page carries the
-grammar and its why). NOAA's own bucket remains the deep archive: every
-granule, every pixel. A consumer who wants raw granules reads the bucket;
-the published series for a month, the archive; the recent sky beside
-today's forecast, this document.
+Each document holds a rolling window of about 72 hours. The build is
+incremental and merges granules newer than the published `lastObservedAt`.
+Older data goes to [history archives](/docs/briefing/history-archives/) at
+`<model-slug>/history/<site>/<YYYY-MM>.jsonl.gz`, which both datasets keep.
+They use the same seeded gzip members as profile history, with a different
+line format: **one observation object per line**, archived exactly once, when
+the instant first enters the window. The history page describes the format
+and the reasons for it.
+
+NOAA's own bucket remains the complete archive, with every granule and every
+pixel. Read the bucket for raw granules, the history archive for a month's
+published series, and this document for the recent sky next to today's
+forecast.
 
 ## Joining observations to forecasts
 
-Observations arrive every 10 minutes; forecasts are hourly. Join by
-instant (an observation belongs beside the forecast hour containing it),
-and label the join with the forecast's run and the observation's
-`generatedAt`, exactly as smoke-to-profile joins surface both runs. The
-natural use is the one the kind was built for: measured surface shortwave
-under a plume whose optical depth the
-[profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics) states, held against
-the transmittance the
+Observations arrive every 10 minutes and forecasts are hourly. Join by
+instant, placing each observation with the forecast hour that contains it.
+Label the join with the forecast's run and the observation's `generatedAt`,
+the same way smoke-to-profile joins show both runs. The main use is the one
+this document kind was built for: comparing measured surface shortwave under
+a plume, whose optical depth the
+[profile's `smoke` block](/docs/briefing/profile-document/#run-site-and-semantics)
+states, with the transmittance the
 [smoke-adjusted derivation](/logbook/smoke-and-thermals/) predicts.
 
-The package closes that loop end to end: `nearestObservation` in
-[`@azohra/meteo.briefing/derive`](/docs/briefing/derive/) is the join primitive,
-and `clearSkyGhiWm2` (Haurwitz, per Reno, Hansen & Stein 2012) turns a
+The package supports that comparison end to end. `nearestObservation` in
+[`@azohra/meteo.briefing/derive`](/docs/briefing/derive/) does the join, and
+`clearSkyGhiWm2` (Haurwitz, per Reno, Hansen & Stein 2012) turns a
 measurement into an `observedTransmittance` against the clear-sky
 expectation. Passed to a Meteogram as
 [`options.observations` and `options.aotObservations`](/docs/briefing/scene/),
-the two datasets draw the **Sun** and **AOT** strips, each labelled from
-its own source.
+the two datasets draw the **Sun** and **AOT** strips, each labelled with its
+own source.

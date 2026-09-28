@@ -13,48 +13,48 @@ import { BRIEFING_PACKAGE_VERSION } from '../../site/src/components/docs/package
 versions the read side: contract guards, derivations, analysis,
 comparison, transport, history, scene graph, SVG renderer, tokens, and
 the scene-derived key. The package version is independent of every
-document's `schemaVersion` —
-[Compatibility](/docs/compatibility/) carries the document families and
-the one rule for reading them.
+document's `schemaVersion`. [Compatibility](/docs/compatibility/) lists
+the document families and explains how to read across their versions.
 
-The package follows semantic-versioning intent. While it remains below
-1.0:
+The package aims to follow semantic versioning. While it is below 1.0:
 
-- patch releases in one minor line are backwards-compatible corrections;
-- a minor release may change a public TypeScript or JavaScript API and
-  describes the change in the changelog and the TypeScript docs; and
-- a deprecation names the replacement and the release boundary at which
-  the old export may disappear.
+- patch releases within one minor line are backwards-compatible
+  corrections;
+- a minor release may change a public TypeScript or JavaScript API, and
+  the changelog and the TypeScript docs describe the change; and
+- a deprecation names the replacement and the release at which the old
+  export may be removed.
 
-Pin an npm range appropriate to your tolerance, validate all external
-documents, and test deterministic and ensemble examples. Branch on the
-scalar value shape and the declared capabilities; a hard-coded model name
-breaks on the next catalogue entry.
+Pin an npm range that suits your tolerance for change, validate every
+external document, and test both deterministic and ensemble examples.
+Branch on the shape of the scalar values and on the declared
+capabilities. Code that hard-codes a model name breaks on the next
+catalogue entry.
 
 ## Finding vocabularies
 
-Three typed kind sets version independently of the package and of each
-other:
+Three sets of finding kinds are versioned separately from the package and
+from each other:
 
-| Constant | Current value | Authority | What it versions |
+| Constant | Current value | Defined in | What it versions |
 | --- | ---: | --- | --- |
 | `ANALYZE_VOCABULARY_VERSION` | <code>{ANALYZE_VOCABULARY_VERSION}</code> | `briefing/src/analyze/vocabulary.ts` | The [single-profile finding kinds](/docs/briefing/analyze/) |
 | `COMPARE_VOCABULARY_VERSION` | <code>{COMPARE_VOCABULARY_VERSION}</code> | `briefing/src/compare.ts` | The [cross-model comparison kinds](/docs/briefing/compare/) |
 | `RUN_COMPARISON_VOCABULARY_VERSION` | <code>{RUN_COMPARISON_VOCABULARY_VERSION}</code> | `briefing/src/history/compare-runs.ts` | The [run-comparison kinds](/docs/briefing/history/) |
 
 The current release publishes site-forecast documents at
-<code>schemaVersion: {SITE_FORECAST_SCHEMA_VERSION}</code>, and its analysis and comparison envelopes carry the
-profile contract's `Mps` suffix grammar (`wstarMinMps`,
-`peakThermalVelocityMps`, `meanWindMps`, `directionFloorMps`, and their
-siblings). Envelopes serialized under earlier vocabularies keep their old
-bare-`Ms` field names, and the runtime version check catches the skew.
+<code>schemaVersion: {SITE_FORECAST_SCHEMA_VERSION}</code>. Its analysis and comparison envelopes use the
+profile contract's `Mps` suffix for speeds (`wstarMinMps`,
+`peakThermalVelocityMps`, `meanWindMps`, `directionFloorMps`, and the
+rest). Envelopes serialized under earlier vocabularies keep the old bare
+`Ms` field names, and the runtime version check catches the mismatch.
 
 ## Release tags are snapshot boundaries
 
-Treat each package release tag as an API and SVG snapshot boundary while
-validating each document's independent `schemaVersion`. The
+Treat each package release tag as a snapshot of the API and the SVG
+output, and still validate each document's own `schemaVersion`. The
 [scene guide](/docs/briefing/scene/) defines the current presentation
-options and scene fields; the [SVG guide](/docs/briefing/svg/) defines
+options and scene fields. The [SVG guide](/docs/briefing/svg/) defines
 rendering, tokens, and the scene-derived key. The
 [package changelog](https://github.com/azohra/meteo/blob/main/briefing/CHANGELOG.md)
-records release comparisons.
+records what changed between releases.

@@ -6,8 +6,8 @@ description: Interpret percentile blocks, contributor counts, censoring, and cir
 import EnsembleSpreadLab from "../../site/src/components/labs/EnsembleSpreadLab.astro";
 import MemberAccounting from "../../site/src/components/docs/MemberAccounting.astro";
 
-Any numeric profile position can be a deterministic number or an ensemble
-object:
+Any numeric position in a profile holds either a deterministic number or an
+ensemble object like this one:
 
 ```json title="ensemble scalar"
 {
@@ -20,9 +20,10 @@ object:
 }
 ```
 
-`run.members` declares total run membership. A position's own `members`
-counts contributors at that position and can be lower when null or censored
-member values were excluded. Do not rank an absent value at zero.
+`run.members` declares how many members the run has in total. A position's
+own `members` counts the members that contributed at that position. It can
+be lower when null or censored member values were left out. Do not rank an
+absent value at zero.
 
 A full-dropout position has exactly this shape:
 
@@ -37,21 +38,27 @@ A full-dropout position has exactly this shape:
 }
 ```
 
-Full dropout means no member contributed at that position. It differs from an
-absent optional field and from a scalar `null` forecast position.
+Full dropout means no member contributed at that position. It is different
+from an absent optional field, and from a position whose value is a plain
+`null`.
 
 ## Reading the block
 
-- `p50` is the median, not the preferred or most likely member.
-- `p25–p75` and `p10–p90` describe member spread at one position; they are not
-  calibrated event-probability intervals.
-- Percentiles remain ordered even when several collapse to the same value.
-- `ceiledMembers`, when present on a supported height position, counts members
-  capped at the published column ceiling rather than resolving a physical top.
+`p50` is the median of the members. It is neither a preferred member nor
+the most likely outcome.
 
-Wind direction is aggregated circularly. A cluster around 350° and 10° belongs
-near north, not near the arithmetic mean of 180°. Consumers use the published
-percentile object and package scene rather than recomputing it linearly.
+`p25`–`p75` and `p10`–`p90` describe how far the members spread at one
+position. They are not calibrated probability intervals for an event.
+
+The percentiles stay in order even when several of them share a value.
+
+`ceiledMembers` appears on some height positions. It counts members that hit
+the published column ceiling, where no physical top was resolved.
+
+Wind direction is aggregated around the circle. Members clustered at 350°
+and 10° belong near north, where a plain arithmetic mean would give
+180°. Use the published percentile object and the package's scene, and do
+not recompute the direction as a straight average.
 
 <MemberAccounting />
 
@@ -60,17 +67,19 @@ percentile object and package scene rather than recomputing it linearly.
 ## Narrow safely in TypeScript
 
 The [profile reference](/docs/briefing/profile-document/#deterministic-and-ensemble-values)
-carries the worked narrowing fence. Choose the guard by question:
-`isEnsembleValue` when the band matters, `isEnsembleDropout` for the
-zero-member shape, `p50` from `@azohra/meteo.briefing/derive` (returning
-`number | null`) when a numeric derivation explicitly chooses the median,
-and `isDeterministicProfile` only when an integration genuinely rejects
-ensemble documents.
+has a worked example. Pick the guard that answers your question:
 
-The scene graph builds median lines and percentile band geometry wherever the
-document supplies populated values. Dropout positions render as gaps; a level
-or hour whose required positions all dropped out contributes no scene element.
+| Question | Guard |
+| --- | --- |
+| Does the spread band matter? | `isEnsembleValue` |
+| Is this the zero-member dropout shape? | `isEnsembleDropout` |
+| Does a numeric derivation need the median? | `p50` from `@azohra/meteo.briefing/derive`, which returns a number or `null` |
+| Does the integration reject ensemble documents outright? | `isDeterministicProfile` |
+
+The scene graph draws median lines and percentile bands wherever the
+document has populated values. Dropout positions render as gaps. A level or
+hour whose required positions all dropped out adds nothing to the scene.
 
 The [column-ceiling study](/logbook/ensemble-spread/) records how a 700 hPa
-source ceiling concealed spread that appeared when the same member derivation
+source ceiling hid spread that appeared once the same member derivation was
 extended to 500 hPa.

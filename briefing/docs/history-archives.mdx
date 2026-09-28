@@ -3,33 +3,32 @@ title: History archives
 description: Consume append-only monthly gzip archives of published profiles and observations.
 ---
 
-Every dataset whose operator publishes with the default `--history`
-flag keeps monthly gzip archives of what it publishes, at one path
-shape:
+When an operator publishes with the default `--history` flag, the dataset
+keeps monthly gzip archives of everything it publishes, at one path shape:
 
 ```text
 <model>/history/<site>/<YYYY-MM>.jsonl.gz
 ```
 
-The path shape is shared; the line grammar is not. Profile history
-archives whole documents per run; observation history archives single
-observation objects per instant. Know which kind of dataset an archive
-belongs to before reading it: a line from one grammar does not parse as
-the other. This page is the archive format;
+Forecast and observation archives share the path shape but not the line
+format. A profile archive stores one whole document per run. An observation
+archive stores one observation object per instant. Check which kind of
+dataset an archive belongs to before reading it, because a line in one
+format does not parse as the other. This page describes the archive format.
 [`@azohra/meteo.briefing/history`](/docs/briefing/history/) is the API that
-reads these archives.
+reads the archives.
 
-History is the operator's flag: `meteo forecast build --no-history`
-publishes current documents only, and an archive simply does not exist
-for that deployment. Absence of an archive is a publication choice,
-never data loss.
+The operator decides whether history is kept. `meteo forecast build
+--no-history` publishes current documents only, and that deployment has no
+archive. A missing archive is a publication choice and does not mean data
+was lost.
 
-## Profile history — one document per line
+## Profile history: one document per line
 
-Each successful new run appends the complete site profile as one line.
-The month comes from `run.referenceTime`. Each line is the same profile
-document accepted by `parseSiteForecast`; the archive has no reduced
-history-only shape.
+Each successful new run appends the complete site profile as one line, in
+the month of its `run.referenceTime`. Each line is the same profile document
+that `parseSiteForecast` accepts. The archive has no reduced, history-only
+shape.
 
 ## Storage properties
 
@@ -41,9 +40,9 @@ history-only shape.
 - Current catalogue values do not retroactively reinterpret an archived
   profile.
 - A corrected re-publication appends a new line for the same
-  `run.referenceTime` with a later `run.generatedAt`; it never rewrites
-  the earlier line. A republication is a fact the archive states; readers
-  dedupe by `referenceTime`, keeping the latest `generatedAt`.
+  `run.referenceTime` with a later `run.generatedAt`, and leaves the earlier
+  line in place. The archive therefore records each republication. Readers
+  deduplicate by `referenceTime`, keeping the latest `generatedAt`.
 
 ## The sidecar index
 
@@ -55,41 +54,41 @@ Every archive publishes an advisory byte-offset index beside it:
 
 ![A month archive of four gzip members above its four sidecar index entries, where a reader uses member 3's byteOffset and byteLength to send one Range request and gets back member 3 alone.](figures/sidecar-index.svg)
 
-One entry per gzip member, in archive order: `byteOffset`, `byteLength`,
-`lines`, and the member's identity: `referenceTime` and `generatedAt`
-for a profile run, `firstObservedAt` / `lastObservedAt` for an
-observation batch. With it, a reader wanting "runs since T" or "the last
-N runs" Range-fetches only the members it needs instead of the whole
-month, provided the operator's storage serves `Range` requests. Object
-stores and CDNs commonly do; verify yours does before building a reader
-on it.
+The index has one entry per gzip member, in archive order. Each entry holds
+`byteOffset`, `byteLength`, `lines` and the member's identity, which is
+`referenceTime` and `generatedAt` for a profile run, or `firstObservedAt` and
+`lastObservedAt` for an observation batch. A reader that wants "runs since
+T" or "the last N runs" can Range-fetch only the members it needs instead of
+the whole month, as long as the operator's storage serves `Range` requests.
+Object stores and CDNs usually do. Check that yours does before building a
+reader on it.
 
-The index is recomputed from the archive bytes after every append (a
-pure function of the file), and it is advisory, never authoritative:
-no reader may require it. The
+The index is recomputed from the archive bytes after every append, so it is
+a pure function of the file. It is advisory, and no reader may depend on it.
+The
 [history loaders' since-suffix strategy](/docs/briefing/history/#the-sidecar-index-and-the-since-suffix-strategy)
-is the worked consumption, degradations included.
+shows how to use it, including what happens when it is missing or wrong.
 
-## Observation history — one observation per line
+## Observation history: one observation per line
 
 The [observation datasets](/docs/briefing/observation-document/)
-(`goes18-dsr`, `goes18-aod`) use the same path shape and the same
-independent-gzip-member appends, but each line is a **single observation
+(`goes18-dsr`, `goes18-aod`) use the same path shape and the same appends of
+independent gzip members. Each line, however, is a **single observation
 object** (`{"observedAt": …, "downwardShortwaveWm2": …}` or
-`{"observedAt": …, "aot": …}`), not an observation document, and
+`{"observedAt": …, "aot": …}`). It is not an observation document, and
 `parseObservationDocument` does not accept a line.
 
-The grammar differs because the publish cadence does: a profile is
-published once per run, but an observation document is a rolling window
-rebuilt every ~15 minutes, so archiving whole documents would store each
-instant roughly 290 times over. Instead each instant is archived exactly
-once (when it first enters the window), under the month of its own
-`observedAt`, so an instant near a month boundary lands in its own
-month, not the build's.
+The format differs because the publishing cadence differs. A profile is
+published once per run. An observation document is a rolling window rebuilt
+about every 15 minutes, so archiving whole documents would store each
+instant roughly 290 times. Each instant is instead archived once, when it
+first enters the window, under the month of its own `observedAt`. An instant
+near a month boundary therefore lands in its own month, which may differ
+from the month of the build.
 
-The provider's bucket remains the deep archive of raw granules; this
-archive is the curated per-site record of exactly what was published:
-gate, rounding, and absences included.
+The provider's bucket remains the full archive of raw granules. This archive
+is the curated per-site record of exactly what was published, including the
+quality gate, the rounding and the absences.
 
 ## Read for analysis
 
@@ -98,19 +97,19 @@ curl -sS https://meteo.azohra.com/data-sample/hrdps-continental/history/test-hil
   | gzip -cd | jq -r '.run.referenceTime'
 ```
 
-For an observation archive, the same pipeline works with `.observedAt`:
-each line is one measured instant, not one run.
+For an observation archive, the same pipeline works with `.observedAt`,
+because each line is one measured instant.
 
-Use an equivalent gzip reader when `gzip` or `jq` is unavailable, but
-know that the archives are **multi-member** gzip: command-line `gzip`
-handles concatenated members, while WHATWG `DecompressionStream("gzip")`
-does not; the [history API](/docs/briefing/history/) holds the measured
-per-runtime failures and the loaders that read these archives correctly.
-Applications should stream lines rather than inflate an entire long
-archive into memory.
+Any equivalent gzip reader works when `gzip` or `jq` is unavailable, as long
+as it handles **multi-member** gzip. Command-line `gzip` handles concatenated
+members. WHATWG `DecompressionStream("gzip")` does not; the
+[history API](/docs/briefing/history/) lists the measured failures per
+runtime and provides loaders that read these archives correctly.
+Applications should stream lines instead of inflating a long archive into
+memory all at once.
 
-History supports reproducible analysis, calibration audits, and downstream
+History supports reproducible analysis, calibration audits and downstream
 archives. Archived output can also calibrate scenario-profile ranges offline.
 
-Publishers choose retention, indexing, query APIs, and access control outside
-the profile schema.
+Operators choose retention, indexing, query APIs and access control. None of
+these is part of the profile schema.

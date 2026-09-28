@@ -1,44 +1,44 @@
 ---
 title: "The sounding"
-description: "One forecast hour drawn as a vertical profile of the flyable band: temperature, dew point, a lifted parcel, and wind, honest about the model's published levels."
+description: "Draw one forecast hour as a vertical profile of the flyable band: temperature, dew point, a lifted parcel, and wind, drawn only from the model's published levels."
 ---
 
-The sounding is the package's second chart family: one forecast hour of a
-validated profile document, drawn as a vertical profile. Where the
-Meteogram connects a day of columns through time, the sounding opens a
-single column up: temperature and dew point against height, a lifted
-parcel beside them, a wind-barb ladder in the right margin, and the
-derived heights (boundary layer top, cloud base, usable lift top) as
-horizontal marks. It lives behind its own subpath and follows the same
-two-step shape as the Meteogram: a renderer-independent scene graph, then
-deterministic SVG. This page is the reference for that subpath; rendering
-a profile at all starts at
+The sounding is the package's second chart family. It draws one forecast
+hour of a validated profile document as a vertical profile. The Meteogram
+connects a day of columns through time, and the sounding opens up a single
+column. It shows temperature and dew point against height, a lifted parcel
+beside them, and a wind-barb ladder in the right margin. The derived
+heights (boundary layer top, cloud base, usable lift top) appear as
+horizontal marks. The sounding has its own subpath and works in the same
+two steps as the Meteogram: a renderer-independent scene graph, then
+deterministic SVG. This page is the reference for that subpath. If you
+have not rendered a profile before, start at
 [Render a first Meteogram](/docs/briefing/render-first-meteogram/).
 
 ## What this chart is
 
-This is a flyable-band profile, capped by the published column. The
-axes are linear height (metres MSL, floor at the model elevation) and
-linear temperature. It is not a skew-T: it has no skewed
-temperature coordinate and no adiabat grid, because the input cannot
-honour one. A profile document carries only the levels its model
-publishes into the flyable band (the deterministic models in the
-catalogue publish nothing above 600 hPa, and ensemble models publish far
-fewer levels than that), so a skew-T's upper half would be invented. The
-chart draws exactly the published column and prints where it ends;
-nothing above the top level is drawn or implied.
+This is a profile of the flyable band, and it stops where the published
+column stops. Both axes are linear: height in metres MSL, with the floor
+at the model elevation, and temperature. It is not a skew-T. It has no
+skewed temperature coordinate and no adiabat grid, because the input
+cannot fill one. A profile document carries only the levels its model
+publishes in the flyable band. The deterministic models in the catalogue
+publish nothing above 600 hPa, and ensemble models publish far fewer
+levels than that, so the upper half of a skew-T would be invented. The
+chart draws exactly the published column and prints where it ends. It
+draws and implies nothing above the top level.
 
-The marks follow the same rule: a derived height that the
-document does not carry adds no mark, and an hour whose required medians
-are absent builds no scene at all.
+The marks follow the same rule. A derived height that the document does
+not carry adds no mark, and an hour whose required medians are absent
+builds no scene at all.
 
 ## Build the scene for one hour
 
-`buildSoundingScene(profile, options)` selects the hour by instant.
-`options.validAt` is the whole selection contract: an instant the
-profile does not publish returns `null` (never an exception), and the
-scene echoes `validAt` back, so a Meteogram selection can drive a
-sounding beside it and nothing public is keyed by hour index.
+`buildSoundingScene(profile, options)` selects the hour by instant, and
+`options.validAt` is the only selector. An instant the profile does not
+publish returns `null` rather than throwing. The scene echoes `validAt`
+back, so a Meteogram selection can drive a sounding next to it, and
+nothing public is keyed by hour index.
 
 ```ts title="build-sounding.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -57,7 +57,7 @@ export function soundingAt(profile: SiteForecast, validAt: string): string | nul
 ```
 
 To pair the sounding with a Meteogram, take the instant from the
-Meteogram's own scene rather than formatting one:
+Meteogram's own scene instead of formatting one yourself:
 
 ```ts title="drive-from-meteogram.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -78,91 +78,94 @@ export function soundingForSelectedHour(profile: SiteForecast, timeZone: string)
 ```
 
 By default the altitude domain follows the Meteogram's rules over the
-whole profile plus the launch (floor at the model elevation, top padded
-above every level and drawn derived height), so the axis stays put while
-a consumer scrubs hours. `floorM` and `topM` override it; `widthPx` and
-`heightPx` size the SVG; `overlays` toggles each drawn layer
-(`temperature`, `dewPoint`, `parcel`, `wind`, `boundaryLayerTop`,
-`cloudBase`, `usableLiftTop`, `launch` — all on by default,
-`DEFAULT_SOUNDING_OVERLAYS` exports the set).
+whole profile plus the launch. The floor sits at the model elevation, and
+the top is padded above every level and every drawn derived height. The
+axis therefore stays still while a consumer scrubs through hours.
+`floorM` and `topM` override the domain, and `widthPx` and `heightPx` set
+the SVG size. `overlays` turns each drawn layer on or off: `temperature`,
+`dewPoint`, `parcel`, `wind`, `boundaryLayerTop`, `cloudBase`,
+`usableLiftTop`, and `launch`. All of them are on by default, and
+`DEFAULT_SOUNDING_OVERLAYS` exports the set.
 
 ## Count the levels off the chart
 
-The chart shows no more vertical resolution than the document carries:
+The chart shows no more vertical resolution than the document carries.
 
-- Every published level draws as a dot on the temperature and
-  dew-point traces (plus one dot for the surface sample). The reader can
-  count the model's levels directly off the chart, and the plain note
-  under the plot states the count and where the column ends
+- Every published level draws as a dot on the temperature and dew-point
+  traces, with one more dot for the surface sample. A reader can count
+  the model's levels directly off the chart. The note under the plot
+  states the count and where the column ends
   (`5 published levels · top of column 2538 m`).
-- Segments between dots are straight, never curved, so nothing
-  suggests structure between levels that the model never published. The
-  measured environment draws solid; only the parcel trace dashes,
-  because it alone is a derivation rather than a published value.
-- A 5-level ensemble column renders as five dots, four
-  straight segments, and p25–p75 envelopes behind the traces and behind
-  each ensemble-valued mark. The envelope is the members' spread at the
-  published levels, interpolated by the same straight segments as the
-  median.
-- The wind ladder is unthinned: one barb at the surface and one per
-  published level, at the level's drawn height. Feathers are 5, 10, and
-  50 km/h, as on the Meteogram.
+- Segments between dots are straight, so the chart suggests no structure
+  between levels that the model did not publish. The measured environment
+  draws solid. Only the parcel trace is dashed, because it is the one
+  derived trace rather than a published value.
+- A 5-level ensemble column renders as five dots and four straight
+  segments, with p25–p75 envelopes behind the traces and behind each
+  ensemble-valued mark. The envelope is the members' spread at the
+  published levels, joined by the same straight segments as the median.
+- The wind ladder is not thinned. It has one barb at the surface and one
+  per published level, at that level's drawn height. Feathers are 5, 10,
+  and 50 km/h, as on the Meteogram.
 
 ## The parcel trace and the LCL
 
 The parcel trace lifts the hour's surface parcel through the published
-levels, dry-adiabatically to its lifting condensation level and moist
-pseudo-adiabatically above, and draws the parcel's temperature beside
-the environment's, with the LCL marked on the trace where it falls
-inside the drawn band. Buoyancy at any height is the horizontal gap
-between the parcel trace and the temperature trace, and
-`readingAtAltitude` reports it numerically (as a virtual-temperature
-difference, so moisture counts). Ensemble documents resolve to the p50
-member before the ascent; the parcel trace itself carries no envelope.
+levels. It rises dry-adiabatically to its lifting condensation level (LCL)
+and moist pseudo-adiabatically above it. The chart draws the parcel's
+temperature next to the environment's and marks the LCL on the trace when
+it falls inside the drawn band. Buoyancy at any height is the horizontal
+gap between the parcel trace and the temperature trace.
+`readingAtAltitude` reports it as a number, as a virtual-temperature
+difference so that moisture counts. For ensemble documents the parcel
+starts from the p50 member, and the parcel trace itself has no envelope.
 
 ## Answer pointer positions
 
-`readingAtAltitude(scene, y)` interpolates the column at a scene y:
-temperature, dew point, dew-point depression, wind speed and direction,
-parcel temperature, and buoyancy, each `null` above the published column
-or where the document carries no value. Interpolation is linear between
-published levels, exactly the straight segments the chart draws, so
-tooltip and pixels agree. `yForAltitude`, `altitudeForY`,
-and `xForTemperature` expose the scales for consumer overlays.
+`readingAtAltitude(scene, y)` interpolates the column at a scene y. It
+returns temperature, dew point, dew-point depression, wind speed and
+direction, parcel temperature, and buoyancy. Each value is `null` above
+the published column or where the document carries no value.
+Interpolation is linear between published levels, which matches the
+straight segments on the chart, so a tooltip and the pixels agree.
+`yForAltitude`, `altitudeForY`, and `xForTemperature` expose the scales
+for consumer overlays.
 
 ## Render SVG and the scene-derived key
 
 `renderSoundingSvg(scene, { idPrefix })` emits a self-contained SVG
-document: stable ordering, two-decimal geometry, identical bytes for
-identical input. Give each sounding on a page its own `idPrefix`.
+document with stable ordering and two-decimal geometry. Identical input
+produces identical bytes. Give each sounding on a page its own
+`idPrefix`.
 
-The chart labels itself in place: each trace carries its name in ink
-behind a short line-chip in the trace's colour at the surface end, and
-each altitude mark (and the LCL) prints its name and height beside its
-own line, anchored on the half of the plot farthest from the traces at
-that altitude. Both label sets are collision-solved deterministically
-(coincident marks stack a minimum gap apart, and a label nudged off its
-true height carries a leader tick back to it), so `buildSoundingKeySpec(scene)`
-keys only what the plot does not already label: the published-level dot,
-the ensemble envelope when one drew, and the calm circle when the wind
-ladder drew a calm level. That is at most three entries. Pass
-`selfLabeled` (the exported `SOUNDING_SELF_LABELED` is the complete set)
-to opt the self-labeling traces, marks, and LCL back into the key, and
-`renderSoundingKeySvg` serializes the spec with the same stylesheet.
-Rebuild the key from the final scene after every overlay change.
+The chart labels itself in place. Each trace prints its name in ink
+behind a short chip of line in the trace's colour, at the surface end.
+Each altitude mark, and the LCL, prints its name and height next to its
+own line, on the half of the plot farther from the traces at that
+altitude. Both sets of labels are placed deterministically so they do not
+collide. Marks at the same height stack a minimum gap apart, and a label
+moved off its true height carries a leader tick back to it. Because of
+this, `buildSoundingKeySpec(scene)` keys only what the plot does not
+already label: the published-level dot, the ensemble envelope when one is
+drawn, and the calm circle when the wind ladder drew a calm level. That
+is three entries at most. Pass `selfLabeled` to add the self-labeling
+traces, marks, and LCL back into the key; the exported
+`SOUNDING_SELF_LABELED` is the complete set. `renderSoundingKeySvg`
+serializes the spec with the same stylesheet. Rebuild the key from the
+final scene after every overlay change.
 
 ## Theming
 
-The chart is themed by the `--meteo-sounding-*` token family, the
-sounding's own: `SOUNDING_TOKEN_DEFAULTS` carries the
-default values, and `SOUNDING_TRACE_TOKENS` / `SOUNDING_MARK_TOKENS` map
-each drawn class to the token that colours it, for legends and focus
-styles. Shared meanings keep the Meteogram's values (cloud base is the
-same colour on both charts), but the sounding reads only its own family;
-override tokens on an ancestor, exactly as the
-[SVG renderer page](/docs/briefing/svg/) describes for the Meteogram,
-and pass `stylesheet: null` to supply all class styling yourself. Colour
-is never the only encoding: the solid environment traces differ from the
-dashed parcel derivation, every trace prints its name in ink beside a
-line-chip, marks differ by dash and printed label, and the dots and note
-survive any palette.
+The chart is styled by its own `--meteo-sounding-*` token family.
+`SOUNDING_TOKEN_DEFAULTS` holds the default values.
+`SOUNDING_TRACE_TOKENS` and `SOUNDING_MARK_TOKENS` map each drawn class to
+the token that colours it, for legends and focus styles. Quantities that
+appear on both charts keep the Meteogram's colours (cloud base is the same
+colour on both), but the sounding reads only its own token family.
+Override tokens on an ancestor, as the
+[SVG renderer page](/docs/briefing/svg/) describes for the Meteogram, or
+pass `stylesheet: null` to supply all the class styling yourself. Colour
+is always paired with another encoding. The environment traces are solid
+and the derived parcel trace is dashed, every trace prints its name in
+ink next to a chip of line, marks differ by dash and printed label, and
+the dots and the note work with any palette.
