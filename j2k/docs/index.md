@@ -1,52 +1,52 @@
 ---
 title: "A T.800 decoder in TypeScript"
-description: "The @azohra/meteo.j2k package: a pure-TypeScript JPEG 2000 (ITU-T T.800) decoder scoped to exactly the codestream subset ECCC's GRIB2 feeds ship, with every marker, MQ context, and lifting step readable against its clause of the spec."
+description: "A pure-TypeScript JPEG 2000 (ITU-T T.800) decoder for exactly the codestreams ECCC's GRIB2 feeds ship, with region decoding for sampled points and every step traceable to its clause of the spec."
 ---
 
 **`@azohra/meteo.j2k`** is a JPEG 2000 (ITU-T T.800) decoder in pure
-TypeScript, scoped to exactly the codestream subset ECCC's GRIB2 feeds
-ship. It was written because the forecast engine's hottest loop used to run
-through a non-SIMD WASM build of OpenJPEG and, for 20-bit fields,
-through OpenJPEG.js, an asm.js-era artifact. Neither was explainable or
-patchable in this repository.
+TypeScript. It decodes exactly the subset of the codestream format that
+ECCC's GRIB2 feeds use, and rejects everything else.
 
-This decoder is justified by explainability alone: every marker, MQ
-context, and lifting step lives in ten small modules with its clause of
-T.800 named. Independence in the format then does two jobs no
-whole-image codec can take on. EBCOT codeblocks are coded independently, so one
-field's hundreds of codeblocks can decode in parallel across workers
+The forecast engine's busiest loop used to run through a WASM build of
+OpenJPEG without SIMD, and 20-bit fields went through OpenJPEG.js, a
+library from the asm.js era. Neither was explainable or patchable in this
+repository. This decoder is. It has ten small modules, and each marker, MQ
+context, and lifting step names the clause of T.800 it implements.
+
+Owning the decoder also made two optimizations possible. JPEG 2000 codes
+each EBCOT codeblock independently, so a field's hundreds of codeblocks can
+decode in parallel across workers
 ([`src/parallel.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/parallel.ts)
-is that seam). And the same independence runs the other way:
-`decodeJ2kRegion`
+builds that plan). The same independence lets `decodeJ2kRegion`
 ([`src/region.ts`](https://github.com/azohra/meteo/blob/main/j2k/src/region.ts))
-decodes *only* the codeblocks a handful of requested gridpoints touch
-(bit-identical to the full decode at those points, ~16× faster per core on
-the largest ECCC field), which is exactly the shape a site-sampling
-forecast engine asks for.
+decode only the codeblocks that a few requested gridpoints touch. The values
+at those points are bit-identical to a full decode, and on the largest ECCC
+field it is about 16× faster per core. A forecast engine that samples a list
+of sites needs exactly that.
 
-This decoder is the production path: it is
-`@azohra/meteo.grib/j2k-node`'s default codec at every bit depth (the WASM
-build stays selectable for whole-image decodes; OpenJPEG.js is retired
-outright), that package's sampled decode is this decoder's region decode,
-and its worker pool fans full decodes' codeblock tasks across threads.
+This is the production decoder. `@azohra/meteo.grib/j2k-node` uses it by
+default at every bit depth, its sampled decode is this package's region
+decode, and its worker pool spreads a full decode's codeblocks across
+threads. The WASM build of OpenJPEG remains available for whole-image
+decodes. OpenJPEG.js has been removed.
 
-The package depends on neither the
-[forecast engine](/docs/forecast/) nor the GRIB packages — Node 22+,
-ESM-only, and nothing installs with it:
+The package needs Node 22 or later and is ESM-only. It has no dependencies
+and does not depend on the [forecast engine](/docs/forecast/) or the GRIB
+package.
 
 ```sh
 pnpm add @azohra/meteo.j2k
 ```
 
-Installed, the import is `import { decodeJ2k } from "@azohra/meteo.j2k"`;
-the examples below run inside the repository, so they import the built
-output by path instead.
+Once installed, import it with
+`import { decodeJ2k } from "@azohra/meteo.j2k"`. The examples below run
+inside the repository, so they import the built output by path.
 
 ## Decode a real field
 
-The workspace's golden corpus carries real ECCC messages; the codestream
-is the GRIB section 7 payload (DRT 5.40). This decodes one and reads a
-sample:
+The workspace's golden corpus holds real ECCC messages. In a GRIB2 field
+packed with data representation template 5.40, the JPEG 2000 codestream is
+the payload of section 7. This example decodes one and prints a few samples.
 
 <!-- meteo-doc-fence: run -->
 ```js
@@ -71,13 +71,12 @@ first samples: 1166, 1166, 1166, 1166
 
 ## Decode four points, not three million
 
-When only a few gridpoints matter (a forecast engine sampling sites),
-`decodeJ2kRegion` takes full-grid raster indexes and entropy-decodes only
-the codeblocks those points touch, then runs window-bounded inverse
-lifts. The values are bit-identical to `decodeJ2k`'s at those indexes
-(region decode is a cheaper route to the same
-integers), and the envelope is the package's usual subset, guarded
-by the same loud errors:
+When you need only a few gridpoints, as a forecast engine sampling sites
+does, pass their full-grid raster indexes to `decodeJ2kRegion`. It
+entropy-decodes only the codeblocks those points touch, then runs the
+inverse wavelet lifts over a bounded window. The values are bit-identical to
+what `decodeJ2k` returns at those indexes. It accepts the same subset as
+`decodeJ2k` and throws the same errors outside it.
 
 <!-- meteo-doc-fence: run -->
 ```js
@@ -93,50 +92,51 @@ Int32Array(2) [ 56, 54 ]
 24/85 codeblocks decoded
 ```
 
-On the largest ECCC field a 4-point region decode touches 49 of 911
-codeblocks; the measured table is in
-[Performance](/docs/j2k/performance/), and the exactness gate in
-[Two-ring correctness](/docs/j2k/correctness/#region-decode-is-exact-by-contract).
+On the largest ECCC field, a 4-point region decode touches 49 of 911
+codeblocks. [Performance](/docs/j2k/performance/) has the measurements, and
+[Two-ring correctness](/docs/j2k/correctness/#region-decode-is-exact-by-contract)
+describes the test that holds region decode to exact equality.
 
-## The `J2kSamples` seam
+## Use it with `@azohra/meteo.grib`
 
-`decodeJ2k` returns raw integer samples shaped exactly like
-`@azohra/meteo.grib`'s `J2kSamples`, so it drops straight into
-`decodeFieldValues`' `DecodeJ2k` injection seam, no adapter:
+`decodeJ2k` returns raw integer samples in the same shape as
+`@azohra/meteo.grib`'s `J2kSamples` type. You can pass it directly as the
+`decodeJ2k` option of `decodeFieldValues`:
 
 ```js
 const { values } = decodeFieldValues(field, { decodeJ2k });
 ```
 
-In `@azohra/meteo.grib`'s Node path this wiring already exists:
-`createNodeJ2kDecoder()` and the worker pool default to this decoder;
-see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
+On Node, `@azohra/meteo.grib` already does this for you:
+`createNodeJ2kDecoder()` and the worker pool use this decoder by default.
+See [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
-## The documentation
+## Documentation
 
 | Page | Covers |
 |---|---|
-| [The subset](/docs/j2k/subset/) | The measured codestream shape, the loud-failure guards, the JasPer extension |
-| [Two-ring correctness](/docs/j2k/correctness/) | The cross-codec oracle ring, the end-to-end ecCodes ring, region decode's exactness contract |
-| [Performance](/docs/j2k/performance/) | The measured region-decode and single-thread tables, the Tier-1 profile, the codeblock-parallel thesis |
+| [The subset](/docs/j2k/subset/) | The codestream features ECCC uses, the errors for anything else, and the JasPer variant |
+| [Two-ring correctness](/docs/j2k/correctness/) | Agreement with other codecs, end-to-end agreement with ecCodes, and exactness of region decode |
+| [Performance](/docs/j2k/performance/) | Region-decode and single-thread timings, the Tier-1 profile, and why decoding by codeblock parallelizes |
 
 ## References
 
-Written against named references; nothing is vendored:
+The decoder was written against these references. No code is vendored.
 
-- **ITU-T T.800**: the spec; Annex B (packets, cited in `packets.ts`),
+- ITU-T T.800, the specification: Annex B (packets, cited in `packets.ts`),
   Annex C (MQ coder, `mq.ts`), Annex D (coefficient bit modelling,
   `t1.ts`), Annex F (the reversible 5/3 inverse, `dwt.ts`).
-- **OpenJPEG** (BSD-2, © Université catholique de Louvain), the
-  behavioural reference: pass gating and midpoint arithmetic (t1.c),
+- OpenJPEG (BSD-2, © Université catholique de Louvain), the reference for
+  behaviour: pass gating and midpoint arithmetic (t1.c),
   lifting order and edge cases (dwt.c), tag trees (tgt.c), header
-  reading order (t2.c). Also the oracle, through the two codec packages
-  `@azohra/meteo.grib/j2k-node` wraps.
-- **pdf.js's jpx.js and ArithmeticDecoder** (Apache-2.0, Mozilla), the
+  reading order (t2.c). It is also the test oracle, through the two codec
+  packages `@azohra/meteo.grib/j2k-node` wraps.
+- pdf.js's jpx.js and ArithmeticDecoder (Apache-2.0, Mozilla), the
   pure-JavaScript cross-reference for MQ register conventions and Tier-1
-  neighbourhood bookkeeping, proven on MSC data via grib2class's lineage.
+  neighbourhood bookkeeping. grib2class, which descends from this code, has
+  proven it on MSC data.
 
-## Layout
+## Source layout
 
 ```
 src/codestream.ts  marker walk and subset guards (SIZ/COD/QCD/SOT/SOD/EOC)
@@ -155,5 +155,5 @@ test/              header parse + guards, parallel-plan equality, the JasPer sha
 tools/bench.ts     single-thread decodeJ2k timing over the corpus
 ```
 
-Zero runtime dependencies, and no Node APIs in `src/`: the package runs
-in browsers as-is.
+The package has no runtime dependencies and uses no Node APIs in `src/`, so
+it runs in browsers unchanged.

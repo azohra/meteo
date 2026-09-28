@@ -47,19 +47,19 @@ const twoTransports = inlineFigure(
     <figure class="fc-figure">
       <Fragment set:html={publicationFlow} />
       <figcaption>
-        The upstream model publishes a cycle; the engine probes it for completeness, builds, and
-        publishes once; the consumer's consistency check closes the loop. The walk-through
-        is <a href="/docs/forecast/architecture/">Forecast architecture</a>.
+        The upstream model publishes a cycle. The engine checks that the cycle is complete, builds,
+        and publishes once. In the browser, a consistency check marks a mismatched manifest and
+        profile as stale. <a href="/docs/forecast/architecture/">Forecast architecture</a> walks
+        through each step.
       </figcaption>
     </figure>
 
     <figure class="fc-figure">
       <Fragment set:html={twoTransports} />
       <figcaption>
-        How the provider bytes arrive: NOAA models are read as <code>.idx</code>-indexed byte
-        ranges; ECCC models stream one whole-domain file at a time, sampled in memory and
-        discarded. The reference
-        is <a href="/docs/forecast/provider-transports/">Provider transports</a>.
+        NOAA models are read as <code>.idx</code>-indexed byte ranges. ECCC models stream one
+        whole-domain file at a time, which the engine samples in memory and discards.
+        <a href="/docs/forecast/provider-transports/">Provider transports</a> is the reference.
       </figcaption>
     </figure>
   </div>

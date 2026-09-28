@@ -64,10 +64,10 @@ const statements: StatementRow[] = [
   <div class="bf-compare-inner section-inner">
     <h2 id="briefing-compare-title">Do the models agree?</h2>
     <p class="bf-section-lede">
-      <code>compareForecasts</code> answers with statements, not a winner: it
-      analyzes every model's document under your launch and thresholds, then
-      reports where they agree and how far they spread. Here it reads two
-      documents for the same day: the same development, two hours apart:
+      <code>compareForecasts</code> analyzes every model's document with your
+      launch and thresholds, then states where they agree and how far they
+      spread. It does not pick a winner. Here it reads two documents for the
+      same day, where the same development arrives two hours apart.
     </p>
 
     <Figure
@@ -75,7 +75,7 @@ const statements: StatementRow[] = [
       title="Two controlled development timings"
       lesson={earlier.lesson}
       description="Two synthetic profiles with matching daytime development shifted to earlier and later hours, rendered side by side from the comparison pair's documents."
-      caption="One launch marker, one lift scale, two documents. The development matches; only its hours move."
+      caption="Both documents share one launch marker and one lift scale. The development is the same, and only its hours move."
       units="time UTC · altitude m MSL · thermal strength as shaded columns"
       scenario={earlier}
       headingLevel="h3"

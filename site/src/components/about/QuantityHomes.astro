@@ -11,19 +11,19 @@ import Figure from "../figure/Figure.astro";
 
 <Figure
   id="quantity-homes"
-  title="Authority across the document boundary"
-  lesson="The forecast engine publishes authoritative values; the package derives views and projections from the document."
+  title="Where each derived value is computed"
+  lesson="The forecast engine publishes the stored values. The package derives views and projections from the published document."
   description="The forecast engine derives stored quantities that need provider inputs or cross-run authority. The npm package derives pure functions, typed statements, and a parameterized usable-lift projection from the published document."
-  caption="Each derived quantity has exactly one authority: the engine stores it, or the package recomputes it from what was published, never both."
+  caption="Each derived quantity is computed in one place. Either the engine stores it, or the package recomputes it from the published document. usableLiftTopM is the one exception."
   units="Conceptual ownership map; no numeric scale"
 >
   <div class="meteo-gram-scroll meteo-gram-scroll--plate" role="region" tabindex="0" aria-label="Scrollable diagram of the forecast engine, the published document, and the package">
     <svg viewBox="0 0 960 486" role="img" aria-labelledby="quantity-homes-svg-title quantity-homes-svg-desc">
-      <title id="quantity-homes-svg-title">Authority across the document boundary</title>
+      <title id="quantity-homes-svg-title">Where each derived value is computed</title>
       <desc id="quantity-homes-svg-desc">
         The forecast engine's derivation module derives boundary-layer top, thermal velocity, cloud
         base, and the default usable-lift top, and writes the published schema-version-{SITE_FORECAST_SCHEMA_VERSION} document once per run.
-        The @azohra/meteo.briefing package reads only that document and owns humidity conversions, lapse and
+        The @azohra/meteo.briefing package reads only that document and provides humidity conversions, lapse and
         stability, thermal index and shear, day windowing with the timezone as a parameter, typed
         single-profile analysis, a sink-rate projection from the published inputs, the 1-2-1 smoothing
         option, and the scene-to-SVG renderer.
@@ -35,7 +35,7 @@ import Figure from "../figure/Figure.astro";
       <text x="48" y="47" class="qh-home">THE FORECAST ENGINE</text>
       <text x="48" y="64" class="qh-home-sub qh-mono">@azohra/meteo.forecast · derive, builders</text>
 
-      <text x="48" y="102" class="qh-list-head qh-mono">OWNS THE DERIVED CORE</text>
+      <text x="48" y="102" class="qh-list-head qh-mono">STORES THE DERIVED CORE</text>
 
       <path d="M48 122 l5 -5 5 5 -5 5 Z" class="qh-bullet-pipe"/>
       <text x="64" y="126" class="qh-item qh-mono">boundaryLayerTopM</text>
@@ -80,7 +80,7 @@ import Figure from "../figure/Figure.astro";
       <text x="406" y="281" class="qh-block-name qh-mono">run · site</text>
       <text x="406" y="293" class="qh-block-note">referenceTime · coordinates</text>
 
-      <text x="480" y="320" text-anchor="middle" class="qh-doc-tag qh-mono" font-size="9.5">THE ONLY INTERFACE BETWEEN HOMES</text>
+      <text x="480" y="320" text-anchor="middle" class="qh-doc-tag qh-mono" font-size="9.5">THE ONLY INTERFACE BETWEEN THE TWO</text>
 
       <!-- ================= right: the package ================= -->
       <rect x="656" y="24" width="272" height="332" class="qh-card"/>

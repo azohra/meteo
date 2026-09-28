@@ -10,9 +10,9 @@
         <h1 id="station-title">Live wind from launch stations</h1>
         <div class="band-rule" aria-hidden="true"></div>
         <p class="station-lede">
-          Vendor adapters read whatever hardware you run into one documented
-          contract. Build your own UI on the data, or render it with
-          components that live natively in your design system.
+          Vendor adapters translate whatever station hardware you run into one
+          documented contract. Build your own UI on that data, or use the
+          components, which render directly in your page and follow your design tokens.
         </p>
         <div class="station-cta-row">
           <a class="station-cta" href="/docs/station/getting-started/">Get started</a>
@@ -22,19 +22,19 @@
       <div class="station-values" role="list">
         <div role="listitem">
           <h2>Any vendor</h2>
-          <p>WindNerd anemometer kits, WeatherFlow Tempest, Campbell Scientific dataloggers, or your own loader on the same wire — the one JSON contract every adapter emits.</p>
+          <p>Every adapter emits the same JSON contract, whether it reads WindNerd anemometer kits, WeatherFlow Tempest, Campbell Scientific dataloggers, Ecowitt, or a loader you write.</p>
         </div>
         <div role="listitem">
           <h2>Headless core</h2>
-          <p>The contract, derivations, chart geometry, and polling stores are framework-free; components optional.</p>
+          <p>The contract, derivations, chart geometry, and polling stores need no framework. The components are optional.</p>
         </div>
         <div role="listitem">
           <h2>Rendered natively</h2>
-          <p>Dial, graded history, wind rose, daily pattern: the full station-page vocabulary, no iframe.</p>
+          <p>Dials, graded history, wind roses, and daily patterns render in your page, without a vendor iframe.</p>
         </div>
         <div role="listitem">
           <h2>Two peer bindings</h2>
-          <p>React or framework-free custom elements. Byte-identical DOM; neither is the reference.</p>
+          <p>React or framework-free custom elements. Both render byte-identical DOM, and neither is the reference.</p>
         </div>
       </div>
       <figure class="station-wire-demo">
@@ -49,7 +49,7 @@
           </meteo-station-feed>
         </div>
         <figcaption class="station-caption">
-          the same object, drawn
+          the same object, drawn by the components
         </figcaption>
       </figure>
     </div>

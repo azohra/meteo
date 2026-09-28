@@ -1,3 +1,5 @@
+/* Capability sections start collapsed; Starlight opens the one holding the
+   current page, so a reader sees the map first and one section in full. */
 export const sidebar = [
   {
     label: "Start here",
@@ -9,6 +11,7 @@ export const sidebar = [
   },
   {
     label: "Briefing",
+    collapsed: true,
     items: [
       { slug: "docs/briefing", label: "The read side" },
       { slug: "docs/briefing/render-first-meteogram", label: "Render a first Meteogram" },
@@ -53,6 +56,7 @@ export const sidebar = [
   },
   {
     label: "Forecast",
+    collapsed: true,
     items: [
       { slug: "docs/forecast", label: "Engine and CLI" },
       {
@@ -78,6 +82,7 @@ export const sidebar = [
   },
   {
     label: "Station",
+    collapsed: true,
     items: [
       { slug: "docs/station", label: "Live station display" },
       { slug: "docs/station/getting-started", label: "Getting started" },
@@ -104,6 +109,7 @@ export const sidebar = [
   },
   {
     label: "GRIB",
+    collapsed: true,
     items: [
       { slug: "docs/grib", label: "GRIB2 in pure TypeScript" },
       { slug: "docs/grib/coverage", label: "What it decodes" },
@@ -113,6 +119,7 @@ export const sidebar = [
   },
   {
     label: "JPEG 2000",
+    collapsed: true,
     items: [
       { slug: "docs/j2k", label: "A T.800 decoder in TypeScript" },
       { slug: "docs/j2k/subset", label: "The subset" },
@@ -122,6 +129,7 @@ export const sidebar = [
   },
   {
     label: "Core",
+    collapsed: true,
     items: [
       { slug: "docs/core", label: "The shared foundation" },
       { slug: "docs/core/conventions", label: "Units, angles, one wind sign" },

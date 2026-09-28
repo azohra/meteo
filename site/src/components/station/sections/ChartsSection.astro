@@ -6,13 +6,13 @@
 <section class="station-section" id="charts" aria-labelledby="charts-title">
   <h2 id="charts-title">History, graded and plain</h2>
   <p class="station-note">
-    The same six hours with your thresholds banding the
-    trace, and with <code>thresholds="none"</code> opting out into
-    the neutral accent. The third panel holds four days of history
-    alone: <code>window-hours</code> re-slices it to 6/12/24 h,
-    and <code>compare-offset-days</code> overlays a prior day&rsquo;s trace
-    shifted onto today&rsquo;s own x-axis, both a plain client-side
-    re-slice of the same fetched points.
+    The first two panels show the same six hours. One bands the trace
+    by your thresholds, and the other sets <code>thresholds="none"</code>
+    to draw it in the neutral accent. The third panel holds four days of
+    history. <code>window-hours</code> re-slices it to 6, 12, or 24 h,
+    and <code>compare-offset-days</code> overlays an earlier day&rsquo;s trace
+    on today&rsquo;s x-axis. Both re-slice the same fetched points in the
+    browser.
   </p>
   <div class="station-grid station-grid-charts">
     <div class="station-panel">
@@ -42,7 +42,7 @@
   </div>
   <div class="station-grid station-grid-charts">
     <div class="station-panel">
-      <h3>History Lab: four days fetched, window-hours + compare-offset-days</h3>
+      <h3>History lab: four days fetched, with window-hours and compare-offset-days</h3>
       <meteo-wind-history-chart
         id="history-lab"
         window-hours="6"

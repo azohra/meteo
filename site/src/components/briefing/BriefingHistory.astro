@@ -15,19 +15,19 @@ const KINDS: { kind: string; gloss: string }[] = [
   },
   {
     kind: "timingTrajectory",
-    gloss: 'window edges across runs; a horizon-clipped edge reads "open since at least", never as timing',
+    gloss: 'window edges across runs; an edge clipped by the forecast horizon reads "open since at least", not as a timing',
   },
   {
     kind: "magnitudeTrajectory",
-    gloss: "peak climb, launch-relative peak lift, and window duration per run; the deltas state themselves",
+    gloss: "peak climb, peak lift above launch, and window duration for each run, with the change between runs",
   },
   {
     kind: "identityDrift",
-    gloss: "republications and changed model facts, so a publisher fix is never read as weather",
+    gloss: "republications and changed model facts, so a fix by the operator is not mistaken for weather",
   },
   {
     kind: "settled",
-    gloss: "whether the newest runs' lift magnitudes sit within one stated band: stability, not skill",
+    gloss: "whether the newest runs' lift magnitudes fall within one stated band, which measures run-to-run stability and says nothing about skill",
   },
 ];
 ---
@@ -36,11 +36,10 @@ const KINDS: { kind: string; gloss: string }[] = [
   <div class="bf-history-inner section-inner">
     <h2 id="briefing-history-title">Has the forecast settled?</h2>
     <p class="bf-section-lede">
-      <code>compareRuns</code> answers by lining up what each successive run
-      said about the same local day, newest first. The runs come out of the
-      month archive every engine build appends to (one gzip member per
-      build, existing bytes never rewritten)
-      via <code>loadForecastHistory</code>:
+      <code>compareRuns</code> lines up what each successive run said about
+      the same local day, newest first. <code>loadForecastHistory</code>
+      reads those runs from the month archive. Every engine build appends one
+      gzip member to it and never rewrites existing bytes.
     </p>
 
     <div class="bf-history-grid">
@@ -66,7 +65,7 @@ const KINDS: { kind: string; gloss: string }[] = [
           <p class="bf-archive-index">
             sidecar {archive.indexPath} lists each member's byte offset and
             length, so a reader can fetch only the runs it is missing with a
-            Range request: advisory, never authoritative
+            Range request. The sidecar is advisory; the archive is authoritative
           </p>
         </div>
         <figcaption class="bf-caption">
@@ -87,10 +86,9 @@ const KINDS: { kind: string; gloss: string }[] = [
           ))}
         </dl>
         <p class="bf-history-refusals">
-          It never editorializes: no "trending better", no weighting one run
-          over another, no agreement grades: just the series and the
-          arithmetic, for you to present as you see
-          fit. <a href="/docs/briefing/history/">History and run
+          It reports the series and the arithmetic and leaves the
+          interpretation to you. It does not say a forecast is "trending
+          better", weight one run over another, or grade agreement. <a href="/docs/briefing/history/">History and run
           convergence</a> documents every kind.
         </p>
       </div>

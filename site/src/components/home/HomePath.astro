@@ -13,7 +13,7 @@ import SectionHeader from "./SectionHeader.astro";
       number="01"
       title="From the providers to your page"
       titleId="home-path-title"
-      intro="The forecast engine turns ECCC and NOAA model files into JSON forecasts on static hosting you control. Station adapters serve the launch's weather stations as one live feed."
+      intro="The forecast engine turns ECCC and NOAA model files into JSON forecasts on static hosting you control. Station adapters combine the weather stations at your launches into one live feed."
     />
 
     <div
@@ -27,9 +27,9 @@ import SectionHeader from "./SectionHeader.astro";
         <desc id="home-path-svg-desc">
           Forecast row: ECCC and NOAA model files feed the forecast engine, which publishes public
           JSON at stable paths. Station row: WindNerd,
-          Tempest, and Campbell stations are normalized by vendor adapters into a single
-          documented contract and served by a mountable feed handler. The &#64;azohra packages
-          render both on your own site or app, as Meteograms and live station displays.
+          Tempest, and Campbell stations pass through vendor adapters into one documented
+          contract, and a feed handler you mount serves them. The &#64;azohra packages draw
+          both on your own site or app, as Meteograms and live station displays.
         </desc>
 
         <defs>
@@ -81,7 +81,7 @@ import SectionHeader from "./SectionHeader.astro";
         <text x="250" y="238" class="hp-name">Vendor adapters</text>
         <text x="250" y="258" class="hp-sub hp-mono">one documented contract</text>
         <text x="250" y="278" class="hp-note">normalized readings and history;</text>
-        <text x="250" y="292" class="hp-note">outages degrade with a reason</text>
+        <text x="250" y="292" class="hp-note">outages report a reason</text>
 
         <path d="M432 262 H506" class="hp-flow" marker-end="url(#hp-head)"/>
         <text x="468" y="250" text-anchor="middle" class="hp-flow-label hp-mono">serves</text>

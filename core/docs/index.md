@@ -1,20 +1,20 @@
 ---
 title: "meteo: the shared foundation"
-description: "The @azohra/meteo.core package, the physical vocabulary the station and briefing packages build on: units, angle and wind-vector math, zod primitives, the upstream-failure vocabulary, and schema-artifact tooling."
+description: "The @azohra/meteo.core package: units, angle and wind-vector math, zod primitives, the upstream-failure vocabulary, and schema-artifact tooling shared by the station and briefing packages."
 ---
 
-**`@azohra/meteo.core`** is the platform's shared physical vocabulary:
-units and conversions, angle and wind-vector math with one sign convention,
-zod schema primitives, the upstream-failure vocabulary, and the machinery
-each capability uses to emit its JSON Schema artifacts. The packages that
-carry these quantities on their wires (station and briefing) build on it;
-grib, j2k, and forecast declare no dependency on it.
+**`@azohra/meteo.core`** holds the types and helpers the other packages
+share. It covers units and conversions, angle and wind-vector math with one
+sign convention, zod schema primitives, the upstream-failure vocabulary, and
+the code each capability uses to emit its JSON Schema artifacts. The station
+and briefing packages depend on it because their documents carry these
+quantities. The grib, j2k, and forecast packages don't depend on it.
 
-Looking for a product, not a foundation? The
-[project overview's responsibility table](/docs/#the-responsibility-boundary)
-maps every layer and links each one's documentation.
+Most readers want one of the other packages. The
+[responsibility table](/docs/#the-responsibility-boundary) on the project
+overview lists every package and links its documentation.
 
-The package installs on its own:
+Install it on its own with:
 
 ```sh
 pnpm add @azohra/meteo.core
@@ -22,32 +22,31 @@ pnpm add @azohra/meteo.core
 
 ## What lives here
 
-Curated exports only. `core` is deliberate API, not a junk drawer; nothing
-moves here merely to shorten an import:
+Every export here is a deliberate part of the API. Code doesn't move into
+`core` only to shorten an import. The package contains:
 
-- **Units**: the platform's unit vocabulary and conversions
+- Units: the platform's unit names and conversions
   ([`units.ts`](https://github.com/azohra/meteo/blob/main/core/src/units.ts))
-- **Angles**: angular math and compass conventions
+- Angles: angle math and compass conventions
   ([`angles.ts`](https://github.com/azohra/meteo/blob/main/core/src/angles.ts))
-- **Wind**: the platform's one wind sign convention
+- Wind: the platform's one wind sign convention
   ([`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts))
-- **Schema primitives**: the shared zod building blocks `ianaTimeZone`,
+- Schema primitives: the shared zod building blocks `ianaTimeZone`,
   `httpUrl`, and the `positionFields` position claims
   ([`schema.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema.ts))
-- **Failures**: the upstream-failure vocabulary
+- Failures: the upstream-failure vocabulary
   ([`failures.ts`](https://github.com/azohra/meteo/blob/main/core/src/failures.ts))
-- **Schema artifacts**: the rendering machinery behind each capability's
-  emitted JSON Schema artifacts
+- Schema artifacts: the code that renders each capability's JSON Schema
+  artifacts
   ([`schema-artifacts.ts`](https://github.com/azohra/meteo/blob/main/core/src/schema-artifacts.ts))
 
-Everything exports through the one curated root surface (the package
-declares no subpaths):
+Everything is exported from the package root. There are no subpaths:
 
 ```ts
 import { KMH_PER_MPS } from "@azohra/meteo.core";
 ```
 
-Dependencies: [zod](https://zod.dev) only.
+Its only dependency is [zod](https://zod.dev).
 
 ## The documentation
 

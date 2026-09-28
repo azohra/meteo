@@ -1,25 +1,25 @@
 ---
 title: Configure launches
-description: Define the launch catalogue the engine builds forecasts for.
+description: Write the site catalogue, sites.json, that lists the launches the engine builds forecasts for.
 ---
 
 import { Aside, Steps } from "../../site/src/components/docs/starlight";
 import { SITES_SCHEMA_VERSION } from "@azohra/meteo.briefing/contract";
 
-A **launch** is the place you fly; a **site** is that launch's record in
-the data. This page authors those records. (Not installed yet? The
-[section landing](/docs/forecast/) carries the install command and the
-Node 22 requirement.) Every builder reads the same
-site catalogue. Pass its path with `--sites`;
-the CLI resolves it to an absolute path for that dispatch, so the file lives
-wherever your project keeps it.
+The engine builds forecasts for the launches listed in a site catalogue,
+`sites.json`. This page shows how to write one. A **launch** is the place you
+fly, and a **site** is that launch's record in the data. If the engine is not
+installed yet, start with the [install command](/docs/forecast/#install).
+
+Every builder reads the same catalogue. Pass its path with `--sites`. The CLI
+resolves the path for each run, so the file can live anywhere in your project.
 
 ## Catalogue shape
 
-The catalogue is identity and build selection
-only: humans author the where, nothing physical. The forecast engine measures
-elevation, terrain, and land cover at those coordinates and publishes them
-in [`site-context.json`](/docs/briefing/site-context-document/).
+The catalogue says where each launch is and what to call it. It holds no
+physical measurements. The engine measures elevation, terrain, and land cover
+at your coordinates and publishes them in
+[`site-context.json`](/docs/briefing/site-context-document/).
 
 ```json title="sites.json"
 {
@@ -36,16 +36,6 @@ in [`site-context.json`](/docs/briefing/site-context-document/).
 }
 ```
 
-The catalogue must satisfy `sitesCatalogueSchema` from `@azohra/meteo.briefing/contract` or
-the generated `briefing/schema/sites.schema.json` artifact — and the engine
-holds it stricter than a reader would: `meteo forecast build` refuses
-unknown fields and `elevationM` outright, where the reader contract merely
-strips them. A field someone typed and the pipeline silently ignored is the
-failure the strictness exists to catch. You publish it to
-the dataset root verbatim; a build never copies it there. Once it
-is published, builders can read it from the dataset
-([`--sites dataset`](/docs/forecast/run-one-model/#complete-command-surface)).
-
 | Field | Meaning |
 | --- | --- |
 | `schemaVersion` | Site-catalogue contract version; <code>{SITES_SCHEMA_VERSION}</code> |
@@ -54,49 +44,60 @@ is published, builders can read it from the dataset
 | `latitude`, `longitude` | Decimal degrees |
 | `timeZone` | IANA timezone used to read local days and clock times |
 
-<Aside type="note" title="No elevation of any kind lives here">
-  The forecast engine rejects any file that includes a hand-typed
-  `elevationM` (or any other unknown field) with a pointer to the
-  measured replacement. The launch elevation is `site-context.json`'s
-  `elevation` pick, measured from ground observations at the catalogued
-  coordinates; each profile records the sampled grid terrain separately as
-  `site.modelElevationM`.
+The file must satisfy `sitesCatalogueSchema` from
+`@azohra/meteo.briefing/contract`, or the generated
+`briefing/schema/sites.schema.json`. `meteo forecast build` is stricter than a
+reader. It refuses unknown fields and `elevationM` outright, where the reader
+contract strips them. The strictness exists to catch a field someone typed
+that the pipeline would otherwise ignore without saying so.
+
+You publish the catalogue to the dataset root yourself, unchanged. A build
+never copies it there. Once it is published, builders can read it from the
+dataset with [`--sites dataset`](/docs/forecast/run-one-model/#complete-command-surface).
+
+<Aside type="note" title="Do not put elevation in the catalogue">
+  The engine rejects a file that includes a hand-typed `elevationM`, or any
+  other unknown field, and points you to the measured replacement. The launch
+  elevation is the `elevation` pick in `site-context.json`, measured from
+  ground observations at the catalogued coordinates. Each profile records the
+  sampled grid terrain separately as `site.modelElevationM`.
 </Aside>
 
-## Add a site safely
+## Add a site
 
 <Steps>
 
 1. Choose a stable slug. Renaming it changes every profile and history path.
-2. Record coordinates from an appropriate source for your launches. Do not
-   record elevation anywhere; the engine measures it in step 4.
-3. Declare the launch's IANA timezone. Local time changes day windows and the
-   meaning of timing findings, so builders echo this value into each profile
-   as `site.timeZone`; do not infer it from longitude in presentation code.
-4. Run the one-shot terrain measurement and commit `site-context.json`
-   together with the catalogue change, so the published elevation, terrain,
-   and land-cover context stays joined to the sites it describes:
+2. Record coordinates from a source you trust for your launches. Do not record
+   elevation anywhere; the engine measures it in step 4.
+3. Declare the launch's IANA timezone. Local time sets day windows and the
+   meaning of timing findings, so builders copy this value into each profile
+   as `site.timeZone`. Do not infer it from longitude in presentation code.
+4. Run the terrain measurement once, then commit `site-context.json` in the
+   same change as the catalogue, so the published elevation, terrain, and land
+   cover stay matched to the sites they describe:
 
    ```sh title="Terminal"
    pnpm exec meteo forecast terrain --sites ./sites.json --output ./site-context.json
    ```
 
-   The geospatial stack loads only when this command runs; a scheduled
-   `forecast build` never pays for it. The command reads the `--sites`
-   catalogue and rewrites the `--output` site-context file. Its shape,
-   the elevation-pick priority, and its sources are in the
-   [site context reference](/docs/briefing/site-context-document/).
+   The command reads the `--sites` catalogue and rewrites the `--output`
+   file. Its geospatial dependencies load only when it runs, so a scheduled
+   `forecast build` never pays for them. The
+   [site context reference](/docs/briefing/site-context-document/) covers the
+   file's shape, how the elevation pick is chosen, and its sources.
 
 </Steps>
 
-The catalogue is done. Next in the path:
-[Choose models](/docs/forecast/choosing-models/) picks the slug, and
-[Run one model](/docs/forecast/run-one-model/) validates this file with a
-dry run before anything fetches: an invalid catalogue fails there with the
-offending field named, and a site outside the chosen model's sampling guard
-fails the build with an out-of-grid error rather than publishing a clamped
-boundary value.
+## Next
 
-The catalogue chooses sampling locations and their local clocks. It does not
-choose audience, launch suitability, display windows, or access policy. Those
-belong to the operator.
+[Choose models](/docs/forecast/choosing-models/) to find the slug for
+`--model`. Then [run one model](/docs/forecast/run-one-model/) as a dry run,
+which validates the catalogue before anything is downloaded. An invalid
+catalogue fails there and names the offending field. A site outside the
+chosen model's sampling guard fails the build with an out-of-grid error
+instead of publishing a clamped boundary value.
+
+The catalogue only chooses where to sample and which local clock to use.
+Audience, launch suitability, display windows, and access policy are the
+[operator's](/docs/glossary/#operator) decisions.

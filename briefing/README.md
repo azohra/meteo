@@ -1,41 +1,44 @@
 # `@azohra/meteo.briefing`
 
-The **briefing** capability of meteo by Azohra: the published site-forecast
-contract and everything that is a pure function of it (validation,
-derivation, analysis, comparison across models and across a model's own
-successive runs, transport, the append-only history), and the Meteogram,
-the visual tier of the same science.
+Read the forecasts the meteo engine publishes. This package validates
+each published document, derives and analyzes its values, compares models
+and successive runs, and draws the result as a Meteogram, a sounding, or a
+compare board. It runs in Node, workers, and browsers; only `/history`
+needs Node.
 
-## Surface
+```sh
+pnpm add @azohra/meteo.briefing
+```
+
+## Entry points
 
 | Entry point | What it is |
 |---|---|
-| `@azohra/meteo.briefing` | The capability root: the re-exported contract — document types, zod schemas, and never-throw parse guards for every published document kind. |
-| `@azohra/meteo.briefing/contract` | The contract itself: `SiteForecast`, the smoke/observation documents, manifests, catalogues, the runs index, and their parsers. |
-| `@azohra/meteo.briefing/derive` | Pure meteorological derivations of published values: lapse rates, the virtual-temperature parcel ascent and its thermal index, shear, usable-lift top at a chosen sink rate, moisture, smoke transmittance, projection, alignment, local-day helpers. |
-| `@azohra/meteo.briefing/analyze` | `analyzeForecast`: typed findings over one forecast (thermal window, cap timing, wind exceedance, smoke impact, and the rest of the closed vocabulary), plus the public `AnalysisFrame` for caller extensions. |
-| `@azohra/meteo.briefing/compare` | `compareForecasts` / `compareAnalyses`: cross-model agreement, spread, and divergence findings for one site. |
-| `@azohra/meteo.briefing/transport` | Consistent loading of the published documents: run-stamp guards, retries, misses discriminated from failures. |
-| `@azohra/meteo.briefing/history` | The append-only archive reader and `compareRuns` convergence: the one Node-only subpath (`node:zlib`). |
-| `@azohra/meteo.briefing/meteogram` | The Meteogram tier: a renderer-independent scene graph (layout, hit-testing, key spec) and the deterministic SVG serializer with its token defaults. |
-| `@azohra/meteo.briefing/compare-board` | The compare-board tier: one local day across a comparison's members as marks on one shared clock — a renderer-agnostic scene plus a minimal SVG serializer. |
+| `@azohra/meteo.briefing` | The package root. It re-exports the contract: document types, zod schemas, and parse guards that never throw, for every published document kind. |
+| `@azohra/meteo.briefing/contract` | The contract itself: `SiteForecast`, the smoke and observation documents, manifests, catalogues, the runs index, and their parsers. |
+| `@azohra/meteo.briefing/derive` | Pure meteorological derivations of published values: lapse rates, the virtual-temperature parcel ascent and its thermal index, shear, usable-lift top at a chosen sink rate, moisture, smoke transmittance, projection, alignment, and local-day helpers. |
+| `@azohra/meteo.briefing/analyze` | `analyzeForecast`: typed findings over one forecast (thermal window, cap timing, wind exceedance, smoke impact, and the rest of a closed vocabulary), plus the public `AnalysisFrame` for your own extensions. |
+| `@azohra/meteo.briefing/compare` | `compareForecasts` and `compareAnalyses`: cross-model agreement, spread, and divergence findings for one site. |
+| `@azohra/meteo.briefing/transport` | Consistent loading of published documents: run-stamp guards, retries, and misses told apart from failures. |
+| `@azohra/meteo.briefing/history` | The append-only archive reader and `compareRuns` convergence. This is the one Node-only subpath (`node:zlib`). |
+| `@azohra/meteo.briefing/meteogram` | The Meteogram: a renderer-independent scene graph (layout, hit-testing, key spec) and a deterministic SVG serializer with its token defaults. |
+| `@azohra/meteo.briefing/compare-board` | The compare board: one local day for every member of a comparison, on one shared clock, as a renderer-agnostic scene plus a minimal SVG serializer. |
 
-The producing side (the engine that samples providers and publishes
-the documents this capability consumes) is
+The documents come from the forecast engine,
 [`@azohra/meteo.forecast`](../forecast/).
 
 ## Documentation
 
-The reference lives in [`docs/`](docs/) (contract, transport,
-derivations, analysis, comparison, and history each have a page) and is
-served at <https://meteo.azohra.com/docs/briefing/>.
-JSON Schema artifacts live in [`schema/`](schema/).
+The guides and reference are in [`docs/`](docs/) and published at
+<https://meteo.azohra.com/docs/briefing/>. Start with
+[Render a first Meteogram](https://meteo.azohra.com/docs/briefing/render-first-meteogram/).
+JSON Schema artifacts are in [`schema/`](schema/).
 
 ## Stability
 
-Pre-1.0: published site-forecast documents carry `schemaVersion: 2` (the
-`Mps` suffix grammar and `seaLevelPressureHpa`); the TypeScript
-surface follows the platform versioning policy in
+The package is pre-1.0. Published site-forecast documents carry
+`schemaVersion: 2` (the `Mps` suffix grammar and `seaLevelPressureHpa`). The
+TypeScript API follows the platform versioning policy in
 [`docs/versioning.mdx`](docs/versioning.mdx).
 
 MIT © Justin Watts

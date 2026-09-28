@@ -6,22 +6,22 @@ import SectionHeader from "./SectionHeader.astro";
 const references = [
   {
     title: "Configure your launches",
-    detail: "sites.json declares each launch; the engine fetches, derives, and publishes on your schedule.",
+    detail: "sites.json lists each launch. The engine fetches, derives, and publishes on your schedule.",
     href: "/docs/forecast/configure-launches/",
   },
   {
     title: "Model catalogue",
-    detail: "models.json declares each model's grid, cadence, capabilities, and lifecycle, absences included.",
+    detail: "models.json declares each model's grid, cadence, capabilities, and lifecycle, including what it does not publish.",
     href: "/docs/briefing/catalogue/",
   },
   {
     title: "Contract, schemas, and units",
-    detail: "Every document has a published JSON Schema, so non-JS consumers are first-class. SI units, declared semantics.",
+    detail: "Every document has a published JSON Schema, so readers in any language can validate it. Values use SI units and declared semantics.",
     href: "/docs/briefing/contract/",
   },
   {
     title: "Forecast history",
-    detail: "Append-only monthly archives beside every current run: compare a forecast with what was published before.",
+    detail: "Append-only monthly archives sit beside every current run, so you can compare a forecast with what was published earlier.",
     href: "/docs/briefing/history-archives/",
   },
 ];
@@ -34,7 +34,7 @@ const references = [
       eyebrow="@azohra/meteo.forecast"
       title="Publish forecasts anyone can read"
       titleId="home-data-title"
-      intro="meteo forecast build fetches each model's newest run, derives the soaring numbers, and writes static JSON at stable paths, a schemaVersion on every document. curl is a complete client. You own the pipeline it runs in: a schedule, a bucket, your credentials."
+      intro="meteo forecast build fetches each model's newest run, derives the soaring values, and writes static JSON to stable paths. Every document carries a schemaVersion, and any HTTP client can read it, curl included. You run the pipeline around it, with your own schedule, storage bucket, and credentials."
     />
 
     <div class="home-data__layout">
