@@ -93,7 +93,19 @@ function extractFences(text) {
         runs.push({ openLine: i + 1, body, expected });
       }
     }
-    if (language === "ts" || language === "typescript") {
+    /* TypeScript fences compile as .ts. JavaScript fences written for a
+       package consumer compile as .mjs under checkJs, so a script a reader
+       copies still type-checks against the built packages even when it
+       cannot run in the gate. Runnable fences are proven by running, and
+       fences that import a package's own ./dist are in-repo scripts. */
+    const body = lines.slice(i + 1, close).join("\n");
+    const consumerJs =
+      (language === "js" || language === "javascript") &&
+      !runs.some((run) => run.openLine === i + 1) &&
+      !/from\s+["']\.\.?\//.test(body);
+    const extension =
+      language === "ts" || language === "typescript" ? "ts" : consumerJs ? "mjs" : null;
+    if (extension) {
       let previous = i - 1;
       while (previous >= 0 && lines[previous].trim() === "") previous -= 1;
       if (previous >= 0 && lines[previous].includes(IGNORE_MARKER)) {
@@ -103,7 +115,7 @@ function extractFences(text) {
           .slice(i + 1, close)
           .map((line) => (indent && line.startsWith(indent) ? line.slice(indent.length) : line))
           .join("\n");
-        fences.push({ openLine: i + 1, body });
+        fences.push({ openLine: i + 1, body, extension });
       }
     }
     i = close;
@@ -139,7 +151,7 @@ for (const docFile of docFiles) {
     const slug = relative(repoRoot, docFile)
       .replace(/[^A-Za-z0-9-]+/g, "__")
       .replace(/^_+/, "");
-    const basename = `${slug}.L${fence.openLine}.ts`;
+    const basename = `${slug}.L${fence.openLine}.${fence.extension}`;
     const needsModuleMarker = !/^\s*(import|export)\b/m.test(fence.body);
     writeFileSync(
       join(tempDir, basename),
@@ -155,10 +167,12 @@ const tsconfig = {
     module: "es2022",
     moduleResolution: "bundler",
     strict: true,
+    allowJs: true,
+    checkJs: true,
     noEmit: true,
     skipLibCheck: true,
     types: ["node"],
-    lib: ["es2022"],
+    lib: ["es2022", "dom"],
     // Flat subpaths (dist/*.d.ts) resolve before dist/*/index.d.ts so a
     // stale directory ghost can never shadow them.
     paths: Object.fromEntries(
@@ -171,7 +185,7 @@ const tsconfig = {
       }),
     ),
   },
-  include: ["*.ts"],
+  include: ["*.ts", "*.mjs"],
 };
 writeFileSync(join(tempDir, "tsconfig.json"), `${JSON.stringify(tsconfig, null, 2)}\n`);
 
@@ -190,7 +204,7 @@ if (result.error) fail(`could not run tsc: ${result.error.message}`);
 
 let unattributed = 0;
 for (const line of `${result.stdout}\n${result.stderr}`.split("\n")) {
-  const diagnostic = line.match(/^(.+\.ts)\((\d+),(\d+)\): (error TS\d+: .*)$/);
+  const diagnostic = line.match(/^(.+\.m?[jt]s)\((\d+),(\d+)\): (error TS\d+: .*)$/);
   if (!diagnostic) {
     if (/error TS\d+/.test(line) && line.trim() !== "") {
       console.error(line);

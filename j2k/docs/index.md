@@ -103,6 +103,7 @@ describes the test that holds region decode to exact equality.
 `@azohra/meteo.grib`'s `J2kSamples` type. You can pass it directly as the
 `decodeJ2k` option of `decodeFieldValues`:
 
+<!-- meteo-doc-fence: ignore — a fragment; field comes from the grib example above -->
 ```js
 const { values } = decodeFieldValues(field, { decodeJ2k });
 ```

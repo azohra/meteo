@@ -165,6 +165,7 @@ shows — are the react page's
 direction-bearing tag (`"none"` opts out); the `favorableDirections`
 property carries the parsed array:
 
+<!-- meteo-doc-fence: ignore — a page fragment; the package declares no tag-name map for querySelector -->
 ```js
 document.querySelector("meteo-station-feed").favorableDirections =
   [{ fromDeg: 260, toDeg: 340 }]; // degrees FROM; sectors may wrap through north
