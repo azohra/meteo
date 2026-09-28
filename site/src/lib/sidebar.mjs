@@ -1,5 +1,7 @@
 /* Capability sections start collapsed; Starlight opens the one holding the
-   current page, so a reader sees the map first and one section in full. */
+   current page, so a reader sees the map first and one section in full.
+   Each package with more than a handful of pages splits into guides (tasks
+   to follow) and reference (facts to look up). */
 export const sidebar = [
   {
     label: "Start here",
@@ -14,44 +16,51 @@ export const sidebar = [
     collapsed: true,
     items: [
       { slug: "docs/briefing", label: "The read side" },
-      { slug: "docs/briefing/render-first-meteogram", label: "Render a first Meteogram" },
-      { slug: "docs/briefing/reading-a-meteogram", label: "Reading a Meteogram" },
-      { slug: "docs/briefing/contract", label: "Contract" },
-      { slug: "docs/briefing/transport", label: "Transport" },
-      { slug: "docs/briefing/derive", label: "Pure derivations" },
-      { slug: "docs/briefing/analyze", label: "Analyze a profile" },
-      { slug: "docs/briefing/compare", label: "Compare profiles" },
-      { slug: "docs/briefing/compare-board", label: "Compare board" },
-      { slug: "docs/briefing/history", label: "History and convergence" },
       {
-        label: "Documents",
+        label: "Guides",
         items: [
-          { slug: "docs/briefing/profile-document", label: "Profile" },
-          { slug: "docs/briefing/smoke-document", label: "Smoke document" },
-          { slug: "docs/briefing/observation-document", label: "Observation document" },
-          { slug: "docs/briefing/site-context-document", label: "Site context" },
-          { slug: "docs/briefing/manifest", label: "Manifest" },
-          { slug: "docs/briefing/catalogue", label: "Model catalogue" },
-          { slug: "docs/briefing/ensemble-values", label: "Ensemble values" },
-          { slug: "docs/briefing/history-archives", label: "History archives" },
-        ],
-      },
-      {
-        label: "Meteogram internals",
-        items: [
-          { slug: "docs/briefing/scene", label: "Scene graph" },
-          { slug: "docs/briefing/svg", label: "SVG renderer and key" },
-        ],
-      },
-      { slug: "docs/briefing/sounding", label: "The sounding" },
-      {
-        label: "Recipes",
-        items: [
+          { slug: "docs/briefing/render-first-meteogram", label: "Render a first Meteogram" },
+          { slug: "docs/briefing/reading-a-meteogram", label: "Reading a Meteogram" },
           { slug: "docs/briefing/run-an-ingest", label: "Run an ingest" },
           { slug: "docs/briefing/wire-an-inspector", label: "Wire an inspector" },
         ],
       },
-      { slug: "docs/briefing/versioning", label: "Package versioning" },
+      {
+        label: "Reference",
+        items: [
+          { slug: "docs/briefing/contract", label: "Contract" },
+          { slug: "docs/briefing/transport", label: "Transport" },
+          { slug: "docs/briefing/derive", label: "Pure derivations" },
+          { slug: "docs/briefing/analyze", label: "Analyze a profile" },
+          { slug: "docs/briefing/compare", label: "Compare profiles" },
+          { slug: "docs/briefing/history", label: "History and convergence" },
+          { slug: "docs/briefing/sounding", label: "The sounding" },
+          { slug: "docs/briefing/compare-board", label: "Compare board" },
+          {
+            label: "Meteogram internals",
+            collapsed: true,
+            items: [
+              { slug: "docs/briefing/scene", label: "Scene graph" },
+              { slug: "docs/briefing/svg", label: "SVG renderer and key" },
+            ],
+          },
+          {
+            label: "Documents",
+            collapsed: true,
+            items: [
+              { slug: "docs/briefing/profile-document", label: "Profile" },
+              { slug: "docs/briefing/smoke-document", label: "Smoke document" },
+              { slug: "docs/briefing/observation-document", label: "Observation document" },
+              { slug: "docs/briefing/site-context-document", label: "Site context" },
+              { slug: "docs/briefing/manifest", label: "Manifest" },
+              { slug: "docs/briefing/catalogue", label: "Model catalogue" },
+              { slug: "docs/briefing/ensemble-values", label: "Ensemble values" },
+              { slug: "docs/briefing/history-archives", label: "History archives" },
+            ],
+          },
+          { slug: "docs/briefing/versioning", label: "Package versioning" },
+        ],
+      },
     ],
   },
   {
@@ -60,7 +69,7 @@ export const sidebar = [
     items: [
       { slug: "docs/forecast", label: "Engine and CLI" },
       {
-        label: "Publish forecasts",
+        label: "Guides",
         items: [
           { slug: "docs/forecast/configure-launches", label: "Configure launches" },
           { slug: "docs/forecast/choosing-models", label: "Choose models" },
@@ -71,13 +80,18 @@ export const sidebar = [
           { slug: "docs/forecast/static-output", label: "Publish static output" },
         ],
       },
-      { slug: "docs/forecast/architecture", label: "Forecast architecture" },
-      { slug: "docs/forecast/derivation-science", label: "Meteogram derivations" },
-      { slug: "docs/forecast/the-mountain-the-model-sees", label: "The mountain the model sees" },
-      { slug: "docs/forecast/model-capabilities", label: "Model capabilities" },
-      { slug: "docs/forecast/forecast-model-feeds", label: "Forecast model feeds" },
-      { slug: "docs/forecast/provider-transports", label: "Provider transports" },
-      { slug: "docs/forecast/builder-contract", label: "Builder contract" },
+      {
+        label: "Reference",
+        items: [
+          { slug: "docs/forecast/architecture", label: "Forecast architecture" },
+          { slug: "docs/forecast/derivation-science", label: "Meteogram derivations" },
+          { slug: "docs/forecast/the-mountain-the-model-sees", label: "The mountain the model sees" },
+          { slug: "docs/forecast/model-capabilities", label: "Model capabilities" },
+          { slug: "docs/forecast/forecast-model-feeds", label: "Forecast model feeds" },
+          { slug: "docs/forecast/provider-transports", label: "Provider transports" },
+          { slug: "docs/forecast/builder-contract", label: "Builder contract" },
+        ],
+      },
     ],
   },
   {
@@ -85,26 +99,37 @@ export const sidebar = [
     collapsed: true,
     items: [
       { slug: "docs/station", label: "Live station display" },
-      { slug: "docs/station/getting-started", label: "Getting started" },
       {
-        label: "Adapters",
+        label: "Guides",
         items: [
-          { slug: "docs/station/adapters", label: "How adapters work" },
-          { slug: "docs/station/adapters/windnerd", label: "WindNerd" },
-          { slug: "docs/station/adapters/tempest", label: "Tempest" },
-          { slug: "docs/station/adapters/campbell", label: "Campbell" },
-          { slug: "docs/station/adapters/ecowitt", label: "Ecowitt" },
+          { slug: "docs/station/getting-started", label: "Getting started" },
+          { slug: "docs/station/what-your-hardware-shows", label: "What your hardware shows" },
+          { slug: "docs/station/theming", label: "Theming" },
+          { slug: "docs/station/connectivity", label: "Connectivity" },
+          { slug: "docs/station/component-gallery", label: "Component gallery" },
         ],
       },
-      { slug: "docs/station/what-your-hardware-shows", label: "What your hardware shows" },
-      { slug: "docs/station/connectivity", label: "Connectivity" },
-      { slug: "docs/station/component-gallery", label: "Component gallery" },
-      { slug: "docs/station/react", label: "React" },
-      { slug: "docs/station/elements", label: "Custom elements" },
-      { slug: "docs/station/theming", label: "Theming" },
-      { slug: "docs/station/client-data", label: "Client data" },
-      { slug: "docs/station/climatology", label: "Climatology" },
-      { slug: "docs/station/wire-contract", label: "Wire contract" },
+      {
+        label: "Reference",
+        items: [
+          {
+            label: "Adapters",
+            collapsed: true,
+            items: [
+              { slug: "docs/station/adapters", label: "How adapters work" },
+              { slug: "docs/station/adapters/windnerd", label: "WindNerd" },
+              { slug: "docs/station/adapters/tempest", label: "Tempest" },
+              { slug: "docs/station/adapters/campbell", label: "Campbell" },
+              { slug: "docs/station/adapters/ecowitt", label: "Ecowitt" },
+            ],
+          },
+          { slug: "docs/station/react", label: "React" },
+          { slug: "docs/station/elements", label: "Custom elements" },
+          { slug: "docs/station/client-data", label: "Client data" },
+          { slug: "docs/station/climatology", label: "Climatology" },
+          { slug: "docs/station/wire-contract", label: "Wire contract" },
+        ],
+      },
     ],
   },
   {
