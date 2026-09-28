@@ -8,22 +8,23 @@ const figuresRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const { TOKEN_DEFAULTS } = await importDist(figuresRoot, "briefing/meteogram");
 
 /* Every ground, rule, and label ink below is emitted as a var() reference
-   to one of the eight ancestor chrome tokens the site (and any downstream
-   page) supplies — --meteo-gram-surface, strip-bg, ink, ink-soft,
-   ink-mute, rule, halo, halo-barb — with the committed light value as the
-   fallback: the same bytes render the light plate wherever no ancestor
-   sets tokens (GitHub, raw file views) and follow the page theme once
-   inlined. Colors that are part of the figures' fixed face (the accent
-   annotation inks, the dark code panel and its syntax colors, the brand
-   flag) stay resolved literals: they pair with each other, not with the
-   page, and the site's :root supplies only the eight chrome tokens. */
+   to one of the ancestor chrome tokens the site (and any downstream page)
+   supplies — --meteo-gram-surface, strip-bg, ink, ink-soft, ink-mute,
+   rule, halo, halo-barb, and the figures' accent-tint and accent-strong —
+   with the committed light value as the fallback: the same bytes render
+   the light plate wherever no ancestor sets tokens (GitHub, raw file
+   views) and follow the page theme once inlined. The accent tint holds
+   chrome ink and the strong accent sits on chrome grounds, so both must
+   follow the theme. Colors that are part of the figures' fixed face (the
+   accent mark, the dark code panel and its syntax colors, the brand flag)
+   stay resolved literals: they pair with each other, not with the page. */
 const chrome = (name, lightDefault) => `var(--meteo-gram-${name}, ${lightDefault})`;
 
 export const PAGE = chrome("strip-bg", "#f4efe4");
 export const SURFACE = chrome("surface", TOKEN_DEFAULTS.surface);
 export const SURFACE_RAISED = chrome("strip-bg", "#efe4d3");
 export const SURFACE_SUNKEN = chrome("strip-bg", "#e1d3c0");
-export const SURFACE_ACCENT = "#f2dcc1";
+export const SURFACE_ACCENT = chrome("accent-tint", "#f2dcc1");
 export const STRIP_BG = chrome("strip-bg", TOKEN_DEFAULTS["strip-bg"]);
 export const RULE = chrome("rule", TOKEN_DEFAULTS.rule);
 export const RULE_STRONG = chrome("ink-soft", "#51483e");
@@ -32,7 +33,7 @@ export const INK_SOFT = chrome("ink-soft", TOKEN_DEFAULTS["ink-soft"]);
 export const INK_MUTE = chrome("ink-mute", TOKEN_DEFAULTS["ink-mute"]);
 export const HALO = chrome("halo", TOKEN_DEFAULTS.halo);
 export const ACCENT = TOKEN_DEFAULTS.accent;
-export const ACCENT_STRONG = "#743008";
+export const ACCENT_STRONG = chrome("accent-strong", "#743008");
 export const ACCENT_INK = TOKEN_DEFAULTS.surface;
 export const FLAG_ORANGE = "#da934a";
 export const CODE_BG = TOKEN_DEFAULTS.ink;

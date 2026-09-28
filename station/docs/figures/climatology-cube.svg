@@ -81,7 +81,7 @@
   <line x1="100" y1="284" x2="484" y2="284" stroke="var(--meteo-gram-rule, #776956)" stroke-opacity="0.4" stroke-width="0.8"/>
   <line x1="100" y1="306" x2="484" y2="306" stroke="var(--meteo-gram-rule, #776956)" stroke-opacity="0.4" stroke-width="0.8"/>
 
-  <rect x="292" y="284" width="32" height="22" fill="#f2dcc1" stroke="#913b0c" stroke-width="1.2"/>
+  <rect x="292" y="284" width="32" height="22" fill="var(--meteo-gram-accent-tint, #f2dcc1)" stroke="#913b0c" stroke-width="1.2"/>
 
   <g fill="var(--meteo-gram-ink-mute, #40565a)"><use href="#docs-climatology-cube-tg116" x="80.6" y="144"/><use href="#docs-climatology-cube-tg116" x="86.3" y="144"/></g>
   <g fill="var(--meteo-gram-ink-mute, #40565a)"><use href="#docs-climatology-cube-tg116" x="80.6" y="166"/><use href="#docs-climatology-cube-tg117" x="86.3" y="166"/></g>

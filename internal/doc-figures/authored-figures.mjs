@@ -6,10 +6,10 @@ import { frame } from "./page-figures.mjs";
 
 /* Authored figures are standalone SVG bodies in authored/. This module turns
    them into the same committed artifact the composed figures produce. Chrome
-   colors become var(--meteo-gram-*) tokens with light fallbacks. The house frame
-   supplies title, lesson, caption, and units, and the generator outlines text. The
-   accent family stays a resolved literal — it pairs with itself, not with
-   the page theme. A source may use only the colors named below; anything
+   colors, including the accent tint and strong accent ink, become
+   var(--meteo-gram-*) tokens with light fallbacks. The house frame supplies
+   title, lesson, caption, and units, and the generator outlines text. The
+   accent mark stays a resolved literal. A source may use only the colors named below; anything
    else fails the build rather than shipping an untokenized pigment. */
 
 const authoredDir = join(dirname(fileURLToPath(import.meta.url)), "authored");
@@ -21,6 +21,8 @@ const CHROME = {
   "#2f454a": "ink-soft",
   "#40565a": "ink-mute",
   "#776956": "rule",
+  "#f2dcc1": "accent-tint",
+  "#743008": "accent-strong",
 };
 
 const CHROME_BY_TRIPLET = new Map(
@@ -30,7 +32,7 @@ const CHROME_BY_TRIPLET = new Map(
   ]),
 );
 
-const ACCENT_LITERALS = new Set(["#913b0c", "#743008", "#f2dcc1"]);
+const ACCENT_LITERALS = new Set(["#913b0c"]);
 const ACCENT_TRIPLET = "145,59,12";
 
 const chromeVar = (hex) => `var(--meteo-gram-${CHROME[hex]}, ${hex})`;
@@ -151,11 +153,11 @@ export const AUTHORED_FIGURE_TARGETS = [
     idPrefix: "platb-",
     title: "Responsibility by layer",
     lesson:
-      "An engine publishes versioned JSON; packages read what it published. Station reads live hardware over its own wire and never crosses that boundary.",
+      "The forecast engine publishes versioned JSON and the briefing package reads it. The station package reads live hardware on a separate wire.",
     description:
-      "Two lanes flow left to right into the operator. A tall tinted band — the versioned JSON documents: manifest, site profiles, month archives, site context — stands as a wall across the top lane: provider model files decode through the grib and j2k packages, the forecast engine publishes through the wall, and the briefing package reads on the far side. The wall stops above the bottom lane, where weather-station hardware feeds the station package over one long wire that passes beneath it, marked never crosses. Both lanes end at the operator column on the right, and a dashed bar beneath the lanes marks the core package's shared vocabulary imported by briefing and station.",
+      "A layer diagram: provider files pass through the decoders and the forecast engine into the versioned JSON documents, which the briefing package reads; weather-station hardware feeds the station package directly; both packages build on core and end at the operator.",
     caption:
-      "Every layer runs on infrastructure its operator controls. The versioned documents are the data boundary between publisher and consumer; the operator owns everything their readers see around them.",
+      "Every layer runs on infrastructure the operator controls. The versioned documents are the data boundary between the forecast engine and its readers, and the operator decides everything readers see around them.",
     units: "layer diagram; no numeric scale",
   }),
   authoredTarget({

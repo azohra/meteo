@@ -1,20 +1,21 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { fromHtml } from "hast-util-from-html";
 
 /* The committed documentation figures are printed plates whose chrome —
    canvas, rules, label ink, halos — is serialized as var(--meteo-gram-*,
    light-default) references. Served through <img> those custom properties
    can never receive the page's values, so the plates stay light on a dark
    page. Inlining each figure as a real <svg> puts the plate inside the
-   page's cascade, where the :root chrome tokens (src/styles/figures.css)
+   page's cascade, where the :root chrome tokens (src/styles/theme.css)
    reach it — the same ancestor-token path a live-rendered meteogram
    follows. The face of the print (stability ramp, field fills, series
    colors) carries no ancestor values and holds its package defaults.
 
-   Scope is deliberately narrow: only Markdown-authored, document-relative
-   figures/*.svg images from the docs content are inlined. Remote images,
-   absolute paths, non-SVG assets, and MDX-authored images keep their
-   normal <img> handling. This runs as a user rehype plugin, i.e. before
+   Scope is deliberately narrow: only document-relative figures/*.svg
+   images from the docs content (Markdown and MDX) are inlined. Remote
+   images, absolute paths, and non-SVG assets keep their normal <img>
+   handling. This runs as a user rehype plugin, i.e. before
    Astro's own rehype-images pass, so the replaced nodes never enter the
    image pipeline; the pruned localImagePaths keep Astro from importing
    the now-unreferenced asset copies. */
@@ -42,9 +43,9 @@ function inlineSvg(path, alt) {
 
 export function rehypeInlineFigures() {
   return (tree, file) => {
-    /* MDX compiles hast to JSX and cannot carry raw nodes; every figure
-       reference lives in plain Markdown, so .mdx files are left alone. */
-    if (typeof file.path !== "string" || !file.path.endsWith(".md")) return;
+    /* MDX compiles hast to JSX and cannot carry raw nodes, so the figure
+       is parsed into SVG elements, which both pipelines accept. */
+    if (typeof file.path !== "string" || !/\.mdx?$/.test(file.path)) return;
     const directory = dirname(file.path);
     const inlined = new Set();
 
@@ -59,7 +60,7 @@ export function rehypeInlineFigures() {
         const alt = typeof child.properties.alt === "string" ? child.properties.alt : "";
         const value = inlineSvg(resolve(directory, src), alt);
         inlined.add(src);
-        return { type: "raw", value };
+        return fromHtml(value, { fragment: true, space: "svg" }).children[0];
       });
     };
     walk(tree);

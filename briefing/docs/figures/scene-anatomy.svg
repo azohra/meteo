@@ -393,16 +393,16 @@
 <g class="meteo-gram-isotherm-label meteo-gram-series-label meteo-gram-haloed-text" stroke-width="2.5"><use href="#docs-scene-anatomy-tg127" x="722.47" y="585.61"/><use href="#docs-scene-anatomy-tg125" x="728.77" y="585.61"/><use href="#docs-scene-anatomy-tg126" x="735.07" y="585.61"/></g>
 <g class="meteo-gram-isotherm-label meteo-gram-series-label meteo-gram-haloed-text" stroke-width="2.5"><use href="#docs-scene-anatomy-tg128" x="506.47" y="554.86"/><use href="#docs-scene-anatomy-tg125" x="512.77" y="554.86"/><use href="#docs-scene-anatomy-tg126" x="519.06" y="554.86"/></g>
 </svg>
-  <rect x="60" y="208" width="720" height="390" fill="none" stroke="#743008" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <rect x="60" y="208" width="720" height="390" fill="none" stroke="var(--meteo-gram-accent-strong, #743008)" stroke-width="1.6" stroke-dasharray="6 4"/>
   <circle cx="73" cy="221" r="9" fill="#913b0c" stroke="var(--meteo-gram-halo, #fffdf8)" stroke-width="1.5"/>
   <g fill="#fffdf8"><use href="#docs-scene-anatomy-tg129" x="69.7" y="224.5"/></g>
-  <rect x="3" y="208" width="54" height="390" fill="none" stroke="#743008" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <rect x="3" y="208" width="54" height="390" fill="none" stroke="var(--meteo-gram-accent-strong, #743008)" stroke-width="1.6" stroke-dasharray="6 4"/>
   <circle cx="16" cy="221" r="9" fill="#913b0c" stroke="var(--meteo-gram-halo, #fffdf8)" stroke-width="1.5"/>
   <g fill="#fffdf8"><use href="#docs-scene-anatomy-tg130" x="12.7" y="224.5"/></g>
-  <rect x="60" y="600" width="720" height="14" fill="none" stroke="#743008" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <rect x="60" y="600" width="720" height="14" fill="none" stroke="var(--meteo-gram-accent-strong, #743008)" stroke-width="1.6" stroke-dasharray="6 4"/>
   <circle cx="73" cy="613" r="9" fill="#913b0c" stroke="var(--meteo-gram-halo, #fffdf8)" stroke-width="1.5"/>
   <g fill="#fffdf8"><use href="#docs-scene-anatomy-tg131" x="69.7" y="616.5"/></g>
-  <rect x="60" y="20" width="720" height="175" fill="none" stroke="#743008" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <rect x="60" y="20" width="720" height="175" fill="none" stroke="var(--meteo-gram-accent-strong, #743008)" stroke-width="1.6" stroke-dasharray="6 4"/>
   <circle cx="73" cy="33" r="9" fill="#913b0c" stroke="var(--meteo-gram-halo, #fffdf8)" stroke-width="1.5"/>
   <g fill="#fffdf8"><use href="#docs-scene-anatomy-tg132" x="69.7" y="36.5"/></g>
   <circle cx="766" cy="581.38" r="9" fill="#913b0c" stroke="var(--meteo-gram-halo, #fffdf8)" stroke-width="1.5"/>
