@@ -68,7 +68,7 @@ answer different questions; inspectors usually want both.
 
 ## Preview, pin, touch
 
-![A three-state machine on two tiers. Resting and Previewing sit side by side on top: pointer movement with a non-touch pointer moves right into Previewing, and leaving the chart returns to Resting. Both drop to the accented Pinned state below on a click or tap; the edge from Resting notes that a touch pointer pins without previewing. From Pinned, clicking the pinned target again or Escape climbs back to Resting, a small self-loop marks re-pinning, and a dashed edge exits to a model or day swap, where the consumer chooses reset or carry by validAt.](figures/pointer-states.svg)
+![A state diagram of the resting, previewing and pinned selection states, the pointer, tap and Escape transitions between them, and the model or day swap that resets or carries the pinned selection.](figures/pointer-states.svg)
 
 The machine has three states and a policy per edge. Hover previews only
 for pointers that can hover: `pointerType === "touch"` skips straight to

@@ -246,7 +246,7 @@ obligation (~2026-08-24). They are caller-movable per call via
 `CompareRunsOptions.settled`, and every finding echoes the values that
 produced it.
 
-![Two five-rung convergence ladders for the same schematic target local day, newest run first, each rung labelled with its run reference time, its leadHours to the day's local-noon anchor (19 to 67 hours), and its vote, with every stated magnitude also plotted as a dot on the panel's shared magnitude scale so the spread is visible as distance. Left, a settled day: the newest three rungs vote window with magnitudes 1480, 1370, and 1520 m above launch, their dots huddled under a short bracket; spreadM = 1520 - 1370 = 150 m, narrower than the magnitudeBandM 300 ruler drawn at the same scale, so settled is true. Right, an unsettled day: window rungs at 1980 and 1420 m and a quiet rung at 990 m of depth scatter across the scale under a long bracket; spreadM = 1980 - 990 = 990 m, far wider than the same 300 m ruler, so settled is false. In both ladders a tinted band encloses only the newest minRuns = 3 rungs; an older rung sits plotted below the band, and the oldest rung is an abstention with the stated reason outOfHorizon and no magnitude. A four-row ledger beneath defines rungs, leadHours, settled, and the embedded thresholds.](figures/convergence-ladder.svg)
+![Two stacked ladders of five runs each for the same target day: on the settled day the newest three rungs span 150 m, inside the 300 m band, and on the unsettled day they span 990 m, outside it.](figures/convergence-ladder.svg)
 
 ## What this vocabulary refuses to say
 

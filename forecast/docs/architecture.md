@@ -7,11 +7,11 @@ description: Follow provider bytes through sampling, derivation, rounding, curre
 `node forecast/dist/cli.js` from a workspace checkout) and the versioned
 documents it writes as its supported interface.
 
-![A five-stage sequence across three actors: an upstream provider publishes a forecast cycle; the forecast engine probes completeness, builds each model, and publishes once across the static-dataset boundary; the browser reads manifest and profile and exposes a torn pair as stale.](figures/publication-flow.svg)
+![Five numbered stages in three lanes: an upstream model cycle, the engine's probe, build and publish, then the browser's read below the static-dataset boundary.](figures/publication-flow.svg)
 
 Inside the builder stage, provider bytes move through module-owned steps:
 
-![A pipeline flowing top to bottom inside the builder stage. A configuration node, models.json plus sites.json, feeds a three-step row: provider transport owned by providers/transport.ts, gridpoint sampling owned by the datamart and NOAA clients with the grib decoder, and source-shaped hours assembled by the builders on their common skeletons. The hours descend to the accented deriveSiteForecast step in derive.ts, then to contract rounding and validation tests in publish.ts and builders/publication.ts, which fans out to the three published artifacts: the per-site profile under sites/, manifest.json, and the append-only monthly gzip history archive.](figures/builder-stage.svg)
+![A vertical chain from models.json and sites.json through transport, sampling, source-shaped hours, deriveSiteForecast, and rounding plus validation, fanning out to the profile, manifest and history files.](figures/builder-stage.svg)
 
 ## Responsibility by module
 
