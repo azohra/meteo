@@ -56,8 +56,9 @@ of region decode.
 
 ## Documentation
 
-The reference in [`docs/`](docs/) covers the supported subset, the
-correctness gate, and measured performance. It is published at
-<https://meteo.azohra.com/docs/j2k/>.
+Read the [full documentation](https://meteo.azohra.com/docs/j2k/) on the
+project site. If speed matters to you, the
+[performance page](https://meteo.azohra.com/docs/j2k/performance/) has the
+measurements. The source pages live in [`docs/`](docs/).
 
 MIT © Justin Watts

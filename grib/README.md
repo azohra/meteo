@@ -58,8 +58,9 @@ explains how.
 
 ## Documentation
 
-The reference in [`docs/`](docs/) covers what the package decodes, the
-ecCodes gate, and the JPEG 2000 codecs and worker pool. It is published at
-<https://meteo.azohra.com/docs/grib/>.
+Read the [full documentation](https://meteo.azohra.com/docs/grib/) on the
+project site. Start with [what it decodes](https://meteo.azohra.com/docs/grib/coverage/)
+if you are checking whether your files are supported. The source pages live
+in [`docs/`](docs/).
 
 MIT © Justin Watts

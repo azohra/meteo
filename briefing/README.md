@@ -22,6 +22,7 @@ pnpm add @azohra/meteo.briefing
 | `@azohra/meteo.briefing/transport` | Consistent loading of published documents: run-stamp guards, retries, and misses told apart from failures. |
 | `@azohra/meteo.briefing/history` | The append-only archive reader and `compareRuns` convergence. This is the one Node-only subpath (`node:zlib`). |
 | `@azohra/meteo.briefing/meteogram` | The Meteogram: a renderer-independent scene graph (layout, hit-testing, key spec) and a deterministic SVG serializer with its token defaults. |
+| `@azohra/meteo.briefing/sounding` | The sounding: one forecast hour as a vertical profile of temperature, dew point, a lifted parcel, and wind, as a renderer-independent scene graph and an SVG serializer. |
 | `@azohra/meteo.briefing/compare-board` | The compare board: one local day for every member of a comparison, on one shared clock, as a renderer-agnostic scene plus a minimal SVG serializer. |
 
 The documents come from the forecast engine,
