@@ -102,7 +102,7 @@ const samples = sampleIndexes.map((index) => selectedColumn[index]).filter(Boole
     gap: 1rem 1.5rem;
     align-items: start;
     color: var(--ink-soft);
-    font: 0.73rem/1.45 var(--mono);
+    font: 0.86rem/1.5 var(--sans);
   }
 
   .barb-key {
@@ -111,7 +111,7 @@ const samples = sampleIndexes.map((index) => selectedColumn[index]).filter(Boole
   }
 
   .barb-key strong {
-    color: var(--chart-wind);
+    color: light-dark(var(--chart-wind), #8fb8c4);
     font-size: 0.78rem;
   }
 
@@ -136,19 +136,16 @@ const samples = sampleIndexes.map((index) => selectedColumn[index]).filter(Boole
 
   th {
     color: var(--ink);
-    font-size: 0.65rem;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    font-size: 0.78rem;
+    font-weight: 650;
   }
 
+  /* Narrow screens stack the key over the table; four short columns fit
+     at 20rem, so the text wraps instead of scrolling. */
   @media (max-width: 48rem) {
     .barb-reading {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       overflow-x: auto;
-    }
-
-    table {
-      min-width: 34rem;
     }
   }
 </style>

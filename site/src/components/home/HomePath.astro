@@ -10,7 +10,6 @@ import SectionHeader from "./SectionHeader.astro";
 <section id="path" class="home-path" aria-labelledby="home-path-title">
   <div class="home-path__inner section-inner">
     <SectionHeader
-      number="01"
       title="From the providers to your page"
       titleId="home-path-title"
       intro="The forecast engine turns ECCC and NOAA model files into JSON forecasts on static hosting you control. Station adapters combine the weather stations at your launches into one live feed."
@@ -39,8 +38,8 @@ import SectionHeader from "./SectionHeader.astro";
         </defs>
 
         <!-- lane labels -->
-        <text x="20" y="30" class="hp-lane hp-mono">FORECAST · MODEL PROVIDERS → OPEN DATA</text>
-        <text x="20" y="200" class="hp-lane hp-mono">STATION · WEATHER STATIONS → ONE FEED</text>
+        <text x="20" y="30" class="hp-lane">Forecast: model providers to open data</text>
+        <text x="20" y="200" class="hp-lane">Station: weather stations to one feed</text>
 
         <!-- forecast lane -->
         <rect x="20" y="44" width="176" height="96" class="hp-card"/>
@@ -105,17 +104,17 @@ import SectionHeader from "./SectionHeader.astro";
     </div>
 
     <p class="home-path__scroll-cue" aria-hidden="true">
-      Scroll horizontally to follow both rows →
+      Scroll sideways to follow both rows.
     </p>
 
     <div class="home-path__footnotes">
-      <a href="/docs/">Explore the architecture <span aria-hidden="true">→</span></a>
+      <a href="/docs/">Explore the architecture</a>
     </div>
   </div>
 </section>
 
 <style>
-  /* 01 sits on the bare page ground between the hero and the briefing band;
+  /* The platform path sits on the bare page ground between the hero and the briefing band;
      a notch tighter than the instrument sections — the diagram is one card. */
   .home-path {
     padding-block: clamp(4rem, 7vw, 6.5rem);
@@ -152,9 +151,8 @@ import SectionHeader from "./SectionHeader.astro";
 
   .hp-lane {
     fill: var(--accent);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
+    font-size: 13px;
+    font-weight: 650;
   }
 
   .hp-card {
@@ -219,7 +217,7 @@ import SectionHeader from "./SectionHeader.astro";
     background: var(--surface-raised);
     border: 1px solid var(--rule);
     border-block-start: 0;
-    font: 0.68rem/1.4 var(--mono);
+    font: 0.82rem/1.4 var(--sans);
   }
 
   @media (max-width: 56rem) {
@@ -237,9 +235,7 @@ import SectionHeader from "./SectionHeader.astro";
   .home-path__footnotes a {
     flex: 0 0 auto;
     color: var(--accent);
-    font: 600 0.72rem/1.4 var(--mono);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font: 600 0.92rem/1.4 var(--sans);
   }
 
 </style>

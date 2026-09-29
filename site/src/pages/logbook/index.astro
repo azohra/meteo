@@ -39,15 +39,10 @@ function kindLabel(kind: (typeof entries)[number]["kind"]): string {
         {
           entries.map((entry) => (
             <li>
-              <span class="entry-number">{entry.number}</span>
               <div class="entry-copy">
-                <div class="entry-meta">
-                  <span>{kindLabel(entry.kind)}</span>
-                  <span>{entry.section}</span>
-                  <time datetime={entry.published.toISOString()}>{dateFormat.format(entry.published)}</time>
-                  <span>{entry.readingMinutes} min</span>
-                  {entry.status === "historical" && <span>Historical</span>}
-                </div>
+                <p class="entry-meta">
+                  {kindLabel(entry.kind)}{" · "}<time datetime={entry.published.toISOString()}>{dateFormat.format(entry.published)}</time>{" · "}{entry.readingMinutes} min read{entry.status === "historical" && <> <span class="entry-status">Historical</span></>}
+                </p>
                 <h2><a href={entry.url}>{entry.title}</a></h2>
                 <p>{entry.summary}</p>
               </div>
@@ -68,33 +63,13 @@ function kindLabel(kind: (typeof entries)[number]["kind"]): string {
     padding-bottom: 42px;
   }
   .logbook-header {
-    position: relative;
     padding: 54px 0 32px;
     border-bottom: 1px solid var(--rule);
   }
-  .logbook-header::after {
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 116px;
-    height: 4px;
-    border-radius: 999px;
-    background: linear-gradient(
-      to right,
-      var(--band-0),
-      var(--band-1),
-      var(--band-2),
-      var(--band-3),
-      var(--band-4)
-    );
-    content: "";
-  }
   .eyebrow {
-    margin: 0 0 12px;
-    font: 600 12px/1.4 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-mute);
+    margin: 0 0 10px;
+    font: 650 15px/1.4 var(--sans);
+    color: var(--accent);
   }
   .logbook-header h1 {
     max-width: 780px;
@@ -119,32 +94,23 @@ function kindLabel(kind: (typeof entries)[number]["kind"]): string {
   }
   .entry-list li {
     display: grid;
-    grid-template-columns: 82px minmax(0, 1fr) 250px;
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 32px;
     padding: 24px 0 25px;
     border-bottom: 1px solid var(--rule);
   }
-  .entry-number {
-    padding-top: 5px;
-    font: 650 30px/1.05 var(--display);
-    font-variant-numeric: tabular-nums;
-    color: var(--accent);
-  }
   .entry-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    font: 11.5px/1.4 var(--mono);
-    letter-spacing: 0.045em;
-    text-transform: uppercase;
+    margin: 0;
+    font: 500 14px/1.4 var(--sans);
     color: var(--ink-mute);
   }
-  .entry-meta span + span::before,
-  .entry-meta span + time::before,
-  .entry-meta time + span::before {
-    margin: 0 7px;
-    color: var(--rule-strong);
-    content: "/";
+  .entry-status {
+    margin-inline-start: 8px;
+    padding: 1px 7px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
   }
   .entry-copy h2 {
     margin: 7px 0 9px;
@@ -164,8 +130,8 @@ function kindLabel(kind: (typeof entries)[number]["kind"]): string {
   .entry-thumbnail { display: block; align-self: center; color: inherit; text-decoration: none; }
   .entry-thumbnail:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   @media (max-width: 900px) {
-    .entry-list li { grid-template-columns: 64px minmax(0, 1fr); }
-    .entry-thumbnail { grid-column: 2; width: min(100%, 420px); }
+    .entry-list li { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .entry-thumbnail { width: min(100%, 420px); }
   }
   @media (max-width: 680px) {
     .logbook-header {
@@ -173,13 +139,6 @@ function kindLabel(kind: (typeof entries)[number]["kind"]): string {
     }
     .logbook-header h1 {
       font-size: 30px;
-    }
-    .entry-list li {
-      grid-template-columns: 48px minmax(0, 1fr);
-      gap: 14px;
-    }
-    .entry-number {
-      font-size: 24px;
     }
     .entry-copy h2 {
       font-size: 22px;

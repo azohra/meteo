@@ -2,10 +2,9 @@ import { expect, test } from "@playwright/test";
 import { guardStaticBrowsing } from "./helpers";
 
 /* The homepage's copy is a human read; these tests hold its structure:
-   the hero exhibits a rendered Meteogram and a live upgraded station
-   instrument (never screenshots), the platform-path diagram is drawn
-   once, the explore bar mirrors the section set, and each layer section
-   renders its exhibit. */
+   the hero draws the day arc from the scenario and a live upgraded
+   station instrument (never screenshots), the platform-path diagram is
+   drawn once, and each layer section renders its exhibit. */
 
 test("the hero exhibits both surfaces for real", async ({ page, baseURL }) => {
   const externalRequests = await guardStaticBrowsing(page, baseURL!);
@@ -14,15 +13,16 @@ test("the hero exhibits both surfaces for real", async ({ page, baseURL }) => {
   const hero = page.locator(".home-hero");
   await expect(hero.locator("#home-title")).toBeVisible();
 
-  // Rendered, not pictured: the Meteogram plate is package-rendered SVG and
-  // the station plate is the live custom element, upgraded and drawing.
-  await expect(hero.locator(".hero-plate__meteogram svg")).toBeVisible();
+  // Rendered, not pictured: the day arc is drawn from the scenario's
+  // published heights, and the station is the live custom element.
+  await expect(hero.locator(".day-arc [role='img'] svg:visible")).toHaveCount(1);
+  await expect(hero.locator(".day-arc__lift").first()).toBeAttached();
   await expect(hero.locator("meteo-current-conditions .meteo-wind-dial")).toBeVisible();
 
   expect(externalRequests, "the homepage attempted external network access").toEqual([]);
 });
 
-test("the platform path is drawn and the explore bar carries the section set", async ({
+test("the platform path is drawn", async ({
   page,
   baseURL,
 }) => {
@@ -32,10 +32,6 @@ test("the platform path is drawn and the explore bar carries the section set", a
   // One diagram, rendered as a real SVG.
   const path = page.locator("#path");
   await expect(path.locator("svg[role='img']")).toBeVisible();
-
-  // The explore bar carries one link per section.
-  const explore = page.locator(".home-index");
-  await expect(explore.locator("ol a")).toHaveCount(5);
 });
 
 test("the briefing and data sections render their exhibits", async ({ page, baseURL }) => {

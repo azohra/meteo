@@ -23,7 +23,7 @@ import MeteoMark from "../MeteoMark.astro";
           <a href="https://acrophobia.ca">acrophobia.ca</a>
         </span>
         <span class="home-closing__links-group">
-          <a href="/about/">About the project <span aria-hidden="true">→</span></a>
+          <a href="/about/">About the project</a>
         </span>
       </nav>
       <p class="home-closing__signoff">
@@ -47,7 +47,7 @@ import MeteoMark from "../MeteoMark.astro";
     background: #0c5b72;
   }
 
-  /* The same grade ramp the page titles open with; keep the two in step. */
+  /* The one place the site draws the grade ramp as a brand reference. */
   .home-closing::before {
     display: block;
     height: 4px;
@@ -112,14 +112,12 @@ import MeteoMark from "../MeteoMark.astro";
 
   .home-closing__links-label {
     color: #7fd7ec;
-    font: 600 0.62rem/1.5 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font: 600 0.86rem/1.4 var(--sans);
   }
 
   .home-closing__links a {
     color: #e7f3f7;
-    font: 600 0.78rem/1.5 var(--mono);
+    font: 600 0.92rem/1.5 var(--sans);
   }
 
   .home-closing__links a:hover {
@@ -144,9 +142,8 @@ import MeteoMark from "../MeteoMark.astro";
 
   .home-closing__maturity {
     margin: 0.55rem 0 0;
-    color: color-mix(in srgb, #e7f3f7 70%, #0c5b72);
-    font: 0.7rem/1.7 var(--mono);
-    letter-spacing: 0.04em;
+    color: color-mix(in srgb, #e7f3f7 88%, #0c5b72);
+    font: 0.84rem/1.6 var(--sans);
   }
 
   .home-closing__maturity a {
@@ -176,8 +173,8 @@ import MeteoMark from "../MeteoMark.astro";
   .home-closing__legal :global(.attribution-line) {
     max-width: 46rem;
     margin: 1.4rem 0 0;
-    color: color-mix(in srgb, #e7f3f7 55%, #0c5b72);
-    font: 0.68rem/1.7 var(--mono);
+    color: color-mix(in srgb, #e7f3f7 82%, #0c5b72);
+    font: 0.8rem/1.6 var(--sans);
   }
 
   .home-closing__legal :global(.attribution-line a) {

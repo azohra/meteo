@@ -28,8 +28,7 @@ const decoders = [
 <section id="decoders" class="home-decoders" aria-labelledby="home-decoders-title">
   <div class="home-decoders__inner section-inner">
     <SectionHeader
-      number="05"
-      eyebrow="@azohra/meteo.grib · @azohra/meteo.j2k"
+      eyebrow="@azohra/meteo.grib and @azohra/meteo.j2k"
       title="Read the provider bytes yourself"
       titleId="home-decoders-title"
       intro="The engine reads provider files with two pure-TypeScript decoders. Each is published as its own package, and both match the reference codecs exactly."
@@ -42,7 +41,7 @@ const decoders = [
             <code>{decoder.install}</code>
             <strong>{decoder.title}</strong>
             <span>{decoder.detail}</span>
-            <small>Read the {decoder.name} docs <span aria-hidden="true">→</span></small>
+            <small>Read the {decoder.name} docs</small>
           </a>
         </li>
       ))}
@@ -55,7 +54,7 @@ const decoders = [
 </section>
 
 <style>
-  /* 05 is the dense two-card coda on the bare page ground — compressed
+  /* The decoders section is the dense two-card coda on the bare page ground — compressed
      cadence before the closing band opens. */
   .home-decoders {
     padding-block: clamp(3.5rem, 6vw, 5.5rem);
@@ -110,9 +109,7 @@ const decoders = [
   .home-decoders__cards small {
     margin-block-start: 0.3rem;
     color: var(--accent);
-    font: 600 0.66rem/1.4 var(--mono);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font: 600 0.86rem/1.4 var(--sans);
   }
 
   .home-decoders__browser {

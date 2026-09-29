@@ -49,8 +49,9 @@
   --band-2: light-dark(#d9a013, #eab308); /* = --meteo-band-2 */
   --band-3: light-dark(#e2662c, #f4732c); /* = --meteo-band-3 */
   --band-4: light-dark(#c22727, #ef4444); /* = --meteo-band-4 */
-  /* The ramp as one sweep — every "grade" signature (title underlines,
-     .band-rule) paints this gradient instead of restating the five stops. */
+  /* The ramp as one sweep. The brand guide allows the grade once as a brand
+     reference, so only the home page's closing band draws it; it never
+     sits under titles. */
   --band-gradient: linear-gradient(
     to right,
     var(--band-0),
@@ -149,6 +150,14 @@
   color-scheme: dark;
 }
 
+/* Set by the theme pin for the frames around a scheme switch; see
+   src/lib/theme-pin.ts. */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
+}
+
 /* Station components declare `color-scheme: light dark` on .meteo-root;
    the site's pin must carry into them so exhibits follow the page theme.
    (Unlayered, so it outranks the package's @layer meteo rule.) */
@@ -161,27 +170,17 @@
 }
 
 .accent-amber {
-  --doc-accent: var(--status-warning);
+  /* One step darker than --status-warning's light arm (4.43:1 as small
+     text on the page ground). */
+  --doc-accent: light-dark(#a84d08, var(--status-warning));
 }
 .accent-blue {
   --doc-accent: var(--accent);
 }
 .accent-green {
-  --doc-accent: var(--status-good);
-}
-
-/* ---- the signature: the grade ----
-   The same five-band scale every chart paints its speed zones with,
-   drawn once per page as the title's underline. Information first:
-   calm blue through green and amber to red — the platform's judgment
-   ramp, signing the page. */
-.band-rule {
-  display: block;
-  width: 7rem;
-  height: 4px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--band-gradient);
+  /* One step darker than --status-good's light arm, which is 4.38:1 as
+     small text on the page ground. */
+  --doc-accent: light-dark(#0f6e34, var(--status-good));
 }
 
 * {
@@ -317,6 +316,13 @@ a:hover {
     width: 100%;
     gap: 0.5rem;
   }
+
+  /* The separators mark registers on one row; wrapped, they strand. */
+  .site-nav__docs,
+  .site-nav__github {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
 }
 
 /* ---- the shared band column ----
@@ -377,23 +383,10 @@ a:hover {
   padding-top: 28px;
 }
 .prose h1 {
-  position: relative;
   font-size: clamp(34px, 5vw, 46px);
   letter-spacing: -0.025em;
   margin: 0 0 22px;
-  padding-bottom: 18px;
   line-height: 1.08;
-}
-/* The page signs itself once: the grade under the title. */
-.prose h1::after {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 7rem;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--band-gradient);
-  content: "";
 }
 .prose h2 {
   font-size: 26px;
@@ -410,9 +403,8 @@ a:hover {
 }
 .prose .back-link {
   margin: 0 0 2px;
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.035em;
+  font-size: 14px;
+  font-weight: 600;
 }
 .prose p,
 .prose li {
@@ -493,11 +485,9 @@ a:hover {
   vertical-align: top;
 }
 .prose thead th {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.055em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--ink);
 }
 .prose tbody td {
   color: var(--ink-soft);

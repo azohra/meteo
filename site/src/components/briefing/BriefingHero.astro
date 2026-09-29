@@ -16,7 +16,7 @@ const exceedanceRun = bandExceedance.runs[0] ?? fail("the exceedance finding car
 const briefingLines = [
   {
     term: "Thermal window",
-    statement: `${clock(window.start)}–${clock(window.end)} · peak climb ${window.peakThermalVelocityMps} m/s`,
+    statement: `${clock(window.start)}–${clock(window.end)}, peak climb ${window.peakThermalVelocityMps} m/s`,
   },
   {
     term: "Lift ceiling",
@@ -24,7 +24,7 @@ const briefingLines = [
   },
   {
     term: "Wind check",
-    statement: `over your ${DAY_WIND_CEILINGS.bandMps} m/s limit ${clock(exceedanceRun.start)}–${clock(exceedanceRun.end)}, peaking ${exceedanceRun.peakMps} m/s`,
+    statement: `Over your ${DAY_WIND_CEILINGS.bandMps} m/s limit ${clock(exceedanceRun.start)}–${clock(exceedanceRun.end)}, peaking ${exceedanceRun.peakMps} m/s`,
   },
 ];
 
@@ -42,7 +42,6 @@ const DOC_LINKS = [
     <div class="bf-hero-grid">
       <div class="bf-hero-copy">
         <h1 id="briefing-title">Turn published forecasts into briefings</h1>
-        <div class="band-rule" aria-hidden="true"></div>
         <p class="bf-lede">
           Give <code>@azohra/meteo.briefing</code> a published forecast and
           it answers what pilots want to know: when the day works, how high
@@ -54,7 +53,7 @@ const DOC_LINKS = [
       <figure class="bf-hero-panel" id="briefing-finding">
         <div class="bf-brief-card">
           <p class="bf-brief-card__title">
-            {clock(window.start)}–{clock(window.end)} · launch {launchM} m
+            The briefing for a launch at {launchM} m
           </p>
           <dl class="bf-brief-card__lines">
             {
@@ -95,7 +94,7 @@ const DOC_LINKS = [
 
   .bf-hero h1 {
     max-width: 18ch;
-    margin: 0 0 0.9rem;
+    margin: 0;
     font-size: clamp(2.1rem, 4.6vw, 3.1rem);
     line-height: 1.08;
     letter-spacing: -0.022em;
@@ -138,9 +137,7 @@ const DOC_LINKS = [
   .bf-brief-card__title {
     margin: 0;
     padding: 0.7rem 1.1rem;
-    font: 600 0.7rem/1.4 var(--mono);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font: 600 0.86rem/1.4 var(--sans);
     color: var(--ink-mute);
     border-block-end: 1px solid var(--rule);
   }
@@ -153,9 +150,7 @@ const DOC_LINKS = [
   }
 
   .bf-brief-card__lines dt {
-    font: 700 0.72rem/1.4 var(--mono);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font: 650 0.86rem/1.4 var(--sans);
     color: var(--accent);
   }
 
@@ -167,8 +162,7 @@ const DOC_LINKS = [
   }
 
   .bf-caption {
-    font-size: 0.82rem;
-    font-style: italic;
+    font-size: 0.86rem;
     color: var(--ink-mute);
     text-align: center;
     text-wrap: balance;
@@ -191,15 +185,13 @@ const DOC_LINKS = [
 
   .bf-docrail-label {
     margin-inline-end: 0.4rem;
-    font: 600 0.66rem/1.6 var(--mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font: 600 0.88rem/1.6 var(--sans);
     color: var(--ink-mute);
   }
 
   .bf-docrail a {
     color: var(--ink-soft);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     font-weight: 600;
   }
 

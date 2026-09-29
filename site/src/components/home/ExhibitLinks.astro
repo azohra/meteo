@@ -9,7 +9,7 @@ const { label, links } = Astro.props;
 
 <nav class="exhibit-links" aria-label={label}>
   {links.map((link) => (
-    <a href={link.href}>{link.text} <span aria-hidden="true">→</span></a>
+    <a href={link.href}>{link.text}</a>
   ))}
 </nav>
 

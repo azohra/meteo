@@ -32,10 +32,10 @@ import Figure from "../figure/Figure.astro";
       <!-- ================= left: the forecast engine ================= -->
       <rect x="32" y="24" width="272" height="332" class="qh-card"/>
       <rect x="32" y="24" width="272" height="52" class="qh-card-head"/>
-      <text x="48" y="47" class="qh-home">THE FORECAST ENGINE</text>
+      <text x="48" y="47" class="qh-home">The forecast engine</text>
       <text x="48" y="64" class="qh-home-sub qh-mono">@azohra/meteo.forecast · derive, builders</text>
 
-      <text x="48" y="102" class="qh-list-head qh-mono">STORES THE DERIVED CORE</text>
+      <text x="48" y="102" class="qh-list-head">Stores the derived core</text>
 
       <path d="M48 122 l5 -5 5 5 -5 5 Z" class="qh-bullet-pipe"/>
       <text x="64" y="126" class="qh-item qh-mono">boundaryLayerTopM</text>
@@ -60,7 +60,7 @@ import Figure from "../figure/Figure.astro";
       <!-- ================= centre: the document ================= -->
       <path d="M380 74 h176 l24 24 v236 h-200 Z" class="qh-doc"/>
       <path d="M556 74 v24 h24 Z" class="qh-doc-fold"/>
-      <text x="398" y="104" class="qh-list-head qh-mono">SCHEMAVERSION: {SITE_FORECAST_SCHEMA_VERSION}</text>
+      <text x="398" y="104" class="qh-list-head qh-mono">schemaVersion: {SITE_FORECAST_SCHEMA_VERSION}</text>
       <text x="398" y="126" class="qh-item" font-size="14">The published document</text>
       <text x="398" y="142" class="qh-block-note qh-mono">data/&lt;model&gt;/sites/&lt;slug&gt;.json</text>
 
@@ -80,15 +80,15 @@ import Figure from "../figure/Figure.astro";
       <text x="406" y="281" class="qh-block-name qh-mono">run · site</text>
       <text x="406" y="293" class="qh-block-note">referenceTime · coordinates</text>
 
-      <text x="480" y="320" text-anchor="middle" class="qh-doc-tag qh-mono" font-size="9.5">THE ONLY INTERFACE BETWEEN THE TWO</text>
+      <text x="480" y="320" text-anchor="middle" class="qh-doc-tag" font-size="10.5">The only interface between the two</text>
 
       <!-- ================= right: the package ================= -->
       <rect x="656" y="24" width="272" height="332" class="qh-card"/>
       <rect x="656" y="24" width="272" height="52" class="qh-card-head"/>
-      <text x="672" y="47" class="qh-home">THE PACKAGE</text>
+      <text x="672" y="47" class="qh-home">The package</text>
       <text x="672" y="64" class="qh-home-sub qh-mono">@azohra/meteo.briefing/derive</text>
 
-      <text x="672" y="102" class="qh-list-head qh-mono">PURE FUNCTIONS + TYPED STATEMENTS</text>
+      <text x="672" y="102" class="qh-list-head">Pure functions and typed statements</text>
 
       <circle cx="677" cy="120" r="4" class="qh-bullet-pkg"/>
       <text x="690" y="124" class="qh-item" font-size="12">humidity conversions</text>
@@ -117,7 +117,7 @@ import Figure from "../figure/Figure.astro";
 
       <!-- ================= the rule ================= -->
       <rect x="32" y="390" width="896" height="72" class="qh-rule-band"/>
-      <text x="56" y="433" class="qh-rule-word">THE RULE</text>
+      <text x="56" y="433" class="qh-rule-word">The rule</text>
       <text x="196" y="420" class="qh-rule-text">Needs inputs beyond the published JSON, or cross-run authority <tspan class="qh-em">→ the forecast engine.</tspan></text>
       <text x="196" y="442" class="qh-rule-text">A pure function of the published document <tspan class="qh-em">→ the package.</tspan>  No quantity lives in both.</text>
 
@@ -141,9 +141,9 @@ import Figure from "../figure/Figure.astro";
   .qh-card-head { fill: var(--meteo-gram-strip-bg); stroke: var(--rule); }
   .qh-doc { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1.4; }
   .qh-doc-fold { fill: var(--surface-sunken); stroke: var(--rule-strong); stroke-width: 1.4; }
-  .qh-home { fill: var(--ink); font-size: 16px; font-weight: 800; letter-spacing: .03em; }
+  .qh-home { fill: var(--ink); font-size: 16px; font-weight: 750; }
   .qh-home-sub { fill: var(--ink-mute); font-size: 10.5px; }
-  .qh-list-head { fill: var(--accent-strong); font-size: 10.5px; font-weight: 700; letter-spacing: .07em; }
+  .qh-list-head { fill: var(--accent-strong); font-size: 11.5px; font-weight: 700; }
   .qh-item { fill: var(--ink); font-size: 12.5px; font-weight: 700; }
   .qh-item-note { fill: var(--ink-mute); font-size: 10.5px; font-weight: 400; }
   .qh-bullet-pipe { fill: var(--accent); }
@@ -154,12 +154,12 @@ import Figure from "../figure/Figure.astro";
   .qh-block-derived { fill: var(--surface-accent); stroke: var(--accent); stroke-width: .9; }
   .qh-block-name { fill: var(--ink); font-size: 11px; font-weight: 700; }
   .qh-block-note { fill: var(--ink-mute); font-size: 9.5px; }
-  .qh-doc-tag { fill: var(--accent-strong); font-size: 10px; font-weight: 700; letter-spacing: .05em; }
+  .qh-doc-tag { fill: var(--accent-strong); font-weight: 700; }
   .qh-flow { stroke: var(--ink-soft); stroke-width: 1.6; fill: none; }
   .qh-flow-label { fill: var(--ink-mute); font-size: 10px; }
   .qh-arrow { fill: var(--ink-soft); }
   .qh-rule-band { fill: var(--surface-accent); stroke: var(--rule); }
-  .qh-rule-word { fill: var(--accent-strong); font-family: var(--display); font-size: 19px; font-weight: 800; letter-spacing: .04em; }
+  .qh-rule-word { fill: var(--accent-strong); font-family: var(--display); font-size: 19px; font-weight: 750; }
   .qh-rule-text { fill: var(--ink); font-size: 13px; }
   .qh-em { font-weight: 700; }
 </style>

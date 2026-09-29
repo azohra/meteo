@@ -8,7 +8,6 @@
     <div class="station-hero-grid">
       <div class="station-hero-copy">
         <h1 id="station-title">Live wind from launch stations</h1>
-        <div class="band-rule" aria-hidden="true"></div>
         <p class="station-lede">
           Vendor adapters translate whatever station hardware you run into one
           documented contract. Build your own UI on that data, or use the
@@ -16,7 +15,7 @@
         </p>
         <div class="station-cta-row">
           <a class="station-cta" href="/docs/station/getting-started/">Get started</a>
-          <a class="station-cta station-cta-quiet" href="https://github.com/azohra/meteo/tree/main/station">GitHub ↗</a>
+          <a class="station-cta station-cta-quiet" href="https://github.com/azohra/meteo/tree/main/station">View on GitHub</a>
         </div>
       </div>
       <div class="station-values" role="list">
@@ -49,7 +48,7 @@
           </meteo-station-feed>
         </div>
         <figcaption class="station-caption">
-          the same object, drawn by the components
+          The same object, drawn by the components.
         </figcaption>
       </figure>
     </div>
@@ -96,7 +95,7 @@
     font-size: clamp(2.3rem, 4.8vw, 3.3rem);
     line-height: 1.06;
     letter-spacing: -0.022em;
-    margin: 0 0 0.9rem;
+    margin: 0;
   }
   .station-lede {
     max-width: 32rem;
@@ -148,8 +147,7 @@
   }
   .station-term-bar {
     padding: 0.5rem 0.9rem;
-    font: 600 0.72rem/1 var(--mono);
-    letter-spacing: 0.04em;
+    font: 600 0.74rem/1 var(--mono);
     color: var(--term-muted);
     border-bottom: 1px solid var(--term-border);
   }
@@ -179,7 +177,6 @@
   .station-wire-instrument { width: 100%; max-width: 22rem; }
   .station-wire-demo .station-caption {
     margin-top: 0.55rem;
-    font-style: italic;
     text-align: center;
     text-wrap: balance;
   }
@@ -192,8 +189,8 @@
     padding-top: 1.6rem;
     border-top: 1px solid var(--rule);
   }
-  .station-values h2 { margin: 0; font-size: 0.92rem; letter-spacing: -0.01em; }
-  .station-values p { margin: 0.3rem 0 0; font-size: 0.83rem; line-height: 1.55; color: var(--ink-mute); }
+  .station-values h2 { margin: 0; font-size: 0.98rem; }
+  .station-values p { margin: 0.3rem 0 0; font-size: 0.88rem; line-height: 1.55; color: var(--ink-mute); }
 
   .station-docrail {
     display: flex;
@@ -206,14 +203,12 @@
   }
   .station-docrail-label {
     margin-inline-end: 0.4rem;
-    font: 600 0.66rem/1.6 var(--mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font: 600 0.88rem/1.6 var(--sans);
     color: var(--ink-mute);
   }
   .station-docrail a {
     color: var(--ink-soft);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     font-weight: 600;
   }
   .station-docrail a:hover {

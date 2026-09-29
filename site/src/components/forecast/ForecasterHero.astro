@@ -24,7 +24,6 @@ const DOC_LINKS = [
     <div class="fc-hero-grid">
       <div class="fc-hero-copy">
         <h1 id="forecaster-title">Publish forecasts for your launches</h1>
-        <div class="band-rule" aria-hidden="true"></div>
         <p class="fc-lede">
           Give <code>@azohra/meteo.forecast</code> your launches and it publishes their
           forecasts. It fetches each model's newest run, derives the soaring values for
@@ -39,12 +38,12 @@ const DOC_LINKS = [
       <figure class="fc-runs" id="runs-json">
         <div class="fc-term">
           <p class="fc-term-title">
-            data-sample/runs.json · {formatBytes(runsBytes)} · the whole file
+            data-sample/runs.json ({formatBytes(runsBytes)}, the whole file)
           </p>
           <pre class="fc-term-body" set:html={runsHtml} />
         </div>
         <figcaption class="fc-caption">
-          the smallest published document, listing the newest run per model; <code>meteo forecast runs-index</code> writes it
+          The smallest published document, listing the newest run per model. <code>meteo forecast runs-index</code> writes it.
         </figcaption>
       </figure>
     </div>
@@ -73,7 +72,7 @@ const DOC_LINKS = [
   }
 
   .fc-hero h1 {
-    margin: 0 0 0.9rem;
+    margin: 0;
     font-size: clamp(2.3rem, 4.8vw, 3.3rem);
     line-height: 1.06;
     letter-spacing: -0.022em;
@@ -103,8 +102,7 @@ const DOC_LINKS = [
   .fc-term-title {
     margin: 0;
     padding: 0.55rem 0.9rem;
-    font: 600 0.7rem/1.4 var(--mono);
-    letter-spacing: 0.04em;
+    font: 600 0.74rem/1.4 var(--mono);
     color: var(--term-muted);
     border-block-end: 1px solid var(--term-border);
   }
@@ -123,8 +121,7 @@ const DOC_LINKS = [
   .fc-term-body :global(.t-nul) { color: var(--term-muted); font-style: italic; }
 
   .fc-caption {
-    font-size: 0.82rem;
-    font-style: italic;
+    font-size: 0.86rem;
     color: var(--ink-mute);
     text-align: center;
     text-wrap: balance;
@@ -142,15 +139,13 @@ const DOC_LINKS = [
 
   .fc-docrail-label {
     margin-inline-end: 0.4rem;
-    font: 600 0.66rem/1.6 var(--mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font: 600 0.88rem/1.6 var(--sans);
     color: var(--ink-mute);
   }
 
   .fc-docrail a {
     color: var(--ink-soft);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     font-weight: 600;
   }
 

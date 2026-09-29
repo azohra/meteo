@@ -101,8 +101,8 @@ const description = rows
         models.json. {description} A blank cell means the model does not publish the field.
       </desc>
 
-      <text x={COL_X[0]} y="26" text-anchor="middle" class="cm-group">FIELDS PUBLISHED</text>
-      <text x={AXIS_LEFT} y="26" class="cm-group">RETAINED PRESSURE COLUMN · hPa</text>
+      <text x={COL_X[0]} y="26" text-anchor="middle" class="cm-group">Fields published</text>
+      <text x={AXIS_LEFT} y="26" class="cm-group">Retained pressure column (hPa)</text>
 
       {capabilityColumns.map(({ lines }, index) =>
         lines.map((line, lineIndex) => (
@@ -196,11 +196,11 @@ const description = rows
 <style>
   /* meteo-gram-scroll / meteo-gram-scroll--plate carry the scroll-region contract. */
   svg { display: block; width: 100%; min-width: 880px; height: auto; font-family: var(--mono); }
-  .cm-group { fill: var(--ink-mute); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+  .cm-group { fill: var(--ink-mute); font-family: var(--sans); font-size: 12px; font-weight: 650; }
   .cm-colhead { fill: var(--ink-soft); font-size: 9.5px; font-weight: 700; letter-spacing: .03em; text-anchor: middle; }
   .cm-row-alt { fill: var(--meteo-gram-strip-bg); }
   .cm-row-rule { stroke: var(--rule); stroke-width: .6; opacity: .55; }
-  .cm-name { fill: var(--ink); font-family: var(--display); font-size: 17px; font-weight: 700; text-transform: uppercase; letter-spacing: .01em; }
+  .cm-name { fill: var(--ink); font-family: var(--display); font-size: 17px; font-weight: 700; }
   .cm-name-sub { fill: var(--ink-mute); font-size: 10px; }
   .cm-flag { fill: var(--accent-strong); font-weight: 700; }
   .cm-yes { fill: var(--ink); }
@@ -213,7 +213,7 @@ const description = rows
   .cm-axis { stroke: var(--rule-strong); stroke-width: 1; }
   .cm-axis-label { fill: var(--ink-mute); font-size: 9.5px; }
   .cm-legend { fill: var(--ink-mute); font-size: 10.5px; font-family: var(--sans); }
-  .catalogue-source { margin: 0; padding: 9px 14px; color: var(--ink-mute); font: 11px/1.45 var(--mono); border-top: 1px solid var(--rule); }
+  .catalogue-source { margin: 0; padding: 9px 14px; color: var(--ink-mute); font: 13px/1.5 var(--sans); border-top: 1px solid var(--rule); }
   .catalogue-source code { font-family: var(--mono); }
   @media (max-width: 720px) {
     .graphic-scroll { margin-inline: -8px; }

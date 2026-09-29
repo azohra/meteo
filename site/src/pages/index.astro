@@ -3,7 +3,6 @@ import HomeClosing from "../components/home/HomeClosing.astro";
 import HomeDecoders from "../components/home/HomeDecoders.astro";
 import HomeForecastData from "../components/home/HomeForecastData.astro";
 import HomeHero from "../components/home/HomeHero.astro";
-import HomeIndex from "../components/home/HomeIndex.astro";
 import HomeLiveStation from "../components/home/HomeLiveStation.astro";
 import HomePath from "../components/home/HomePath.astro";
 import HomeTeachingMeteogram from "../components/home/HomeTeachingMeteogram.astro";
@@ -17,7 +16,6 @@ import Base from "../layouts/Base.astro";
 >
   <main id="main-content" class="home-main">
     <HomeHero />
-    <HomeIndex />
     <HomePath />
     <HomeTeachingMeteogram />
     <HomeLiveStation />
@@ -33,34 +31,15 @@ import Base from "../layouts/Base.astro";
   }
 
   .home-main :global(section[id]) {
-    scroll-margin-top: 8.5rem;
+    scroll-margin-top: 5rem;
   }
 
-  /* The 02 band is painted here rather than in HomeTeachingMeteogram:
+  /* The briefing band is painted here rather than in HomeTeachingMeteogram:
      that component's markup and inner styles belong to the scenario
-     exhibit, and this id-keyed rule outranks its scoped section rule.
-     Page-wide ground sequence (spread across five components): hero+01
-     --page, 02 sunken, 03 --page, 04 accent-tinted, 05 --page, teal
-     colophon. */
+     exhibit, and this id-keyed rule outranks its scoped section rule. */
   .home-main :global(#briefing) {
     padding-block: clamp(5.5rem, 10vw, 9rem);
     background: var(--surface-sunken);
     border-block: 1px solid var(--rule-strong);
-  }
-
-  /* 02's number chip — the same device SectionHeader draws for the other
-     sections (keep the two in step); painted from here for the same reason
-     as the band above. The empty alt keeps it decorative. */
-  .home-main :global(#briefing .home-section-head__eyebrow::before) {
-    content: "02" / "";
-    display: inline-grid;
-    place-items: center;
-    min-width: 1.75rem;
-    padding: 0.22rem 0.3rem;
-    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--rule));
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--accent) 9%, transparent);
-    font-weight: 700;
-    line-height: 1;
   }
 </style>

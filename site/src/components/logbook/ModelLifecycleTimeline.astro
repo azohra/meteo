@@ -54,13 +54,14 @@ const dateFormat = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "s
   .lifecycle li > div { position: relative; min-width: 0; padding: 18px; }
   .lifecycle li > div + div { border-left: 1px solid var(--rule); }
   .lifecycle li > div:not(:last-child)::after { position: absolute; top: 50%; right: -8px; z-index: 1; width: 14px; height: 14px; background: var(--surface); border-top: 1px solid var(--rule); border-right: 1px solid var(--rule); transform: translateY(-50%) rotate(45deg); content: ""; }
-  span, code, small { display: block; font-family: var(--mono); }
-  span { color: var(--ink-mute); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+  span, code, small { display: block; }
+  code, small { font-family: var(--mono); }
+  span { color: var(--ink-mute); font: 600 12.5px/1.3 var(--sans); }
   strong, time { display: block; margin-top: 7px; color: var(--ink); font: 700 18px/1.2 var(--sans); }
   code { margin-top: 4px; color: var(--accent-strong); font-size: 11px; }
   small { margin-top: 7px; color: var(--ink-mute); font-size: 9px; }
   .sunset { text-align: center; background: var(--surface-accent); }
-  .sunset time { color: var(--accent-strong); font-family: var(--display); font-size: 22px; text-transform: uppercase; }
+  .sunset time { color: var(--accent-strong); font-family: var(--display); font-size: 22px; }
   @media (max-width: 660px) {
     .lifecycle li { grid-template-columns: 1fr; }
     .lifecycle li > div + div { border-top: 1px solid var(--rule); border-left: 0; }
