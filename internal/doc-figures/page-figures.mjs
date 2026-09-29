@@ -181,8 +181,9 @@ async function composeTwoTransports(ctx) {
   const fileFloorMb = Math.round(maxOffset / 1e6);
   const bytes = (offset) => offset.toLocaleString("en-CA");
 
-  const BAR_LEFT = 340;
-  const BAR_RIGHT = 936;
+  const W = COLUMN_CHART_WIDTH;
+  const BAR_LEFT = 0;
+  const BAR_RIGHT = W;
   const hits = records.map((record, index) => ({
     ...record,
     n: index + 1,
@@ -191,99 +192,116 @@ async function composeTwoTransports(ctx) {
   for (let i = 1; i < hits.length; i += 1) {
     if (hits[i].x - hits[i - 1].x < 26) hits[i] = { ...hits[i], x: hits[i - 1].x + 26 };
   }
+  /* Keep the last chip and bar inside the body when the nudge pushes it. */
+  const overflow = Math.max(0, hits[hits.length - 1].x - (BAR_RIGHT - 10));
+  for (const hit of hits) hit.x -= overflow;
 
   const numChip = (cx, cy, n) =>
-    `<circle cx="${round(cx)}" cy="${round(cy)}" r="7" fill="${SURFACE}" stroke="${ACCENT}" stroke-width="1.4"/>
-  ${t(cx, cy + 3.5, String(n), { font: MONO, size: 10, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}`;
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="8" fill="${SURFACE}" stroke="${ACCENT}" stroke-width="1.4"/>
+  ${t(cx, cy + 4, String(n), { font: MONO, size: 11, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}`;
 
+  const B = 424; // top of panel B
+  const stepTop = B + 72;
   const gribBox = (x, dropped = false) =>
     dropped
-      ? `<rect x="${x}" y="324" width="84" height="80" fill="${SURFACE}" stroke="${RULE}" stroke-width="1.2" stroke-dasharray="4 4" opacity=".55"/>`
-      : `<rect x="${x}" y="324" width="84" height="80" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.4"/>`;
+      ? `<rect x="${x}" y="${stepTop}" width="84" height="80" fill="${SURFACE}" stroke="${RULE}" stroke-width="1.2" stroke-dasharray="4 4" opacity=".55"/>`
+      : `<rect x="${x}" y="${stepTop}" width="84" height="80" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.4"/>`;
 
   const site = (cx, cy) =>
     `<circle cx="${cx}" cy="${cy}" r="3.4" fill="${ACCENT}"/><circle cx="${cx}" cy="${cy}" r="7" fill="none" stroke="${ACCENT}" stroke-width="1" opacity=".5"/>`;
 
+  const note = (x, y, text, anchor) =>
+    t(x, y, text, { size: 11, fill: INK_MUTE, ...(anchor ? { anchor } : {}) });
+
+  /* Three equal step columns across panel B. */
+  const col = (i) => W / 6 + (i * W) / 3;
+  const step = (
+    i,
+    label,
+    lines,
+  ) => `${t(col(i), stepTop - 14, label, { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
+  ${lines.map((line, k) => note(col(i), stepTop + 102 + k * 15, line, "middle")).join("\n  ")}`;
+  const stepArrow = (i) =>
+    `<path d="M${round(col(i) + 56)} ${stepTop + 40} H${round(col(i + 1) - 56)}" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>`;
+
+  const RANGE_BOX = { x: W / 2 - 200, y: 322, w: 400, h: 58 };
+  const statsTop = stepTop + 172;
+
   const body = `${flowMarker("two-transports-head")}
-  ${panelChip(24, 8, "A")}
-  ${t(58, 26, "INDEXED BYTE RANGES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(956, 25, "NOAA · HRRR, GFS", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="24" y1="42" x2="956" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${panelChip(0, 0, "A")}
+  ${t(34, 18, "INDEXED BYTE RANGES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(W, 17, "NOAA · HRRR, GFS", { font: MONO, size: 12, fill: INK_MUTE, anchor: "end" })}
+  <line x1="0" y1="34" x2="${W}" y2="34" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
-  <rect x="40" y="58" width="280" height="122" fill="${STRIP_BG}" stroke="${RULE}"/>
-  ${t(54, 78, ".idx SIDECAR · PLAIN TEXT, FREE", { font: MONO, size: 11, weight: 700, ls: 0.55 })}
+  <rect x="0" y="50" width="300" height="130" fill="${STRIP_BG}" stroke="${RULE}"/>
+  ${t(14, 72, ".idx SIDECAR · PLAIN TEXT, FREE", { font: MONO, size: 12, weight: 700, ls: 0.55 })}
   ${hits
     .map(
-      (hit, index) => `${numChip(62, 96 + index * 20, hit.n)}
-  ${t(76, 100 + index * 20, hit.label, { font: MONO, size: 10, fill: INK_SOFT })}
-  ${t(176, 100 + index * 20, `byte ${bytes(hit.offset)}`, { font: MONO, size: 10, fill: INK_MUTE })}`,
+      (hit, index) => `${numChip(24, 94 + index * 22, hit.n)}
+  ${t(40, 98 + index * 22, hit.label, { font: MONO, size: 12, fill: INK_SOFT })}
+  ${t(140, 98 + index * 22, `byte ${bytes(hit.offset)}`, { font: MONO, size: 12, fill: INK_MUTE })}`,
     )
     .join("\n  ")}
+  ${note(320, 108, "the index alone places records")}
+  ${note(320, 124, `beyond byte ${bytes(maxOffset)}, over ${fileFloorMb} MB`)}
 
-  ${t(340, 82, `hrrr.t12z.wrfprsf24.grib2 · run ${runLabel} · one record per field and level`, { font: MONO, size: 11, weight: 600, fill: INK_SOFT })}
-  <rect x="${BAR_LEFT}" y="100" width="${BAR_RIGHT - BAR_LEFT}" height="36" fill="${SURFACE_SUNKEN}" stroke="${RULE}" stroke-width=".7"/>
+  ${t(0, 210, `hrrr.t12z.wrfprsf24.grib2 · run ${runLabel} · one record per field and level`, { font: MONO, size: 12, weight: 600, fill: INK_SOFT })}
+  <rect x="${BAR_LEFT}" y="236" width="${BAR_RIGHT - BAR_LEFT}" height="36" fill="${SURFACE_SUNKEN}" stroke="${RULE}" stroke-width=".7"/>
   ${hits
     .map(
-      (hit) => `${numChip(hit.x, 90, hit.n)}
-  <rect x="${round(hit.x - 4.5)}" y="100" width="9" height="36" fill="${ACCENT}" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
+      (hit) => `${numChip(hit.x, 225, hit.n)}
+  <rect x="${round(hit.x - 4.5)}" y="236" width="9" height="36" fill="${ACCENT}" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
     )
     .join("\n  ")}
-  ${t(340, 156, "unshaded bytes never leave NOAA's bucket", { font: MONO, size: 10.5, fill: INK_MUTE })}
-  ${t(40, 204, "the index alone places records", { font: MONO, size: 10.5, fill: INK_MUTE })}
-  ${t(40, 218, `beyond byte ${bytes(maxOffset)}, over ${fileFloorMb} MB`, { font: MONO, size: 10.5, fill: INK_MUTE })}
+  ${note(0, 292, "unshaded bytes never leave NOAA's bucket")}
 
   ${hits
-    .map(
-      (hit) =>
-        `<path d="M${round(hit.x)} 136 C${round(hit.x)} 154 ${round((hit.x + 640) / 2)} 158 ${round(640 + (hit.x - 640) / 6)} 168" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>`,
-    )
+    .map((hit) => {
+      const cx = W / 2;
+      const endX = cx + 60 + (hit.x - cx) / 6;
+      return `<path d="M${round(hit.x)} 272 C${round(hit.x)} 294 ${round((hit.x + endX) / 2)} 300 ${round(endX)} ${RANGE_BOX.y - 4}" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>`;
+    })
     .join("\n  ")}
 
-  <rect x="470" y="172" width="340" height="52" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
-  ${t(640, 193, "ONE RANGE REQUEST PER NEEDED RECORD", { font: DISPLAY, size: 15, weight: 800, ls: 0.45, anchor: "middle" })}
-  ${t(640, 211, "megabytes cross the network; the file stays on the shelf", { size: 10.5, fill: INK_SOFT, anchor: "middle" })}
+  <rect x="${RANGE_BOX.x}" y="${RANGE_BOX.y}" width="${RANGE_BOX.w}" height="${RANGE_BOX.h}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${t(W / 2, RANGE_BOX.y + 23, "ONE RANGE REQUEST PER NEEDED RECORD", { font: DISPLAY, size: 15, weight: 800, ls: 0.45, anchor: "middle" })}
+  ${t(W / 2, RANGE_BOX.y + 43, "megabytes cross the network; the file stays on the shelf", { size: 12, fill: INK_SOFT, anchor: "middle" })}
 
-  ${panelChip(24, 252, "B")}
-  ${t(58, 270, "WHOLE-DOMAIN STREAM", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(956, 269, "ECCC · HRDPS, RDPS, GDPS, REPS, GEPS; Datamart has no index", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="24" y1="286" x2="956" y2="286" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${panelChip(0, B, "B")}
+  ${t(34, B + 18, "WHOLE-DOMAIN STREAM", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(W, B + 17, "ECCC · HRDPS, RDPS, GDPS, REPS, GEPS; Datamart has no index", { font: MONO, size: 12, fill: INK_MUTE, anchor: "end" })}
+  <line x1="0" y1="${B + 34}" x2="${W}" y2="${B + 34}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
-  ${t(150, 312, "1 · FETCH", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
-  ${gribBox(108)}
-  <line x1="116" y1="340" x2="184" y2="340" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  <line x1="116" y1="354" x2="184" y2="354" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  <line x1="116" y1="368" x2="184" y2="368" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  <line x1="116" y1="382" x2="184" y2="382" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  ${t(150, 424, "the whole domain,", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-  ${t(150, 438, "one message per file", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
+  ${step(0, "1 · FETCH", ["the whole domain,", "one message per file"])}
+  ${gribBox(round(col(0) - 42))}
+  ${[16, 30, 44, 58]
+    .map(
+      (dy) =>
+        `<line x1="${round(col(0) - 34)}" y1="${stepTop + dy}" x2="${round(col(0) + 34)}" y2="${stepTop + dy}" stroke="${RULE}" stroke-width=".8" opacity=".8"/>`,
+    )
+    .join("\n  ")}
+  ${stepArrow(0)}
 
-  <path d="M200 364 H396" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>
+  ${step(1, "2 · SAMPLE IN MEMORY", ["read once; keep only the", "catalogued launch cells"])}
+  ${gribBox(round(col(1) - 42))}
+  ${site(round(col(1) - 20), stepTop + 22)}
+  ${site(round(col(1) + 12), stepTop + 34)}
+  ${site(round(col(1) - 10), stepTop + 56)}
+  ${site(round(col(1) + 24), stepTop + 64)}
+  ${stepArrow(1)}
 
-  ${t(450, 312, "2 · SAMPLE IN MEMORY", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
-  ${gribBox(408)}
-  ${site(430, 346)}
-  ${site(462, 358)}
-  ${site(440, 380)}
-  ${site(474, 388)}
-  ${t(450, 424, "read once; keep only the", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-  ${t(450, 438, "catalogued launch cells", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
+  ${step(2, "3 · DROP", ["released before the", "next fetch begins"])}
+  ${gribBox(round(col(2) - 42), true)}
 
-  <path d="M500 364 H696" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>
+  ${t(W / 2, stepTop + 148, "repeat, file after file, through the run; memory never holds more than a handful of files", { font: MONO, size: 12, weight: 600, fill: INK_SOFT, anchor: "middle" })}
 
-  ${t(750, 312, "3 · DROP", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
-  ${gribBox(708, true)}
-  ${t(750, 424, "released before the", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-  ${t(750, 438, "next fetch begins", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-
-  ${t(490, 464, "repeat, file after file, through the run; memory never holds more than a handful of files", { font: MONO, size: 11.5, weight: 600, fill: INK_SOFT, anchor: "middle" })}
-
-  <line x1="490" y1="478" x2="490" y2="522" stroke="${RULE}" stroke-width="1"/>
-  ${t(60, 506, "4–8 GiB", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
-  ${t(200, 496, "moved per deterministic run;", { size: 11, fill: INK_MUTE })}
-  ${t(200, 511, "~9 GiB REPS · ~14 GiB GEPS", { size: 11, fill: INK_MUTE })}
-  ${t(530, 506, "kilobytes kept", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
-  ${t(756, 496, "per site and run: the profile JSON", { size: 11, fill: INK_MUTE })}
-  ${t(756, 511, "is what actually gets published", { size: 11, fill: INK_MUTE })}`;
+  <line x1="0" y1="${statsTop - 8}" x2="${W}" y2="${statsTop - 8}" stroke="${RULE}" stroke-width="1"/>
+  ${t(0, statsTop + 28, "4–8 GiB", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
+  ${note(190, statsTop + 18, "moved per deterministic run;")}
+  ${note(190, statsTop + 33, "~9 GiB REPS · ~14 GiB GEPS")}
+  ${t(0, statsTop + 76, "kilobytes kept", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
+  ${note(190, statsTop + 66, "per site and run: the profile JSON")}
+  ${note(190, statsTop + 81, "is what actually gets published")}`;
 
   return frame({
     id: "two-transports",
@@ -294,8 +312,8 @@ async function composeTwoTransports(ctx) {
     caption:
       "Record numbers and offsets come from the committed HRRR index fixture (grib/test/fixtures-idx/hrrr.t12z.wrfprsf24.excerpt.idx); run-volume context comes from the project measurements recorded with the pipeline research.",
     units: "byte offsets and transferred GiB where labelled",
-    bodyWidth: 980,
-    bodyHeight: 530,
+    bodyWidth: W,
+    bodyHeight: statsTop + 88,
     body,
   });
 }

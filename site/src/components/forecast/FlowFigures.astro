@@ -54,7 +54,7 @@ const twoTransports = inlineFigure(
       </figcaption>
     </figure>
 
-    <figure class="fc-figure">
+    <figure class="fc-figure fc-figure--column">
       <Fragment set:html={twoTransports} />
       <figcaption>
         NOAA models are read as <code>.idx</code>-indexed byte ranges. ECCC models stream one
@@ -93,7 +93,7 @@ const twoTransports = inlineFigure(
     border-radius: var(--radius);
   }
 
-  /* The publication flow is drawn for the docs column; wider, its type
+  /* Both plates are drawn for the docs column; wider, their type
      outgrows the page's. */
   .fc-figure--column {
     max-width: 46rem;
