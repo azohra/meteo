@@ -1,6 +1,6 @@
 ---
 title: "Choose models"
-description: "Model choice by spatial resolution and forecast schedule"
+description: "Choose a model by spatial resolution, forecast schedule and lead time, then compare models to find where the forecast is sensitive."
 ---
 
 import ModelDisagreementLab from "../../site/src/components/labs/ModelDisagreementLab.astro";
@@ -8,11 +8,11 @@ import CapabilityMatrix from "../../site/src/components/docs/CapabilityMatrix.as
 import ModelHorizonChart from "../../site/src/components/docs/ModelHorizonChart.astro";
 
 Nine deterministic models publish through the same profile contract with different resolutions,
-lead times, pressure levels, optional capabilities, and field semantics (two ensembles publish
-beside them; [Ensemble values](/docs/briefing/ensemble-values/) covers their shape). Choose by
-lead time and required detail, then use disagreement to locate sensitivity in the day.
+lead times, pressure levels, optional capabilities, and field semantics. Two ensembles publish
+beside them, and [Ensemble values](/docs/briefing/ensemble-values/) covers their shape. Choose by
+lead time and required detail, then use disagreement between models to locate sensitivity in the day.
 
-The slug in the first column is the string `--model` takes:
+The slug in the first column is the string `--model` takes.
 
 | Slug | Grid | New run every | Horizon | Note |
 | --- | ---: | ---: | ---: | --- |
@@ -43,18 +43,18 @@ behind every cell; per-model publication times and transfer costs are in the
 | Is next week worth watching? | GDPS / GFS | wait for shorter-range guidance |
 
 Both NAM entries carry a declared `sunset` in the catalogue (successor `rrfs`), so weigh that
-date when building anything durable on them; the
+date before building anything durable on them. The
 [feed reference](/docs/forecast/forecast-model-feeds/) records the lifecycle details, and
 [adopting a retiring model](/logbook/adopting-a-retiring-model/) is the
 case study behind the `sunset` declaration.
 
 A global model can identify a ridge or trough many days out. It cannot resolve the launch cycle on a
-particular mountain face. Use long-range guidance to allocate attention, not to choose an hour.
+particular mountain face. Use long-range guidance to decide where to pay attention. Do not use it to choose an hour.
 
 ## Grid resolution controls terrain and local detail
 
 Each grid cell averages terrain and atmosphere across its footprint. A finer grid can place model
-terrain elevation closer to a launch and represent smaller weather features; a coarser grid describes
+terrain elevation closer to a launch and represent smaller weather features. A coarser grid describes
 the regional setup. Neither resolution guarantees the right answer.
 
 Model terrain elevation changes pressure-level filtering and every height derived from the surface
@@ -65,8 +65,8 @@ grid spacing, domains, and verified model terrain elevations belong in the
 ## Time steps and pressure levels limit chart detail
 
 Some Meteograms contain hourly columns; others contain three-hourly columns. Their curves may look
-equally continuous, but the latter carry fewer observations of the model state. A narrow peak between
-three-hour steps is interpolation, not another forecast sample.
+equally continuous, but the three-hourly charts carry fewer observations of the model state. A narrow
+peak between three-hour steps is interpolation and does not add a forecast sample.
 
 Vertical sampling imposes the same limit. Missing or widely spaced pressure levels reduce the detail
 available for lapse rate, wind shear, parcel crossings, and cloud layers. Compare the structure and
@@ -77,11 +77,11 @@ sample positions behind a line before treating two smooth traces as equivalent e
 ## Use model disagreement to locate forecast sensitivity
 
 Similar traces support the conclusion that the large-scale setup is straightforward. Separated traces
-identify sensitivity (to timing, moisture, initialization, terrain, or model physics), but a majority is
-not automatically correct. Related systems can share errors, and a coarse model can reach the right
+identify sensitivity to timing, moisture, initialization, terrain, or model physics. A majority of models
+is not automatically correct. Related systems can share errors, and a coarse model can reach the right
 answer for the wrong local reason.
 
-Use the comparison to locate the split:
+Use the comparison to locate the split.
 
 | Pattern | First suspect |
 | --- | --- |

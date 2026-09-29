@@ -3,20 +3,20 @@ title: Schedule builds
 description: Schedule the build command so each model rebuilds when its provider publishes a new run.
 ---
 
-A scheduler invokes the same `meteo forecast build` command you ran manually. It
-runs outside the data contract. The publisher communicates its schedule and
-availability to consumers.
+A scheduler invokes the same `meteo forecast build` command you ran manually.
+The scheduler sits outside the data contract. The operator communicates the
+schedule and availability to consumers.
 
 ## Use the declared cadence
 
-`models.json` declares each forecast model's `runIntervalHours`, `stepHours`,
-and `horizonHours`; observation datasets declare `cadenceMinutes` instead
-and run on their own clock: a GOES observation builder ticks every
-fifteen minutes, every tick, not when a forecast model publishes
-([the wire told on us](/logbook/wire-told-on-us/) records learning that
-the expensive way). The living [forecast feed reference](/docs/forecast/forecast-model-feeds/)
-records provider schedules and verification dates. Use both when choosing a
-polling window; never run a builder more often than its provider publishes.
+`models.json` declares each forecast model's `runIntervalHours`, `stepHours`
+and `horizonHours`. Observation datasets declare `cadenceMinutes` instead
+and run on their own clock. A GOES observation builder runs on every
+fifteen-minute tick, independent of when any forecast model publishes.
+[The wire told on us](/logbook/wire-told-on-us/) records how we learned that
+the expensive way. The living [forecast feed reference](/docs/forecast/forecast-model-feeds/)
+records provider schedules and verification dates. Use both when you choose a
+polling window, and do not run a builder more often than its provider publishes.
 
 ```text
 scheduler tick
@@ -31,43 +31,43 @@ scheduler tick
 
 ## A worked schedule
 
-`hrdps-continental` publishes four runs a day (00/06/12/18Z), each complete
-roughly **T+3:55** after its reference time; the
+`hrdps-continental` publishes four runs a day (00/06/12/18Z). Each run is
+complete roughly T+3:55 after its reference time, and the
 [feed reference](/docs/forecast/forecast-model-feeds/#hrdps-continental-25-km--supported)
-carries the verified window. Ticking a few minutes after the window, in
-UTC, catches each run once:
+has the verified window. A tick a few minutes after the window, in UTC,
+catches each run once.
 
 ```text title="crontab (UTC)"
 5 4,10,16,22 * * *  cd /srv/forecasts && pnpm exec meteo forecast build --model hrdps-continental --sites ./sites.json --output ./public/data && ./deploy.sh
 ```
 
-Idempotency makes the timing forgiving rather than critical: a tick that
-fires before the run completes publishes nothing; a tick that sees an
-already-published `referenceTime` exits without rewriting. An extra
-tick per window (say, 30 minutes later) therefore costs one cheap
-manifest read and covers a slow provider day. `deploy.sh` is whatever moves `--output` to
-your hosting ([Publish static output](/docs/forecast/static-output/) shows
-the sync commands); run it only on a zero exit.
+Builds are idempotent, so the timing is forgiving. A tick that fires before
+the run completes publishes nothing. A tick that sees an already-published
+`referenceTime` exits without rewriting. An extra tick per window (say, 30
+minutes later) costs one cheap manifest read and covers a slow provider day.
+`deploy.sh` stands for whatever moves `--output` to your hosting, and
+[Publish static output](/docs/forecast/static-output/) shows the sync
+commands. Run it only on a zero exit.
 
 ## Operational rules
 
-- Give each model its own step and its own failure label; group steps into
-  jobs by provider rate-limit domain rather than by model, so a provider host
-  never sees more than one builder's connections at once; the reference
-  operator instance does exactly this.
+- Give each model its own step and its own failure label. Group steps into
+  jobs by provider rate-limit domain instead of by model, so a provider host
+  sees at most one builder's connections at a time. The reference operator
+  instance is set up this way.
 - Prevent overlapping jobs against the same output directory.
-- Treat a zero exit as command completion, then inspect whether a new manifest
-  identity was actually produced.
+- A zero exit means the command completed. Check separately whether it
+  produced a new manifest identity.
 - Deploy only after the builder has completed. Consumers still guard
   manifest/profile skew because CDN objects can expire independently.
 - Keep credentials and destination-specific settings in the scheduler or
-  hosting platform, never in profile JSON.
-- Preserve logs containing model slug, start/end time, exit status, and the
+  hosting platform. They do not belong in profile JSON.
+- Keep logs with the model slug, start and end time, exit status and the
   published `(referenceTime, generatedAt)` pair.
 
-The public reference operator schedules every rule on this page;
-[Tune the wire](/docs/forecast/tune-the-wire/#the-reference-operator)
-walks its pipeline.
+The public reference operator follows every rule on this page in its
+schedule. [Tune the wire](/docs/forecast/tune-the-wire/#the-reference-operator)
+walks through its pipeline.
 
 For a multi-model schedule, prefer separate invocations over `--all` when
 failure isolation matters. `--all` is useful for controlled batch execution

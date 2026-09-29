@@ -5,19 +5,19 @@ description: "Build your first forecast: one model, your launches, one CLI comma
 
 import { Aside, Steps } from "../../site/src/components/docs/starlight";
 
-The supported publisher interface is `meteo forecast build`, the CLI
+The supported operator interface is `meteo forecast build`, the CLI that
 `@azohra/meteo.forecast` installs (`pnpm exec meteo forecast build`).
-Model-specific builder modules
-remain implementation details; downstream automation should use
-the CLI so external site and output paths are scoped consistently.
+Model-specific builder modules are implementation details. Downstream
+automation should use the CLI so external site and output paths are scoped
+consistently.
 
 <Steps>
 
-1. **Confirm the model declaration.** Read [Choose models](/docs/forecast/choosing-models/)
+1. Confirm the model declaration. Read [Choose models](/docs/forecast/choosing-models/)
    and [Model capabilities](/docs/forecast/model-capabilities/). The slug in
    `models.json` is its identity.
-2. **Preflight paths and selection.** This performs no network access or
-   writes:
+2. Preflight the paths and model selection. This step performs no network
+   access and writes nothing.
 
    ```sh title="Terminal"
    pnpm exec meteo forecast build --model hrrr-conus --sites ./sites.json --output ./public/data --dry-run
@@ -26,14 +26,14 @@ the CLI so external site and output paths are scoped consistently.
    Success is one line, `Would build hrrr-conus for N site(s) from … into …`,
    with both paths resolved absolute and nothing written.
 
-3. **Use a short smoke cap when appropriate.** Append `--max-steps 2` to the
-   dry run to select the first two scheduled steps; it limits forecast
-   steps, not sites or fields.
-4. **Point the engine at your published root.** A real build (never the dry
-   run) reads the published dataset to detect what is already there, and
-   refuses to guess where that is: without configuration it exits with
-   `PublisherConfigurationError`. Set `METEO_DATA_BASE` to the public URL
-   your dataset will live at:
+3. Use a short smoke cap when appropriate. Append `--max-steps 2` to the
+   dry run to select the first two scheduled steps. It limits forecast
+   steps and leaves sites and fields unchanged.
+4. Point the engine at your published root. A real build reads the
+   published dataset to detect what is already there, and the dry run does
+   not. The engine does not guess where the dataset is, so without
+   configuration a real build exits with `PublisherConfigurationError`. Set
+   `METEO_DATA_BASE` to the public URL your dataset will live at.
 
    ```sh title="Terminal"
    export METEO_DATA_BASE="https://forecasts.your.club/data"
@@ -42,19 +42,19 @@ the CLI so external site and output paths are scoped consistently.
    [Environment and credentials](/docs/forecast/environment/) covers the
    day-one state of that URL and the S3 mode that reads the bucket
    directly.
-5. **Run the build.** Remove `--dry-run` (and `--max-steps`, if you used
+5. Run the build. Remove `--dry-run` (and `--max-steps`, if you used
    it) for the full declared horizon.
-6. **Inspect output before deploying it.** The model manifest and each
-   expected site profile must share the same `referenceTime`; one line of
-   output means they do:
+6. Inspect the output before deploying it. The model manifest and each
+   expected site profile must share the same `referenceTime`. If this
+   command prints one line, they do.
 
    ```sh title="Terminal"
    jq -r '.referenceTime // .run.referenceTime' public/data/hrrr-conus/manifest.json public/data/hrrr-conus/sites/*.json | sort -u
    ```
 
    For byte-level validation, parse each file with the raw-text guards from
-   [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) — the same
-   check every consumer runs.
+   [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/). Every
+   consumer runs the same check.
 
 </Steps>
 
@@ -77,7 +77,7 @@ meteo forecast runs-index [--output PATH]
 meteo forecast catalogue [--output PATH]
 ```
 
-A site catalogue is required (`--sites` or `METEO_SITES`); which sites an
+A site catalogue is required (`--sites` or `METEO_SITES`). Which sites an
 operator publishes is their decision, so there is no default. Passing the
 literal `dataset` builds from the `sites.json` published at the dataset
 root, so site identity needs no home in an operator's repository. The output
@@ -85,21 +85,21 @@ root defaults to `./data`. `--model` and `--all` are mutually exclusive.
 Unknown model slugs, missing or unreadable site files, invalid site
 catalogues, and unusable output paths fail with an actionable error.
 
-History publication is the operator's flag, on by default: every
-successful build also appends
-the [append-only month archives](/docs/briefing/history-archives/) and their sidecar
-indexes. `--no-history` publishes current documents only.
+History publication is the operator's choice and is on by default. Every
+successful build also appends to the
+[append-only month archives](/docs/briefing/history-archives/) and their
+sidecar indexes. `--no-history` publishes current documents only.
 
-`publish` uploads one model's tree in publication order, refusing to
-publish backwards (`--dry-run` prints the verdict and the plan without
-moving a byte); `terrain` regenerates
-[`site-context.json`](/docs/briefing/site-context-document/), and
+`publish` uploads one model's tree in publication order and refuses to
+publish backwards. With `--dry-run` it prints the verdict and the plan
+without moving a byte. `terrain` regenerates
+[`site-context.json`](/docs/briefing/site-context-document/).
 `terrain --check` answers `fresh` or `stale` for the published context
 against the published catalogue, and `terrain --sync` regenerates and
-publishes the context when the answer is stale; `runs-index` regenerates `runs.json`
-wholesale from the published manifests; `catalogue` emits the packaged
-`models.json`. Teaching-scenario generation is source-checkout tooling,
-not engine surface.
+publishes the context when the answer is stale. `runs-index` regenerates
+`runs.json` wholesale from the published manifests. `catalogue` emits the
+packaged `models.json`. Teaching-scenario generation is source-checkout
+tooling and is not part of the engine surface.
 
 <Aside type="caution" title="A full build is a data job">
   Builders fetch real provider files. Whole-domain ECCC deterministic runs can
@@ -112,10 +112,10 @@ not engine surface.
 </Aside>
 
 Each builder detects the latest complete provider run and exits without
-rewriting output when that `referenceTime` is already published. "Already
-published" is read from the published dataset itself, at the root
-configured in step 4; the same source seeds
-the month archives that history appends continue. A successful
+rewriting output when that `referenceTime` is already published. The engine
+reads what is already published from the published dataset itself, at the
+root configured in step 4. The same source seeds the month archives that
+history appends continue. A successful
 new run writes current profiles, appends history, and writes the model
 manifest. [Environment and credentials](/docs/forecast/environment/) is the
 complete variable list. [Schedule builds](/docs/forecast/schedule-builds/)
@@ -123,28 +123,32 @@ applies the catalogued publication cadence to recurring jobs.
 
 ## When a build fails
 
-A build fails loudly rather than publishing a wrong document. The errors
-you will actually see: a missing or non-finite required sample throws
-`` `${provider} returned no ${fieldName} for ${site.name}` ``; a NaN that
-survives to publication is refused by the shared writer with
-`` `non-finite value ${value} at ${path} — refusing to publish` ``; a site
-outside the model's sampling guard fails with an out-of-grid error; and a
-real build without a configured published root exits with
-`PublisherConfigurationError` (step 4). A failed build exits non-zero
-before the deploy step your scheduler gates on
-([Schedule builds](/docs/forecast/schedule-builds/)), so the previous
-publication stays live and the next tick simply tries again.
+A build fails with an error instead of publishing a wrong document. These
+are the errors you will see.
+
+- A missing or non-finite required sample throws
+  `` `${provider} returned no ${fieldName} for ${site.name}` ``.
+- The shared writer refuses a NaN that survives to publication with
+  `` `non-finite value ${value} at ${path} — refusing to publish` ``.
+- A site outside the model's sampling guard fails with an out-of-grid error.
+- A real build without a configured published root exits with
+  `PublisherConfigurationError` (step 4).
+
+A failed build exits non-zero before the deploy step your scheduler gates on
+([Schedule builds](/docs/forecast/schedule-builds/)). The previous
+publication stays live, and the next tick tries again.
 
 ## Render what you built
 
-Rendering is the read side's job, and
+Rendering belongs to the read side.
 [Render a first Meteogram](/docs/briefing/render-first-meteogram/) is the
-complete walkthrough — fetch, validate, scene, SVG. Point its `base` at
+complete walkthrough, covering fetch, validation, scene and SVG. Point its `base` at
 your own published root (the same URL as `METEO_DATA_BASE`) instead of the
 sample dataset, and use your own model and site slugs. When the page loads
 a manifest and profile pair from cached static storage, use `loadForecast()`
-from [`@azohra/meteo.briefing/transport`](/docs/briefing/transport/) so the
-pair is guaranteed to describe one model run.
+from [`@azohra/meteo.briefing/transport`](/docs/briefing/transport/) so a pair
+that describes two runs is retried once and reported as stale if it still
+disagrees.
 
 Before that URL exists, the same walkthrough runs unchanged against the
 built directory: serve `--output` locally
