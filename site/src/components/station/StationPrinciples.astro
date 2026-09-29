@@ -6,7 +6,6 @@
 
 <section class="station-principles" aria-label="Principles">
   <div class="station-principles-inner section-inner">
-    <span class="station-principles-label">Principles</span>
     <p class="station-principles-copy">
       Stations report what they measure and why they are down, and your site decides the
       words, units, colours, and wind bands. The <a href="/docs/station/wire-contract/">wire contract</a> sets out the rules in full.
@@ -17,16 +16,7 @@
 <style>
   .station-principles-inner {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: clamp(1.1rem, 2.5vw, 1.75rem);
-    align-items: baseline;
     padding-block: clamp(1.6rem, 3.5vw, 2.4rem);
-  }
-  .station-principles-label {
-    font: 600 0.66rem/1.6 var(--mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ink-mute);
   }
   .station-principles-copy {
     margin: 0;
@@ -34,9 +24,5 @@
     font-size: 0.9rem;
     line-height: 1.55;
     color: var(--ink-soft);
-  }
-
-  @media (max-width: 520px) {
-    .station-principles-inner { grid-template-columns: 1fr; row-gap: 0.5rem; }
   }
 </style>

@@ -21,6 +21,7 @@
 
 .meteo-gram-figure--content {
   width: 100%;
+  margin-inline: 0;
 }
 
 .meteo-gram-figure--wide {
@@ -52,7 +53,7 @@
   max-width: 52rem;
   margin: 0.35rem 0 0;
   color: var(--ink-soft);
-  font: 0.85rem/1.5 var(--mono);
+  font: 0.92rem/1.5 var(--sans);
 }
 
 .meteo-gram-figure__body {
@@ -80,7 +81,7 @@
   padding: 0.75rem var(--meteo-gram-figure-inline-space) 0.9rem;
   /* Dark figure captions read one step lighter than page-mute ink. */
   color: light-dark(var(--ink-mute), color-mix(in srgb, var(--ink-mute) 50%, var(--ink-soft)));
-  font: 0.76rem/1.55 var(--mono);
+  font: 0.84rem/1.55 var(--sans);
   border-block-start: 1px solid var(--rule);
 }
 
@@ -91,9 +92,7 @@
 
 .meteo-gram-figure__units-label {
   color: var(--accent);
-  font-weight: 700;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .meteo-gram-control-group {
@@ -113,7 +112,7 @@
 }
 
 .meteo-gram-control-group :is(label, button, select, input) {
-  font: 0.78rem/1.35 var(--mono);
+  font: 0.84rem/1.35 var(--sans);
 }
 
 .meteo-gram-control-group label {
@@ -148,14 +147,12 @@
   align-items: start;
   /* Dark legend text reads one step lighter than page-soft ink. */
   color: light-dark(var(--ink-soft), color-mix(in srgb, var(--ink-soft) 55%, var(--ink)));
-  font: 0.75rem/1.4 var(--mono);
+  font: 0.8rem/1.4 var(--sans);
 }
 
 .meteo-gram-legend__title {
   color: light-dark(var(--ink-mute), color-mix(in srgb, var(--ink-mute) 50%, var(--ink-soft)));
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-weight: 650;
 }
 
 .meteo-gram-legend ul {

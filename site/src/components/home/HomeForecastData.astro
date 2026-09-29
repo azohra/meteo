@@ -30,7 +30,6 @@ const references = [
 <section id="data" class="home-data" aria-labelledby="home-data-title">
   <div class="home-data__inner section-inner">
     <SectionHeader
-      number="04"
       eyebrow="@azohra/meteo.forecast"
       title="Publish forecasts anyone can read"
       titleId="home-data-title"
@@ -61,7 +60,7 @@ const references = [
             <a href={reference.href}>
               <strong>{reference.title}</strong>
               <span>{reference.detail}</span>
-              <small>Read the reference <span aria-hidden="true">→</span></small>
+              <small>Read the reference</small>
             </a>
           </li>
         ))}
@@ -71,7 +70,7 @@ const references = [
 </section>
 
 <style>
-  /* 04 is the second full-bleed band of the scroll's alternation — the
+  /* The forecast-data section is the second full-bleed band of the scroll's alternation — the
      glacier-tinted one. The briefing band dips neutral; this one turns
      toward the accent, so the two bands read as different registers and
      the theme-invariant terminal bezel pops on it in either arm. */
@@ -107,8 +106,7 @@ const references = [
     padding: 0.6rem 1.2rem;
     border-block-end: 1px solid var(--term-border);
     color: var(--term-muted);
-    font: 600 0.68rem/1.4 var(--mono);
-    letter-spacing: 0.05em;
+    font: 600 0.78rem/1.4 var(--mono);
   }
 
   .home-data__terminal pre {
@@ -176,9 +174,7 @@ const references = [
 
   .home-data__refs small {
     color: var(--accent);
-    font: 600 0.66rem/1.4 var(--mono);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font: 600 0.86rem/1.4 var(--sans);
   }
 
   @media (max-width: 58rem) {

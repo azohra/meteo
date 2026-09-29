@@ -1,84 +1,37 @@
 ---
-import MeteoMark from "../MeteoMark.astro";
-import AtmosphereField from "./AtmosphereField.astro";
-import { onlyOverlays, renderSyntheticMeteogram } from "../../lib/example-meteogram";
-import { scenarioById } from "../../lib/scenarios";
+import DayArc from "./DayArc.astro";
 import "@azohra/meteo.station/styles.css";
 
-/* Two rendered surfaces, side by side, both real: the Meteogram is a
-   build-time render of a committed synthetic scenario through the
-   package's only chart-geometry path; the station instrument is the live
-   custom-elements binding fed the same synthetic season as /station/.
-   Nothing here is a screenshot. */
-const scenario = scenarioById("convective-cycle");
-const { svg: heroMeteogramSvg } = renderSyntheticMeteogram(
-  scenario,
-  {
-    overlays: onlyOverlays(
-      "stability",
-      "wind",
-      "clouds",
-      "boundaryLayerTop",
-      "usableLiftTop",
-      "cloudBase",
-      "launch",
-    ),
-    widthPx: 560,
-    plotHeightPx: 210,
-    barbStride: 2,
-  },
-  "home-hero-meteogram",
-);
+/* The hero states the product in one line, offers two ways in, and shows
+   two real things: the live custom-elements station binding (fed the same
+   synthetic season as /station/) and the day arc, drawn from a committed
+   scenario's published heights. Nothing here is a screenshot. */
 ---
 
 <section class="home-hero" aria-labelledby="home-title">
-  <div class="home-hero__atmosphere" aria-hidden="true"><AtmosphereField /></div>
   <div class="home-hero__copy">
     <h1 id="home-title">Publish the weather for your launches.</h1>
-    <div class="band-rule" aria-hidden="true"></div>
     <p class="home-hero__lede">
       Open-source packages that turn weather-model output into soaring forecasts and
       show live wind from your launch. You run them, and your pilots read the results on your site.
     </p>
     <nav class="home-hero__actions" aria-label="Start with meteo by Azohra">
-      <a class="home-hero__action home-hero__action--primary" href="/docs/">
-        Start building <span aria-hidden="true">→</span>
-      </a>
-      <a class="home-hero__action" href="/logbook/">Read the logbook</a>
-      <a class="home-hero__action" href="https://github.com/azohra/meteo">View GitHub</a>
+      <a class="home-hero__action home-hero__action--primary" href="/docs/">Start building</a>
+      <a class="home-hero__action" href="https://github.com/azohra/meteo">View on GitHub</a>
     </nav>
   </div>
 
-  <div
-    class="home-hero__artifact"
-    aria-label="A rendered Meteogram and a live station readout"
-  >
-    <div class="home-hero__mark" aria-hidden="true"><MeteoMark /></div>
-    <p class="home-hero__artifact-label">What your pilots get</p>
-    <div class="home-hero__plates">
-      <div class="hero-plate hero-plate--meteogram">
-        <p class="hero-plate__label">Meteogram</p>
-        <div
-          class="hero-plate__meteogram"
-          role="img"
-          aria-label={`A compact rendered Meteogram: ${scenario.accessibilityDescription}`}
-          set:html={heroMeteogramSvg}
-        />
-        <p class="hero-plate__note">Point forecasts, drawn for soaring</p>
-      </div>
-      <div class="hero-plate hero-plate--station">
-        <p class="hero-plate__label">Station</p>
-        <div class="meteo-root hero-plate__station">
-          <meteo-station-feed
-            id="hero-station-feed"
-            thresholds='{"unit":"kmh","values":[12,20,28]}'
-          >
-            <meteo-current-conditions station-id="launch-ridge"></meteo-current-conditions>
-          </meteo-station-feed>
-        </div>
-        <p class="hero-plate__note">Live wind, gusts, and trend</p>
-      </div>
+  <figure class="home-hero__station">
+    <div class="meteo-root">
+      <meteo-station-feed id="hero-station-feed" thresholds='{"unit":"kmh","values":[12,20,28]}'>
+        <meteo-current-conditions station-id="launch-ridge"></meteo-current-conditions>
+      </meteo-station-feed>
     </div>
+    <figcaption>The station component, playing a synthetic test season.</figcaption>
+  </figure>
+
+  <div class="home-hero__arc">
+    <DayArc />
   </div>
 </section>
 
@@ -92,199 +45,116 @@ const { svg: heroMeteogramSvg } = renderSyntheticMeteogram(
 
 <style>
   .home-hero {
-    position: relative;
-    isolation: isolate;
     display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(23rem, 0.85fr);
-    gap: clamp(2.5rem, 6vw, 6rem);
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+    grid-template-areas:
+      "copy station"
+      "arc arc";
+    gap: clamp(2.5rem, 5vw, 4rem) clamp(2.5rem, 6vw, 6rem);
+    align-items: center;
     width: min(74.25rem, calc(100% - 3.5rem));
-    min-height: min(47rem, calc(100svh - 5.5rem));
     margin-inline: auto;
-    padding-block: clamp(4.5rem, 7vw, 6.5rem) clamp(4.5rem, 9vw, 7rem);
-  }
-
-  .home-hero__atmosphere {
-    position: absolute;
-    z-index: -1;
-    inset: 0 -12vw;
-    color: var(--accent);
-    opacity: 0.13;
-    pointer-events: none;
-    mask-image: linear-gradient(110deg, #000 0%, transparent 65%);
+    padding-block: clamp(4rem, 7vw, 6rem) clamp(3.5rem, 6vw, 5rem);
   }
 
   .home-hero__copy {
-    padding-block-start: clamp(1rem, 3.5vw, 3rem);
-  }
-
-  .home-hero__artifact-label {
-    margin: 0;
-    color: var(--accent);
-    font: 600 0.72rem/1.4 var(--mono);
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
+    grid-area: copy;
   }
 
   h1 {
-    max-width: 18ch;
-    margin: 0 0 1.1rem;
-    font-size: clamp(2.5rem, 5vw, 3.9rem);
-    line-height: 1.06;
-    letter-spacing: -0.025em;
-  }
-
-  .band-rule {
-    margin-block-end: 1.4rem;
+    max-width: 16ch;
+    margin: 0 0 1.4rem;
+    font-size: clamp(2.6rem, 5.4vw, 4.2rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
   }
 
   .home-hero__lede {
-    max-width: 43rem;
+    max-width: 38rem;
     margin: 0;
     color: var(--ink-soft);
-    font-size: clamp(1.08rem, 2vw, 1.32rem);
+    font-size: clamp(1.08rem, 1.9vw, 1.28rem);
     line-height: 1.58;
   }
 
   .home-hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.65rem;
-    margin-block: 2rem 0;
+    gap: 0.75rem;
+    margin-block-start: 2rem;
   }
 
   .home-hero__action {
     display: inline-flex;
-    gap: 0.7rem;
     align-items: center;
-    min-height: 2.8rem;
-    padding: 0.65rem 1.2rem;
+    min-height: 2.9rem;
+    padding: 0.7rem 1.3rem;
     color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--rule);
+    background: transparent;
+    border: 1px solid var(--rule-strong);
     border-radius: var(--radius-small);
-    font: 600 0.88rem/1.2 var(--sans);
+    font: 600 0.95rem/1.2 var(--sans);
     transition:
       color 150ms ease,
       border-color 150ms ease,
-      background-color 150ms ease,
-      transform 150ms ease;
+      background-color 150ms ease;
   }
 
   .home-hero__action:hover {
     color: var(--accent);
     border-color: var(--accent);
     text-decoration: none;
-    transform: translateY(-1px);
   }
 
   .home-hero__action--primary {
     color: var(--accent-ink);
     background: var(--accent);
     border-color: var(--accent);
-    font-weight: 650;
   }
 
   .home-hero__action--primary:hover {
     color: var(--accent-ink);
-    filter: brightness(1.08);
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
   }
 
-  .home-hero__artifact {
-    position: relative;
-    min-width: 0;
-    max-width: 100%;
-    padding: 1.8rem 1.6rem;
-    background: var(--surface-raised);
-    border: 1px solid var(--rule);
-    border-top-color: color-mix(in srgb, var(--accent) 72%, var(--rule));
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
+  .home-hero__station {
+    grid-area: station;
+    margin: 0;
   }
 
-  .home-hero__mark {
-    position: absolute;
-    top: 1.75rem;
-    right: 1.4rem;
-    width: 2.8rem;
-    color: color-mix(in srgb, var(--accent) 72%, transparent);
-  }
-
-  .home-hero__mark :global(svg) {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  .home-hero__plates {
-    display: grid;
-    gap: 1.15rem;
-    margin-block-start: 1.6rem;
-  }
-
-  .hero-plate {
-    min-width: 0;
-    padding: 0.85rem 0.9rem 0.75rem;
-    background: var(--surface);
-    border: 1px solid var(--rule);
-    border-radius: var(--radius-small);
-  }
-
-  .hero-plate__label {
-    margin: 0 0 0.6rem;
+  .home-hero__station figcaption {
+    margin-block-start: 0.7rem;
     color: var(--ink-mute);
-    font: 700 0.65rem/1.4 var(--mono);
-    letter-spacing: 0.055em;
-    text-transform: uppercase;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    text-align: center;
   }
 
-  .hero-plate__note {
-    margin: 0.6rem 0 0;
-    color: var(--ink-mute);
-    font: 0.65rem/1.4 var(--mono);
-    letter-spacing: 0.045em;
-    text-transform: uppercase;
+  .home-hero__arc {
+    grid-area: arc;
+    min-width: 0;
   }
 
-  .hero-plate__meteogram :global(svg) {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  .hero-plate__station {
-    max-width: 24rem;
-  }
-
-  @media (max-width: 58rem) {
+  @media (max-width: 52rem) {
     .home-hero {
-      grid-template-columns: 1fr;
-      min-height: 0;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "copy"
+        "arc"
+        "station";
     }
 
-    .home-hero__atmosphere {
-      inset-inline: -3rem;
-      mask-image: linear-gradient(135deg, #000 0%, transparent 62%);
-    }
-
-    .home-hero__plates {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      align-items: start;
+    .home-hero__station {
+      width: min(100%, 22rem);
+      justify-self: center;
     }
   }
 
   @media (max-width: 43rem) {
     .home-hero {
       width: min(100% - 2rem, 74.25rem);
-      padding-block-start: 3.25rem;
-    }
-
-    .home-hero__copy {
-      padding-block-start: 0;
-    }
-
-    h1 {
-      font-size: clamp(3rem, 14vw, 4.4rem);
+      padding-block-start: 3rem;
     }
 
     .home-hero__actions {
@@ -292,15 +162,7 @@ const { svg: heroMeteogramSvg } = renderSyntheticMeteogram(
     }
 
     .home-hero__action {
-      justify-content: space-between;
-    }
-
-    .home-hero__artifact {
-      padding-inline: 1rem;
-    }
-
-    .home-hero__plates {
-      grid-template-columns: 1fr;
+      justify-content: center;
     }
   }
 </style>

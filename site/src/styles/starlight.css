@@ -158,23 +158,9 @@ h1#_top,
   letter-spacing: -0.02em;
 }
 
-/* The page signs itself once: the grade under the title. */
 h1#_top {
-  position: relative;
-  padding-bottom: 1.05rem;
   margin-top: 1.6rem;
   font-size: clamp(1.9rem, 4vw, 2.4rem);
-}
-
-h1#_top::after {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 7rem;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--band-gradient);
-  content: "";
 }
 
 .sl-markdown-content h2:not(:where(.not-content *)) {
@@ -193,6 +179,7 @@ h1#_top::after {
 }
 
 .sl-markdown-content code:not(:where(.not-content *)) {
+  color: var(--accent-strong);
   border: 1px solid color-mix(in srgb, var(--rule) 60%, transparent);
   border-radius: 4px;
   font-family: var(--mono);
@@ -220,10 +207,8 @@ h1#_top::after {
 
 .sl-markdown-content th:not(:where(.not-content *)) {
   background: var(--surface-raised);
-  font-family: var(--mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
+  font-size: 0.86rem;
+  font-weight: 650;
 }
 
 .sl-markdown-content td:not(:where(.not-content *)) {

@@ -12,7 +12,6 @@ import "@azohra/meteo.station/styles.css";
 <section id="station" class="home-station-section" aria-labelledby="home-station-title">
   <div class="home-section-inner section-inner">
     <SectionHeader
-      number="03"
       eyebrow="@azohra/meteo.station"
       title="Live wind from the launch's weather station"
       titleId="home-station-title"
@@ -66,7 +65,7 @@ import "@azohra/meteo.station/styles.css";
 </script>
 
 <style>
-  /* 03 returns to the bare page ground between the briefing and data bands;
+  /* The station section returns to the bare page ground between the briefing and data bands;
      open padding — the live instrument gets air. */
   .home-station-section {
     padding-block: clamp(4.5rem, 9vw, 8rem);
@@ -106,9 +105,7 @@ import "@azohra/meteo.station/styles.css";
 
   .home-station-facts dt {
     color: var(--accent);
-    font: 600 0.64rem/1.4 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font: 600 0.86rem/1.4 var(--sans);
   }
 
   .home-station-facts dd {

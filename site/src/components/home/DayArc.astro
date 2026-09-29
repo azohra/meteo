@@ -1,0 +1,352 @@
+---
+import { scenarioById } from "../../lib/scenarios";
+
+/* The home page's one bold element: a convective day from the committed
+   convective-cycle scenario, drawn as the three heights a pilot reads off
+   a Meteogram (boundary-layer top, usable-lift top, cloud base) over the
+   launch line. Every point is the scenario's published value; an hour the
+   profile leaves null stays undrawn, so the usable-lift arc exists only
+   where the scenario states it. The full Meteogram of the same day sits in
+   the briefing section below. Two drawings share the data: a wide one and
+   a narrow one for phones, so labels keep a readable size. */
+const scenario = scenarioById("convective-cycle");
+const { profile, launch } = scenario;
+const hours = profile.hours;
+
+type Point = [number, number];
+
+const round = (n: number) => Math.round(n * 10) / 10;
+const hourLabel = (i: number) =>
+  new Date(hours[i].validAt).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: scenario.timeZone,
+  });
+const metres = (m: number) => `${Math.round(m).toLocaleString("en-US")} m`;
+/* The convective-cycle scenario is deterministic, so every stated derived
+   value is a plain number; an ensemble's percentile object reads as absent. */
+const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
+
+const stated = hours.flatMap((hour) =>
+  [num(hour.derived.boundaryLayerTopM), num(hour.derived.usableLiftTopM), num(hour.derived.cloudBaseM)].filter(
+    (v): v is number => typeof v === "number",
+  ),
+);
+const floorM = Math.min(launch.elevationM, ...stated) - 420;
+const ceilingM = Math.max(...stated) + 250;
+
+const peakIndex = hours.reduce(
+  (best, hour, i) =>
+    (num(hour.derived.usableLiftTopM) ?? -Infinity) > (num(hours[best].derived.usableLiftTopM) ?? -Infinity)
+      ? i
+      : best,
+  0,
+);
+const peakM = num(hours[peakIndex].derived.usableLiftTopM);
+const boundaryPeakIndex = hours.reduce(
+  (best, hour, i) =>
+    (num(hour.derived.boundaryLayerTopM) ?? -Infinity) > (num(hours[best].derived.boundaryLayerTopM) ?? -Infinity)
+      ? i
+      : best,
+  0,
+);
+const cloudPeakIndex = hours.reduce(
+  (best, hour, i) =>
+    (num(hour.derived.cloudBaseM) ?? -Infinity) > (num(hours[best].derived.cloudBaseM) ?? -Infinity) ? i : best,
+  0,
+);
+
+/* Monotone cubic (Fritsch–Carlson) through the stated hours: the curve
+   never overshoots a published value between two hours. */
+function monotonePath(points: Point[]): string {
+  const n = points.length;
+  if (n < 2) return "";
+  const dx: number[] = [];
+  const slope: number[] = [];
+  for (let i = 0; i < n - 1; i += 1) {
+    dx.push(points[i + 1][0] - points[i][0]);
+    slope.push((points[i + 1][1] - points[i][1]) / dx[i]);
+  }
+  const tangent = [slope[0]];
+  for (let i = 1; i < n - 1; i += 1) {
+    tangent.push(slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2);
+  }
+  tangent.push(slope[n - 2]);
+  for (let i = 0; i < n - 1; i += 1) {
+    if (slope[i] === 0) {
+      tangent[i] = 0;
+      tangent[i + 1] = 0;
+      continue;
+    }
+    const a = tangent[i] / slope[i];
+    const b = tangent[i + 1] / slope[i];
+    const h = Math.hypot(a, b);
+    if (h > 3) {
+      tangent[i] = (3 / h) * a * slope[i];
+      tangent[i + 1] = (3 / h) * b * slope[i];
+    }
+  }
+  let d = `M${round(points[0][0])} ${round(points[0][1])}`;
+  for (let i = 0; i < n - 1; i += 1) {
+    const c1x = points[i][0] + dx[i] / 3;
+    const c1y = points[i][1] + (tangent[i] * dx[i]) / 3;
+    const c2x = points[i + 1][0] - dx[i] / 3;
+    const c2y = points[i + 1][1] - (tangent[i + 1] * dx[i]) / 3;
+    d += ` C${round(c1x)} ${round(c1y)} ${round(c2x)} ${round(c2y)} ${round(points[i + 1][0])} ${round(points[i + 1][1])}`;
+  }
+  return d;
+}
+
+function drawing(
+  width: number,
+  height: number,
+  hourStep: number,
+  liftAnchor: "start" | "middle",
+) {
+  const pad = { top: 28, right: 20, bottom: 34, left: 20 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+  const x = (i: number) => pad.left + (plotW * i) / (hours.length - 1);
+  const y = (m: number) => pad.top + plotH * (1 - (m - floorM) / (ceilingM - floorM));
+
+  /* One run per unbroken stretch of stated values. */
+  const runs = (pick: (i: number) => number | null | undefined): Point[][] => {
+    const out: Point[][] = [];
+    let run: Point[] = [];
+    hours.forEach((_, i) => {
+      const v = pick(i);
+      if (typeof v === "number") run.push([x(i), y(v)]);
+      else if (run.length) {
+        out.push(run);
+        run = [];
+      }
+    });
+    if (run.length) out.push(run);
+    return out;
+  };
+
+  const launchY = round(y(launch.elevationM));
+  const liftRuns = runs((i) => num(hours[i].derived.usableLiftTopM));
+  return {
+    width,
+    height,
+    ticks: hours.map((_, i) => ({ x: round(x(i)), label: i % hourStep === 0 ? hourLabel(i) : "" })),
+    top: pad.top,
+    bottom: height - pad.bottom,
+    left: pad.left,
+    right: width - pad.right,
+    launchY,
+    cloud: runs((i) => num(hours[i].derived.cloudBaseM)).map(monotonePath),
+    boundary: runs((i) => num(hours[i].derived.boundaryLayerTopM)).map(monotonePath),
+    lift: liftRuns.map(monotonePath),
+    /* The usable band: the ground between the launch line and the
+       usable-lift top, over the hours the scenario states one. */
+    band: liftRuns
+      .filter((run) => run.length > 1)
+      .map(
+        (run) =>
+          `${monotonePath(run)} L${round(run[run.length - 1][0])} ${launchY} L${round(run[0][0])} ${launchY} Z`,
+      ),
+    cloudLabel: {
+      x: round(x(cloudPeakIndex)),
+      y: round(y(num(hours[cloudPeakIndex].derived.cloudBaseM) ?? ceilingM)) - 12,
+    },
+    boundaryLabel: {
+      x: round(x(boundaryPeakIndex)),
+      y: round(y(num(hours[boundaryPeakIndex].derived.boundaryLayerTopM) ?? floorM)) + 26,
+    },
+    peak:
+      typeof peakM === "number" ? { x: round(x(peakIndex)), y: round(y(peakM)) } : null,
+    liftAnchor,
+  };
+}
+
+const drawings = [
+  { variant: "wide", ...drawing(1120, 300, 1, "start") },
+  { variant: "narrow", ...drawing(380, 320, 3, "middle") },
+];
+
+const description =
+  `A convective day from a test scenario, ${hourLabel(0)} to ${hourLabel(hours.length - 1)}. ` +
+  `The boundary layer and cloud base rise to a mid-afternoon peak and fall back by evening` +
+  (typeof peakM === "number"
+    ? `, and usable lift above the ${metres(launch.elevationM)} launch peaks at ${metres(peakM)} at ${hourLabel(peakIndex)}.`
+    : ".");
+---
+
+<figure class="day-arc">
+  <div role="img" aria-label={description}>
+  {
+    drawings.map((d) => (
+      <svg
+        class={`day-arc__svg day-arc__svg--${d.variant}`}
+        viewBox={`0 0 ${d.width} ${d.height}`}
+        aria-hidden="true"
+      >
+        <g class="day-arc__hours">
+          {d.ticks.map((tick) => (
+            <>
+              <line x1={tick.x} x2={tick.x} y1={d.top} y2={d.bottom} />
+              {tick.label && (
+                <text x={tick.x} y={d.height - 10}>
+                  {tick.label}
+                </text>
+              )}
+            </>
+          ))}
+        </g>
+        {d.band.map((path) => (
+          <path class="day-arc__band" d={path} />
+        ))}
+        <line class="day-arc__launch" x1={d.left} x2={d.right} y1={d.launchY} y2={d.launchY} />
+        <text class="day-arc__label day-arc__label--launch" x={d.left + 4} y={d.launchY + 20}>
+          Launch {metres(launch.elevationM)}
+        </text>
+        {d.cloud.map((path) => (
+          <path class="day-arc__cloud" d={path} />
+        ))}
+        {d.boundary.map((path) => (
+          <path class="day-arc__boundary" d={path} />
+        ))}
+        {d.lift.map((path) => (
+          <path class="day-arc__lift" d={path} />
+        ))}
+        <text class="day-arc__label" x={d.cloudLabel.x} y={d.cloudLabel.y} text-anchor="middle">
+          Cloud base
+        </text>
+        <text class="day-arc__label day-arc__label--inside" x={d.boundaryLabel.x} y={d.boundaryLabel.y} text-anchor="middle">
+          Boundary layer
+        </text>
+        {d.peak && typeof peakM === "number" && (
+          <>
+            <circle class="day-arc__peak" cx={d.peak.x} cy={d.peak.y} r="5" />
+            <text
+              class="day-arc__label day-arc__label--lift"
+              x={d.liftAnchor === "start" ? d.peak.x + 12 : d.peak.x}
+              y={d.liftAnchor === "start" ? d.peak.y - 12 : d.peak.y - 16}
+              text-anchor={d.liftAnchor}
+            >
+              Usable lift {metres(peakM)} at {hourLabel(peakIndex)}
+            </text>
+          </>
+        )}
+      </svg>
+    ))
+  }
+  </div>
+  <figcaption>
+    One convective day from a committed test scenario, drawn from its published heights. The full Meteogram of the same day is further down the page.
+  </figcaption>
+</figure>
+
+<style>
+  .day-arc {
+    margin: 0;
+  }
+
+  .day-arc__svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    font-family: var(--sans);
+  }
+
+  .day-arc__svg--narrow {
+    display: none;
+  }
+
+  @media (max-width: 43rem) {
+    .day-arc__svg--wide {
+      display: none;
+    }
+
+    .day-arc__svg--narrow {
+      display: block;
+    }
+  }
+
+  .day-arc__hours line {
+    stroke: var(--rule);
+    stroke-width: 1;
+    stroke-dasharray: 2 6;
+  }
+
+  .day-arc__hours text {
+    fill: var(--ink-mute);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-anchor: middle;
+  }
+
+  .day-arc__band {
+    fill: color-mix(in srgb, var(--accent) 16%, transparent);
+    stroke: none;
+  }
+
+  .day-arc__launch {
+    stroke: var(--rule-strong);
+    stroke-width: 1.5;
+  }
+
+  .day-arc__cloud {
+    fill: none;
+    stroke: var(--ink-mute);
+    stroke-width: 2;
+    stroke-dasharray: 1 7;
+    stroke-linecap: round;
+  }
+
+  .day-arc__boundary {
+    fill: none;
+    stroke: var(--ink-soft);
+    stroke-width: 1.75;
+    stroke-dasharray: 9 7;
+  }
+
+  .day-arc__lift {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+  }
+
+  .day-arc__peak {
+    fill: var(--page);
+    stroke: var(--accent);
+    stroke-width: 2.5;
+  }
+
+  .day-arc__label {
+    fill: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 600;
+    paint-order: stroke;
+    stroke: var(--page);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+  }
+
+  .day-arc__label--inside {
+    stroke: none;
+  }
+
+  .day-arc__label--launch {
+    fill: var(--ink-mute);
+    font-weight: 500;
+  }
+
+  .day-arc__label--lift {
+    fill: var(--accent-strong);
+    font-size: 15px;
+    font-weight: 650;
+  }
+
+  figcaption {
+    max-width: 44rem;
+    margin-block-start: 0.9rem;
+    color: var(--ink-mute);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+</style>

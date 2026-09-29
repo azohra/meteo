@@ -88,8 +88,7 @@ const statements: StatementRow[] = [
             <header class="bf-compare-panel__head">
               <strong>{scenario.label}</strong>
               <span>
-                window {vote.window}{vote.clipped ? " · open at the first published hour" : ` · start stated`} ·
-                peak {vote.peakMps} m/s
+                Window {vote.window}{vote.clipped ? ", open at the first published hour" : ", start stated"}, peak {vote.peakMps} m/s
               </span>
             </header>
             <SyntheticMeteogram
@@ -168,7 +167,7 @@ const statements: StatementRow[] = [
   }
 
   .bf-compare-panel__head span {
-    font: 0.68rem/1.4 var(--mono);
+    font: 0.84rem/1.4 var(--sans);
     color: var(--ink-mute);
   }
 

@@ -5,7 +5,7 @@ import type { LogbookEntry } from "../../lib/logbook";
 type LogbookThumbnailKind = LogbookEntry["thumbnail"];
 
 interface Props {
-  entry: Pick<LogbookEntry, "number" | "title" | "accent" | "thumbnail">;
+  entry: Pick<LogbookEntry, "title" | "accent" | "thumbnail">;
 }
 
 const { entry } = Astro.props;
@@ -235,7 +235,6 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   </svg>
 
   <div class="thumbnail-meta" aria-hidden="true">
-    <span>{entry.number}</span>
     <span>{labels[entry.thumbnail]}</span>
   </div>
 </div>
@@ -308,8 +307,8 @@ const descriptions: Record<LogbookThumbnailKind, string> = {
   .wstar-bar { fill: var(--chart-usable); }
   .fast-bar { fill: var(--chart-usable); }
   .slow-bar { fill: var(--status-serious); }
-  .thumbnail-meta { position: absolute; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-between; gap: 10px; padding: 6px 8px; color: var(--ink); background: color-mix(in srgb, var(--surface) 90%, transparent); border-top: 1px solid var(--rule); font: 9px/1.2 var(--mono); letter-spacing: .04em; text-transform: uppercase; }
-  .thumbnail-meta span:last-child { color: var(--doc-accent); font-weight: 700; }
+  .thumbnail-meta { position: absolute; right: 0; bottom: 0; left: 0; display: flex; justify-content: space-between; gap: 10px; padding: 6px 8px; color: var(--ink); background: color-mix(in srgb, var(--surface) 90%, transparent); border-top: 1px solid var(--rule); font: 600 12px/1.2 var(--sans); }
+  .thumbnail-meta span { color: var(--doc-accent); }
   @media (prefers-reduced-motion: reduce) {
     .logbook-thumbnail * { transition: none !important; animation: none !important; }
   }

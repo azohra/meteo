@@ -59,8 +59,8 @@ const KINDS = Object.keys(KIND_SET);
         </div>
         <figcaption class="bf-caption">
           {archive.runs.length === 1
-            ? "one run so far this month; each new build appends one more member"
-            : `${archive.runs.length} runs this month; one member per build`}
+            ? "One run so far this month. Each new build appends one more member."
+            : `${archive.runs.length} runs this month, one member per build.`}
         </figcaption>
       </figure>
 
@@ -130,8 +130,7 @@ const KINDS = Object.keys(KIND_SET);
   .bf-term-title {
     margin: 0;
     padding: 0.55rem 0.9rem;
-    font: 600 0.7rem/1.4 var(--mono);
-    letter-spacing: 0.04em;
+    font: 600 0.74rem/1.4 var(--mono);
     color: var(--term-muted);
     border-block-end: 1px solid var(--term-border);
     overflow-wrap: anywhere;
@@ -180,8 +179,7 @@ const KINDS = Object.keys(KIND_SET);
   }
 
   .bf-caption {
-    font-size: 0.82rem;
-    font-style: italic;
+    font-size: 0.86rem;
     color: var(--ink-mute);
     text-align: center;
     text-wrap: balance;
