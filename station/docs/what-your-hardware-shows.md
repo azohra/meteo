@@ -1,13 +1,13 @@
 ---
 title: What your hardware shows
-description: "The capability flags each adapter declares, and exactly which surfaces appear, degrade, or stay hidden for your station."
+description: "The capability flags each adapter declares, and which display surfaces appear, degrade, or stay hidden for your station."
 ---
 
 Every station on the wire declares its
 [capabilities](/docs/station/wire-contract/), and the display surfaces
-render from the declaration alone: a station without a capability renders
-less page, not placeholder data.
-This page is the map from your hardware to your screen.
+render from that declaration alone. A station without a capability gets a
+shorter page with no placeholder data in it. This page maps your hardware
+to what appears on screen.
 
 ## What each vendor declares
 
@@ -24,21 +24,21 @@ A [custom adapter](/docs/station/adapters/) declares its own row.
 
 | Capability | With it | Without it |
 |---|---|---|
-| `history` | `WindHistoryChart`, `TrendChart`, the sparkline, the daily pattern | The two charts return `hidden` outright: the card renders no chart, not an empty one; the sparkline needs at least two history points; the daily pattern has nothing to aggregate |
-| `live` | The `/live` SSE stream, `useStationLive` / `createStationLiveStore`, and `WindSampleStrip` | `/live?station=` answers **404**; the live hooks never connect; the sample strip has no input |
-| `conditions` | The air matrix's columns, pressure and conditions readouts | The station simply contributes no column; readouts stay absent |
+| `history` | `WindHistoryChart`, `TrendChart`, the sparkline, the daily pattern | The two charts return `hidden`, so the card renders no chart at all rather than an empty one. The sparkline needs at least two history points. The daily pattern has nothing to aggregate |
+| `live` | The `/live` SSE stream, `useStationLive` / `createStationLiveStore`, and `WindSampleStrip` | `/live?station=` answers **404**. The live hooks never connect. The sample strip has no input |
+| `conditions` | The air matrix's columns, pressure and conditions readouts | The station contributes no column, and the readouts stay absent |
 | `temperature` | Temperature readouts and the temperature trend series | Absent |
 | `gustLull` | Gust and lull flanks on strips and current readouts | Absent |
-| `battery` | The wire document's telemetry block | No display surface reads it today; it travels for your own consumers |
-| `recentSummaries` | The wire's pre-digested step blocks (WindNerd: ten 1-minute and twelve 5-minute steps), refreshed by the live stream's `summaries` frames, drawn by `RecentSummaries` / `<meteo-recent-summaries>` | The panels render nothing; not derivable client-side — the samples ring covers only ~10 minutes |
+| `battery` | The wire document's telemetry block | No display surface reads it today. It travels for your own consumers |
+| `recentSummaries` | The wire's pre-digested step blocks (WindNerd: ten 1-minute and twelve 5-minute steps), refreshed by the live stream's `summaries` frames and drawn by `RecentSummaries` / `<meteo-recent-summaries>` | The panels render nothing. The blocks can't be derived client-side, because the samples ring covers only ~10 minutes |
 
-Two consequences worth planning around:
+Two of these affect how you plan a page.
 
-- **The card in the docs' figures shows a history chart.** If your station
-  declares `history: false` (Tempest, Ecowitt), your `StationCard` renders
-  the dial and readouts and no chart, exactly as declared. Pair a
-  history-less station with one that has it, or accept the shorter card.
-- **Live is one vendor today.** Only WindNerd declares `live`. Streaming
-  APIs are safe to leave wired for a mixed fleet — they apply per station —
-  but a Tempest-only or Ecowitt-only page should not reach for
-  `useStationLive`.
+The card in the docs' figures shows a history chart. If your station
+declares `history: false` (Tempest, Ecowitt), your `StationCard` renders
+the dial and readouts with no chart, as declared. Pair a history-less
+station with one that has history, or accept the shorter card.
+
+Only WindNerd declares `live` today. The streaming APIs apply per station,
+so it is safe to leave them wired for a mixed fleet. A Tempest-only or
+Ecowitt-only page should not reach for `useStationLive`.
