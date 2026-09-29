@@ -28,6 +28,9 @@ import {
 import { measureText, wrapText } from "./fonts.mjs";
 
 const FRAME_MARGIN = 30;
+/* Figures sit in the docs content column (about 640 CSS px); a body near
+   720 units keeps 12-unit labels legible there. */
+const COLUMN_CHART_WIDTH = 720;
 
 function wrapped(x, y, lines, o, lineHeight) {
   return lines.map((line, index) => t(x, y + index * lineHeight, line, o)).join("\n  ");
@@ -112,28 +115,28 @@ function panelChip(x, y, letter) {
 }
 
 function legendRows(rows, width, top = 0) {
-  const spec = { family: "ibm-plex-mono", weight: 400, size: 11 };
+  const spec = { family: "ibm-plex-mono", weight: 400, size: 12 };
   const parts = [];
   let y = top;
   for (const row of rows) {
     const lines = wrapText(row.text, width - 30, spec);
     parts.push(chip(10, y + 4, row.n, row.muted ? { fill: INK_MUTE, ink: SURFACE } : {}));
-    parts.push(wrapped(30, y + 8, lines, { font: MONO, size: 11, fill: INK }, 16));
-    y += lines.length * 16 + 8;
+    parts.push(wrapped(30, y + 8, lines, { font: MONO, size: 12, fill: INK }, 17));
+    y += lines.length * 17 + 8;
   }
   return { markup: parts.join("\n  "), height: y - top };
 }
 
 function ledgerRows(rows, width, top = 0) {
-  const spec = { family: "ibm-plex-mono", weight: 400, size: 11 };
+  const spec = { family: "ibm-plex-mono", weight: 400, size: 12 };
   const termWidth = 150;
   const parts = [];
   let y = top;
   for (const row of rows) {
     const lines = wrapText(row.text, width - termWidth - 12, spec);
-    parts.push(t(0, y + 8, row.term, { font: MONO, size: 11, weight: 700, fill: INK_SOFT }));
-    parts.push(wrapped(termWidth, y + 8, lines, { font: MONO, size: 11, fill: INK }, 16));
-    y += lines.length * 16 + 7;
+    parts.push(t(0, y + 8, row.term, { font: MONO, size: 12, weight: 700, fill: INK_SOFT }));
+    parts.push(wrapped(termWidth, y + 8, lines, { font: MONO, size: 12, fill: INK }, 17));
+    y += lines.length * 17 + 7;
   }
   return { markup: parts.join("\n  "), height: y - top };
 }
@@ -178,8 +181,9 @@ async function composeTwoTransports(ctx) {
   const fileFloorMb = Math.round(maxOffset / 1e6);
   const bytes = (offset) => offset.toLocaleString("en-CA");
 
-  const BAR_LEFT = 340;
-  const BAR_RIGHT = 936;
+  const W = COLUMN_CHART_WIDTH;
+  const BAR_LEFT = 0;
+  const BAR_RIGHT = W;
   const hits = records.map((record, index) => ({
     ...record,
     n: index + 1,
@@ -188,99 +192,116 @@ async function composeTwoTransports(ctx) {
   for (let i = 1; i < hits.length; i += 1) {
     if (hits[i].x - hits[i - 1].x < 26) hits[i] = { ...hits[i], x: hits[i - 1].x + 26 };
   }
+  /* Keep the last chip and bar inside the body when the nudge pushes it. */
+  const overflow = Math.max(0, hits[hits.length - 1].x - (BAR_RIGHT - 10));
+  for (const hit of hits) hit.x -= overflow;
 
   const numChip = (cx, cy, n) =>
-    `<circle cx="${round(cx)}" cy="${round(cy)}" r="7" fill="${SURFACE}" stroke="${ACCENT}" stroke-width="1.4"/>
-  ${t(cx, cy + 3.5, String(n), { font: MONO, size: 10, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}`;
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="8" fill="${SURFACE}" stroke="${ACCENT}" stroke-width="1.4"/>
+  ${t(cx, cy + 4, String(n), { font: MONO, size: 11, weight: 700, fill: ACCENT_STRONG, anchor: "middle" })}`;
 
+  const B = 424; // top of panel B
+  const stepTop = B + 72;
   const gribBox = (x, dropped = false) =>
     dropped
-      ? `<rect x="${x}" y="324" width="84" height="80" fill="${SURFACE}" stroke="${RULE}" stroke-width="1.2" stroke-dasharray="4 4" opacity=".55"/>`
-      : `<rect x="${x}" y="324" width="84" height="80" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.4"/>`;
+      ? `<rect x="${x}" y="${stepTop}" width="84" height="80" fill="${SURFACE}" stroke="${RULE}" stroke-width="1.2" stroke-dasharray="4 4" opacity=".55"/>`
+      : `<rect x="${x}" y="${stepTop}" width="84" height="80" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.4"/>`;
 
   const site = (cx, cy) =>
     `<circle cx="${cx}" cy="${cy}" r="3.4" fill="${ACCENT}"/><circle cx="${cx}" cy="${cy}" r="7" fill="none" stroke="${ACCENT}" stroke-width="1" opacity=".5"/>`;
 
+  const note = (x, y, text, anchor) =>
+    t(x, y, text, { size: 11, fill: INK_MUTE, ...(anchor ? { anchor } : {}) });
+
+  /* Three equal step columns across panel B. */
+  const col = (i) => W / 6 + (i * W) / 3;
+  const step = (
+    i,
+    label,
+    lines,
+  ) => `${t(col(i), stepTop - 14, label, { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
+  ${lines.map((line, k) => note(col(i), stepTop + 102 + k * 15, line, "middle")).join("\n  ")}`;
+  const stepArrow = (i) =>
+    `<path d="M${round(col(i) + 56)} ${stepTop + 40} H${round(col(i + 1) - 56)}" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>`;
+
+  const RANGE_BOX = { x: W / 2 - 200, y: 322, w: 400, h: 58 };
+  const statsTop = stepTop + 172;
+
   const body = `${flowMarker("two-transports-head")}
-  ${panelChip(24, 8, "A")}
-  ${t(58, 26, "INDEXED BYTE RANGES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(956, 25, "NOAA · HRRR, GFS", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="24" y1="42" x2="956" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${panelChip(0, 0, "A")}
+  ${t(34, 18, "INDEXED BYTE RANGES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(W, 17, "NOAA · HRRR, GFS", { font: MONO, size: 12, fill: INK_MUTE, anchor: "end" })}
+  <line x1="0" y1="34" x2="${W}" y2="34" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
-  <rect x="40" y="58" width="280" height="122" fill="${STRIP_BG}" stroke="${RULE}"/>
-  ${t(54, 78, ".idx SIDECAR · PLAIN TEXT, FREE", { font: MONO, size: 11, weight: 700, ls: 0.55 })}
+  <rect x="0" y="50" width="300" height="130" fill="${STRIP_BG}" stroke="${RULE}"/>
+  ${t(14, 72, ".idx SIDECAR · PLAIN TEXT, FREE", { font: MONO, size: 12, weight: 700, ls: 0.55 })}
   ${hits
     .map(
-      (hit, index) => `${numChip(62, 96 + index * 20, hit.n)}
-  ${t(76, 100 + index * 20, hit.label, { font: MONO, size: 10, fill: INK_SOFT })}
-  ${t(176, 100 + index * 20, `byte ${bytes(hit.offset)}`, { font: MONO, size: 10, fill: INK_MUTE })}`,
+      (hit, index) => `${numChip(24, 94 + index * 22, hit.n)}
+  ${t(40, 98 + index * 22, hit.label, { font: MONO, size: 12, fill: INK_SOFT })}
+  ${t(140, 98 + index * 22, `byte ${bytes(hit.offset)}`, { font: MONO, size: 12, fill: INK_MUTE })}`,
     )
     .join("\n  ")}
+  ${note(320, 108, "the index alone places records")}
+  ${note(320, 124, `beyond byte ${bytes(maxOffset)}, over ${fileFloorMb} MB`)}
 
-  ${t(340, 82, `hrrr.t12z.wrfprsf24.grib2 · run ${runLabel} · one record per field and level`, { font: MONO, size: 11, weight: 600, fill: INK_SOFT })}
-  <rect x="${BAR_LEFT}" y="100" width="${BAR_RIGHT - BAR_LEFT}" height="36" fill="${SURFACE_SUNKEN}" stroke="${RULE}" stroke-width=".7"/>
+  ${t(0, 210, `hrrr.t12z.wrfprsf24.grib2 · run ${runLabel} · one record per field and level`, { font: MONO, size: 12, weight: 600, fill: INK_SOFT })}
+  <rect x="${BAR_LEFT}" y="236" width="${BAR_RIGHT - BAR_LEFT}" height="36" fill="${SURFACE_SUNKEN}" stroke="${RULE}" stroke-width=".7"/>
   ${hits
     .map(
-      (hit) => `${numChip(hit.x, 90, hit.n)}
-  <rect x="${round(hit.x - 4.5)}" y="100" width="9" height="36" fill="${ACCENT}" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
+      (hit) => `${numChip(hit.x, 225, hit.n)}
+  <rect x="${round(hit.x - 4.5)}" y="236" width="9" height="36" fill="${ACCENT}" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
     )
     .join("\n  ")}
-  ${t(340, 156, "unshaded bytes never leave NOAA's bucket", { font: MONO, size: 10.5, fill: INK_MUTE })}
-  ${t(40, 204, "the index alone places records", { font: MONO, size: 10.5, fill: INK_MUTE })}
-  ${t(40, 218, `beyond byte ${bytes(maxOffset)}, over ${fileFloorMb} MB`, { font: MONO, size: 10.5, fill: INK_MUTE })}
+  ${note(0, 292, "unshaded bytes never leave NOAA's bucket")}
 
   ${hits
-    .map(
-      (hit) =>
-        `<path d="M${round(hit.x)} 136 C${round(hit.x)} 154 ${round((hit.x + 640) / 2)} 158 ${round(640 + (hit.x - 640) / 6)} 168" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>`,
-    )
+    .map((hit) => {
+      const cx = W / 2;
+      const endX = cx + 60 + (hit.x - cx) / 6;
+      return `<path d="M${round(hit.x)} 272 C${round(hit.x)} 294 ${round((hit.x + endX) / 2)} 300 ${round(endX)} ${RANGE_BOX.y - 4}" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>`;
+    })
     .join("\n  ")}
 
-  <rect x="470" y="172" width="340" height="52" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
-  ${t(640, 193, "ONE RANGE REQUEST PER NEEDED RECORD", { font: DISPLAY, size: 15, weight: 800, ls: 0.45, anchor: "middle" })}
-  ${t(640, 211, "megabytes cross the network; the file stays on the shelf", { size: 10.5, fill: INK_SOFT, anchor: "middle" })}
+  <rect x="${RANGE_BOX.x}" y="${RANGE_BOX.y}" width="${RANGE_BOX.w}" height="${RANGE_BOX.h}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${t(W / 2, RANGE_BOX.y + 23, "ONE RANGE REQUEST PER NEEDED RECORD", { font: DISPLAY, size: 15, weight: 800, ls: 0.45, anchor: "middle" })}
+  ${t(W / 2, RANGE_BOX.y + 43, "megabytes cross the network; the file stays on the shelf", { size: 12, fill: INK_SOFT, anchor: "middle" })}
 
-  ${panelChip(24, 252, "B")}
-  ${t(58, 270, "WHOLE-DOMAIN STREAM", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(956, 269, "ECCC · HRDPS, RDPS, GDPS, REPS, GEPS; Datamart has no index", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="24" y1="286" x2="956" y2="286" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${panelChip(0, B, "B")}
+  ${t(34, B + 18, "WHOLE-DOMAIN STREAM", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(W, B + 17, "ECCC · HRDPS, RDPS, GDPS, REPS, GEPS; Datamart has no index", { font: MONO, size: 12, fill: INK_MUTE, anchor: "end" })}
+  <line x1="0" y1="${B + 34}" x2="${W}" y2="${B + 34}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
 
-  ${t(150, 312, "1 · FETCH", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
-  ${gribBox(108)}
-  <line x1="116" y1="340" x2="184" y2="340" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  <line x1="116" y1="354" x2="184" y2="354" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  <line x1="116" y1="368" x2="184" y2="368" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  <line x1="116" y1="382" x2="184" y2="382" stroke="${RULE}" stroke-width=".8" opacity=".8"/>
-  ${t(150, 424, "the whole domain,", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-  ${t(150, 438, "one message per file", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
+  ${step(0, "1 · FETCH", ["the whole domain,", "one message per file"])}
+  ${gribBox(round(col(0) - 42))}
+  ${[16, 30, 44, 58]
+    .map(
+      (dy) =>
+        `<line x1="${round(col(0) - 34)}" y1="${stepTop + dy}" x2="${round(col(0) + 34)}" y2="${stepTop + dy}" stroke="${RULE}" stroke-width=".8" opacity=".8"/>`,
+    )
+    .join("\n  ")}
+  ${stepArrow(0)}
 
-  <path d="M200 364 H396" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>
+  ${step(1, "2 · SAMPLE IN MEMORY", ["read once; keep only the", "catalogued launch cells"])}
+  ${gribBox(round(col(1) - 42))}
+  ${site(round(col(1) - 20), stepTop + 22)}
+  ${site(round(col(1) + 12), stepTop + 34)}
+  ${site(round(col(1) - 10), stepTop + 56)}
+  ${site(round(col(1) + 24), stepTop + 64)}
+  ${stepArrow(1)}
 
-  ${t(450, 312, "2 · SAMPLE IN MEMORY", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
-  ${gribBox(408)}
-  ${site(430, 346)}
-  ${site(462, 358)}
-  ${site(440, 380)}
-  ${site(474, 388)}
-  ${t(450, 424, "read once; keep only the", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-  ${t(450, 438, "catalogued launch cells", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
+  ${step(2, "3 · DROP", ["released before the", "next fetch begins"])}
+  ${gribBox(round(col(2) - 42), true)}
 
-  <path d="M500 364 H696" stroke="${INK_SOFT}" stroke-width="1.5" fill="none" marker-end="url(#two-transports-head)"/>
+  ${t(W / 2, stepTop + 148, "repeat, file after file, through the run; memory never holds more than a handful of files", { font: MONO, size: 12, weight: 600, fill: INK_SOFT, anchor: "middle" })}
 
-  ${t(750, 312, "3 · DROP", { font: DISPLAY, size: 14, weight: 800, ls: 0.56, anchor: "middle" })}
-  ${gribBox(708, true)}
-  ${t(750, 424, "released before the", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-  ${t(750, 438, "next fetch begins", { size: 10.5, fill: INK_MUTE, anchor: "middle" })}
-
-  ${t(490, 464, "repeat, file after file, through the run; memory never holds more than a handful of files", { font: MONO, size: 11.5, weight: 600, fill: INK_SOFT, anchor: "middle" })}
-
-  <line x1="490" y1="478" x2="490" y2="522" stroke="${RULE}" stroke-width="1"/>
-  ${t(60, 506, "4–8 GiB", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
-  ${t(200, 496, "moved per deterministic run;", { size: 11, fill: INK_MUTE })}
-  ${t(200, 511, "~9 GiB REPS · ~14 GiB GEPS", { size: 11, fill: INK_MUTE })}
-  ${t(530, 506, "kilobytes kept", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
-  ${t(756, 496, "per site and run: the profile JSON", { size: 11, fill: INK_MUTE })}
-  ${t(756, 511, "is what actually gets published", { size: 11, fill: INK_MUTE })}`;
+  <line x1="0" y1="${statsTop - 8}" x2="${W}" y2="${statsTop - 8}" stroke="${RULE}" stroke-width="1"/>
+  ${t(0, statsTop + 28, "4–8 GiB", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
+  ${note(190, statsTop + 18, "moved per deterministic run;")}
+  ${note(190, statsTop + 33, "~9 GiB REPS · ~14 GiB GEPS")}
+  ${t(0, statsTop + 76, "kilobytes kept", { font: DISPLAY, size: 28, weight: 800, ls: 0.28 })}
+  ${note(190, statsTop + 66, "per site and run: the profile JSON")}
+  ${note(190, statsTop + 81, "is what actually gets published")}`;
 
   return frame({
     id: "two-transports",
@@ -291,8 +312,8 @@ async function composeTwoTransports(ctx) {
     caption:
       "Record numbers and offsets come from the committed HRRR index fixture (grib/test/fixtures-idx/hrrr.t12z.wrfprsf24.excerpt.idx); run-volume context comes from the project measurements recorded with the pipeline research.",
     units: "byte offsets and transferred GiB where labelled",
-    bodyWidth: 980,
-    bodyHeight: 530,
+    bodyWidth: W,
+    bodyHeight: statsTop + 88,
     body,
   });
 }
@@ -452,9 +473,9 @@ async function composeRotatedGrid(ctx) {
   ${haloT(pole.x + 11, pole.y - 1, "rotated south pole", { font: MONO, size: 10, weight: 700, fill: INK })}
   ${haloT(pole.x + 11, pole.y + 12, `${deg(grid.southPoleLatitude)}, ${deg(poleLon)}`, { font: MONO, size: 9.5, fill: INK_MUTE })}
   <path d="M40 428 h26" stroke="${RULE_STRONG}" stroke-width="1.4"/>
-  ${t(76, 432, "true graticule · solid", { font: MONO, size: 10, fill: INK_SOFT })}
+  ${t(76, 432, "true graticule · solid", { font: MONO, size: 11, fill: INK_SOFT })}
   <path d="M40 446 h26" stroke="${INK_SOFT}" stroke-width="1.2" stroke-dasharray="4 3"/>
-  ${t(76, 450, "rotated graticule · dashed · heavy dash: rotated equator", { font: MONO, size: 10, fill: INK_SOFT })}`;
+  ${t(76, 451, "rotated graticule · dashed · heavy dash: rotated equator", { font: MONO, size: 11, fill: INK_SOFT })}`;
 
   /* ── Panel B: the inverse at the launch, gridlines mapped through fromRotated ── */
   const bx = 470;
@@ -660,21 +681,31 @@ async function composeRotatedGrid(ctx) {
         `the distance is the caller's out-of-domain guard`,
     },
   ];
-  const ledger = ledgerRows(rows, 980, 512);
+  /* Panels stack for the docs column: A keeps its own coordinates, B is
+     shifted from its authored x = 470 to the left edge beneath A. */
+  const bodyWidth = 510;
+  const aOffsetX = round((bodyWidth - 430) / 2);
+  const panelBTop = 478;
+  const ledgerTop = panelBTop + 506;
+  const ledger = ledgerRows(rows, bodyWidth, ledgerTop);
 
   return frame({
     id: "rotated-grid",
     title: "Why template 3.1 needs an analytic inverse",
     lesson:
       "A rotated grid's rows follow a tilted frame, not the true graticule: toRotated maps a geographic point straight to fractional grid coordinates, and the reported distance is the residual.",
-    description: `Two panels. Left, a schematic globe: the true graticule in solid strokes, the rotated graticule in dashed strokes, the rotated south pole marked at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)}, and the HRDPS continental domain lying along the rotated equator. Right, the neighbourhood of the launch at ${deg(launch.latitude)}, ${deg(launch.longitude)}: dashed rotated gridlines at ${di.toFixed(4)}° spacing tilted against the solid true graticule, the launch mapped by toRotated to rotated (${deg(rot.latitude)}, ${deg(rot.longitude)}), fractional cell (${iFrac.toFixed(2)}, ${jFrac.toFixed(2)}), nearest gridpoint (i ${iIndex}, j ${jIndex}) = storage index ${nearest.index}, with the ${nearest.distanceKm.toFixed(3)} km residual drawn in a magnified inset.`,
+    description: `Two stacked panels. Above, a schematic globe: the true graticule in solid strokes, the rotated graticule in dashed strokes, the rotated south pole marked at ${deg(grid.southPoleLatitude)}, ${deg(poleLon)}, and the HRDPS continental domain lying along the rotated equator. Below, the neighbourhood of the launch at ${deg(launch.latitude)}, ${deg(launch.longitude)}: dashed rotated gridlines at ${di.toFixed(4)}° spacing tilted against the solid true graticule, the launch mapped by toRotated to rotated (${deg(rot.latitude)}, ${deg(rot.longitude)}), fractional cell (${iFrac.toFixed(2)}, ${jFrac.toFixed(2)}), nearest gridpoint (i ${iIndex}, j ${jIndex}) = storage index ${nearest.index}, with the ${nearest.distanceKm.toFixed(3)} km residual drawn in a magnified inset.`,
     caption:
       "Every number is computed at figure-generation time from the committed HRDPS continental fixture through the built package: parseGrid for the pole and spacing, toRotated for the inverse, nearestGridpoint for the index and distance. The globe is schematic; the pole, domain, gridlines, index, and residual are the fixture's real values.",
     units: "coordinates degrees · grid spacing degrees (rotated frame) · residual km and m",
-    bodyWidth: 980,
-    bodyHeight: 512 + ledger.height,
-    body: `${panelA}
+    bodyWidth,
+    bodyHeight: ledgerTop + ledger.height,
+    body: `<g transform="translate(${aOffsetX} 0)">
+  ${panelA}
+  </g>
+  <g transform="translate(-470 ${panelBTop})">
   ${panelB}
+  </g>
   ${ledger.markup}`,
   });
 }
@@ -737,10 +768,10 @@ async function composeContractAnatomy(ctx) {
     },
   ];
 
-  const metaWidth = 300;
+  const metaWidth = 260;
   const codeX = metaWidth + 18;
-  const codeWidth = 620;
-  const roleSpec = { family: "ibm-plex-sans", weight: 400, size: 11 };
+  const codeWidth = 442;
+  const roleSpec = { family: "ibm-plex-sans", weight: 400, size: 12 };
 
   const parts = [];
   let y = 0;
@@ -753,15 +784,15 @@ async function composeContractAnatomy(ctx) {
     }
     const roleLines = wrapText(segment.role, metaWidth - 8, roleSpec);
     parts.push(
-      t(0, y + 14, segment.path, { font: MONO, size: 11.5, weight: 700, fill: ACCENT_STRONG }),
+      t(0, y + 14, segment.path, { font: MONO, size: 12.5, weight: 700, fill: ACCENT_STRONG }),
     );
-    parts.push(wrapped(0, y + 32, roleLines, { size: 11, fill: INK_SOFT }, 15));
-    const metaHeight = 32 + roleLines.length * 15;
+    parts.push(wrapped(0, y + 33, roleLines, { size: 12, fill: INK_SOFT }, 17));
+    const metaHeight = 33 + roleLines.length * 17;
 
     const jsonLines = segment.json.split("\n");
-    const monoProbe = { family: "ibm-plex-mono", weight: 400, size: 10 };
+    const monoProbe = { family: "ibm-plex-mono", weight: 400, size: 12 };
     const maxLine = Math.max(...jsonLines.map((line) => measureText(line, monoProbe)));
-    const size = Math.min(10, round((10 * (codeWidth - 28)) / Math.max(maxLine, 1)));
+    const size = Math.min(12, round((12 * (codeWidth - 28)) / Math.max(maxLine, 1)));
     const lineHeight = round(size * 1.45);
     const codeHeight = 24 + jsonLines.length * lineHeight;
     parts.push(
@@ -815,6 +846,7 @@ async function composeDeriveSinkRate(ctx) {
   const rendered = await ctx.renderScene("convective-cycle", {
     idPrefix: "docs-derive-sink",
     overlays,
+    widthPx: COLUMN_CHART_WIDTH,
   });
   const { scene, profile } = rendered;
 
@@ -863,7 +895,7 @@ async function composeDeriveSinkRate(ctx) {
   const maxParityDelta = Math.max(...points.map((point) => point.reproducedDeltaM ?? 0));
   const usableColour = TOKEN_DEFAULTS.usable ?? "#2179ad";
 
-  const legendSpec = { family: "ibm-plex-mono", weight: 400, size: 11 };
+  const legendSpec = { family: "ibm-plex-mono", weight: 400, size: 12 };
   const legendText =
     `published series (1.0 m/s, pipeline authority) · projected at ${SINK_RATE_MS} m/s sink: ` +
     `a heavier wing climbs to ${localeRound(peak.altitudeM)} m instead of ` +
@@ -882,7 +914,7 @@ async function composeDeriveSinkRate(ctx) {
   <text x="${round(peak.x)}" y="${round(peak.y - 10)}" text-anchor="middle" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="11" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${esc(`usableLiftTopM(inputs, ${SINK_RATE_MS}) -> ${localeRound(peak.altitudeM)} m`)}</text>
   <path d="M0 ${round(legendTop - 4)} h26" stroke="${usableColour}" stroke-width="3"/>
   <path d="M40 ${round(legendTop - 4)} h26" stroke="${ACCENT_STRONG}" stroke-width="3" stroke-dasharray="6 4"/>
-  ${wrapped(78, legendTop, legendLines, { font: MONO, size: 11, fill: INK }, 16)}`;
+  ${wrapped(78, legendTop, legendLines, { font: MONO, size: 12, fill: INK }, 17)}`;
 
   return frame({
     id: "derive-sink-rate",
@@ -893,7 +925,7 @@ async function composeDeriveSinkRate(ctx) {
     caption: `The dashed series is computed at figure-generation time from the document's own published inputs (model elevation, boundary-layer top, W*, cloud base, level heights). Recomputed at the default 1.0 m/s, the same function reproduces the stored series within ${maxParityDelta.toFixed(1)} m of the contract-rounded published values.`,
     units: "heights m MSL · sink rate m/s · time UTC",
     bodyWidth: scene.width,
-    bodyHeight: legendTop + (legendLines.length - 1) * 16 + 6,
+    bodyHeight: legendTop + (legendLines.length - 1) * 17 + 6,
     body,
   });
 }
@@ -901,7 +933,10 @@ async function composeDeriveSinkRate(ctx) {
 async function composeAnalyzeFindings(ctx) {
   const { analyzeForecast } = await ctx.importPackage("briefing/analyze");
   const { xForHour, yForAltitude } = await ctx.importPackage("briefing/meteogram");
-  const rendered = await ctx.renderScene("convective-cycle", { idPrefix: "docs-analyze-findings" });
+  const rendered = await ctx.renderScene("convective-cycle", {
+    idPrefix: "docs-analyze-findings",
+    widthPx: COLUMN_CHART_WIDTH,
+  });
   const { scene, profile } = rendered;
   const meta = ctx.scenarioMeta("convective-cycle");
   const analysis = analyzeForecast(profile, { launch: meta.launch });
@@ -1026,7 +1061,7 @@ async function composeCompareAgreement(ctx) {
     "launch",
     "selectedHour",
   );
-  const options = { overlays, columnWidthPx: 56, plotHeightPx: 280 };
+  const options = { overlays, columnWidthPx: 80, plotHeightPx: 260 };
   const panels = [];
   for (const [variant, slug] of [
     ["earlier", "timing-earlier"],
@@ -1055,14 +1090,14 @@ async function composeCompareAgreement(ctx) {
 
   const panelMarkup = panels
     .map((panel, index) => {
-      const x = index * (panelWidth + gap);
+      const y = index * (panelHeight + gap);
       const slugSpec = { family: "ibm-plex-mono", weight: 700, size: 11.5 };
       const vote = panel.vote
         ? `window ${localTime(panel.vote.start.local)}–${localTime(panel.vote.end.local)} · peak at ${localTime(panel.vote.peakLiftTopAt.local)}` +
           (panel.vote.clippedAtStart ? " · start clipped" : "") +
           (panel.vote.clippedAtEnd ? " · end clipped" : "")
         : "";
-      return `<g transform="translate(${round(x)} 0)">
+      return `<g transform="translate(0 ${round(y)})">
     <rect x="0" y="0" width="${round(panelWidth)}" height="${round(panelHeight)}" fill="${SURFACE}" stroke="${RULE}"/>
     ${t(10, 19, panel.slug, { font: MONO, size: 11.5, weight: 700, fill: ACCENT_STRONG })}
     ${t(18 + measureText(panel.slug, slugSpec), 19, panel.label, { font: MONO, size: 11.5, fill: INK_SOFT })}
@@ -1074,7 +1109,8 @@ async function composeCompareAgreement(ctx) {
     })
     .join("\n  ");
 
-  const bodyWidth = panelWidth * 2 + gap;
+  const bodyWidth = panelWidth;
+  const panelsHeight = panelHeight * 2 + gap;
   const rows = [
     {
       term: "windowAgreement",
@@ -1095,25 +1131,28 @@ async function composeCompareAgreement(ctx) {
         ]
       : []),
   ];
-  const ledger = ledgerRows(rows, bodyWidth, panelHeight + 18);
+  const ledger = ledgerRows(rows, bodyWidth, panelsHeight + 18);
 
   return frame({
     id: "compare-agreement",
     title: "Two models, one verdict, evidence attached",
     lesson: meta.lesson,
-    description: `Two controlled profiles with the same daytime development at different hours, rendered side by side, with the windowAgreement finding compareForecasts computed from them: ${agreement.voters} voters, unanimous ${String(agreement.unanimous)}.`,
+    description: `Two controlled profiles with the same daytime development at different hours, rendered one above the other, with the windowAgreement finding compareForecasts computed from them: ${agreement.voters} voters, unanimous ${String(agreement.unanimous)}.`,
     caption:
       "Charts and verdict are computed at figure-generation time from the committed comparison pair (re-slugged so each document keeps its own analysis). An edge clipped by a document's horizon reads as \"open since at least\" and stays out of the timing spread, which is why this pair's start spread is reported as null rather than a number no model stated.",
     units: "time UTC · heights m MSL · W* m/s",
     bodyWidth,
-    bodyHeight: panelHeight + 18 + ledger.height,
+    bodyHeight: panelsHeight + 18 + ledger.height,
     body: `${panelMarkup}\n  ${ledger.markup}`,
   });
 }
 
 async function composeFirstMeteogram(ctx) {
   const { buildKeySpec, renderKeySvg } = await ctx.importPackage("briefing/meteogram");
-  const rendered = await ctx.renderScene("convective-cycle", { idPrefix: "docs-first-meteogram" });
+  const rendered = await ctx.renderScene("convective-cycle", {
+    idPrefix: "docs-first-meteogram",
+    widthPx: COLUMN_CHART_WIDTH,
+  });
   const { scene } = rendered;
   const meta = ctx.scenarioMeta("convective-cycle");
 
@@ -1131,7 +1170,7 @@ async function composeFirstMeteogram(ctx) {
     title: "The chart and key this page's code produces",
     lesson: meta.lesson,
     description:
-      "A complete teaching Meteogram and the key derived from its final scene, exactly as the page's twelve-line example serializes them.",
+      "A complete teaching Meteogram and the key derived from its final scene, built with the same calls as the page's example and drawn at the docs column's width.",
     caption:
       "Rendered by the released package: validate, build a scene, serialize the chart, then derive the key from that final scene. Swap the committed teaching profile for your published one and the code below is the whole program.",
     units:
@@ -1144,7 +1183,10 @@ async function composeFirstMeteogram(ctx) {
 
 async function composeSceneAnatomy(ctx) {
   const { xForHour } = await ctx.importPackage("briefing/meteogram");
-  const rendered = await ctx.renderScene("convective-cycle", { idPrefix: "docs-scene-anatomy" });
+  const rendered = await ctx.renderScene("convective-cycle", {
+    idPrefix: "docs-scene-anatomy",
+    widthPx: COLUMN_CHART_WIDTH,
+  });
   const { scene } = rendered;
 
   const s = scene.scales;
@@ -1254,8 +1296,12 @@ async function composeSceneAnatomy(ctx) {
 async function composeInspectorSelection(ctx) {
   const { drawnBarbsForHour, xForHour } = await ctx.importPackage("briefing/meteogram");
 
-  const probe = (await ctx.renderScene("convective-cycle", { idPrefix: "docs-inspector-probe" }))
-    .scene;
+  const probe = (
+    await ctx.renderScene("convective-cycle", {
+      idPrefix: "docs-inspector-probe",
+      widthPx: COLUMN_CHART_WIDTH,
+    })
+  ).scene;
   const hourIndex = Math.max(0, probe.selectedHourIndex - 2);
   const ladder = drawnBarbsForHour(probe, hourIndex);
   const target = ladder[Math.min(ladder.length - 1, 2)] ?? ladder[0];
@@ -1263,6 +1309,7 @@ async function composeInspectorSelection(ctx) {
   const rendered = await ctx.renderScene("convective-cycle", {
     idPrefix: "docs-inspector-selection",
     selection: { hourIndex, altitudeM: target?.altitudeM },
+    widthPx: COLUMN_CHART_WIDTH,
   });
   const { scene } = rendered;
   const selection = scene.selection;
@@ -1345,8 +1392,8 @@ function clubify(svg) {
 
 /* This plate DEMONSTRATES the token override, so its two chart panels must
    not themselves follow the page the plate sits on: each panel's tokens are
-   resolved to literals — package defaults on the left, the club palette on
-   the right — and only the frame around them stays page-chrome. */
+   resolved to literals — package defaults above, the club palette
+   below — and only the frame around them stays page-chrome. */
 function pinTokens(svg, prefix = "meteo-gram") {
   const reference = new RegExp(`var\\(--${prefix}-[\\w-]+,\\s*([^)]+)\\)`, "g");
   /* Fallbacks can themselves be var() references (the per-element halo
@@ -1390,7 +1437,7 @@ async function composeTokenContrast(ctx) {
   const panelWidth = left.scene.width + 2;
   const panelHeight = headerHeight + left.scene.height + 2;
 
-  const panel = (x, title, chartMarkup) => `<g transform="translate(${round(x)} 0)">
+  const panel = (y, title, chartMarkup) => `<g transform="translate(0 ${round(y)})">
     <rect x="0" y="0" width="${round(panelWidth)}" height="${round(panelHeight)}" fill="${SURFACE}" stroke="${RULE}"/>
     ${t(10, 17, title, { font: MONO, size: 11, weight: 600, fill: INK_SOFT })}
     <path d="M0 ${headerHeight} h${round(panelWidth)}" stroke="${RULE}"/>
@@ -1407,7 +1454,7 @@ async function composeTokenContrast(ctx) {
   ).markup;
 
   const body = `${panel(0, "package defaults", leftChart)}
-  ${panel(panelWidth + gap, "ancestor overrides --meteo-gram-*", rightChart)}`;
+  ${panel(panelHeight + gap, "ancestor overrides --meteo-gram-*", rightChart)}`;
 
   return frame({
     id: "token-contrast",
@@ -1415,12 +1462,12 @@ async function composeTokenContrast(ctx) {
     lesson:
       "Palette is not scene data: a downstream look is CSS custom properties on an ancestor, never a forked serializer.",
     description:
-      "The same teaching Meteogram rendered twice from one scene. The left panel uses the package's default tokens; the right panel resolves the same markup with surface, ink, temperature, and halo tokens overridden to a dark club palette. The scene geometry of both panels is identical.",
+      "The same teaching Meteogram rendered twice from one scene. The upper panel uses the package's default tokens; the lower panel resolves the same markup with surface, ink, temperature, and halo tokens overridden to a dark club palette. The scene geometry of both panels is identical.",
     caption:
-      "Both panels serialize the same DEFAULT_STYLESHEET; the right panel only swaps the resolved values of --meteo-gram-surface, --meteo-gram-strip-bg, --meteo-gram-ink, --meteo-gram-ink-soft, --meteo-gram-ink-mute, --meteo-gram-rule, --meteo-gram-temp, --meteo-gram-halo, and --meteo-gram-halo-barb: the ancestor-override path the page documents. In this committed plate each panel is pinned to its resolved values, so the demonstration itself never restyles with the page around it.",
+      "Both panels serialize the same DEFAULT_STYLESHEET; the lower panel only swaps the resolved values of --meteo-gram-surface, --meteo-gram-strip-bg, --meteo-gram-ink, --meteo-gram-ink-soft, --meteo-gram-ink-mute, --meteo-gram-rule, --meteo-gram-temp, --meteo-gram-halo, and --meteo-gram-halo-barb: the ancestor-override path the page documents. In this committed plate each panel is pinned to its resolved values, so the demonstration itself never restyles with the page around it.",
     units: "altitude m and ft · time UTC",
-    bodyWidth: panelWidth * 2 + gap,
-    bodyHeight: panelHeight,
+    bodyWidth: panelWidth,
+    bodyHeight: panelHeight * 2 + gap,
     body,
   });
 }
@@ -1439,10 +1486,10 @@ async function composeTokenReference(ctx) {
     .filter(([, enabled]) => !enabled)
     .map(([name]) => name);
 
-  const width = 940;
-  const columns = 3;
+  const width = 720;
+  const columns = 2;
   const colWidth = (width - (columns - 1) * 18) / columns;
-  const monoName = { family: "ibm-plex-mono", weight: 400, size: 10 };
+  const monoName = { family: "ibm-plex-mono", weight: 400, size: 12 };
 
   const truncate = (value, maxWidth) => {
     if (measureText(value, monoName) <= maxWidth) return value;
@@ -1456,16 +1503,16 @@ async function composeTokenReference(ctx) {
     const parts = [];
     if (isColor(value)) {
       parts.push(
-        `<rect x="${round(x)}" y="${round(y)}" width="14" height="14" fill="${value === "transparent" ? SURFACE : value}" stroke="${RULE}"/>`,
+        `<rect x="${round(x)}" y="${round(y)}" width="16" height="16" fill="${value === "transparent" ? SURFACE : value}" stroke="${RULE}"/>`,
       );
     } else {
       parts.push(
-        `<rect x="${round(x)}" y="${round(y)}" width="14" height="14" fill="${SURFACE}" stroke="${RULE}"/>`,
+        `<rect x="${round(x)}" y="${round(y)}" width="16" height="16" fill="${SURFACE}" stroke="${RULE}"/>`,
       );
       parts.push(
-        t(x + 7, y + 10.5, "Aa", {
+        t(x + 8, y + 11.5, "Aa", {
           font: MONO,
-          size: 6.5,
+          size: 7.5,
           weight: 700,
           fill: INK_MUTE,
           anchor: "middle",
@@ -1473,12 +1520,12 @@ async function composeTokenReference(ctx) {
       );
     }
     const nameWidth = measureText(name, monoName);
-    parts.push(t(x + 22, y + 11, name, { font: MONO, size: 10, fill: INK }));
-    const valueMax = colWidth - 22 - nameWidth - 18;
+    parts.push(t(x + 24, y + 12.5, name, { font: MONO, size: 12, fill: INK }));
+    const valueMax = colWidth - 24 - nameWidth - 18;
     parts.push(
-      t(x + colWidth - 6, y + 11, truncate(value, Math.max(valueMax, 60)), {
+      t(x + colWidth - 6, y + 12.5, truncate(value, Math.max(valueMax, 60)), {
         font: MONO,
-        size: 10,
+        size: 12,
         fill: INK_MUTE,
         anchor: "end",
       }),
@@ -1492,14 +1539,14 @@ async function composeTokenReference(ctx) {
     entries.forEach(([name, value], index) => {
       const column = Math.floor(index / rows);
       const row = index % rows;
-      parts.push(swatchEntry(column * (colWidth + 18), top + row * 22, name, value));
+      parts.push(swatchEntry(column * (colWidth + 18), top + row * 25, name, value));
     });
-    return { markup: parts.join("\n  "), height: rows * 22 };
+    return { markup: parts.join("\n  "), height: rows * 25 };
   };
 
-  const heading = (y, text) => t(0, y, text, { size: 13, weight: 700 });
+  const heading = (y, text) => t(0, y, text, { size: 14, weight: 700 });
   const parts = [];
-  let y = 12;
+  let y = 14;
 
   parts.push(heading(y, `Stability ramp: STABILITY_TOKEN_DEFAULTS`));
   y += 12;
@@ -1509,14 +1556,14 @@ async function composeTokenReference(ctx) {
 
   parts.push(heading(y, "Scene defaults: DEFAULT_CAPE_CLASSES · DEFAULT_OVERLAYS"));
   y += 18;
-  const lineSpec = { family: "ibm-plex-mono", weight: 400, size: 10.5 };
+  const lineSpec = { family: "ibm-plex-mono", weight: 400, size: 12 };
   const sceneLines = [
     `CAPE strip classes: watch from ${DEFAULT_CAPE_CLASSES.watchJkg}, risk from ${DEFAULT_CAPE_CLASSES.riskJkg}, severe from ${DEFAULT_CAPE_CLASSES.severeJkg} J/kg; a cell dims when CIN is at or below ${DEFAULT_CAPE_CLASSES.cappedCinJkg} J/kg.`,
     `Overlays defaulting on (${overlaysOn.length}): ${overlaysOn.join(", ")}.`,
     `Defaulting off (${overlaysOff.length}): ${overlaysOff.join(", ")}.`,
   ].flatMap((line) => wrapText(line, width, lineSpec));
-  parts.push(wrapped(0, y, sceneLines, { font: MONO, size: 10.5, fill: INK_SOFT }, 15));
-  y += sceneLines.length * 15 + 16;
+  parts.push(wrapped(0, y, sceneLines, { font: MONO, size: 12, fill: INK_SOFT }, 17));
+  y += sceneLines.length * 17 + 16;
 
   parts.push(heading(y, `Renderer tokens: TOKEN_DEFAULTS (${tokens.length})`));
   y += 12;
@@ -1601,13 +1648,16 @@ async function composeRegionDecode(ctx) {
   }
   const points = indices.map((index) => ({ x: index % width, y: Math.floor(index / width) }));
 
+  /* Panels stack for the docs column: A above B above C, each W wide. */
+  const W = 620;
+
   /* ── Panel A: the request, in image space ── */
-  const aX = 24;
+  const aX = 0;
   const aTop = 56;
-  const k2 = 340 / width;
+  const k2 = W / width;
   const aH = round(height * k2);
   const imagePanel = [
-    `<rect x="${aX}" y="${aTop}" width="340" height="${aH}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+    `<rect x="${aX}" y="${aTop}" width="${W}" height="${aH}" fill="${SURFACE}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
   ];
   points.forEach((point, index) => {
     const x = aX + point.x * k2;
@@ -1619,27 +1669,27 @@ async function composeRegionDecode(ctx) {
     imagePanel.push(
       t(x + 7, labelY, String(index + 1), {
         font: MONO,
-        size: 10,
+        size: 12,
         weight: 700,
         fill: ACCENT_STRONG,
       }),
     );
   });
   imagePanel.push(
-    t(aX, aTop + aH + 18, `${width} × ${height} = ${samples.toLocaleString("en-CA")} samples`, {
+    t(aX, aTop + aH + 20, `${width} × ${height} = ${samples.toLocaleString("en-CA")} samples`, {
       font: MONO,
-      size: 10,
+      size: 12,
       fill: INK_SOFT,
     }),
   );
   imagePanel.push(
-    t(aX, aTop + aH + 33, points.map((p, i) => `${i + 1} (${p.x}, ${p.y})`).join(" · "), {
+    t(aX, aTop + aH + 38, points.map((p, i) => `${i + 1} (${p.x}, ${p.y})`).join(" · "), {
       font: MONO,
-      size: 9.5,
+      size: 12,
       fill: INK_MUTE,
     }),
   );
-  const statTop = aTop + aH + 66;
+  const statTop = aTop + aH + 76;
   imagePanel.push(
     t(aX, statTop, `${four.decoded} of ${total}`, {
       font: DISPLAY,
@@ -1655,7 +1705,7 @@ async function composeRegionDecode(ctx) {
       `codeblocks entropy-decoded · ${((four.decoded / total) * 100).toFixed(1)} %`,
       {
         font: MONO,
-        size: 11,
+        size: 12,
         fill: INK_SOFT,
       },
     ),
@@ -1663,15 +1713,16 @@ async function composeRegionDecode(ctx) {
   imagePanel.push(
     t(aX, statTop + 40, "values bit-identical to the full decode", {
       font: MONO,
-      size: 10.5,
+      size: 12,
       fill: INK_MUTE,
     }),
   );
 
   /* ── Panel B: every codeblock in the tile buffer, touched ones hatched ── */
-  const mX = 386;
-  const mTop = 56;
-  const k = 590 / width;
+  const mX = 0;
+  const bTop = statTop + 76;
+  const mTop = bTop + 56;
+  const k = W / width;
   const mW = round(width * k);
   const mH = round(height * k);
   const map = [];
@@ -1704,7 +1755,7 @@ async function composeRegionDecode(ctx) {
   );
   const prev = plan.resolutions[levels - 1];
   const bandLabel = (x, y, label) =>
-    t(x, y, label, { font: MONO, size: 10.5, weight: 700, fill: INK_MUTE });
+    t(x, y, label, { font: MONO, size: 12, weight: 700, fill: INK_MUTE });
   map.push(bandLabel(mX + prev.width * k + 8, mTop + 16, "HL"));
   map.push(bandLabel(mX + 8, mTop + prev.height * k + 16, "LH"));
   map.push(bandLabel(mX + prev.width * k + 8, mTop + prev.height * k + 16, "HH"));
@@ -1728,11 +1779,11 @@ async function composeRegionDecode(ctx) {
   map.push(
     t(
       mX + mW,
-      mTop + mH + 18,
+      mTop + mH + 20,
       "tile buffer: the finest subbands ring the coarser levels, recursively",
       {
         font: MONO,
-        size: 10,
+        size: 12,
         fill: INK_MUTE,
         anchor: "end",
       },
@@ -1740,16 +1791,16 @@ async function composeRegionDecode(ctx) {
   );
 
   /* ── Panel C: the sublinear cost curve, computed by decodeJ2kRegion ── */
-  const cTop = 428;
-  const barX = 150;
-  const barW = 700;
+  const cTop = mTop + mH + 90;
+  const barX = 110;
+  const barW = 440;
   const bars = [];
   series.forEach((entry, index) => {
     const y = cTop + 44 + index * 26;
     bars.push(
-      t(barX - 10, y + 9, `${entry.count} ${entry.count === 1 ? "point" : "points"}`, {
+      t(barX - 10, y + 10, `${entry.count} ${entry.count === 1 ? "point" : "points"}`, {
         font: MONO,
-        size: 11,
+        size: 12,
         fill: INK,
         anchor: "end",
       }),
@@ -1758,9 +1809,9 @@ async function composeRegionDecode(ctx) {
       `<rect x="${barX}" y="${y}" width="${round((entry.decoded / total) * barW)}" height="13" fill="${ACCENT}" stroke="${ACCENT_STRONG}" stroke-width=".8"/>`,
     );
     bars.push(
-      t(barX + (entry.decoded / total) * barW + 8, y + 10.5, `${entry.decoded}`, {
+      t(barX + (entry.decoded / total) * barW + 8, y + 11, `${entry.decoded}`, {
         font: MONO,
-        size: 11,
+        size: 12,
         weight: 700,
         fill: ACCENT_STRONG,
       }),
@@ -1773,25 +1824,20 @@ async function composeRegionDecode(ctx) {
   bars.push(
     t(barX + barW, cTop + 32, `${total} = every codeblock (full decode)`, {
       font: MONO,
-      size: 10,
+      size: 12,
       fill: INK_SOFT,
       anchor: "end",
     }),
   );
   const pointsFactor = series[series.length - 1].count / series[0].count;
   const blocksFactor = series[series.length - 1].decoded / series[0].decoded;
-  bars.push(
-    t(
-      barX,
-      barsBottom + 20,
-      `points ×${pointsFactor} -> codeblocks ×${Math.round(blocksFactor)}: nearby points share windows, and every point's coarse-level ancestry converges`,
-      {
-        font: MONO,
-        size: 10.5,
-        fill: INK_SOFT,
-      },
-    ),
+  const factorLines = wrapText(
+    `points ×${pointsFactor} -> codeblocks ×${Math.round(blocksFactor)}: nearby points share windows, and every point's coarse-level ancestry converges`,
+    W,
+    { family: "ibm-plex-mono", weight: 400, size: 12 },
   );
+  bars.push(wrapped(0, barsBottom + 22, factorLines, { font: MONO, size: 12, fill: INK_SOFT }, 17));
+  const cBottom = barsBottom + 22 + (factorLines.length - 1) * 17;
 
   const rows = [
     {
@@ -1813,22 +1859,22 @@ async function composeRegionDecode(ctx) {
         "four neighbourhoods recur at every coarser level, which is why cost tracks codeblocks, not points",
     },
   ];
-  const ledger = ledgerRows(rows, 980, barsBottom + 44);
+  const ledger = ledgerRows(rows, W, cBottom + 28);
 
-  const body = `${panelChip(24, 8, "A")}
-  ${t(58, 26, "THE REQUEST", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(364, 25, "image space", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="24" y1="42" x2="364" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  const body = `${panelChip(0, 8, "A")}
+  ${t(34, 26, "THE REQUEST", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(W, 25, "image space", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="0" y1="42" x2="${W}" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
   ${imagePanel.join("\n  ")}
-  ${panelChip(386, 8, "B")}
-  ${t(420, 26, "WHAT IT TOUCHES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(976, 25, `${total} codeblocks · ${levels} decomposition levels`, { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="386" y1="42" x2="976" y2="42" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${panelChip(0, bTop + 8, "B")}
+  ${t(34, bTop + 26, "WHAT IT TOUCHES", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  ${t(W, bTop + 25, `${total} codeblocks · ${levels} decomposition levels`, { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
+  <line x1="0" y1="${bTop + 42}" x2="${W}" y2="${bTop + 42}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
   ${map.join("\n  ")}
-  ${panelChip(24, cTop - 34, "C")}
-  ${t(58, cTop - 16, "CODEBLOCKS TOUCHED AS POINTS MULTIPLY", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
-  ${t(976, cTop - 17, "same field · same seed per count", { font: MONO, size: 11, fill: INK_MUTE, anchor: "end" })}
-  <line x1="24" y1="${cTop}" x2="976" y2="${cTop}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${panelChip(0, cTop - 34, "C")}
+  ${t(34, cTop - 16, "CODEBLOCKS TOUCHED AS POINTS MULTIPLY", { font: DISPLAY, size: 18, weight: 800, ls: 0.36 })}
+  <line x1="0" y1="${cTop}" x2="${W}" y2="${cTop}" stroke="${RULE_STRONG}" stroke-width="1.2"/>
+  ${t(0, cTop + 18, "same field · same seed per count", { font: MONO, size: 11, fill: INK_MUTE })}
   ${bars.join("\n  ")}
   ${ledger.markup}`;
 
@@ -1836,12 +1882,12 @@ async function composeRegionDecode(ctx) {
     id: "region-decode",
     title: "Region-decode cost tracks codeblocks, not points",
     lesson: `decodeJ2kRegion entropy-decodes only the codeblocks the requested points touch: 4 points on the ${samples.toLocaleString("en-CA")}-sample HRDPS continental field decode ${four.decoded} of ${total}.`,
-    description: `Three panels. Left, the ${width} × ${height} HRDPS continental field with the bench's 4 scattered sample points marked. Centre, the codestream's tile buffer: all ${total} codeblocks drawn across ${levels} decomposition levels, with the ${four.decoded} codeblocks this 4-point decode actually entropy-decoded filled and hatched, clustering around each point's coefficient position in every subband. Below, the touched count as the same scatter grows: ${series.map((entry) => `${entry.count} point${entry.count === 1 ? "" : "s"} -> ${entry.decoded}`).join(", ")} of ${total} codeblocks; points ×${pointsFactor} costs only ×${Math.round(blocksFactor)} in codeblocks.`,
+    description: `Three stacked panels. First, the ${width} × ${height} HRDPS continental field with the bench's 4 scattered sample points marked. Next, the codestream's tile buffer: all ${total} codeblocks drawn across ${levels} decomposition levels, with the ${four.decoded} codeblocks this 4-point decode actually entropy-decoded filled and hatched, clustering around each point's coefficient position in every subband. Below, the touched count as the same scatter grows: ${series.map((entry) => `${entry.count} point${entry.count === 1 ? "" : "s"} -> ${entry.decoded}`).join(", ")} of ${total} codeblocks; points ×${pointsFactor} costs only ×${Math.round(blocksFactor)} in codeblocks.`,
     caption:
       "Every count is computed at figure-generation time by calling decodeJ2kRegion on the JPEG 2000 codestream embedded in the committed fixture (grib/test/fixtures/hrdps-continental-tmp-2m.grib2), with the point scatter reproducing the committed bench's seed (j2k/test/region.test.ts). The highlighted blocks are the exact set whose bytes that decode read, verified equal to its reported codeblocksDecoded.",
     units: "codeblocks count · points count · samples count · coordinates gridpoints",
-    bodyWidth: 980,
-    bodyHeight: barsBottom + 44 + ledger.height,
+    bodyWidth: W,
+    bodyHeight: cBottom + 28 + ledger.height,
     body,
   });
 }
@@ -1859,9 +1905,9 @@ async function composeAnalyzeEnvelope(ctx) {
   }
 
   /* The left card quotes the envelope analyzeForecast computed at
-     figure-generation time; the right column is compare.md's validation
+     figure-generation time; the list beneath it is compare.md's validation
      list. The chips pair each validated field with its validation. */
-  const cardW = 452;
+  const cardW = 720;
   const q = (value) => `"${value}"`;
   const groups = [
     {
@@ -1908,7 +1954,7 @@ async function composeAnalyzeEnvelope(ctx) {
   card.push(
     t(cardW - 16, 25, "computed by analyzeForecast", {
       font: MONO,
-      size: 9.5,
+      size: 11,
       fill: INK_MUTE,
       anchor: "end",
     }),
@@ -1920,7 +1966,7 @@ async function composeAnalyzeEnvelope(ctx) {
   for (const group of groups) {
     if (group.accent) {
       const boxTop = cy - 16;
-      const boxHeight = 22 + group.rows.length * 22;
+      const boxHeight = 24 + group.rows.length * 24;
       card.push(
         `<rect x="8" y="${boxTop}" width="${cardW - 16}" height="${boxHeight}" fill="${SURFACE_ACCENT}" stroke="${ACCENT_STRONG}" stroke-width="1.4"/>`,
       );
@@ -1928,17 +1974,17 @@ async function composeAnalyzeEnvelope(ctx) {
     card.push(
       t(16, cy, group.label, {
         font: MONO,
-        size: 9.5,
+        size: 11,
         weight: 700,
         ls: 0.4,
         fill: group.accent ? ACCENT_STRONG : INK_MUTE,
       }),
     );
-    cy += 22;
+    cy += 24;
     for (const row of group.rows) {
       if (row.chip) card.push(chip(26, cy - 4, row.chip));
-      card.push(t(42, cy, row.text, { font: MONO, size: 11, fill: INK }));
-      cy += 22;
+      card.push(t(42, cy, row.text, { font: MONO, size: 12, fill: INK }));
+      cy += 24;
     }
     cy += 10;
   }
@@ -1981,11 +2027,12 @@ async function composeAnalyzeEnvelope(ctx) {
         "is a programming error and throws",
     },
   ];
-  const rightX = 496;
-  const rightW = 484;
+  const rightX = 0;
+  const rightW = cardW;
+  const rightTop = cardHeight + 34;
   const right = [];
   right.push(
-    t(rightX, 26, "COMPAREANALYSES VALIDATES, NEVER RECONSTRUCTS", {
+    t(rightX, rightTop + 26, "COMPAREANALYSES VALIDATES, NEVER RECONSTRUCTS", {
       font: DISPLAY,
       size: 18,
       weight: 800,
@@ -1993,26 +2040,32 @@ async function composeAnalyzeEnvelope(ctx) {
     }),
   );
   right.push(
-    `<line x1="${rightX}" y1="40" x2="${rightX + rightW}" y2="40" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
+    `<line x1="${rightX}" y1="${rightTop + 40}" x2="${rightX + rightW}" y2="${rightTop + 40}" stroke="${RULE_STRONG}" stroke-width="1.2"/>`,
   );
   const list = legendRows(validations, rightW, 0);
-  right.push(`<g transform="translate(${rightX} 62)">${list.markup}</g>`);
+  right.push(`<g transform="translate(${rightX} ${rightTop + 62})">${list.markup}</g>`);
 
-  const bodyHeight = Math.max(cardHeight, 62 + list.height) + 34;
+  const noteLines = wrapText(
+    "compareAnalyses options deliberately lack timeZone, launch, and thresholds: they come from the members and are validated, never supplied",
+    cardW,
+    { family: "ibm-plex-mono", weight: 400, size: 12 },
+  );
+  const noteTop = rightTop + 62 + list.height + 24;
+  const bodyHeight = noteTop + (noteLines.length - 1) * 17 + 6;
   const body = `${card.join("\n  ")}
   ${right.join("\n  ")}
-  ${t(0, bodyHeight - 2, "compareAnalyses options deliberately lack timeZone, launch, and thresholds: they come from the members and are validated, never supplied", { font: MONO, size: 10.5, fill: INK_SOFT })}`;
+  ${wrapped(0, noteTop, noteLines, { font: MONO, size: 12, fill: INK_SOFT }, 17)}`;
 
   return frame({
     id: "analyze-envelope",
     title: "The envelope re-enters compare without the profile",
     lesson:
       "Everything a downstream comparison validates or states about a member rides the serialized ForecastAnalysis itself: analyze once at the edge, cache the envelope as JSON, and compare later without re-opening any profile.",
-    description: `The envelope analyzeForecast computed for the committed convective-cycle teaching profile, quoted field by field: vocabularyVersion ${envelope.vocabularyVersion}, member identity (model and run referenceTime), the site block with the launch the analysis ran against, the timezone and its source, and the required self-description: the fully resolved thresholds for ${Object.keys(envelope.thresholds).length} kinds, the precomputed deterministic flag, the coveredDays the hours actually touch, and extensions absent rather than empty. Beside it, the six named validations compareAnalyses runs against those same fields: vocabulary-version skew, site and launch mismatch, timezone mismatch, thresholds deep-inequality, missing self-description, and duplicate member identity.`,
+    description: `The envelope analyzeForecast computed for the committed convective-cycle teaching profile, quoted field by field: vocabularyVersion ${envelope.vocabularyVersion}, member identity (model and run referenceTime), the site block with the launch the analysis ran against, the timezone and its source, and the required self-description: the fully resolved thresholds for ${Object.keys(envelope.thresholds).length} kinds, the precomputed deterministic flag, the coveredDays the hours actually touch, and extensions absent rather than empty. Beneath it, the six named validations compareAnalyses runs against those same fields: vocabulary-version skew, site and launch mismatch, timezone mismatch, thresholds deep-inequality, missing self-description, and duplicate member identity.`,
     caption:
-      "The left card is not hand-written: every value is read from the envelope analyzeForecast returns for the committed teaching profile at figure-generation time, and the figure refuses to build if that envelope grows extensions. The right column is the validation list the compare guide documents; each failure is a distinct, named error.",
+      "The envelope card is not hand-written: every value is read from the envelope analyzeForecast returns for the committed teaching profile at figure-generation time, and the figure refuses to build if that envelope grows extensions. The list beneath it is the validation list the compare guide documents; each failure is a distinct, named error.",
     units: "no numeric scale · a document anatomy",
-    bodyWidth: 980,
+    bodyWidth: cardW,
     bodyHeight,
     body,
   });
@@ -2042,13 +2095,15 @@ async function composeReliefPercentiles(ctx) {
     return { ...spec, site };
   });
 
-  const panelW = 452;
+  const panelW = 720;
   const plotTop = 96;
-  const plotHeight = 240;
-  const barW = 72;
-  const barXs = [64, 200, 336];
+  const plotHeight = 210;
+  const barW = 96;
+  const barXs = [150, 362, 574];
+  const panelHeight = plotTop + plotHeight + 44;
+  const x0 = 0;
 
-  const panelMarkup = (spec, x0) => {
+  const panelMarkup = (spec, y0) => {
     const { terrain } = spec.site;
     const discs = terrain.relief;
     const minM = Math.min(...discs.map((disc) => disc.minM));
@@ -2060,13 +2115,13 @@ async function composeReliefPercentiles(ctx) {
     const parts = [];
     parts.push(panelChip(x0, 8, spec.chip));
     parts.push(t(x0 + 34, 26, spec.heading, { font: DISPLAY, size: 17, weight: 800, ls: 0.36 }));
-    parts.push(t(x0 + 16, 52, spec.slug, { font: MONO, size: 11, weight: 700, fill: INK_SOFT }));
+    parts.push(t(x0 + 16, 52, spec.slug, { font: MONO, size: 12, weight: 700, fill: INK_SOFT }));
     parts.push(
       t(
         x0 + panelW - 16,
         52,
         `launch pick ${spec.site.elevation.elevationM} m · ${spec.site.elevation.source}`,
-        { font: MONO, size: 9.5, weight: 700, fill: ACCENT_STRONG, anchor: "end" },
+        { font: MONO, size: 12, weight: 700, fill: ACCENT_STRONG, anchor: "end" },
       ),
     );
     parts.push(
@@ -2083,7 +2138,7 @@ async function composeReliefPercentiles(ctx) {
       parts.push(
         t(bx + barW / 2, yMax - 8, `${localeRound(disc.maxM)} m`, {
           font: MONO,
-          size: 9.5,
+          size: 12,
           fill: INK_SOFT,
           anchor: "middle",
         }),
@@ -2091,7 +2146,7 @@ async function composeReliefPercentiles(ctx) {
       parts.push(
         t(bx + barW / 2, yMin + 14, `${localeRound(disc.minM)} m`, {
           font: MONO,
-          size: 9.5,
+          size: 12,
           fill: INK_SOFT,
           anchor: "middle",
         }),
@@ -2099,21 +2154,8 @@ async function composeReliefPercentiles(ctx) {
       parts.push(
         t(bx + barW / 2, plotTop + plotHeight + 34, `${disc.radiusKm} km`, {
           font: MONO,
-          size: 11,
+          size: 12,
           weight: 700,
-          anchor: "middle",
-        }),
-      );
-      const launchY = yFor(spec.site.elevation.elevationM);
-      parts.push(
-        `<rect x="${bx + 6}" y="${round(launchY - 11)}" width="${barW - 12}" height="17" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.2"/>`,
-      );
-      parts.push(
-        t(bx + barW / 2, launchY + 2, `p${disc.percentile}`, {
-          font: MONO,
-          size: 10.5,
-          weight: 800,
-          fill: ACCENT_INK,
           anchor: "middle",
         }),
       );
@@ -2121,15 +2163,37 @@ async function composeReliefPercentiles(ctx) {
 
     const launchY = yFor(spec.site.elevation.elevationM);
     parts.push(
-      `<line x1="${x0 + 28}" y1="${round(launchY)}" x2="${x0 + panelW - 28}" y2="${round(launchY)}" stroke="${ACCENT_STRONG}" stroke-width="1.6" stroke-dasharray="6 4"/>`,
+      `<line x1="${x0 + 76}" y1="${round(launchY)}" x2="${x0 + panelW - 28}" y2="${round(launchY)}" stroke="${ACCENT_STRONG}" stroke-width="1.6" stroke-dasharray="6 4"/>`,
     );
     parts.push(
-      `<text x="${x0 + 24}" y="${round(launchY + 3)}" text-anchor="end" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="9" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${esc("launch")}</text>`,
+      `<text x="${x0 + 70}" y="${round(launchY + 4)}" text-anchor="end" fill="${ACCENT_STRONG}" font-family="${MONO}" font-size="12" font-weight="700" stroke="${HALO}" stroke-width="3" paint-order="stroke">${esc("launch")}</text>`,
     );
+    /* Chips last, so the launch line runs beneath their labels. */
+    discs.forEach((disc, index) => {
+      const bx = x0 + barXs[index];
+      parts.push(
+        `<rect x="${bx + 8}" y="${round(launchY - 12)}" width="${barW - 16}" height="19" fill="${ACCENT}" stroke="${HALO}" stroke-width="1.2"/>`,
+      );
+      parts.push(
+        t(bx + barW / 2, launchY + 2.5, `p${disc.percentile}`, {
+          font: MONO,
+          size: 12,
+          weight: 800,
+          fill: ACCENT_INK,
+          anchor: "middle",
+        }),
+      );
+    });
     parts.push(
-      t(x0 + 16, plotTop + plotHeight + 34, "disc radius", { font: MONO, size: 9, fill: INK_MUTE }),
+      t(x0 + 16, plotTop + plotHeight + 34, "disc radius", {
+        font: MONO,
+        size: 11,
+        fill: INK_MUTE,
+      }),
     );
-    return parts.join("\n  ");
+    return `<g transform="translate(0 ${y0})">
+  ${parts.join("\n  ")}
+  </g>`;
   };
 
   const rows = [
@@ -2160,11 +2224,13 @@ async function composeReliefPercentiles(ctx) {
         "the launch",
     },
   ];
-  const ledger = ledgerRows(rows, 980, plotTop + plotHeight + 58);
+  const panelGap = 28;
+  const panelsHeight = panelHeight * 2 + panelGap;
+  const ledger = ledgerRows(rows, panelW, panelsHeight + 14);
 
   const body = `${panelMarkup(panels[0], 0)}
-  <line x1="490" y1="8" x2="490" y2="${plotTop + plotHeight + 44}" stroke="${RULE}" stroke-width="1"/>
-  ${panelMarkup(panels[1], 528)}
+  <line x1="0" y1="${panelHeight + panelGap / 2}" x2="${panelW}" y2="${panelHeight + panelGap / 2}" stroke="${RULE}" stroke-width="1"/>
+  ${panelMarkup(panels[1], panelHeight + panelGap)}
   ${ledger.markup}`;
 
   return frame({
@@ -2173,12 +2239,12 @@ async function composeReliefPercentiles(ctx) {
     lesson:
       "Each relief disc states its terrain span and the launch's percentile rank within it; the radii only mean something side by side: the same launch can be a local high point at 1 km and sit low in its 10 km terrain.",
     description:
-      "Two panels of three relief discs each, read from the committed site-context sample. Left, test-hill: the launch pick sits at the 73rd percentile of the 1 km disc, the 60th at 3 km, and the 52nd at 10 km, a local rise settling toward mid-slope as bigger terrain enters the disc. Right, test-valley: 60th at 1 km, 43rd at 3 km, and 12th at 10 km, a valley floor once the 10 km disc reaches the surrounding mountains. In every panel the dashed line is the elevation block's measured launch pick crossing all three min-to-max terrain bars.",
+      "Two panels of three relief discs each, read from the committed site-context sample, one above the other. Upper, test-hill: the launch pick sits at the 73rd percentile of the 1 km disc, the 60th at 3 km, and the 52nd at 10 km, a local rise settling toward mid-slope as bigger terrain enters the disc. Lower, test-valley: 60th at 1 km, 43rd at 3 km, and 12th at 10 km, a valley floor once the 10 km disc reaches the surrounding mountains. In every panel the dashed line is the elevation block's measured launch pick crossing all three min-to-max terrain bars.",
     caption:
       "Every number is read from the committed sample document (site/public/data-sample/site-context.json) at figure-generation time: bar ends are each disc's minM and maxM, chips are its percentile field, and the dashed line is the elevation pick. The percentile is a rank among the disc's terrain, not a linear position between the bar ends; the chips ride the launch line only because that is the elevation whose rank they state.",
     units: "elevations m MSL · disc radii km · percentile rank 0-100",
-    bodyWidth: 980,
-    bodyHeight: plotTop + plotHeight + 58 + ledger.height,
+    bodyWidth: panelW,
+    bodyHeight: panelsHeight + 14 + ledger.height,
     body,
   });
 }

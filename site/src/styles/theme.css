@@ -75,6 +75,9 @@
   --meteo-gram-rule: light-dark(#776956, #5a6672);
   --meteo-gram-halo: light-dark(#fffdf8, #14181c);
   --meteo-gram-halo-barb: light-dark(#355963, #0d1114);
+  /* Documentation figures only: the highlighted band and its strong ink. */
+  --meteo-gram-accent-tint: light-dark(#f2dcc1, #3a2618);
+  --meteo-gram-accent-strong: light-dark(#743008, #f2a877);
 
   /* ---- the terminal: a dark instrument face in either theme, like the
      dial's own bezel. Theme-invariant by design. ---- */

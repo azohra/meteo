@@ -1,20 +1,25 @@
 ---
 title: Getting started
-description: Install @azohra/meteo.station, mount the station feed handler, render components against it, and reach the data-level API directly.
+description: Install @azohra/meteo.station, serve your stations as one feed, and render a live station card on your page.
 ---
 
-Two moves: mount the feed handler on your server, then render components
-against it. Everything else ([adapters](/docs/station/adapters/),
-[theming](/docs/station/theming/), [the React surface](/docs/station/react/),
-[the wire itself](/docs/station/wire-contract/)) layers on top of this page.
+This page takes you from a weather station and a website to a live wind
+card on that website. You mount a feed handler on your server, check that
+it answers, then render components against it. [Adapters](/docs/station/adapters/),
+[theming](/docs/station/theming/), [React](/docs/station/react/), and the
+[wire contract](/docs/station/wire-contract/) all build on these steps.
 
-## Install
+## 1. Install the package
 
 ```sh
 pnpm add @azohra/meteo.station
 ```
 
-## 1 · Mount the feed
+## 2. Mount the feed handler
+
+List your stations and create a handler. Each entry names its vendor, and
+the matching [adapter](/docs/station/adapters/) reads that hardware and
+converts its readings to the wire contract.
 
 ```ts
 import { createStationFeedHandler } from "@azohra/meteo.station/server";
@@ -45,18 +50,23 @@ const handler = createStationFeedHandler({
 export default { fetch: handler }; // e.g. a Cloudflare worker
 ```
 
+Each vendor's page lists every field its entry takes and the quirks its
+adapter handles: [WindNerd](/docs/station/adapters/windnerd/),
+[Tempest](/docs/station/adapters/tempest/),
+[Campbell](/docs/station/adapters/campbell/), and
+[Ecowitt](/docs/station/adapters/ecowitt/).
+
+## 3. Check that the feed answers
+
 ```sh
 curl 'https://your.host/api/wind/feed'               # every station + history
 curl 'https://your.host/api/wind/feed?hours=2'       # narrower window (≤ the ceiling)
 curl 'https://your.host/api/wind/current?station=summit' # one station, reading only
 ```
 
-(A third route, `/live`, streams raw samples for stations that declare
-the `live` capability — [What your hardware
-shows](/docs/station/what-your-hardware-shows/) maps who has it.)
-`/feed` answers with a `StationFeed`, every configured station on one
-document, whether its upstream answered or not (abbreviated with `…`; the
-field names are real):
+`/feed` returns a `StationFeed`. It holds every configured station in one
+document, whether or not that station's upstream answered. In this
+abbreviated example, `…` marks omitted fields; the field names are real.
 
 ```json
 {
@@ -77,9 +87,13 @@ field names are real):
 }
 ```
 
-`?hours=2` serves the same shape with `history` narrowed to the trailing
-two hours. `/current` answers with a `StationCurrent` (one station,
-reading only, `history` null):
+The `meadow` entry shows a failed upstream. The station keeps its place in
+the feed with `"status": "unavailable"` and a machine-readable `reason`, and
+the other stations are unaffected.
+
+`?hours=2` returns the same shape with `history` cut to the last two hours.
+`/current` returns a `StationCurrent`, which holds one station's reading and
+a null `history`:
 
 ```json
 {
@@ -92,68 +106,15 @@ reading only, `history` null):
 }
 ```
 
-A failed upstream keeps its station's slot with `"status": "unavailable"`
-and a machine `reason`; the documents, field by field, are the
-[wire contract](/docs/station/wire-contract/), with committed annotated
-examples in `station/schema/`.
+A third route, `/live`, streams raw samples for stations that declare the
+`live` capability. [What your hardware shows](/docs/station/what-your-hardware-shows/)
+lists which vendors have it. The [wire contract](/docs/station/wire-contract/)
+describes every field, and `station/schema/` holds annotated examples.
 
-Each vendor's reference page lists every field its entry takes and the
-quirks its adapter guards:
-[WindNerd](/docs/station/adapters/windnerd/),
-[Tempest](/docs/station/adapters/tempest/),
-[Campbell](/docs/station/adapters/campbell/),
-[Ecowitt](/docs/station/adapters/ecowitt/).
+## 4. Render a station card
 
-`maxHistoryHours` (default 6) is both the default window and the ceiling for
-`?hours=`; the range and rejection rules are in
-[the HTTP protocol](/docs/station/wire-contract/#the-http-protocol). Routing
-matches by pathname suffix by default; pass `basePath: "/api/wind"` to pin
-exact-match routes (`/api/wind/feed`, `/api/wind/current`) when several
-handlers are mounted beside each other.
-
-Responses carry `Cache-Control` and a weak `ETag`, so unchanged upstreams
-revalidate to 304; the derivation is
-[the HTTP protocol's](/docs/station/wire-contract/#the-http-protocol).
-Override caching for a CDN with:
-
-<!-- meteo-doc-fence: ignore — a handler-option fragment, not a standalone module -->
-```ts
-cacheControl: (route, maxAge) =>
-  `public, max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=30`,
-```
-
-### Dynamic configuration
-
-`stations` may also be a resolver (a database read, a KV fetch) called once
-per assembly, with the `Request` when the handler invoked it:
-
-<!-- meteo-doc-fence: ignore — one-line sketch; readStationsFromDb is the reader's own -->
-```ts
-createStationFeedHandler({ stations: async (request) => readStationsFromDb(request) });
-```
-
-A station whose config fails validation (or repeats an id) degrades to
-`unavailable`/`not_configured` with the zod issues logged; a bad row never
-500s the feed. Static arrays get the same check eagerly at construction,
-which warns loudly but does not throw.
-
-### The data-level API
-
-The handler is a thin HTTP wrapper. For cron jobs, static builds, or
-framework loaders, call the data layer directly:
-
-<!-- meteo-doc-fence: ignore — `stations` is the config array from the mount example above -->
-```ts
-import { loadStationFeed, loadStationCurrent } from "@azohra/meteo.station/server";
-
-const feed = await loadStationFeed({ stations, historyHours: 3 });             // StationFeed
-const current = await loadStationCurrent({ stations, stationId: "summit" });   // StationCurrent
-```
-
-Both own the degradation belt (an adapter that throws costs one station,
-never the document), `servedAt`, and `schemaVersion`.
-
-## 2 · Render the fleet
+Import the default styles and the React components, poll the handler's
+mount base, and render the card and table inside a provider:
 
 ```tsx
 import "@azohra/meteo.station/styles.css"; // the default skin (an intentional side effect)
@@ -185,18 +146,30 @@ function LiveWind() {
 }
 ```
 
-![The station card rendered from a synthetic station, Launch Ridge: the wind dial with lull and gust flanks beside a six-hour graded history chart.](figures/hero-light.svg)
+You should see a card for the primary station and a table of every station
+in the feed:
 
-The chart in that card draws only for a station that declares `history`
-(WindNerd and Campbell do; Tempest and Ecowitt serve the latest reading
-only, so their cards render the dial and readouts and no chart).
+![The station card for a synthetic station, Launch Ridge, with a wind dial beside a six-hour wind history chart.](figures/hero-light.svg)
+
+The history chart appears only for a station that declares `history`.
+WindNerd and Campbell do. Tempest and Ecowitt serve only the latest
+reading, so their cards show the dial and readouts without a chart.
 [What your hardware shows](/docs/station/what-your-hardware-shows/) maps
-every capability to its surfaces.
+each capability to the components that use it.
 
-No react? The same page is one module script and plain markup with the
-[custom-elements binding](/docs/station/elements/):
-`<meteo-station-feed src="/api/wind">` polls the same endpoints through the
-same shared stores and its children render the same DOM:
+`useStation` polls the feed and adds a lighter `/current` poll for the
+station you name. `useStationFeed(url)` polls the feed alone. Hooks,
+composition, and seeding the provider during server-side rendering are
+covered in
+[React](/docs/station/react/), and the tokens behind the default styles are
+in [Theming](/docs/station/theming/).
+
+### Without React
+
+The [custom-elements binding](/docs/station/elements/) renders the same
+page with one module script and plain markup. `<meteo-station-feed>` polls
+the same endpoints through the same stores, and its children render the
+same DOM as the React components:
 
 ```html
 <script type="module">import "@azohra/meteo.station/elements/register";</script>
@@ -206,27 +179,68 @@ same shared stores and its children render the same DOM:
 </meteo-station-feed>
 ```
 
-`useStationFeed(url)` polls the feed alone; `useStation` adds the light
-`/current` poll for the station you name. Hooks, the provider contract,
-composition, and SSR seeding are covered in [React](/docs/station/react/);
-the tokens the components wear are in [Theming](/docs/station/theming/).
+## Handler options
 
-That is the full basic path: a mounted feed and a rendered fleet. Two
-deeper options when you want them: season-scale WindNerd pulls at coarse
-record resolution are a
-[direct-adapter option on the WindNerd page](/docs/station/adapters/windnerd/#direct-adapter-options),
-and the pure history-slicing functions behind the charts are in
-[the client data layer](/docs/station/client-data/#slicing-history).
+`maxHistoryHours` defaults to 6. It sets both the default history window
+and the largest value `?hours=` accepts; the range and rejection rules are
+in [the HTTP protocol](/docs/station/wire-contract/#the-http-protocol).
+
+Routes match by pathname suffix by default. When several handlers are
+mounted side by side, pass `basePath: "/api/wind"` to match exact routes
+(`/api/wind/feed`, `/api/wind/current`) instead.
+
+Responses carry `Cache-Control` and a weak `ETag`, so a client revalidating
+an unchanged feed gets a 304. [The HTTP protocol](/docs/station/wire-contract/#the-http-protocol)
+explains how both are derived. To set your own caching for a CDN:
+
+<!-- meteo-doc-fence: ignore — a handler-option fragment, not a standalone module -->
+```ts
+cacheControl: (route, maxAge) =>
+  `public, max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=30`,
+```
+
+### Load stations at request time
+
+`stations` can also be a function, such as a database or KV read. The
+handler calls it once each time it assembles a document, passing the
+`Request` when there is one:
+
+<!-- meteo-doc-fence: ignore — one-line sketch; readStationsFromDb is the reader's own -->
+```ts
+createStationFeedHandler({ stations: async (request) => readStationsFromDb(request) });
+```
+
+A station whose config fails validation, or repeats another station's id,
+becomes `unavailable` with reason `not_configured`, and the zod issues are
+logged. A bad row never makes the feed return a 500. A static array gets
+the same check once, when the handler is created; it logs a warning and
+does not throw.
+
+### Call the data layer directly
+
+The handler is a thin HTTP wrapper. Cron jobs, static builds, and framework
+loaders can call the functions beneath it:
+
+<!-- meteo-doc-fence: ignore — `stations` is the config array from the mount example above -->
+```ts
+import { loadStationFeed, loadStationCurrent } from "@azohra/meteo.station/server";
+
+const feed = await loadStationFeed({ stations, historyHours: 3 });             // StationFeed
+const current = await loadStationCurrent({ stations, stationId: "summit" });   // StationCurrent
+```
+
+Both set `servedAt` and `schemaVersion`, and both contain failures the same
+way the handler does: an adapter that throws marks its own station
+unavailable and leaves the rest of the document intact.
 
 ## Where next
 
-Route by the question you are carrying out of this page
-(the [section landing](/docs/station/) inventories every page):
-
-| Your next question | Page |
+| If you want to | Read |
 |---|---|
-| What does my vendor's config entry take, and what quirks does its adapter guard? | Your vendor's page under [Adapters](/docs/station/adapters/) |
-| Why is my station missing a chart or a column? | [What your hardware shows](/docs/station/what-your-hardware-shows/) |
-| How do I compose more than the card and the table? | [React](/docs/station/react/) — or [custom elements](/docs/station/elements/) with no framework |
-| How do I make it wear my site's palette? | [Theming](/docs/station/theming/) |
-| What exactly travels between handler and page? | [Wire contract](/docs/station/wire-contract/) |
+| Configure your vendor's station entry | Your vendor's page under [Adapters](/docs/station/adapters/) |
+| Find out why a station has no chart or column | [What your hardware shows](/docs/station/what-your-hardware-shows/) |
+| Build layouts beyond the card and table | [React](/docs/station/react/), or [custom elements](/docs/station/elements/) without a framework |
+| Match your site's colours | [Theming](/docs/station/theming/) |
+| Pull a season of WindNerd records at coarse record resolution | [Direct-adapter options](/docs/station/adapters/windnerd/#direct-adapter-options) |
+| Slice history yourself | [Client data](/docs/station/client-data/#slicing-history) |
+| See exactly what the handler sends | [Wire contract](/docs/station/wire-contract/) |

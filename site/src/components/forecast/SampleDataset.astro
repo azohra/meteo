@@ -137,9 +137,9 @@ const stats = manifest.stats;
   <div class="section-inner">
     <h2 id="dataset-title">The published dataset</h2>
     <p class="fc-section-lede">
-      Point the engine at a site catalogue and an output directory, and this tree is what lands
-      there. This one is an HRDPS continental run over three test sites, served
-      at <code>meteo.azohra.com/data-sample/</code>; curl any path in it.
+      Give the engine a site catalogue and an output directory, and it writes this tree there.
+      This sample is an HRDPS continental run over three test sites, served
+      at <code>meteo.azohra.com/data-sample/</code>. You can curl any path in it.
     </p>
 
     <div class="fc-dataset-grid">
@@ -170,17 +170,17 @@ const stats = manifest.stats;
         <figcaption class="fc-caption">
           Between the run's first and last published
           hour, <code>thermalVelocityMps</code> goes {firstHour.derived.thermalVelocityMps} → {lastHour.derived.thermalVelocityMps} and <code>usableLiftTopM</code> goes {firstHour.derived.usableLiftTopM ?? "null"} → {lastHour.derived.usableLiftTopM ??
-            "null"}, derived by the engine from the sampled fields. The equations behind every
+            "null"}. The engine derives both from the sampled fields, and the equations for every
           derived quantity are
           in <a href="/docs/forecast/derivation-science/">Meteogram derivations</a>. The full
-          file: <a href="/data-sample/hrdps-continental/sites/test-hill.json">test-hill.json</a>.
+          file is <a href="/data-sample/hrdps-continental/sites/test-hill.json">test-hill.json</a>.
         </figcaption>
       </figure>
     </div>
 
     <p class="fc-cost" id="dataset-cost">
       The documents total {formatBytes(totalBytes)}. <code>manifest.stats</code> records
-      what building them cost the engine: {stats.downloads} provider
+      how much work the build took: {stats.downloads} provider
       downloads, {formatBytes(stats.downloadBytes)} fetched, {Math.round(stats.durationMs / 1000)} s, {stats.retries} retries.
     </p>
   </div>

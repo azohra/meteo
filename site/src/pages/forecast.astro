@@ -16,7 +16,7 @@ import SampleDataset from "../components/forecast/SampleDataset.astro";
 
 <Base
   title="Forecast — the forecast engine and meteo CLI — meteo by Azohra"
-  description="Point @azohra/meteo.forecast at your launches: it fetches each model's newest run, derives the soaring numbers, and publishes plain JSON wherever you host it. Your schedule, one CLI."
+  description="@azohra/meteo.forecast fetches each model's newest run for your launches, derives the soaring values, and publishes plain JSON wherever you host it, on your schedule, from one CLI."
   activeNav="forecast"
 >
   <main id="main-content" class="forecaster-main">
@@ -27,16 +27,14 @@ import SampleDataset from "../components/forecast/SampleDataset.astro";
 
     <section id="boundary" class="fc-boundary" aria-labelledby="boundary-title">
       <div class="section-inner">
-        <h2 id="boundary-title">The engine is a package, not a hosted service</h2>
+        <h2 id="boundary-title">You run the engine yourself</h2>
         <p>
-          A running pipeline (the cron schedule
-          that triggers builds, the site catalogue it builds from, the bucket the documents land
-          in and its credentials) is yours to own; none of it ships in the
-          package. <a href="https://acrophobia.ca">acrophobia.ca</a> runs the reference
-          pipeline. To stand up your
-          own, <a href="/docs/forecast/run-one-model/">Run one model</a> walks the first build
-          end to end; the engine's reference is
-          the <a href="/docs/forecast/">forecast documentation</a>.
+          The package is not a hosted service and ships no running pipeline. You supply the
+          cron schedule that triggers builds, the site catalogue it builds from, and the storage
+          bucket and credentials the documents land in. <a href="https://acrophobia.ca">acrophobia.ca</a> runs the reference pipeline. To set
+          up your own, <a href="/docs/forecast/run-one-model/">Run one model</a> walks through the
+          first build. The <a href="/docs/forecast/">forecast documentation</a> is the engine's
+          full reference.
         </p>
       </div>
     </section>

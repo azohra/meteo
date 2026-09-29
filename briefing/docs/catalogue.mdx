@@ -5,8 +5,9 @@ description: Discover models and render their declared capabilities from the cat
 
 import { MODEL_CATALOGUE_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
 
-`models.json` is the machine-readable declaration of which models exist
-in the dataset; provider evidence lives in the dated
+`models.json` lists the models a dataset publishes and declares what each
+one can provide, in a form code can read. The provider facts behind those
+declarations are in the dated
 [forecast feed reference](/docs/forecast/forecast-model-feeds/).
 
 ## On the wire
@@ -17,7 +18,7 @@ in the dataset; provider evidence lives in the dated
 | **Parse** | `parseModelCatalogueJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
 | **Zod authority** | `modelCatalogueSchema`, pinning `MODEL_CATALOGUE_SCHEMA_VERSION` (<code>{MODEL_CATALOGUE_SCHEMA_VERSION}</code>) |
 | **JSON Schema** | [`models.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/models.schema.json) |
-| **Discovery** | this document *is* discovery: `models`, plus the optional `smokeModels` and `observationModels` arrays |
+| **Discovery** | readers discover models from this document: `models`, plus the optional `smokeModels` and `observationModels` arrays |
 
 ## Entry structure
 
@@ -30,19 +31,20 @@ in the dataset; provider evidence lives in the dated
 | Kind | `deterministic` or `ensemble` | Document interpretation without a named-model branch |
 | Capabilities | levels, omega provenance, heat fluxes, gust/precipitation semantics, smoke coupling, convection, PBL and cloud fields | Declared feature presence and labels |
 
-`stepHours` declares the finest published step, not a whole-horizon promise: NAM drops from hourly
-to three-hourly output after 36 hours and GEPS from three-hourly to six-hourly after 192 hours. The
-dated [forecast feed reference](/docs/forecast/forecast-model-feeds/) records each model's full
-cadence.
+`stepHours` declares the finest published step. It does not promise that
+step across the whole horizon. NAM drops from hourly to three-hourly output
+after 36 hours, and GEPS from three-hourly to six-hourly after 192 hours.
+The dated [forecast feed reference](/docs/forecast/forecast-model-feeds/)
+records each model's full cadence.
 
-`typicalPublicationLagHours` is the upper end of normal for *this dataset's*
-publish of a run after its `referenceTime`: the provider's
-complete-availability time plus publisher overhead, rounded up.
-[`runFreshness`](/docs/briefing/derive/#judge-run-freshness) is the grader
-that reads it. The values were seeded
-2026-08-10, drawing on the dated `[verified]` availability times the
-[forecast feed reference](/docs/forecast/forecast-model-feeds/) records, and
-are to be re-verified against the accumulated run archive around
+`typicalPublicationLagHours` is the upper end of the normal delay between a
+run's `referenceTime` and *this dataset* publishing it. It is the provider's
+complete-availability time plus the operator's own overhead, rounded up.
+[`runFreshness`](/docs/briefing/derive/#judge-run-freshness) reads it to
+grade freshness. The values were seeded on 2026-08-10 from the dated
+`[verified]` availability times in the
+[forecast feed reference](/docs/forecast/forecast-model-feeds/). They are
+due to be re-verified against the accumulated run archive around
 September 2026.
 
 ## Discover models from the catalogue
@@ -60,20 +62,24 @@ export function modelLabels(text: string): string[] {
 }
 ```
 
-Non-profile datasets discover separately: the optional `smokeModels`
-array lists smoke-document models (RAQDPS today) with the same identity
-and cadence metadata but no profile capabilities. It is not
-part of `models`: a capabilities-less entry there would fail every
-already-deployed catalogue guard, while an unknown top-level key is
-stripped harmlessly. Absence of the array means the catalogue predates
-smoke documents; see the
-[smoke document reference](/docs/briefing/smoke-document/). The optional
-`observationModels` array follows the same compatibility logic for
-observation datasets (GOES-18 DSR and AOD today): identity, `gridKm`, and a
-`cadenceMinutes` freshness yardstick in place of run scheduling; see the
-[observation document reference](/docs/briefing/observation-document/).
+Datasets that are not profiles have their own arrays. The optional
+`smokeModels` array lists smoke-document models (RAQDPS today) with the same
+identity and cadence metadata as `models`, but no profile capabilities. They
+sit outside `models` because an entry without capabilities would fail every
+catalogue guard already deployed, while older guards strip an unknown
+top-level key harmlessly. If the array is absent, the catalogue predates
+smoke documents. The [smoke document reference](/docs/briefing/smoke-document/)
+covers them.
 
-A new catalogue entry is not a package enum change.
+The optional `observationModels` array works the same way for observation
+datasets (GOES-18 DSR and AOD today). Each entry has identity, `gridKm`, and
+a `cadenceMinutes` value used to judge freshness, in place of run
+scheduling. The
+[observation document reference](/docs/briefing/observation-document/)
+covers them.
+
+Adding a model to the catalogue needs no package enum change, because the package
+has no enum of models.
 
 ## Site context beside the catalogues
 
@@ -83,13 +89,14 @@ and `sites.json`; the
 
 ## Absence and semantics are declarations
 
-Capability booleans state whether a family exists. Gust and precipitation go
-further by declaring meaning: readers must not label two different windows as
-the same measurement. Vertical velocity declares both provenance and the
-subset of levels that carries it.
+Capability booleans state whether a family of fields exists. Gust and
+precipitation also declare what the value means, so readers must not label
+two different time windows as the same measurement. Vertical velocity
+declares where it comes from and which levels carry it.
 
-Render the declaration. Do not infer features from the provider, grid size,
-kind, slug, or another model in the same family. See
-[Model capabilities](/docs/forecast/model-capabilities/) for the reading
-consequences and [Choose models](/docs/forecast/choosing-models/) for task-oriented
-selection.
+Show what the catalogue declares. Do not infer features from the provider,
+grid size, kind, slug, or another model in the same family.
+[Model capabilities](/docs/forecast/model-capabilities/) explains what each
+declaration means for reading a chart, and
+[Choose models](/docs/forecast/choosing-models/) helps you pick models for a
+task.

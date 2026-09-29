@@ -1,73 +1,75 @@
 ---
 title: Theming
-description: "Token-driven theming for the station components: .meteo-root scoping, the class and token vocabulary, dark mode and the toggle, and speed bands."
+description: "Theme the station components with CSS tokens, covering .meteo-root scoping, the class and token vocabulary, dark mode and the toggle, and speed bands."
 ---
 
-Every colour the components paint rides a CSS custom property with a light
-fallback baked in. Import the default skin once:
+Every colour the components paint comes from a CSS custom property with a
+built-in light fallback. Import the default skin once.
 
 <!-- meteo-doc-fence: ignore — a CSS side-effect import; there are no type declarations to check -->
 ```ts
 import "@azohra/meteo.station/styles.css";
 ```
 
-Then wrap your markup in `.meteo-root` for the token set. Override any token
-on any ancestor to retheme.
+Then wrap your markup in `.meteo-root` to get the token set. To change the
+theme, override any token on any ancestor.
 
 ## Scoping and layering
 
-- **`.meteo-root`** carries the tokens and `color-scheme`. Components outside
-  a `.meteo-root` still render (the light fallbacks apply); inside one, every
-  token is themeable.
-- The whole sheet ships inside **`@layer meteo`**, so your unlayered CSS
-  always outranks it: no specificity fights, no `!important`.
+`.meteo-root` carries the tokens and `color-scheme`. Components outside a
+`.meteo-root` still render with the light fallbacks. Inside one, every token
+can be themed.
+
+The whole sheet ships inside `@layer meteo`, so your unlayered CSS always
+takes precedence over it without higher specificity or `!important`.
 
 ## Light, dark, and the toggle
 
-Tokens are defined once via `light-dark()` with `color-scheme: light dark` on
-the root, so the system preference picks the theme with no duplicate token
-blocks. A manual toggle sets `data-theme="dark"` (or `"light"`) on
-`.meteo-root`, a one-line `color-scheme` pin that beats the system
-preference:
+Each token is defined once with `light-dark()`, and the root sets
+`color-scheme: light dark`, so the system preference picks the theme without
+duplicate token blocks. A manual toggle sets `data-theme="dark"` (or
+`"light"`) on `.meteo-root`. That attribute sets `color-scheme` in one line
+and overrides the system preference.
 
 ```html
 <div class="meteo-root" data-theme="dark">…</div>
 ```
 
-Remove the attribute (or set any other value) to return to following the
-system. Because both arms of every token are always declared, a theme switch
-is instant and complete: there is no partially-themed state.
+Remove the attribute (or set any other value) to follow the system again.
+Both the light and dark values of every token are always declared, so a
+theme switch is instant and complete, with no partially themed state.
 
 ## The vocabulary
 
-Everything the platform ships (classes and tokens) starts with `meteo-`, so
-one grep of your page finds all of it. Within that root, three tiers:
+Every class and token the platform ships starts with `meteo-`, so one grep
+of your page finds all of them. Names under that prefix fall into three
+tiers.
 
-- **Bare `meteo-*`**: the shared skin and generic furniture any capability
-  may use: surfaces, ink, `meteo-grid-line`, `meteo-tick`, `meteo-cursor`,
-  `meteo-hit`, `meteo-microlabel`, the freshness badge, the value/unit
-  spans.
-- **`meteo-band-*`**: speed grading, deliberately platform-wide: today the
-  station components wear `meteo-band-0..n`; any future capability that
-  grades wind speeds wears the same tokens.
-- **`meteo-<family>-*`**: component-family scope. Wind lives only where
-  wind is actually visualized: `meteo-wind-*` (dial, rose, the wind history
-  chart, vanes, the lull–gust band). Station-level artifacts are
-  station-scoped (`meteo-station-card-*`, `meteo-station-table-*`,
+- Bare `meteo-*` names are the shared skin and the generic parts any
+  capability may use: surfaces, ink, `meteo-grid-line`, `meteo-tick`,
+  `meteo-cursor`, `meteo-hit`, `meteo-microlabel`, the freshness badge, and
+  the value and unit spans.
+- `meteo-band-*` names are speed grading, and they are platform-wide on
+  purpose. Today the station components use `meteo-band-0..n`, and any
+  future capability that grades wind speeds will use the same tokens.
+- `meteo-<family>-*` names are scoped to a component family. The
+  `meteo-wind-*` names appear only where wind is drawn: the dial, the rose,
+  the wind history chart, vanes, and the lull–gust band. Station-level parts
+  use station-scoped names (`meteo-station-card-*`, `meteo-station-table-*`,
   `meteo-current-*`, `meteo-summary-*`) because a station is a weather
-  station, not a wind station. Alongside: `meteo-air-*`, `meteo-sample-*`,
-  `meteo-trend-*`, `meteo-strip-*`, `meteo-sparkline-*`. The Meteogram renderer already
-  follows the same pattern (`meteo-gram-*`, themed on the
-  [SVG renderer page](/docs/briefing/svg/)), and
-  future capabilities continue it (`meteo-sounding-*`).
+  station rather than a wind station. The other families are
+  `meteo-air-*`, `meteo-sample-*`, `meteo-trend-*`, `meteo-strip-*`, and
+  `meteo-sparkline-*`. The Meteogram renderer already follows the same
+  pattern (`meteo-gram-*`, themed on the
+  [SVG renderer page](/docs/briefing/svg/)), and future capabilities will
+  continue it (`meteo-sounding-*`).
 
 ## Hook-only classes
 
-Some of the vocabulary is deliberately unstyled: the default skin paints
-nothing on these classes; they exist as consumer styling seams, stable
-handles on parts the skin leaves alone. They are versioned API like every
-other class, and a test holds the list against both the source and the
-stylesheet.
+The default skin paints nothing on the classes below. They exist as stable
+handles for your own styling, on parts the skin leaves alone. They are
+versioned API like every other class, and a test checks the list against
+both the source and the stylesheet.
 
 <!-- Kept in sync by hand with station/test/hook-only-classes.ts (the
      committed allowlist station/test/class-contract.test.ts enforces);
@@ -90,18 +92,18 @@ stylesheet.
 | `meteo-air-corner` | The air matrix's corner cell |
 | `meteo-compass-fan` | The compass fan's wrapper, beside its styled state classes |
 
-Unstyled by design: style them from your own CSS, or leave them be; the
-default look does not depend on them. The SVG text seams
-(`meteo-grid-label`, `meteo-tick`) are not bare, though: font, size, and
-ink arrive from their chart's base `.meteo-*-svg text` rule, so the class
-itself carries no rule to replace; override the base rule rather than
-adding per-class rules.
+You can style these classes from your own CSS or leave them alone, and
+the default look does not depend on them. The SVG text classes
+(`meteo-grid-label`, `meteo-tick`) still render styled text. Their font,
+size, and ink come from the chart's base `.meteo-*-svg text` rule, and the
+class itself has no rule to replace. To restyle them, override the base
+rule instead of adding rules per class.
 
 ## Token reference
 
-![Every station theme token with its light and dark values as labelled colour swatches, grouped into chrome and identity, freshness states, chart and wind encoding, and the five-step band ramp; the font, radius, and shadow tokens listed as text.](figures/token-map.svg)
+![Labelled colour swatches show the light and dark values of every station theme token, grouped into chrome and identity, freshness states, chart and wind encoding, and the five-step band ramp, with the font, radius, and shadow tokens listed as text.](figures/token-map.svg)
 
-### `--meteo-*` — the shared skin
+### `--meteo-*` shared skin
 
 | Token | Role |
 |---|---|
@@ -119,13 +121,13 @@ adding per-class rules.
 | `--meteo-radius` | Corner radius |
 | `--meteo-shadow` | Card shadow |
 
-### `--meteo-band-*` — speed grading, platform-wide
+### `--meteo-band-*` speed grading
 
 | Token | Role |
 |---|---|
 | `--meteo-band-0` … `--meteo-band-4` | Speed grading, calm → strong |
 
-### `--meteo-wind-*` — genuinely wind-scoped
+### `--meteo-wind-*` wind encoding
 
 | Token | Role |
 |---|---|
@@ -133,23 +135,23 @@ adding per-class rules.
 | `--meteo-wind-mean` | The mean trace when ungraded |
 | `--meteo-wind-vane` | Vane glyphs in the direction row |
 | `--meteo-wind-compare` | The day-over-day compare overlay trace |
-| `--meteo-wind-favorable` / `--meteo-wind-unfavorable` | The judgment verdicts: the rose's and dial's rings, vane tints, the direction fragment, the favorable-share stat |
+| `--meteo-wind-favorable` / `--meteo-wind-unfavorable` | The favorable and unfavorable verdicts: the rose's and dial's rings, vane tints, the direction fragment, the favorable-share stat |
 
 ## Speed bands and your palette
 
 `thresholds` ([React](/docs/station/react/#thresholds)) grades traces, dial
-arcs, and rose petals into `meteo-band-0..n` **classes**; what a band means
-and what colour it wears belong to your CSS. Three thresholds make four
-bands; add `--meteo-band-*` overrides (and rules for higher indices if you
-declare more thresholds) to speak your own colour language.
+arcs, and rose petals into `meteo-band-0..n` classes. Your CSS decides what
+each band means and what colour it gets. Three thresholds make four bands.
+Add `--meteo-band-*` overrides to use your own colours, and add rules for
+higher indices if you declare more thresholds.
 
 ## Dark-mode notes
 
-- The site's theme toggle over the
-  [component gallery](/docs/station/component-gallery/) exercises exactly
-  this mechanism: `data-theme` on `.meteo-root`, nothing else.
-- If your page also styles `color-scheme` globally, the root's own
-  declaration wins inside `.meteo-root`; the components stay coherent even
-  when the page around them disagrees.
-- README imagery is generated from these same tokens, so the docs never
-  drift from the palette.
+- The site's theme toggle on the
+  [component gallery](/docs/station/component-gallery/) uses only this
+  mechanism, `data-theme` on `.meteo-root`.
+- If your page also sets `color-scheme` globally, the root's own
+  declaration wins inside `.meteo-root`. The components stay consistent even
+  when the page around them uses a different scheme.
+- README images are generated from these same tokens, so the docs always
+  match the palette.

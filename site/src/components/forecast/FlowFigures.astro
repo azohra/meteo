@@ -32,7 +32,7 @@ function inlineFigure(raw: string, alt: string): string {
 
 const publicationFlow = inlineFigure(
   publicationFlowRaw,
-  "A five-stage sequence across three actors: an upstream provider publishes a forecast cycle; the forecast engine probes completeness, builds each model, and publishes once across the static-dataset boundary; the browser reads manifest and profile and exposes a torn pair as stale.",
+  "Five numbered stages in three lanes: an upstream model cycle, the engine's probe, build and publish, then the browser's read below the static-dataset boundary.",
 );
 const twoTransports = inlineFigure(
   twoTransportsRaw,
@@ -44,22 +44,21 @@ const twoTransports = inlineFigure(
   <div class="section-inner">
     <h2 id="flow-title">From model cycle to browser</h2>
 
-    <figure class="fc-figure">
+    <figure class="fc-figure fc-figure--column">
       <Fragment set:html={publicationFlow} />
       <figcaption>
-        The upstream model publishes a cycle; the engine probes it for completeness, builds, and
-        publishes once; the consumer's consistency check closes the loop. The walk-through
-        is <a href="/docs/forecast/architecture/">Forecast architecture</a>.
+        The upstream model publishes a cycle. The engine checks that the cycle is complete, builds,
+        and publishes once. In the browser, a consistency check marks a mismatched manifest and
+        profile as stale. <a href="/docs/forecast/architecture/">Forecast architecture</a> walks
+        through each step.
       </figcaption>
     </figure>
 
-    <figure class="fc-figure">
+    <figure class="fc-figure fc-figure--column">
       <Fragment set:html={twoTransports} />
       <figcaption>
-        How the provider bytes arrive: NOAA models are read as <code>.idx</code>-indexed byte
-        ranges; ECCC models stream one whole-domain file at a time, sampled in memory and
-        discarded. The reference
-        is <a href="/docs/forecast/provider-transports/">Provider transports</a>.
+        NOAA models are read as <code>.idx</code>-indexed byte ranges. ECCC models stream one
+        whole-domain file at a time, which the engine samples in memory and discards. <a href="/docs/forecast/provider-transports/">Provider transports</a> is the reference.
       </figcaption>
     </figure>
   </div>
@@ -92,6 +91,13 @@ const twoTransports = inlineFigure(
     width: 100%;
     height: auto;
     border-radius: var(--radius);
+  }
+
+  /* Both plates are drawn for the docs column; wider, their type
+     outgrows the page's. */
+  .fc-figure--column {
+    max-width: 46rem;
+    margin-inline: auto;
   }
 
   .fc-figure figcaption {

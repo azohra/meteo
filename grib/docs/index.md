@@ -1,23 +1,24 @@
 ---
 title: "GRIB2 in pure TypeScript"
-description: "The @azohra/meteo.grib package: GRIB2 section parsing, rotated and Lambert grids with O(1) nearest-gridpoint lookup, complex packing, JPEG 2000 through an injected decoder seam, and NOMADS .idx helpers, gated bit-for-bit against ecCodes."
+description: "Decode GRIB2 files in TypeScript: regular, rotated, and Lambert grids, simple and complex packing, JPEG 2000, multi-field messages, and NOMADS .idx byte ranges, checked bit-for-bit against ecCodes."
 ---
 
-**`@azohra/meteo.grib`** is a GRIB2 decoder in pure TypeScript, written because
-the forecast engine needs grid template 3.1 (rotated latitude-longitude:
-every ECCC HRDPS, RDPS, REPS, and RAQDPS field) and multi-field messages
-(NCEP's paired U/V submessages), and no maintained JavaScript decoder
-provides either.
+**`@azohra/meteo.grib`** decodes GRIB2, the binary format weather services
+publish model output in, in pure TypeScript. The forecast engine needs two
+things no maintained JavaScript decoder provides. One is grid template 3.1,
+the rotated latitude-longitude grid of every ECCC HRDPS, RDPS, REPS, and
+RAQDPS field. The other is multi-field messages, which NCEP uses to pair U
+and V wind.
 
-The core is browser-safe by construction
-([what the core never does](/docs/grib/coverage/#what-the-core-never-does));
-Node callers get JPEG 2000 from the separate `@azohra/meteo.grib/j2k-node`
-subpath; see [JPEG 2000 and the pool](/docs/grib/jpeg2000/).
+The core runs in the browser. It does no I/O and imports nothing from
+`node:` ([what the core never does](/docs/grib/coverage/#what-the-core-never-does)).
+Node callers get a JPEG 2000 decoder and a worker pool from the separate
+`@azohra/meteo.grib/j2k-node` subpath, described in
+[JPEG 2000 and the pool](/docs/grib/jpeg2000/).
 
-Installing it pulls in no
-[forecast engine](/docs/forecast/) and no forecast documents —
-Node 22+, ESM-only, and `@cornerstonejs/codec-openjpeg` (the selectable
-WASM codec) installs with it:
+The package needs Node 22 or later and is ESM-only. It does not pull in the
+[forecast engine](/docs/forecast/) or any forecast documents.
+`@cornerstonejs/codec-openjpeg`, the selectable WASM codec, installs with it.
 
 ```sh
 pnpm add @azohra/meteo.grib
@@ -25,10 +26,11 @@ pnpm add @azohra/meteo.grib
 
 ## Decode a real field
 
-[`test/fixtures/`](https://github.com/azohra/meteo/tree/main/grib/test/fixtures)
-holds real provider messages. This decodes a committed HRDPS 2 m
-temperature field (a rotated-grid, JPEG 2000-packed message, the
-combination that motivated the package) and samples one launch:
+The repository keeps real provider messages in
+[`test/fixtures/`](https://github.com/azohra/meteo/tree/main/grib/test/fixtures).
+This example decodes a committed HRDPS 2 m temperature field and reads the
+value at one launch. The field is on a rotated grid and packed with JPEG
+2000, the combination the package was written for.
 
 <!-- meteo-doc-fence: run -->
 ```js
@@ -65,16 +67,16 @@ rotated 2540x1290 = 3276600 points
 2 m temperature: 23.05 C
 ```
 
-Consumers inside the workspace (the forecast engine) import the same surface
-as `@azohra/meteo.grib` and `@azohra/meteo.grib/j2k-node`.
+The forecast engine imports the same API from `@azohra/meteo.grib` and
+`@azohra/meteo.grib/j2k-node`.
 
 ## Decode your own file
 
-Installed from npm, the same walk works on any GRIB2 file. Discover what
-a file contains before decoding: one message can carry several fields
-(NCEP pairs U/V wind as submessages), and the template numbers say which
-grid geometry each field uses and whether it needs a JPEG 2000 decoder
-(packing 5.40 — every ECCC field):
+The same steps work on any GRIB2 file once the package is installed from
+npm. List what a file holds before you decode it. One message can carry
+several fields (NCEP sends U and V wind as submessages of one message). The
+template numbers tell you each field's grid geometry and whether it needs a
+JPEG 2000 decoder, which packing 5.40 does. Every ECCC field uses 5.40.
 
 ```js
 import { readFileSync } from "node:fs";
@@ -111,21 +113,21 @@ const { values } = decodeFieldValues(field, { decodeJ2k });
 console.log(`${values.length} values, first: ${values[0]}`);
 ```
 
-`parseGrid` accepts grid templates 3.0, 3.1, and 3.30 and
-`decodeFieldValues` packings 5.0, 5.2, 5.3, and 5.40; anything outside
-that envelope throws, naming the template, rather than decoding
-approximately. [What it decodes](/docs/grib/coverage/) is the full
-envelope.
+`parseGrid` accepts grid templates 3.0, 3.1, and 3.30. `decodeFieldValues`
+accepts packings 5.0, 5.2, 5.3, and 5.40. Any other template throws an error
+that names it, so a file is never decoded approximately.
+[What it decodes](/docs/grib/coverage/) lists everything the package
+supports.
 
-## The documentation
+## Documentation
 
 | Page | Covers |
 |---|---|
 | [What it decodes](/docs/grib/coverage/) | Grid templates, packing, multi-field messages, bitmaps, wind rotation, the `.idx` byte-range helpers |
-| [The ecCodes gate](/docs/grib/correctness/) | The bit-for-bit acceptance philosophy and the twenty-message golden corpus |
-| [JPEG 2000 and the pool](/docs/grib/jpeg2000/) | Codec options, the region-decode sampled path, the codeblock-parallel strategy, worker-pool sizing |
+| [The ecCodes gate](/docs/grib/correctness/) | How every decode path is checked bit-for-bit against ecCodes over a twenty-message corpus |
+| [JPEG 2000 and the pool](/docs/grib/jpeg2000/) | Codec options, decoding only the points you sample, parallel decoding by codeblock, and sizing the worker pool |
 
-## Layout
+## Source layout
 
 ```
 src/bytes.ts       big-endian octet and MSB-first bitstream primitives (package-private)
@@ -145,14 +147,14 @@ test/              module suites, the ecCodes golden gate, and the @azohra/meteo
 tools/             decode, pool, and codec benches
 ```
 
-## Built on
+## Credits
 
-ecCodes (Apache-2.0, ECMWF) is the oracle: the golden corpus is its
-answers, and the decode arithmetic follows its exact semantics. wgrib2's
-`unpk_complex.c` (public domain, Wesley Ebisuzaki) guided complex
-packing; grib2class (MIT, archmoj) served as a pure-JS cross-check.
-JPEG 2000 comes from the workspace's own [`@azohra/meteo.j2k`](/docs/j2k/) by
-default, with `@cornerstonejs/codec-openjpeg` (MIT, the cornerstone.js
-team, carrying OpenJPEG itself) as the selectable fallback. numpy's
-pairwise summation (BSD-3-Clause) is ported in the golden suite.
-Thanks, all.
+ecCodes (Apache-2.0, ECMWF) is the reference implementation. The golden
+corpus records its output, and the decode arithmetic follows its semantics
+exactly. Wesley Ebisuzaki's `unpk_complex.c` from wgrib2 (public domain)
+guided the complex-packing decoder, and grib2class (MIT, archmoj) served as
+a pure-JavaScript cross-check. JPEG 2000 decoding uses this workspace's
+[`@azohra/meteo.j2k`](/docs/j2k/) by default. `@cornerstonejs/codec-openjpeg`
+(MIT, the cornerstone.js team), which wraps OpenJPEG, is the alternative you
+can select. The golden suite includes a port of numpy's pairwise summation
+(BSD-3-Clause). Thank you to all of them.

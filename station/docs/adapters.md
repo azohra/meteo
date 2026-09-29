@@ -3,22 +3,22 @@ title: Adapters
 description: "How station hardware becomes wire documents: the shipped vendor adapters, custom adapters, defineStationAdapter, environment injection, caching, and polling etiquette."
 ---
 
-How station hardware becomes wire documents. An adapter is two functions:
-`meta` declares the station's identity and capabilities from config alone,
-and `load` fetches the vendor's upstream, validates it in the vendor's own
-units, and normalizes it into the shapes specified in
-[the wire contract](/docs/station/wire-contract/). Whatever the hardware,
-the client sees one document.
+An adapter turns one vendor's station hardware into wire documents. It is
+two functions. `meta` declares the station's identity and capabilities from
+config alone. `load` fetches the vendor's upstream, validates it in the
+vendor's own units, and normalizes it into the shapes specified in
+[the wire contract](/docs/station/wire-contract/). The client sees the same
+document whatever the hardware.
 
-![Five lanes on the left, one per adapter, each pairing a vendor upstream with the adapter that guards it. WindNerd: windnerd.net live and records endpoints, already in m/s; the adapter validates speeds 0 to 140 m/s and its live INIT block enriches the meta, with config winning over vendor values. Tempest: the WeatherFlow REST endpoint at swd.weatherflow.com, m/s; the adapter validates 0 to 140 m/s and fills every field of the conditions block. Campbell: the logger's own DataQuery web API with no vendor cloud, tables in km/h; the adapter bounds speeds 0 to 500 km/h then converts with kmhToMps, and pinned field contracts check the units. Ecowitt: the cloud real_time endpoint, roughly one upload a minute; the request pins SI units because the defaults are imperial, and speeds are validated 0 to 140 m/s. A fifth dashed lane, Custom, takes any upstream you can fetch: your mapping must return a valid Station, and defineStationAdapter supplies the full belt. All five lanes' arrows, labelled normalized Station, converge on one accented node, the wire contract's Station document: identity plus capabilities on both arms of the status union, status ok carrying reading and history, status unavailable carrying a reason code, speeds in m/s with null never zero, and capabilities declared, never inferred. An italic note beneath states the point: whatever the hardware, the client sees one document. To the right, a downstream zone that speaks only the contract, never a vendor: the station feed handler assembles stations into StationFeed and serves /feed, /current, /live, and the other routes over HTTP to components and clients, which keep one decoder for every station. A footer strip states the degradation belt: a throw or an invalid return degrades that station to status unavailable with a machine reason code — still the contract — and the rest of the feed survives.](figures/adapter-flow.svg)
+![Five vendor adapters (WindNerd, Tempest, Campbell, Ecowitt and custom) normalize their upstreams into the Station wire contract that the feed handler and clients read, and a failing adapter becomes an unavailable station with a reason code.](figures/adapter-flow.svg)
 
 ## The shipped adapters
 
-Four vendors are built in; each has its own reference page: config
+Four vendors are built in. Each has a reference page covering its config
 fields, capabilities, endpoint, and the quirks the adapter guards. Every
-vendor page ends with the same Setup block (the
+vendor page ends with the same Setup block, which is the
 [getting-started](/docs/station/getting-started/) mount with a one-entry
-`stations` array), so the pages differ only in the config entry itself:
+`stations` array. Only the config entry differs from page to page.
 
 | Vendor | Hardware |
 |---|---|
@@ -27,24 +27,24 @@ vendor page ends with the same Setup block (the
 | [Campbell](/docs/station/adapters/campbell/) | Campbell Scientific loggers |
 | [Ecowitt](/docs/station/adapters/ecowitt/) | Ecowitt arrays behind a gateway (WS90 Wittboy and siblings) |
 
-What each vendor declares, and what each declaration turns on (chart,
-stream, matrix column), is mapped surface by surface in
-[What your hardware shows](/docs/station/what-your-hardware-shows/).
+[What your hardware shows](/docs/station/what-your-hardware-shows/) maps
+what each vendor declares, and what each declaration turns on (chart,
+stream, matrix column), surface by surface.
 
-Anything else plugs in as a custom adapter, below.
+Any other hardware plugs in as a custom adapter, described below.
 
 ## The custom arm
 
-Everything from here down is for writing an adapter of your own: if
-your vendor is in the table above, pick its page and stop here.
+The rest of this page is for writing your own adapter. If your vendor is in
+the table above, its page has everything you need.
 
-The derivations the built-in vendors fill the wire with are public, so a
-custom adapter produces the same physics: `pressureTendency` (the trend
-code from recent history) and `seaLevelPressureHpa` (station pressure
-reduced to sea level) live on `@azohra/meteo.station`, and skipping them
-means your stations disagree with every other vendor's.
+The derivations the built-in vendors use to fill the wire are public, so a
+custom adapter can produce the same physics. `pressureTendency` computes the
+trend code from recent history, and `seaLevelPressureHpa` reduces station
+pressure to sea level. Both are exported from `@azohra/meteo.station`. If
+you skip them, your stations disagree with every other vendor's.
 
-Any station without a built-in vendor plugs in as `vendor: "custom"`:
+A station without a built-in vendor plugs in as `vendor: "custom"`.
 
 <!-- meteo-doc-fence: ignore — toStation is the reader's own mapping; the fence shows the loader's shape -->
 ```ts
@@ -61,18 +61,18 @@ const stations = [{
 }];
 ```
 
-The returned document is validated against the wire schema; an invalid return
-degrades that station to `unavailable`/`contract_break` and the rest of the
-feed survives. A loader that **throws** degrades through the same reason
-mapping the built-in adapters use: a thrown `UpstreamError("…", "timeout")`
-surfaces as `timeout`, a network `TypeError` as `upstream_error`;
-`contract_break` is reserved for invalid returned documents and unclassified
-throws.
+The returned document is validated against the wire schema. An invalid
+return degrades that station to `unavailable` with reason `contract_break`,
+and the rest of the feed still loads. A loader that throws degrades through
+the same reason mapping the built-in adapters use. A thrown
+`UpstreamError("…", "timeout")` surfaces as `timeout`, and a network
+`TypeError` surfaces as `upstream_error`. `contract_break` is reserved for
+invalid returned documents and unclassified throws.
 
 ## The plugin-factory pattern
 
-A third-party vendor package ships the same thing as a **plugin factory**, a
-function closing over vendor options and returning a config entry:
+A third-party vendor package ships the same thing as a plugin factory. That
+is a function that closes over vendor options and returns a config entry.
 
 <!-- meteo-doc-fence: ignore — a vendor-package sketch; toStation is the vendor's own mapping -->
 ```ts
@@ -104,83 +104,84 @@ export function acmeStation(options: {
 
 ## defineStationAdapter
 
-Vendor packages that want the full built-in treatment build their loader with
-`defineStationAdapter({ meta, load })` from `@azohra/meteo.station/server`.
-It owns environment resolution, meta assembly, the try/catch degradation
-belt, failure logging, reason mapping, and `mode: "current"` slimming; the
-adapter body is then parse + map, nothing else. Inside its `load`, throw
-freely; the belt degrades.
+A vendor package that wants the same handling as the built-in adapters
+builds its loader with `defineStationAdapter({ meta, load })` from
+`@azohra/meteo.station/server`. It handles environment resolution, meta
+assembly, the try/catch that degrades failures, failure logging, reason
+mapping, and `mode: "current"` slimming. The adapter body only parses and
+maps. Its `load` can throw freely, and the wrapper degrades the station.
 
 ## The rulebook
 
-The rules below bind what an adapter *returns*, however it is built:
+These rules apply to what an adapter returns, however it is built.
 
-- Never resolve a healthy-looking document for an upstream failure: the
-  station degrades to `unavailable` with a reason (the belt does this for
-  anything thrown).
-- Capabilities are declared from what the hardware carries, never inferred
-  from the data that happened to arrive.
-- Calm (below the WMO threshold) carries no direction; the speed still
-  travels.
-- Plausibility bounds live in the adapter, in the VENDOR's units (0–500 km/h
-  for km/h upstreams, 0–140 m/s for m/s ones), where a lying instrument costs
-  one station; the contract only validates shape.
-- Cache keys name the upstream identity (vendor + endpoint/station), never a
-  host-chosen label.
-- `mode: "current"` means history `null` with meta intact: same decoder,
-  lighter document.
+- An upstream failure degrades the station to `unavailable` with a reason.
+  The adapter does not resolve a healthy-looking document for it. Anything
+  thrown is degraded this way automatically.
+- Capabilities are declared from what the hardware carries. They are not
+  inferred from the data that happened to arrive.
+- A calm reading (below the WMO threshold) carries no direction. The speed
+  still travels.
+- Plausibility bounds live in the adapter, in the vendor's units: 0–500 km/h
+  for km/h upstreams and 0–140 m/s for m/s ones. Checked there, a faulty
+  instrument costs one station. The contract only validates shape.
+- Cache keys name the upstream identity (vendor plus endpoint or station).
+  They do not use a host-chosen label.
+- `mode: "current"` returns history as `null` with meta intact. It uses the
+  same decoder and produces a lighter document.
 
-`emptyConditions()` from `@azohra/meteo.station` is the starting point
-for a station carrying one or two conditions-class sensors: spread the
-measured fields over it and every absent quantity stays null, never zero.
+For a station with one or two conditions-class sensors, start from
+`emptyConditions()` in `@azohra/meteo.station`. Spread the measured fields
+over it, and every absent quantity stays null rather than zero.
 
 ## Environment injection
 
-Adapters touch the world only through an injected environment:
+Adapters reach the outside world only through an injected environment,
 `{ fetch, cache, logger, userAgent, now }`. Upstream documents go through
-`fetchUpstreamText`, which enforces a 4-second timeout and a 512 KiB
-response cap, and maps HTTP 429 to `rate_limited`. Upstream streams go
-through `fetchUpstreamStream`. Its deadline covers only the connect:
-headers must arrive within 10 seconds. After that, the open body answers
-to the caller's `signal` and an idle watchdog, with no whole-response
-timeout. It shares the same failure mapping, and streams are never
-cached; every caller owns its own connection.
+`fetchUpstreamText`. It enforces a 4-second timeout and a 512 KiB response
+cap, and maps HTTP 429 to `rate_limited`. Upstream streams go through
+`fetchUpstreamStream`, whose deadline covers only the connect. Headers must
+arrive within 10 seconds. After that, the open body is governed by the
+caller's `signal` and an idle watchdog, and there is no whole-response
+timeout. It uses the same failure mapping. Streams are not cached, so every
+caller owns its own connection.
 
-- **`cache`**: provide a `FeedCache` backed by KV/Redis when your platform
-  runs multiple isolates, so they share one upstream poll instead of each
-  keeping a private memory cache. On Cloudflare Workers, `workersCache()`
-  ships that shared cache over the ambient `caches.default`, and returns
-  `undefined` off-platform so `cache: workersCache()` falls back to the
-  memory default.
-- **`logger`**: the default writes degradations to the console
-  (`warn`/`error`); inject your own to route them, or a no-op to silence
-  them. Every `LogEvent` carries a stable `code` (`"upstream_failure"`,
-  `"config_invalid"`, `"clock_skew"`, …); match alerting on codes, never on
-  the prose `message`.
-- **`userAgent`**: overrides the default
+- `cache` takes a `FeedCache`. Provide one backed by KV or Redis when your
+  platform runs multiple isolates, so they share one upstream poll instead
+  of each keeping a private memory cache. On Cloudflare Workers,
+  `workersCache()` provides that shared cache over the ambient
+  `caches.default`. Off-platform it returns `undefined`, so
+  `cache: workersCache()` falls back to the memory default.
+- `logger` defaults to writing degradations to the console (`warn` and
+  `error`). Inject your own to route them, or a no-op to silence them.
+  Every `LogEvent` carries a stable `code` (`"upstream_failure"`,
+  `"config_invalid"`, `"clock_skew"`, …). Match alerting on the code
+  rather than the prose `message`.
+- `userAgent` overrides the default
   `azohra-meteo/0.1 (+https://meteo.azohra.com)`.
-- **`now`**: injectable clock, for tests and replay.
+- `now` is an injectable clock for tests and replay.
 
 ## The cache trust model
 
 The shared default cache is a trust boundary. When no cache is injected,
 every handler and bare adapter call in the process shares one bounded
 in-memory cache, and concurrent misses on a key coalesce into a single
-upstream hit. Cache keys name the *upstream* (vendor + endpoint/station
-identity), never credentials or host-chosen labels:
+upstream hit. Cache keys name the upstream (vendor plus endpoint or station
+identity). They leave out credentials and host-chosen labels.
 [Tempest keys exclude the token](/docs/station/adapters/tempest/#endpoint-and-the-token-free-cache-key),
-so a config carrying a wrong token can be served a payload another config's
-valid token warmed. Payloads are per-station, not per-credential, so that
-sharing is correct; but the default cache then trusts every tenant in
-the process. Multi-tenant hosts whose tenants must not share payloads, or
-must re-prove credentials per request, should inject a cache per tenant.
+so a config with a wrong token can be served a payload that another
+config's valid token put in the cache. Payloads are per station rather than
+per credential, so that sharing is correct. It does mean the default cache
+trusts every tenant in the process. A multi-tenant host whose tenants must
+not share payloads, or must re-prove credentials per request, should inject
+a cache per tenant.
 
 ## Polling etiquette
 
 Every response advertises `recommendedPollSeconds` per station, derived
-from upstream cache TTLs; polling faster than those TTLs returns the same
-cached payload. Upstreams that are not official APIs get extra care:
-validate every value, degrade to `unavailable` on any contract break
+from upstream cache TTLs. Polling faster than those TTLs returns the same
+cached payload. Upstreams that are not official APIs get extra care.
+Validate every value, degrade to `unavailable` on any contract break
 rather than guessing, and send a User-Agent that names the project.
 [WindNerd's endpoints](/docs/station/adapters/windnerd/#endpoints) are
 the shipped example.

@@ -61,10 +61,10 @@ const cloudBase =
   fail("the sounding lost its cloud-base mark");
 const lcl = soundingScene.lcl ?? fail("the sounding lost its LCL marker");
 const caption =
-  `The tinted Meteogram column is ${hourLabel}, the day's strongest lift; the sounding opens that ` +
-  `column vertically. ${soundingScene.levelCount} dots per trace are the model's published levels — ` +
-  `the straight segments between them are interpolation, never data — and the dashed parcel is the ` +
-  `one derived trace, its LCL at ${Math.round(lcl.altitudeM)} m sitting close under the ` +
+  `The tinted Meteogram column is ${hourLabel}, the hour of the day's strongest lift, and the sounding ` +
+  `draws that column vertically. The ${soundingScene.levelCount} dots on each trace are the model's ` +
+  `published levels. The straight segments between them are interpolation, not data. The dashed ` +
+  `parcel is the only derived trace, and its LCL at ${Math.round(lcl.altitudeM)} m sits just under the ` +
   `${Math.round(cloudBase.altitudeM)} m cloud base.`;
 ---
 
@@ -72,12 +72,13 @@ const caption =
   <div class="bf-sounding-inner section-inner">
     <h2 id="briefing-sounding-title">One hour, read vertically</h2>
     <p class="bf-section-lede">
-      A Meteogram answers the day; a sounding answers one hour.
+      A Meteogram covers the whole day, and a sounding covers one hour.
       The <code>/sounding</code> subpath takes the same profile document
-      and a <code>validAt</code>, and draws that column as a vertical
-      profile, capped where the model's published levels end: temperature
-      and dew point with one dot per published level, a lifted parcel with
-      its LCL, the derived heights, and a wind-barb ladder. <a href="/docs/briefing/sounding/">The sounding</a> is
+      and a <code>validAt</code> time, and draws that hour's column as a
+      vertical profile that stops where the model's published levels end.
+      It shows temperature and dew point with one dot per published level,
+      a lifted parcel with its LCL (lifted condensation level), the derived
+      heights, and a ladder of wind barbs. <a href="/docs/briefing/sounding/">The sounding</a> is
       the reference for the subpath.
     </p>
 

@@ -3,8 +3,15 @@
    sample run. The fence's launch elevation is the sample's own
    site-context pick, read from the committed document rather than typed
    in. */
+import briefingPackageJson from "@azohra/meteo.briefing/package.json";
 import siteContext from "../../../public/data-sample/site-context.json";
 import { fail } from "./exhibit";
+
+/* The capability subpaths are the package's own export map, so a new
+   subpath shows up here without an edit. */
+const subpaths = Object.keys(briefingPackageJson.exports)
+  .filter((key) => /^\.\/[a-z-]+$/.test(key))
+  .map((key) => key.slice(2));
 
 const contextSites = siteContext.sites as Record<
   string,
@@ -39,17 +46,16 @@ const svg = renderMeteogramSvg(
   <div class="bf-surfaces-inner section-inner">
     <h2 id="briefing-surfaces-title">Start building</h2>
     <p class="bf-section-lede">
-      Install it, point it at a forecast URL, and you have findings and a
-      chart. This example runs against a sample forecast hosted by this
-      site, so it works as pasted:
+      Install the package and give it a forecast URL to get findings and a
+      chart. This example reads a sample forecast hosted on this site, so it
+      runs as pasted.
     </p>
     <pre class="bf-code" tabindex="0"><code>{installCode}</code></pre>
     <pre class="bf-code" tabindex="0"><code>{readCode}</code></pre>
     <p class="bf-surfaces-docs">
-      Each capability is its own subpath (<code>contract</code>,{" "}
-      <code>transport</code>, <code>derive</code>, <code>analyze</code>,{" "}
-      <code>compare</code>, <code>history</code>, <code>meteogram</code>),
-      and each has its own page in
+      Each capability is its own subpath ({subpaths.map((name, index) => (
+        <>{index > 0 && ", "}<code>{name}</code></>
+      ))}), and each has its own page in
       the <a href="/docs/briefing/">briefing documentation</a>.
     </p>
   </div>

@@ -15,15 +15,14 @@ const windowWords = scene.rows.map((row) => {
 
 <section class="bf-board" aria-labelledby="briefing-board-title">
   <div class="bf-board-inner section-inner">
-    <h2 id="briefing-board-title">The whole field on one clock</h2>
+    <h2 id="briefing-board-title">Every model on one clock</h2>
     <p class="bf-section-lede">
-      The compare board lays every model's day on one shared axis: the
-      thermal window as a bar, hours past your wind ceilings barred
-      beneath it, cap break and rain onset at their hours, and the
-      launch, aloft, top, and storm numbers beside the lane. Timing
-      differences read straight down the column, and a model that can't
-      state something shows a dash — never a reassuring blank.
-      <a href="/docs/briefing/compare-board/">Compare board</a> documents
+      The compare board draws every model's day on one shared time axis.
+      Each row shows the thermal window as a bar, with the hours past your
+      wind ceilings marked beneath it and cap break and rain onset at their
+      hours. The launch, aloft, top, and storm numbers sit beside the row.
+      Timing differences line up down the column. Where a model cannot
+      state a value, the board shows a dash instead of a blank. <a href="/docs/briefing/compare-board/">Compare board</a> documents
       the scene and its SVG serializer.
     </p>
 
@@ -32,7 +31,7 @@ const windowWords = scene.rows.map((row) => {
       title="Two development timings, one axis"
       lesson={earlier.lesson}
       description={`Compare board with two model rows on a shared ${String(scene.axis.dayStartHour).padStart(2, "0")}:00–${scene.axis.dayEndHour}:00 local axis; each row draws its thermal window as a bar with launch, gust, aloft, top, and storms cells beside it.`}
-      caption={`One glance down the column: ${windowWords.join(" against ")} — the same development, two hours apart.`}
+      caption={`Read down the column: ${windowWords.join(" against ")}, the same development two hours apart.`}
       units="time local · winds m/s · altitude m MSL"
       scenario={earlier}
       headingLevel="h3"

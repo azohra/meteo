@@ -1,12 +1,13 @@
 ---
 title: Render SVG and a scene-derived key
-description: Serialize a scene and its scene-derived key to deterministic SVG styled by package tokens.
+description: Serialize a scene and its key to deterministic SVG, styled by the package's tokens.
 ---
 
-`renderMeteogramSvg(scene, options)` emits a complete SVG document with stable ordering
-and two-decimal geometry, styled entirely by overridable `--meteo-gram-*` tokens:
+`renderMeteogramSvg(scene, options)` emits a complete SVG document with
+stable ordering and two-decimal geometry. All of its styling comes from
+`--meteo-gram-*` tokens, which you can override.
 
-![The same Meteogram rendered twice from one scene. The left panel uses the package's default tokens; the right panel only overrides --meteo-gram-* custom properties to a dark club palette. The SVG markup of both panels is identical.](figures/token-contrast.svg)
+![One scene rendered twice with identical SVG markup, once with the package's default tokens and once with the --meteo-gram-* custom properties overridden to a dark club palette.](figures/token-contrast.svg)
 
 ```ts title="render-svg.ts"
 import type { MeteogramScene } from "@azohra/meteo.briefing/meteogram";
@@ -17,24 +18,28 @@ export function renderClubSvg(scene: MeteogramScene): string {
 }
 ```
 
-Give each chart on an HTML page a unique `idPrefix`. The prefix namespaces
-definitions such as cloud hatch patterns.
+Give each chart on an HTML page a unique `idPrefix`. The prefix keeps
+definitions such as cloud hatch patterns separate.
 
 ## Derive the key from the final scene
 
-`buildKeySpec(scene)` reports only encodings that the scene actually drew. It
-carries each keyed series' real class, dash, and stroke width; describes each
-shaded field overlay as a `ramps` entry whose classes are the drawn patches'
-own, in weak-to-strong reading order; includes the condensation hatch only
-when dense cloud is visible; includes the stability ramp only when that field
-is visible; adds the p25–p75 note only when a drawn series has an
-ensemble band; and keys the wind-window marker pair (filled triangle in,
-open circle out) only when the scene drew that row. Lines that label themselves on the plot (the 10°/20°
-isotherms, the Td isolines) stay out of the key by default; a consumer whose
-look keys them anyway opts them in with
-`selfLabeled: ["dewPointIsoline"]` and receives the real style facts instead
-of restating dash and width. `renderKeySvg` serializes that spec with the
-same package stylesheet:
+`buildKeySpec(scene)` reports only the encodings the scene actually drew:
+
+- each keyed series, with its real class, dash, and stroke width;
+- each shaded field overlay, as a `ramps` entry whose classes are the
+  drawn patches' own, in weak-to-strong reading order;
+- the condensation hatch, only when dense cloud is visible;
+- the stability ramp, only when that field is visible;
+- the p25–p75 note, only when a drawn series has an ensemble band; and
+- the wind-window marker pair (filled triangle in, open circle out), only
+  when the scene drew that row.
+
+Lines that label themselves on the plot, such as the 10° and 20°
+isotherms and the Td isolines, stay out of the key by default. A consumer
+whose design keys them anyway adds them with
+`selfLabeled: ["dewPointIsoline"]` and gets the real style facts, so it
+does not have to restate dash and width. `renderKeySvg` serializes the
+spec with the same package stylesheet:
 
 ```ts title="render-key.ts"
 import type { MeteogramScene } from "@azohra/meteo.briefing/meteogram";
@@ -45,37 +50,37 @@ export function renderClubKey(scene: MeteogramScene): string {
 }
 ```
 
-Build the key from the final scene after every option or overlay change. An
-all-layer key falsely labels a progressive or hidden-layer chart. Give each
-key its own `idPrefix` to separate its hatch definition from every chart and
-key on the page.
+Build the key from the final scene after every option or overlay change.
+A key listing every layer mislabels a chart that reveals layers
+progressively or hides some. Give each key its own `idPrefix` so its hatch
+definition stays separate from every other chart and key on the page.
 
 ## Stylesheet choices
 
-The default output embeds `DEFAULT_STYLESHEET`. Every colour fallback comes
-from one of the exported maps:
+The default output embeds `DEFAULT_STYLESHEET`. Every colour fallback
+comes from one of these exported maps:
 
 - `TOKEN_DEFAULTS` for the renderer's general token surface;
 - `STABILITY_TOKEN_DEFAULTS` for the eight-class stability ramp;
-- `SERIES_TOKENS` for the key-entry id → token correspondence
-  (`"meteo-gram-series-usable"` → `usable`) a legend or focus style needs; read it
-  instead of parsing id strings; and
+- `SERIES_TOKENS` for mapping a key-entry id to its token
+  (`"meteo-gram-series-usable"` → `usable`), which a legend or focus style
+  needs; read it instead of parsing id strings; and
 - `FIELD_STYLE_DEFAULTS` for each field-overlay class's fill token and
-  opacity, the facts an HTML ramp chip needs.
+  opacity, which an HTML ramp chip needs.
 
-Token keys omit the CSS prefix: `surface` maps to `--meteo-gram-surface`,
-and `stable` maps to `--meteo-gram-stab-stable`. Read the maps for
-legends and swatches; override CSS custom properties on an ancestor for
-a downstream presentation.
+Token keys leave out the CSS prefix, so `surface` maps to
+`--meteo-gram-surface` and `stable` maps to `--meteo-gram-stab-stable`.
+Read the maps to build legends and swatches. To restyle the chart for your
+own site, override the CSS custom properties on an ancestor.
 
-![The package's exported defaults rendered as swatches and values: the stability ramp, all renderer tokens, the CAPE class thresholds, and which overlays default on.](figures/token-reference.svg)
+![The package's exported defaults as swatches and values: the stability ramp, every renderer token, the CAPE class thresholds, and which overlays are on by default.](figures/token-reference.svg)
 
-The stability ramp's eight classes, in order: `very-unstable`,
-`unstable`, `conditional-strong`, `conditional`, `near-neutral`,
-`stable`, `inverted`, `strong-inversion`, each themed by its
-`--meteo-gram-stab-<name>` token. The figure's CAPE thresholds and
-overlay defaults read from the same package exports
-(`DEFAULT_CAPE_CLASSES`, `DEFAULT_OVERLAYS`).
+The stability ramp has eight classes. In order they are `very-unstable`,
+`unstable`, `conditional-strong`, `conditional`, `near-neutral`, `stable`,
+`inverted`, and `strong-inversion`, and each is coloured by its
+`--meteo-gram-stab-<name>` token. The figure reads its CAPE thresholds and
+overlay defaults from the package exports `DEFAULT_CAPE_CLASSES` and
+`DEFAULT_OVERLAYS`.
 
 ```ts title="stability-swatches.ts"
 import { STABILITY_TOKEN_DEFAULTS } from "@azohra/meteo.briefing/meteogram";
@@ -85,12 +90,13 @@ export const stabilitySwatches = Object.entries(STABILITY_TOKEN_DEFAULTS).map(
 );
 ```
 
-The reference renderer keeps the stability field pale so lines, markers,
-labels, and white wind barbs remain foreground. The
+The reference renderer keeps the stability field pale so that lines,
+markers, labels, and white wind barbs stay in the foreground. The
 [stability-ramp logbook entry](/logbook/stability-ramp/) records the
 measured palette constraints.
 
-Override tokens on an ancestor instead of forking the serializer:
+To change the look, override tokens on an ancestor rather than forking
+the serializer:
 
 ```css title="club-overrides.css"
 .club-meteogram {
@@ -103,29 +109,32 @@ Override tokens on an ancestor instead of forking the serializer:
 }
 ```
 
-Pass `stylesheet: null` when the consumer will supply all class styling.
-`DEFAULT_STYLESHEET` remains available as a reference, but copying individual
-hex values into application code creates a second authority.
+Pass `stylesheet: null` when you will supply all the class styling
+yourself. `DEFAULT_STYLESHEET` stays available as a reference, but copying
+individual hex values into application code gives the colours a second
+source that can drift.
 
-`TOKEN_DEFAULTS` defines a type-scale token for every serializer text role,
-including strip scales, hour ticks, the surface-temperature row, and key
-labels. The per-element `--meteo-gram-halo-series`, `--meteo-gram-halo-barb`,
-`--meteo-gram-halo-marker`, and `--meteo-gram-halo-text` slots fall back to shared
-`--meteo-gram-halo`; set one slot to `transparent` to remove that halo. Scalar strips
-print their maximum and minimum at the right edge. The cloud-layer strip keeps
-its H/M/L row tags.
+`TOKEN_DEFAULTS` defines a type-size token for every text role in the
+serializer, including strip scales, hour ticks, the surface-temperature
+row, and key labels. The per-element halo tokens
+`--meteo-gram-halo-series`, `--meteo-gram-halo-barb`,
+`--meteo-gram-halo-marker`, and `--meteo-gram-halo-text` fall back to the
+shared `--meteo-gram-halo`. Set one of them to `transparent` to remove that
+halo. Scalar strips print their maximum and minimum at the right edge, and
+the cloud-layer strip keeps its H/M/L row tags.
 
-The serializer fills sampled field bands with the SVG even-odd rule. Custom
-renderers of `MeteogramScene.fields` must apply the same `fill-rule="evenodd"` to
-preserve holes between interpolated contour thresholds.
+The serializer fills sampled field bands with the SVG even-odd rule. A
+custom renderer of `MeteogramScene.fields` must use the same
+`fill-rule="evenodd"` to keep the holes between interpolated contour
+thresholds.
 
 ## Scene defaults
 
-meteo by Azohra ships one reference look. Configure scene behaviour
-through `MeteogramOptions` and visual values through the renderer's
+meteo by Azohra ships one reference look. Configure what the scene draws
+through `MeteogramOptions`, and how it looks through the renderer's
 `--meteo-gram-*` tokens. `DEFAULT_OVERLAYS` exposes the package's overlay
-defaults when a control must enumerate every layer; omit `overlays` when
-the reference defaults are sufficient.
+defaults for a control that has to list every layer. Leave out `overlays`
+when the reference defaults are enough.
 
 ```ts title="build-reference-scene.ts"
 import type { SiteForecast } from "@azohra/meteo.briefing/contract";
@@ -146,17 +155,19 @@ export function buildClubScene(profile: SiteForecast) {
 }
 ```
 
-Display windows, overlay choices, CAPE classes, sink rates, and local colour
-overrides belong to the operator. Pass them directly to
-`buildMeteogramScene` or the consuming stylesheet.
+Display windows, overlay choices, CAPE classes, sink rates, and local
+colour overrides are the operator's choices. Pass them to
+`buildMeteogramScene` or set them in your own stylesheet.
 
 ## Deterministic SVG output
 
-The same scene and options produce identical bytes, supporting static builds,
-caching, reviewable golden diffs, and reproducible teaching figures. Ensemble
-profile values remain percentile bands in the scene.
+The same scene and options always produce identical bytes. That makes
+static builds, caching, reviewable golden diffs, and reproducible teaching
+figures possible. Ensemble profile values stay percentile bands in the
+scene.
 
-If an intentional renderer change alters a golden, the release tag is the
+If an intentional renderer change alters a golden file, the release tag
+is the
 [snapshot boundary](/docs/briefing/versioning/#release-tags-are-snapshot-boundaries).
-A new snapshot is not
-evidence that labels, units, IDs, or accessibility stayed correct.
+A new snapshot does not show that labels, units, IDs, or accessibility
+stayed correct.

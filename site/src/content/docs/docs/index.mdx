@@ -1,70 +1,73 @@
 ---
 title: Project overview
-description: What each layer does, from provider bytes to a published forecast and its chart, and where each capability's documentation begins.
+description: Where to start, what each package does, and how forecast data moves from provider files to a published chart.
 ---
 
 import QuantityHomes from "../../../components/about/QuantityHomes.astro";
 
 meteo by Azohra publishes soaring forecasts for a flying community. The
-forecast engine builds versioned JSON documents for the launches you
-catalogue; the TypeScript packages validate those documents and draw the
-charts. Any layer can run on infrastructure its operator controls.
+forecast engine builds versioned JSON documents for the launches you list,
+and the TypeScript packages validate those documents and draw the charts.
+You can run every part on infrastructure you control.
 
 ## Where to begin
 
-Every capability's section in the sidebar opens with its own first steps
-and carries its install command. The three doors most readers want: the
-operator's path starts at
-[Configure launches](/docs/forecast/configure-launches/), the TypeScript
-reader's at
-[Render a first Meteogram](/docs/briefing/render-first-meteogram/), and the
-station owner's at
-[Station getting started](/docs/station/getting-started/). The rest of
-this page is the map of how those layers fit.
+Pick the path that matches what you want to do:
 
-![Two lanes flow left to right into the operator. A tall tinted band — the versioned JSON documents: manifest, site profiles, month archives, site context — stands as a wall across the top lane: provider model files decode through the grib and j2k packages, the forecast engine publishes through the wall, and the briefing package reads on the far side. The wall stops above the bottom lane, where weather-station hardware feeds the station package over one long wire that passes beneath it, marked never crosses. Both lanes end at the operator column on the right, and a dashed bar beneath the lanes marks the core package's shared vocabulary imported by briefing and station.](figures/platform-boundary.svg)
+- **Publish forecasts for your launches.** Start at
+  [Configure launches](/docs/forecast/configure-launches/).
+- **Read published forecasts in TypeScript.** Start at
+  [Render a first Meteogram](/docs/briefing/render-first-meteogram/).
+- **Show live wind from a weather station.** Start at
+  [Station getting started](/docs/station/getting-started/).
+
+Each package's section in the sidebar begins with an overview and its
+install command. The rest of this page shows how the packages fit together.
+
+![Provider files pass through the decoders and the forecast engine into versioned JSON documents that the briefing package reads, while station hardware reaches the station package on a separate path, and both paths end with the operator.](figures/platform-boundary.svg)
 
 ## The responsibility boundary
 
-| Layer | Responsibility | Output or policy |
+| Layer | What it handles | What it produces |
 | --- | --- | --- |
-| [`@azohra/meteo.grib`](/docs/grib/) and [`@azohra/meteo.j2k`](/docs/j2k/), the decoders | Provider bytes beneath the engine: GRIB2 sections, grids, and packing, and the JPEG 2000 codestreams inside ECCC messages | Decoded grids, gated bit-for-bit against ecCodes |
-| [`@azohra/meteo.forecast`](/docs/forecast/), the forecast engine | Provider input, model-dependent sampling, and quantities that require unpublished inputs or cross-run authority | Published profile values |
-| Versioned JSON | Portable model, site, time, semantics, source-field, and derived-value documents | The data boundary between publisher and consumer — [Compatibility](/docs/compatibility/) carries the one rule for reading it |
-| [`@azohra/meteo.briefing`](/docs/briefing/) npm package | Contract validation, pure document derivations, scene construction, hit-testing, and reference SVG | Reusable analysis and presentation primitives |
-| [`@azohra/meteo.station`](/docs/station/) npm package | Live weather-station reading, derivation, and display: client, server, React, and custom-element bindings | The [station capability](/docs/station/) |
-| [`@azohra/meteo.core`](/docs/core/), the shared foundation | Units, angle and wind-vector math with one sign convention platform-wide, zod primitives, and the upstream-failure vocabulary | The [shared physical vocabulary](/docs/core/) the briefing and station packages build on |
-| The [operator](/docs/glossary/#operator) | Location selection, schedule, hosting, retention, presentation, access, verification, and safety language | A complete publication for their audience |
+| [`@azohra/meteo.grib`](/docs/grib/) and [`@azohra/meteo.j2k`](/docs/j2k/) | Provider files: GRIB2 sections, grids, and packing, and the JPEG 2000 images inside ECCC messages | Decoded grids that match ecCodes bit for bit |
+| [`@azohra/meteo.forecast`](/docs/forecast/) | Fetching provider data, sampling each model at each site, and computing values that need raw model inputs or several runs | The values in each published profile |
+| Versioned JSON documents | Model, site, time, semantics, source fields, and derived values in a portable form | The boundary between whoever publishes and whoever reads. [Compatibility](/docs/compatibility/) explains how to read across versions |
+| [`@azohra/meteo.briefing`](/docs/briefing/) | Contract validation, pure derivations from a document, scene construction, hit-testing, and reference SVG | Analysis and chart building blocks |
+| [`@azohra/meteo.station`](/docs/station/) | Reading, deriving, and displaying live station data, with client, server, React, and custom-element bindings | Live station feeds and components |
+| [`@azohra/meteo.core`](/docs/core/) | Units, angle and wind-vector math with one sign convention, zod primitives, and the upstream-failure vocabulary | Shared types and helpers for briefing and station |
+| The [operator](/docs/glossary/#operator) | Choosing locations, schedule, hosting, retention, presentation, access, verification, and safety language | The publication their audience sees |
 
-The platform ships [the engine, not an
-instance](/docs/forecast/#engine-not-instance); an operator composes it
-into a pipeline of their own.
+The project ships the engine. Each operator runs their own copy of it in a
+pipeline they control ([engine and instance](/docs/forecast/#engine-not-instance)).
 
 ## Who owns each value
 
-The forecast engine owns the **stored derivations** — values the published
-profile alone cannot yield, including
-its boundary-layer, thermal-velocity, cloud-base, and usable-lift series. The briefing
-package owns the **pure derivations** — functions of the published document — and the reference
-renderer. Presentation
-parameters belong to the consumer: timezone, windows, palette, overlays, and the sink-rate
-choices the renderer exposes.
+The forecast engine computes the **stored derivations**. These are values a
+reader can't recompute from the published profile, such as the
+boundary-layer top, thermal velocity, cloud base, and usable-lift series.
+The briefing package computes the **pure derivations**, which depend only on
+the published document, and provides the reference renderer. The reader
+chooses presentation settings: timezone, time windows, palette, overlays,
+and the sink rate the renderer uses.
 
-The parameterized `usableLiftTopM` is the explicit exception spanning that boundary. The
-implementation is the package's pure function; the engine imports it and stores its 1.0 m/s
-evaluation as the authoritative published value, so a consumer projecting another sink rate runs
-the same code that produced the stored series.
+`usableLiftTopM` is the one value on both sides. The calculation lives in
+the briefing package as a pure function. The engine imports that function
+and stores its result for a 1.0 m/s sink rate as the published value. A
+reader who wants another sink rate runs the same code that produced the
+stored series.
 
 <QuantityHomes />
 
-The model catalogue is authoritative for declared capabilities and provider semantics. The
-[model-capabilities guide](/docs/forecast/model-capabilities/) explains how consumers render those
-declarations.
+The model catalogue declares what each model can publish and what its
+provider values mean. The
+[model-capabilities guide](/docs/forecast/model-capabilities/) explains how
+readers should display those declarations.
 
-The chart at the end of the pipeline is the **Meteogram**: surface forcing
-aligned with the atmosphere above one model grid cell.
+The chart at the end of the pipeline is the **Meteogram**. It lines up
+surface forcing with the atmosphere above one model grid cell.
 [Reading a Meteogram](/docs/briefing/reading-a-meteogram/) explains every
-mark on it, the [glossary](/docs/glossary/) carries the platform's other
-terms of art, and the [logbook](/logbook/) records how the derivations
-and visual conventions were established. Where the platform came from, and
-the projects it descends from, is [the about page](/about/).
+mark on it. The [glossary](/docs/glossary/) defines the project's other
+terms, and the [logbook](/logbook/) records how the derivations and visual
+conventions were worked out. The [about page](/about/) covers where the
+project came from.

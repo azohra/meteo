@@ -4,43 +4,42 @@ description: "Poll runs.json, ingest coherent publications, and serve through ga
 ---
 
 An ingest loop polls the published dataset, notices a new publication,
-pulls one model's documents as a coherent set, and serves them from its
-own storage. Two kinds of code meet in it. The questions with correct
-answers ("is this set one publication", "why is this document missing",
-"is this run late") are package verbs; `@azohra/meteo.briefing/transport`
-and `@azohra/meteo.briefing/derive` answer every one of them. The
-scheduler, the store, retention, and what your product tells its users
-when a feed runs late are policy, shaped by the consumer and its runtime.
-This page is the recipe for wiring the loop, not a module to import; it is
-the server-side counterpart of
+pulls one model's documents as a coherent set, and serves them from its own
+storage. Some of its questions have correct answers: "is this set one
+publication", "why is this document missing", "is this run late".
+`@azohra/meteo.briefing/transport` and `@azohra/meteo.briefing/derive`
+answer all of them. The rest is policy that depends on your product and
+runtime: the scheduler, the store, retention, and what you tell users when a
+feed runs late. This page is a recipe for wiring the loop, and there is no
+module to import for it. It is the server-side counterpart of
 [Wire an inspector](/docs/briefing/wire-an-inspector/).
 
-![A flowchart of the ingest loop with the happy path as a vertical spine. Step 1 polls runs.json with loadRuns (one small fetch; the poll is the subscription); step 2 compares each model's (referenceTime, generatedAt) identity pair against seen[slug] per model. An unchanged pair exits right to serving with nothing new this tick; a changed pair continues down to step 3, loadSiteSet, where the manifest is the commit point and per-site misses never poison the set. A set still mixed after one retry branches right to step 4, syncing: true (a publish mid-flight; runsSeen names the runs), which ingests nothing and drops to serving what the store already holds. A coherent set (syncing: false; one run anchors the whole set) continues down the spine to step 5, the atomic swap: store the set under its new referenceTime and advance seen[slug], and the new run becomes what you serve. Every path lands on the wide strip at the bottom, the standing state rather than a step: serving the newest coherent publication the store holds, the predecessor kept serving through syncing sets, late runs, and dead ticks, never a partially ingested run and never deleting on a miss. A dashed edge climbs from the strip back to step 1 on the next tick: your cadence, a small fraction of the fastest runIntervalHours you serve.](figures/ingest-loop.svg)
+![The ingest loop as a numbered column: poll runs.json, compare the identity pair, load the site set, then swap atomically, side-stepping to syncing when a publish is mid-flight, with every branch returning to serving the newest coherent publication.](figures/ingest-loop.svg)
 
 ## Poll runs.json on your own cadence
 
-The dataset is static files, so it offers no webhook and needs none:
-the poll is the subscription. One fetch of `runs.json`
-(the cross-model run index, regenerated wholesale at every publish) answers
-"what run is current for every model". `loadRuns({ fetch, baseUrl })`
-fetches it with the same discriminated miss semantics as every other
-loader in the [transport guide](/docs/briefing/transport/).
+The dataset is static files, so there is no webhook, and none is needed:
+polling is how you subscribe. One fetch of `runs.json` answers "which run is
+current for every model". It is the cross-model run index, regenerated in
+full at every publish. `loadRuns({ fetch, baseUrl })` fetches it and reports
+misses the same way as every other loader in the
+[transport guide](/docs/briefing/transport/).
 
-Pick the cadence yourself. A sensible loop wakes at a small fraction of the
-fastest `runIntervalHours` it serves (every few minutes is plenty when the
-fastest feed publishes six-hourly), and a poll that finds nothing new costs
-one small document.
+You choose the cadence. A sensible loop wakes at a small fraction of the
+fastest `runIntervalHours` it serves. Every few minutes is plenty when the
+fastest feed publishes every six hours, and a poll that finds nothing new
+costs one small document.
 
 ## Detect a publication by its identity pair
 
 A publication is identified by the pair `(run.referenceTime,
-run.generatedAt)`; the fact and its consequences are defined in
-[Compatibility](/docs/compatibility/#publication-identity).
-For the loop that means: remember the last pair you ingested per model, and
-treat any change as work. A new `referenceTime` is a new run; a later
-`generatedAt` for the same `referenceTime` is a corrected re-publication,
-and re-ingesting it is exactly as mandatory: comparing `referenceTime`
-alone would serve retracted values forever.
+run.generatedAt)`. [Compatibility](/docs/compatibility/#publication-identity)
+defines this and what follows from it. For the loop, it means you remember
+the last pair you ingested for each model and treat any change as work. A new
+`referenceTime` is a new run. A later `generatedAt` for the same
+`referenceTime` is a corrected re-publication, and you must re-ingest it just
+the same. A loop that compared `referenceTime` alone would serve retracted
+values forever.
 
 ```ts title="detect-publications.ts"
 import type { RunsIndexEntry } from "@azohra/meteo.briefing/contract";
@@ -72,18 +71,18 @@ export async function modelsToIngest(
 }
 ```
 
-Advance `seen[slug]` to the fresh pair only after that model's documents
-ingest coherently below; a publish caught mid-flight then stays on the
-work list and is retried by the next tick, for free.
+Advance `seen[slug]` to the new pair only after that model's documents have
+ingested coherently, as below. A publish caught mid-flight then stays on the
+work list, and the next tick retries it at no extra cost.
 
 ## Ingest a coherent set
 
-A model's sites are separate files behind separate cache entries, so around
-a publish, per-site fetches can straddle two runs even when each
-manifest/document pair looks consistent on its own. `loadSiteSet`
-exists for exactly this. It anchors on one fetch of the model's manifest
-as the commit point, requires every site document to carry that manifest's
-run, and retries once on a mid-publish mix; the
+A model's sites are separate files behind separate cache entries. Around a
+publish, per-site fetches can therefore span two runs, even when each
+manifest and document pair looks consistent on its own. `loadSiteSet` solves
+exactly this. It fetches the model's manifest once as the commit point,
+requires every site document to carry that manifest's run, and retries once
+if a publish mixed them. The
 [transport guide](/docs/briefing/transport/#load-a-site-set-as-one-publication)
 defines the contract. The result discriminates on `syncing`:
 
@@ -127,25 +126,30 @@ export async function ingestProfileModel(
 }
 ```
 
-Three behaviours in that code carry the recipe. On `{ syncing: true }` the
-loop ingests **nothing** (not even the sites that agreed with the manifest),
-because a partial ingest is a torn store, and the next poll reads the
-finished publication cleanly while your store keeps serving what it already
-holds. Per-site misses never poison the set: `"absent"` sites are routine
-and `"invalid"` is a contract break to log loudly, exactly as in the
-[miss table](/docs/briefing/transport/#absent-is-routine-invalid-is-loud).
-And a coherent set may be the *previous* publication:
-[not syncing, just the newest complete forecast there is](/docs/briefing/transport/#load-a-site-set-as-one-publication);
-store it under its `referenceTime` and let the identity-pair check decide
-whether it was news. For a smoke model the recipe is identical with
-`parseSmokeDocumentJson` as the guard.
+Three behaviours in that code make the recipe work:
+
+- On `{ syncing: true }` the loop ingests **nothing**, not even the sites
+  that agreed with the manifest. A partial ingest would leave the store
+  holding two runs. The next poll reads the finished publication, and your
+  store keeps serving what it already holds in the meantime.
+- Per-site misses do not spoil the set. `"absent"` sites are routine, and
+  `"invalid"` is a contract break to log loudly, as the
+  [miss table](/docs/briefing/transport/#absent-is-routine-invalid-is-loud)
+  says.
+- A coherent set may be the *previous* publication, which is
+  [the newest complete forecast there is](/docs/briefing/transport/#load-a-site-set-as-one-publication).
+  Store it under its `referenceTime`, and let the identity-pair check decide
+  whether it was new.
+
+For a smoke model the recipe is the same, with `parseSmokeDocumentJson` as
+the guard.
 
 ## Observation series are the exception
 
-Observation documents are ingested per site with `loadObservation`: a
-guarded single fetch, no manifest anchor, no coherence dance. The
+Observation documents are ingested per site with `loadObservation`. It makes
+one guarded fetch, with no manifest anchor and no coherence check. The
 [transport guide](/docs/briefing/transport/#observations-one-guarded-fetch-no-dance)
-carries the full argument for why the dance would be wrong here.
+explains why a coherence check would be wrong here.
 
 ```ts title="ingest-observations.ts"
 import type { ObservationDocument } from "@azohra/meteo.briefing/contract";
@@ -171,51 +175,50 @@ export async function ingestObservations(
 }
 ```
 
-Because there is no run to anchor, observation series also have no
-publication pair to detect: poll them on their own tick, sized against the
-catalogue's `cadenceMinutes` rather than any `runIntervalHours`.
+Observation series have no run, so there is no publication pair to detect
+either. Poll them on their own tick, sized against the catalogue's
+`cadenceMinutes` instead of any `runIntervalHours`.
 
 ## Serve the predecessor through gaps
 
-Publishes take time and providers have bad days, so gaps are routine: a
-syncing set, a run that never appears, an ingest tick that dies halfway.
-The recipe absorbs all of them one way: the store serves the newest
-coherent publication it holds until a newer one has ingested completely,
-then swaps atomically under the new `referenceTime`. Never serve a
-partially ingested run, and never delete on a miss. A model that went
-quiet still has a perfectly good predecessor run, dated by its own `run`
-block; telling the reader "this is the 06Z run; the 12Z is late" beats
+Publishes take time and providers have bad days, so gaps are routine: a set
+that is still syncing, a run that never appears, an ingest tick that dies
+halfway. The recipe handles all of them the same way. The store serves the
+newest coherent publication it holds until a newer one has ingested
+completely, then swaps to it atomically under the new `referenceTime`. Do
+not serve a partially ingested run, and do not delete on a miss. A model
+that went quiet still has a good previous run, dated by its own `run` block.
+Telling the reader "this is the 06Z run; the 12Z is late" is better than
 showing nothing.
 
-How many predecessors to keep (one, a season, forever) is the consumer's
+How many previous runs to keep (one, a season, all of them) is your
 retention policy. The dataset's own
-[history archives](/docs/briefing/history-archives/) already keep the per-site record of
-everything published (readable programmatically with the
-[`@azohra/meteo.briefing/history` loaders](/docs/briefing/history/)), so your store
-only needs what your product serves hot.
+[history archives](/docs/briefing/history-archives/) already keep the per-site
+record of everything published, and the
+[`@azohra/meteo.briefing/history` loaders](/docs/briefing/history/) read it,
+so your store only needs what your product serves right now.
 
 ## Baseline feeds and bonus feeds
 
-Not every feed you ingest carries the same weight, and the gap-handling
-above should not pretend otherwise. A **baseline** feed is one your product
-cannot serve its purpose without; a **bonus** feed enriches the picture
-while it is there: a second opinion from another model, a smoke overlay,
-an observation series. The distinction matters because their failures mean
-different things. A baseline model gone stale is *your outage* (alert,
-escalate, apologize); a bonus feed going quiet is weather, or a
-provider's bad day: say so in the product and keep serving
-everything else. One freshness grade should never take the whole product
-down with it.
+Some feeds matter more than others, and your gap handling should reflect
+that. A **baseline** feed is one your product cannot do its job without. A
+**bonus** feed adds to the picture while it is available, such as a second
+model's opinion, a smoke overlay or an observation series. Their failures
+mean different things. A stale baseline model is *your outage*: alert,
+escalate and apologize. A bonus feed going quiet is the weather or a
+provider's bad day. Say so in the product and keep serving everything else.
+One feed's freshness grade should not take the whole product down.
 
-Which feeds are the baseline is product policy: the catalogue declares
-what each model publishes, not which ones you depend on.
+Which feeds are baseline is your product's decision. The catalogue declares
+what each model publishes, and it does not know which ones you depend on.
 
 ## Judge freshness with `runFreshness`
 
-A store that serves through gaps must answer "how current is
-this?". `runFreshness` from `@azohra/meteo.briefing/derive` grades a runs.json entry
-`"current" | "delayed" | "stale"`; the grading semantics live in the
-[derive reference](/docs/briefing/derive/#judge-run-freshness).
+A store that keeps serving through gaps has to answer "how current is
+this?". `runFreshness` from `@azohra/meteo.briefing/derive` grades a
+runs.json entry as `"current" | "delayed" | "stale"`. The
+[derive reference](/docs/briefing/derive/#judge-run-freshness) defines the
+grades.
 
 ```ts title="grade-feeds.ts"
 import type { ModelCatalogue, RunsIndex } from "@azohra/meteo.briefing/contract";
@@ -241,8 +244,8 @@ export function gradeFeeds(
 }
 ```
 
-Pass the runs.json entry and the catalogue entry straight in. A
-`"delayed"` run is still the newest forecast there is;
-`"stale"` means the feed has missed enough runs that presenting it as
-current weather would be dishonest; which grade triggers which product
-behaviour is the baseline-versus-bonus decision above.
+Pass the runs.json entry and the catalogue entry straight in. A `"delayed"`
+run is still the newest forecast there is. `"stale"` means the feed has
+missed enough runs that presenting it as current weather would mislead.
+Which grade triggers which behaviour in your product follows from the
+baseline and bonus decision above.

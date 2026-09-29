@@ -20,7 +20,7 @@ import RosesSection from "../components/station/sections/RosesSection.astro";
 
 <Base
   title="Station — live weather-station components — meteo by Azohra"
-  description="Live wind from launch stations: vendor adapters read any weather station into one documented contract, and framework-free components render it live: dials, history charts, roses, and daily patterns."
+  description="Live wind from launch weather stations. Vendor adapters read each station into one documented contract, and framework-free components draw it live as dials, history charts, roses, and daily patterns."
   activeNav="station"
 >
   <main id="main-content" class="station-main">
@@ -43,13 +43,13 @@ import RosesSection from "../components/station/sections/RosesSection.astro";
 
     <section id="catalogue" class="station-closing" aria-labelledby="station-catalogue-title">
       <div class="section-inner">
-        <h2 id="station-catalogue-title">Three exhibits here; the catalogue holds them all</h2>
+        <h2 id="station-catalogue-title">See every component</h2>
         <p>
-          Instruments, seasons, trends, the air matrix, the fleet table,
-          one-line strips, the atoms, and an instrument with no provider at
-          all: the <a href="/docs/station/component-gallery/">component
-          gallery</a> renders every element in the binding, live, the same
-          way this page does.
+          This page shows three sections. The <a href="/docs/station/component-gallery/">component
+          gallery</a> renders every element in the binding live, the same way
+          this page does. That includes instruments, seasons, trends, the air
+          matrix, the fleet table, one-line strips, the atoms, and an
+          instrument with no provider at all.
         </p>
       </div>
     </section>
@@ -58,12 +58,11 @@ import RosesSection from "../components/station/sections/RosesSection.astro";
       <div class="section-inner">
         <h2 id="station-boundary-title">This package reads live stations. It doesn't forecast.</h2>
         <p>
-          Station reads live weather stations and renders them; it is independent
-          of the forecast and Meteogram capabilities. Forecasts are the job
-          of <a href="/forecast/">@azohra/meteo.forecast</a>, the engine. Build the same
-          page against your own stations: <a href="/docs/station/">the station
-          documentation</a> covers the wire contract, adapters, the feed handler, and
-          both bindings.
+          Station reads live weather stations and draws them. It does not depend
+          on the forecast or Meteogram packages. Forecasts come from the engine, <a href="/forecast/">@azohra/meteo.forecast</a>. To build this page
+          against your own stations, start with <a href="/docs/station/">the station
+          documentation</a>. It covers the wire contract, adapters, the feed handler,
+          and both bindings.
         </p>
       </div>
     </section>

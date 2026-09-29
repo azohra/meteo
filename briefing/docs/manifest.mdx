@@ -5,8 +5,10 @@ description: Read the identity, extent, sites, and build accounting of one stati
 
 import { MANIFEST_SCHEMA_VERSION } from '@azohra/meteo.briefing/contract';
 
-Each published model directory contains `manifest.json`. It is the small
-discovery document paired with the larger site profiles.
+Each published model directory contains a `manifest.json`. It is a small
+document that says which run was published, for which sites, over which
+forecast hours, with the build's statistics. The larger site profiles sit
+beside it.
 
 ## On the wire
 
@@ -16,7 +18,7 @@ discovery document paired with the larger site profiles.
 | **Parse** | `parseForecastManifestJson` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
 | **Zod authority** | `forecastManifestSchema` |
 | **JSON Schema** | [`manifest.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/manifest.schema.json) |
-| **Discovery** | one per published model directory; `runs.json` at the data root indexes every current manifest's publication identity, but does not replace the manifest's site inventory or forecast extent |
+| **Discovery** | one per published model directory; `runs.json` at the data root indexes every current manifest's publication identity, but it does not carry the manifest's site list or forecast extent |
 
 ## Stable fields
 
@@ -32,35 +34,35 @@ discovery document paired with the larger site profiles.
 | `stats` | Stable accounting core plus optional transport-specific numbers |
 
 The stable stats core is `downloads`, `downloadBytes`, `retries`, and
-`durationMs`. Other numeric keys can change; use them for
-diagnostics, not application logic.
+`durationMs`. Other numeric keys can change, so use them only for
+diagnostics.
 
 ## Publication identity
 
 Treat `(referenceTime, generatedAt)` as the publication identity. A new
-`generatedAt` with the same `referenceTime` is a corrected republication and
-should be re-ingested. It is not a schema release; the identity pair and
-its consequences are defined in
-[Compatibility](/docs/compatibility/#publication-identity).
+`generatedAt` with the same `referenceTime` is a corrected republication, and
+you should ingest it again. It does not change the schema.
+[Compatibility](/docs/compatibility/#publication-identity) defines the
+identity pair and what follows from it.
 
-The manifest and a selected profile must describe the same model and
-`referenceTime`. Independently cached static files can briefly disagree during
-deployment, so TypeScript consumers use
-[`loadForecast()` from `@azohra/meteo.briefing/transport`](/docs/briefing/transport/)
-rather than composing two unguarded fetches.
+The manifest and the profile you read with it must describe the same model
+and `referenceTime`. Static files cached separately can disagree for a short
+time while a publish is deploying. In TypeScript, use
+[`loadForecast()` from `@azohra/meteo.briefing/transport`](/docs/briefing/transport/),
+which checks the pair, instead of making two fetches yourself.
 
 ## Validate the document
 
-Use `parseForecastManifestJson` from `@azohra/meteo.briefing/contract`. A 404 means the model
-is not published at that root; an invalid document is also unavailable, and
-view code must not guess its missing fields.
+Use `parseForecastManifestJson` from `@azohra/meteo.briefing/contract`. A
+404 means the model is not published at that root. Treat an invalid document
+as unavailable too, and do not guess its missing fields in view code.
 
-The observation datasets (`goes18-dsr`, `goes18-aod`) publish a manifest
-variant: it keeps the identity and `stats` fields but carries
+The observation datasets (`goes18-dsr`, `goes18-aod`) publish a different
+manifest. It keeps the identity and `stats` fields, but carries
 `firstObservedAt`, `lastObservedAt`, and `observationCount` in place of the
-forecast-hour extent (its `referenceTime` equals `lastObservedAt`), so
-`parseForecastManifestJson` does not accept it. Parse it with
-`parseObservationManifestJson`, or with `parseManifestJson` when the
-dataset kind is unknown; the
+forecast-hour extent, and its `referenceTime` equals `lastObservedAt`.
+`parseForecastManifestJson` rejects it. Parse it with
+`parseObservationManifestJson`, or with `parseManifestJson` when you do not
+know the dataset kind. The
 [observation document reference](/docs/briefing/observation-document/)
-covers that dataset family.
+covers these datasets.

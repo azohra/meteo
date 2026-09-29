@@ -21,7 +21,7 @@ import BriefingSurfaces from "../components/briefing/BriefingSurfaces.astro";
 
 <Base
   title="Briefing — read, analyze, and compare published forecasts — meteo by Azohra"
-  description="@azohra/meteo.briefing turns published forecast JSON into a briefing: typed findings for one day, agreement and spread across models, convergence across a model's runs, and the Meteogram when the answer should be drawn."
+  description="@azohra/meteo.briefing turns published forecast JSON into a briefing: typed findings for one day, agreement and spread across models, convergence across a model's runs, and the Meteogram chart."
   activeNav="briefing"
 >
   <main id="main-content" class="bf-main">
@@ -38,11 +38,10 @@ import BriefingSurfaces from "../components/briefing/BriefingSurfaces.astro";
       <div class="section-inner">
         <h2 id="briefing-boundary-title">This package reads forecasts. It doesn't make them.</h2>
         <p>
-          Producing and publishing forecasts is the job
-          of <a href="/forecast/">@azohra/meteo.forecast</a>, the engine.
-          Whatever the engine publishes, this package can read, analyze,
-          compare, and draw; the full reference is
-          the <a href="/docs/briefing/">briefing documentation</a>.
+          The engine, <a href="/forecast/">@azohra/meteo.forecast</a>,
+          produces and publishes forecasts. This package reads, analyzes,
+          compares, and draws whatever the engine publishes. The full
+          reference is the <a href="/docs/briefing/">briefing documentation</a>.
         </p>
       </div>
     </section>

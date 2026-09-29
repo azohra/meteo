@@ -44,8 +44,8 @@ const layers: Array<{
 }> = [
   {
     overlay: "stability",
-    label: "Thermal structure",
-    detail: "Stability through each model column",
+    label: "Stability",
+    detail: "How stable each model column is",
     checked: true,
   },
   {
@@ -56,13 +56,13 @@ const layers: Array<{
   },
   {
     overlay: "clouds",
-    label: "Moisture",
-    detail: "Near-saturated layers through each profile",
+    label: "Cloud",
+    detail: "Near-saturated layers in each profile",
     checked: true,
   },
   {
     overlay: "boundaryLayerTop",
-    label: "Parcel boundary",
+    label: "Boundary layer",
     detail: "Depth of the convective mixing layer",
     checked: true,
   },
@@ -96,9 +96,9 @@ for (const overlay of ["temperature", "cape", "gusts", "pblHeight", "cloudLayers
   <div class="home-section-inner section-inner">
     <SectionHeader
       eyebrow="@azohra/meteo.briefing"
-      title="Tells you what kind of day it is"
+      title="Read what kind of day it is"
       titleId="home-meteogram-title"
-      intro="The package reads published forecasts and answers in typed findings; the Meteogram is its chart. Toggle a layer to see how the chart builds."
+      intro="The package reads a published forecast and returns typed findings about the day. The Meteogram draws the same forecast as a chart. Toggle a layer to see what it adds."
     />
 
     <dl class="home-briefing-tiers">
@@ -124,7 +124,7 @@ for (const overlay of ["temperature", "cape", "gusts", "pblHeight", "cloudLayers
       id="home-convective-cycle"
       title="A fair-weather convective day"
       description={scenario.accessibilityDescription}
-      caption="The parcel boundary, cloud base, and usable-lift top follow different paths because each measures a different limit."
+      caption="The boundary-layer top, cloud base, and usable-lift top follow different paths because each measures a different limit."
       units="Altitude m MSL and ft MSL; wind barbs in km/h; surface strips as labelled"
       {scenario}
       headingLevel="h3"

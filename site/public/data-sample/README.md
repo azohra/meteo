@@ -3,10 +3,10 @@
 One real HRDPS continental run (`referenceTime` 2026-08-12T12:00:00Z),
 captured by the engine over the three synthetic sites in
 [`scenarios/catalog/`](../../../scenarios/catalog/) and served at
-`https://meteo.azohra.com/data-sample/`. Captured engine output —
-regenerate, never hand-edit
-(`briefing/test/data-sample-contract.test.ts` holds every document to the
-published contract guards).
+`https://meteo.azohra.com/data-sample/`. It is captured engine output, so
+regenerate it instead of editing it by hand.
+`briefing/test/data-sample-contract.test.ts` checks every document against
+the published contract guards.
 
 ## How it was generated
 
@@ -25,9 +25,9 @@ rather than reproducing it.
 
 ## The eight-step truncation
 
-`--max-steps 8` is deliberate: HRDPS continental publishes 48 hourly
-steps, and the sample keeps hours 1–8 as a small demonstration miniature. It
-demonstrates every document shape; it is not the model's horizon.
+`--max-steps 8` is deliberate. HRDPS continental publishes 48 hourly
+steps, and the sample keeps hours 1–8 to stay small. It shows every document
+shape, but it is not the model's horizon.
 
 ## Attribution
 

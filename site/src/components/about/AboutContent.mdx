@@ -7,7 +7,7 @@ from that life, not from a plan to start a software platform.
 
 It began while I was rebuilding [acrophobia.ca](https://acrophobia.ca) for
 our local free-flight club. The best forecast view we had was a static PNG
-from Canada RASP: genuinely useful, impossible to interact with. I wanted a
+from Canada RASP: useful, but impossible to interact with. I wanted a
 modern, web-native meteogram for my own use and my club's, with live
 weather-station data beside it. Looking for one exposed the gap: everything
 close was paid, Europe-only, or ancient. Nothing was built for Canada,
@@ -19,9 +19,9 @@ for pilots, primarily free-flight paragliders. meteo by Azohra brings
 forecast and live observational data into tools people can use to inform a
 flying decision. It does not make that decision for them.
 
-A club's site can make the result legible and specific to its community,
-with no code asked of the reader, while the science, contracts, and
-derivations stay inspectable underneath.
+A club's site can present the result for its own community, and its
+readers need no code to use it. The science, contracts, and derivations
+stay open to inspection underneath.
 
 ## The open-forecast bet
 
@@ -40,8 +40,7 @@ learn from; meteo's first derivations were faithful ports of its constants.
 
 The projects now do different jobs: Canada RASP draws national maps from a
 standing server; meteo derives site columns, publishes versioned documents,
-and renders them through a reusable library that can sit inside many
-downstream experiences. In publishing open soaring forecasts at all, it
+and renders them through a reusable library that other sites can build on. In publishing open soaring forecasts at all, it
 also follows [soaringmeteo](https://soaringmeteo.org/), which has done that
 job for the wider free-flight world for years.
 
@@ -64,11 +63,11 @@ removed. The [GRIB correctness record](/docs/grib/correctness/) and
 decoders are checked against independent implementations.
 
 The repository now separates the reusable engine from any operating instance.
-Publishers choose their sites, schedule, storage, credentials, and public
-surface in their own repositories. The
+Operators choose their sites, schedule, storage, credentials, and public
+pages in their own repositories. The
 [`azohra/acrophobia-forecasts`](https://github.com/azohra/acrophobia-forecasts)
 repository is the public reference instance; the
-[compatibility guide](/docs/compatibility/) owns the current version and
+[compatibility guide](/docs/compatibility/) has the current version and
 migration rules.
 
 ## Learning in public
@@ -78,7 +77,7 @@ weather stack. The documentation, logbook, and labs record what I learned,
 where the methods came from, and what remains uncertain. I want that trail
 to help another pilot or builder begin further ahead.
 
-Every published quantity has exactly one authority, and a club can run any
-layer on infrastructure it controls. The [documentation](/docs/) maps
-those boundaries — start with
+Each published quantity has exactly one source, and a club can run
+any layer on infrastructure it controls. The [documentation](/docs/) maps
+those boundaries, starting with
 [Who owns each value](/docs/#who-owns-each-value).

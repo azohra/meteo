@@ -3,13 +3,13 @@ title: "What it decodes"
 description: "The GRIB2 surface @azohra/meteo.grib covers: grid templates 3.0, 3.1, and 3.30, data representation templates 5.0, 5.2, 5.3, and 5.40, multi-field messages, bitmaps, wind rotation, and the NOMADS .idx byte-range helpers."
 ---
 
-Coverage is driven by the feeds the forecast engine actually reads, not by
-the GRIB2 specification's full surface. The package parses sections over
+The package covers the parts of GRIB2 that the forecast engine's feeds
+use, which is a subset of the full specification. It parses sections over
 raw GRIB2 bytes, including repeated sections 2–7 (multi-field messages)
 and section 6 bitmaps, and decodes the grid and packing templates below.
-Anything else is rejected with a named error, not approximated; for
-example, an unsupported packing template fails with the exact template
-number and the supported list.
+Anything else is rejected with a named error instead of being
+approximated. An unsupported packing template, for example, fails with the
+exact template number and the supported list.
 
 ## Grid templates (section 3)
 
@@ -23,14 +23,14 @@ lookup is O(1) per point.
 | 3.30 | Lambert conformal | HRRR CONUS 3 km, NAM 12 km and CONUS nest |
 
 `nearestGridpoint` reports the great-circle distance alongside the
-index, because callers use distance as the out-of-domain guard: it
-clamps and reports rather than throwing.
+index, because callers use the distance as the out-of-domain guard. It
+clamps and reports instead of throwing.
 [`src/grid.ts`](https://github.com/azohra/meteo/blob/main/grib/src/grid.ts)
-holds the inverses;
+holds the inverses, and
 [`src/nearest.ts`](https://github.com/azohra/meteo/blob/main/grib/src/nearest.ts)
-the lookup.
+holds the lookup.
 
-![The rotated graticule drawn over the true one: a schematic globe with the rotated south pole marked and the HRDPS domain lying along the rotated equator, and beside it the launch neighbourhood where tilted rotated gridlines cross the true graticule; toRotated maps the launch to fractional grid coordinates and a storage index, with the great-circle residual nearestGridpoint reports drawn in a magnified inset.](figures/rotated-grid.svg)
+![A schematic globe with the rotated south pole and the HRDPS domain along the rotated equator, and a close-up of a launch where rotated gridlines cross the true graticule, showing toRotated mapping the launch to fractional grid coordinates and a storage index, and the great-circle residual that nearestGridpoint reports.](figures/rotated-grid.svg)
 
 ## Data representation templates (section 5)
 
@@ -41,11 +41,12 @@ the lookup.
 | 5.3 | Complex packing with spatial differencing | Pure TypeScript |
 | 5.40 | JPEG 2000 | Through an injected decoder interface, so the codec dependency never enters this package's core |
 
-The measured shape of the feeds ([fixture
-findings](https://github.com/azohra/meteo/blob/main/grib/test/fixtures/README.md)):
-every harvested NOAA record (GFS, HRRR, NAM) uses DRT 5.3, and every
-ECCC Datamart product uses DRT 5.40. The JPEG 2000 seam and its Node
-wiring have [their own page](/docs/grib/jpeg2000/).
+The [fixture
+findings](https://github.com/azohra/meteo/blob/main/grib/test/fixtures/README.md)
+record the measured shape of the feeds. Every harvested NOAA record (GFS,
+HRRR, NAM) uses DRT 5.3, and every ECCC Datamart product uses DRT 5.40.
+The JPEG 2000 seam and its Node wiring have
+[their own page](/docs/grib/jpeg2000/).
 
 ## Wind rotation
 
@@ -59,8 +60,9 @@ Lambert cone constant.
 
 NOMADS publishes an `.idx` sidecar per GRIB file: one line per record,
 with byte offsets. [`src/idx.ts`](https://github.com/azohra/meteo/blob/main/grib/src/idx.ts)
-parses the sidecar and fetches single records by HTTP Range request,
-with fetch injected rather than ambient:
+parses the sidecar and fetches single records by HTTP Range request.
+The caller passes in the fetch function instead of the module using a
+global one.
 
 - `parseIdx` / `findRecord`: parse the sidecar text and locate a record
   by its fields.
@@ -70,11 +72,10 @@ with fetch injected rather than ambient:
 - `fetchIndex`: fetch and parse a sidecar (a plain, unranged GET).
 - `fetchRecord`: fetch one record's bytes with a Range request.
 
-A 200 response to a Range request is a failure, never a body to use:
-it means the server ignored `Range`
-and sent the whole multi-hundred-megabyte file. Only `206 Partial
-Content` is success. `fetchRecord` enforces this and throws with the
-offending status.
+Only `206 Partial Content` counts as success. A 200 response to a Range
+request is a failure, because it means the server ignored `Range` and sent
+the whole multi-hundred-megabyte file. `fetchRecord` enforces this and
+throws with the offending status.
 
 ## What the core never does
 

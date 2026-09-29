@@ -4,19 +4,20 @@ description: "The per-site wildfire-smoke time series from RAQDPS: fields, units
 ---
 
 The smoke document is the contract's wildfire-smoke
-[document family](/docs/compatibility/#document-families): a per-site,
-per-run time series of wildfire smoke from an air-quality
-model: ECCC's RAQDPS (GEM-MACH) today. It exists because the
-wind-profile models this dataset publishes for Canada are smoke-blind,
-and folding another model's smoke into their profiles would break the
-one-model-per-document rule. Consumers join a smoke document to a
-profile by site and `validAt` instead, and label the join with both
+[document family](/docs/compatibility/#document-families). It is a time
+series of wildfire smoke for one site and one run of an air-quality model,
+which today is ECCC's RAQDPS (GEM-MACH).
+
+It is a separate document because the wind-profile models published for
+Canada carry no smoke, and putting another model's smoke into their profiles
+would break the rule of one model per document. Consumers join a smoke
+document to a profile by site and `validAt`, and label the result with both
 models' runs.
 
-The live sample dataset publishes no smoke documents: the datasets this
+The live sample dataset has no smoke documents. The datasets this document
 kind was built against stayed with their operator when the engine went
-public, and are private now. Nothing on this page is fetchable from the
-sample; the JSON below is still real, quoted from a committed
+public, and they are private. Nothing on this page can be fetched from the
+sample. The JSON below is still real: it is quoted from a committed
 [history-archive](/docs/briefing/history-archives/) fixture.
 
 ## On the wire
@@ -27,7 +28,7 @@ sample; the JSON below is still real, quoted from a committed
 | **Parse** | `parseSmokeDocument(Json)` from [`@azohra/meteo.briefing/contract`](/docs/briefing/contract/) |
 | **Zod authority** | `smokeDocumentSchema` |
 | **JSON Schema** | [`smoke.schema.json`](https://github.com/azohra/meteo/blob/main/briefing/schema/smoke.schema.json) |
-| **Discovery** | the catalogue's `smokeModels` array: separate from `models`, so consumers that predate smoke keep parsing the catalogue untouched |
+| **Discovery** | the catalogue's `smokeModels` array, kept separate from `models` so consumers written before smoke existed still parse the catalogue unchanged |
 
 ## Shape and units
 
@@ -50,54 +51,53 @@ sample; the JSON below is still real, quoted from a committed
 ```
 
 *Quoted from the committed fixture
-`briefing/test/fixtures/raqdps-erie-2026-08.jsonl.gz`: the first
-archived run of a real smoked-in August 2026 month, its 72 hours elided
-to one.*
+`briefing/test/fixtures/raqdps-erie-2026-08.jsonl.gz`. It is the first
+archived run of a real, smoky August 2026, with its 72 hours cut to one.*
 
 | Field | Unit | Meaning |
 | --- | --- | --- |
-| `pm25Ugm3` | µg/m³ | Total near-surface PM2.5, all sources: the air-quality number. |
-| `smokePlumeSurfaceUgm3` | µg/m³ | The wildfire-smoke share of that PM2.5 at the surface. |
-| `smokePlumeColumnMgm2` | mg/m² | Vertically integrated wildfire-smoke PM2.5, as published; currently [quarantined from derived optics](#the-column-field-carries-a-provider-defect). |
+| `pm25Ugm3` | µg/m³ | Total near-surface PM2.5 from all sources. This is the air-quality number. |
+| `smokePlumeSurfaceUgm3` | µg/m³ | The part of that surface PM2.5 that comes from wildfire smoke. |
+| `smokePlumeColumnMgm2` | mg/m² | Vertically integrated wildfire-smoke PM2.5, as published. It is currently [kept out of derived optics](#the-column-field-carries-a-provider-defect). |
 
-The site block carries identity and the timezone echo only: no
-elevations, because terrain is a profile concern, not an air-quality
-one. Hours are all forecast hours, chronological, like a profile's.
+The site block carries only the site's identity and its timezone. It has no
+elevations, because terrain matters to a profile and not to air quality.
+The hours are all forecast hours, in time order, as in a profile.
 
-RAQDPS publishes **no optical-depth field** (verified 2026-08-09: the
-live Datamart tree carries concentration and column-mass files only), so
-optical thickness would be derived downstream from the column through a
-cited mass-extinction efficiency; see
+RAQDPS publishes **no optical-depth field**. On 2026-08-09 the live Datamart
+tree held only concentration and column-mass files. Optical thickness would
+therefore be derived downstream from the column, using a cited
+mass-extinction efficiency; see
 [`smokeAotFromColumn` in `@azohra/meteo.briefing/derive`](/docs/briefing/derive/)
-and the narrative in [Smoke and thermals](/logbook/smoke-and-thermals/).
-Read the next section before using that derivation on this document's
+and the account in [Smoke and thermals](/logbook/smoke-and-thermals/).
+Read the next section before applying that derivation to this document's
 column.
 
 ## The column field carries a provider defect
 
-Verified 2026-08-10 against the raw provider GRIBs, HRRR, and GOES-18:
-the provider declares a column integrated over the entire atmosphere,
-but the measured content behaves as the surface concentration times a
-~50–250 m near-surface slab: it correlates with RAQDPS's own surface
-field, not with a real column, and in heavy smoke it runs ~15–26× below
-satellite-consistent columns. The builder's read and unit conversion are
-faithful to the published GRIB; the defect is upstream, and it was
-reported to ECCC on 2026-08-10.
+This was checked on 2026-08-10 against the raw provider GRIBs, HRRR, and
+GOES-18. The provider declares a column integrated over the entire
+atmosphere. The values behave instead like the surface concentration
+multiplied by a near-surface layer about 50–250 m deep. They track RAQDPS's
+own surface field rather than a real column, and in heavy smoke they run
+about 15–26× below columns consistent with the satellite. The builder reads
+and converts the published GRIB faithfully, so the defect is upstream. It
+was reported to ECCC on 2026-08-10.
 
-The field is therefore quarantined from any derived optics: the
-analyze [`smokeImpact` kind](/docs/briefing/analyze/) republishes it
-raw as the document's own fact and carries no AOT for joined days.
-Re-arbitration has a named trigger: GOES AOD once ECCC responds, or
-~September. The contract's
+The field is therefore kept out of all derived optics. The analyze
+[`smokeImpact` kind](/docs/briefing/analyze/) republishes it raw as a fact of
+the document and gives no AOT for joined days. The decision will be
+revisited when a named trigger arrives: GOES AOD once ECCC responds, or
+around September. The contract's
 [`smokePlumeColumnMgm2` JSDoc](https://github.com/azohra/meteo/blob/main/briefing/src/contract.ts)
-carries the same warning beside the type, so the quarantine travels
-with the code. The surface field does not share the problem.
+carries the same warning next to the type, so the warning travels with the
+code. The surface field does not have this problem.
 
-## Provider facts — verified 2026-08-09
+## Provider facts, verified 2026-08-09
 
-- The Datamart folds the wildfire products into the plain
-  `model_raqdps` tree: there is no `model_raqdps-fw/` directory,
-  whatever older MSC documentation implies. Files live under
+- The Datamart keeps the wildfire products in the plain `model_raqdps`
+  tree. There is no `model_raqdps-fw/` directory, whatever older MSC
+  documentation suggests. Files live under
   `https://dd.weather.gc.ca/YYYYMMDD/WXO-DD/model_raqdps/10km/grib2/HH/hhh/`
   with the usual MSC one-message-per-file naming
   (`…_MSC_RAQDPS_PM2.5-WildfireSmokePlume_Sfc_RLatLon0.09_PThhhH.grib2`).
@@ -107,23 +107,23 @@ with the code. The surface field does not share the problem.
   (not currently published here), plus NO2, NO, O3, SO2, and plain
   PM10/PM2.5.
 - The GRIB messages carry **no units metadata**. The SI base units were
-  established from live field statistics: surface concentrations arrive
-  in kg/m³ and the column in kg/m² (that day's national maxima, 1.4×10⁻⁶
-  and 1.2×10⁻⁴, are physically plausible only in kg-based units). The
-  builder converts to µg/m³ and mg/m² at fetch.
-- Fetch cost: three whole-domain files per forecast hour, ~0.6 MB
-  together; roughly 43 MB per run, 86 MB per day.
+  worked out from live field statistics: surface concentrations arrive in
+  kg/m³ and the column in kg/m². That day's national maxima, 1.4×10⁻⁶ and
+  1.2×10⁻⁴, are physically plausible only in kg-based units. The builder
+  converts to µg/m³ and mg/m² when it fetches.
+- Fetch cost: three whole-domain files per forecast hour, about 0.6 MB
+  together, or roughly 43 MB per run and 86 MB per day.
 
 ## Joining a smoke document to a profile
 
-The two models run on different schedules (RAQDPS twice daily, HRDPS
-four times), so a joined pair usually mixes runs. RAQDPS's 72 h horizon
-covers HRDPS's 48 h at the worst offset (12 + 48 = 60 < 72), so the join
-never runs dry, but any view built on it must surface the smoke run's
-`referenceTime` beside the profile's rather than implying same-run
-provenance. `smokeHoursByValidAt` in
-[`@azohra/meteo.briefing/derive`](/docs/briefing/derive/) does the alignment; the
-scene graph's `smokeSource` carries the label. Models that publish their
-own smoke (HRRR) never need the join: their profiles carry a
-same-run [`smoke` block](/docs/briefing/profile-document/) instead, and
-when both exist the profile's own block wins.
+The two models run on different schedules: RAQDPS twice a day and HRDPS
+four times. A joined pair therefore usually mixes runs. RAQDPS's 72 h horizon
+covers HRDPS's 48 h even at the worst offset (12 + 48 = 60 < 72), so the join
+never runs out of smoke hours. Any view built on it must still show the smoke
+run's `referenceTime` next to the profile's, so it does not imply both came
+from the same run. `smokeHoursByValidAt` in
+[`@azohra/meteo.briefing/derive`](/docs/briefing/derive/) aligns the hours, and
+the scene graph's `smokeSource` carries the label. Models that publish their
+own smoke, such as HRRR, never need the join. Their profiles carry a
+same-run [`smoke` block](/docs/briefing/profile-document/), and when both
+exist, the profile's own block is used.

@@ -26,11 +26,11 @@ const codeHtml = [
   <div class="bf-findings-inner section-inner">
     <h2 id="briefing-findings-title">From URL to briefing</h2>
     <p class="bf-section-lede">
-      Fetch a published forecast, validate it, analyze it against your launch:
+      Fetch a published forecast, validate it, and analyze it for your launch.
     </p>
     <pre class="bf-call" set:html={codeHtml} />
     <p class="bf-section-lede">
-      Here is everything that call returned for the sample day, {rows.length} findings:
+      For the sample day, that call returns these {rows.length} findings.
     </p>
     <dl class="bf-finding-rows">
       {
@@ -49,8 +49,8 @@ const codeHtml = [
       it cites, and the thresholds it was computed with), so your site decides
       what to show and how. The two wind ceilings
       ({DAY_WIND_CEILINGS.surfaceMps} and {DAY_WIND_CEILINGS.bandMps} m/s)
-      came from the call: the package ships no safe-wind numbers, and
-      with no ceiling there is no exceedance finding. The thermal-window
+      are arguments to the call. The package ships no safe-wind numbers,
+      so without a ceiling there is no exceedance finding. The thermal-window
       thresholds ({analysis.thresholds.thermalWindow.wstarMinMps} m/s of climb
       over at least {analysis.thresholds.thermalWindow.depthMinM} m) are
       defaults you can override per call.

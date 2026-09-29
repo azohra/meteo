@@ -1,34 +1,33 @@
 # @azohra/meteo.core
 
-The foundation of the meteo by Azohra platform: the shared physical vocabulary
-every other `@azohra/*` meteorology package builds on.
+Shared units, wind math, and schema helpers for the meteo by Azohra
+packages. You rarely install it directly. For application code, use one of
+these instead:
 
-**Looking for a product, not a foundation?**
-
-- **Forecasts**: the published site-forecast contract, pure derivations,
-  analysis, comparison, history, transport, and the Meteogram presentation
-  tier → [`@azohra/meteo.briefing`](../briefing/README.md)
-- **Live stations**: live weather-station reading, derivation, and display
-  (client, server, React, and custom-element bindings) →
-  [`@azohra/meteo.station`](../station/README.md)
+- [`@azohra/meteo.briefing`](../briefing/README.md) reads published
+  forecasts. It has the forecast contract, pure derivations, analysis,
+  comparison, history, transport, and the Meteogram renderer.
+- [`@azohra/meteo.station`](../station/README.md) reads and displays live
+  weather stations, with client, server, React, and custom-element
+  bindings.
 
 ## What lives here
 
-Curated exports only. `core` is deliberate API, not a junk drawer; nothing
-moves here merely to shorten an import:
+Every export here is a deliberate part of the API. Code doesn't move into
+`core` only to shorten an import. The package contains:
 
-- **Units**: the platform's unit vocabulary and conversions (`units.ts`)
-- **Angles**: angular math and compass conventions (`angles.ts`)
-- **Wind**: the platform's one wind sign convention (`wind.ts`)
-- **Schema primitives**: shared zod building blocks (`schema.ts`)
-- **Failures**: the upstream-failure vocabulary (`failures.ts`)
-- **Schema artifacts**: the rendering machinery behind each capability's
-  emitted JSON Schema artifacts (`schema-artifacts.ts`)
+- Units: the platform's unit names and conversions (`units.ts`)
+- Angles: angle math and compass conventions (`angles.ts`)
+- Wind: the platform's one wind sign convention (`wind.ts`)
+- Schema primitives: shared zod building blocks (`schema.ts`)
+- Failures: the upstream-failure vocabulary (`failures.ts`)
+- Schema artifacts: the code that renders each capability's JSON Schema
+  artifacts (`schema-artifacts.ts`)
 
-Everything is exported through the one curated surface:
+Everything is exported from the package root:
 
 ```ts
 import { KMH_PER_MPS } from "@azohra/meteo.core";
 ```
 
-Dependencies: [zod](https://zod.dev) only.
+Its only dependency is [zod](https://zod.dev).

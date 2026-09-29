@@ -1,11 +1,11 @@
 # `@azohra/meteo.grib`
 
-A GRIB2 decoder in pure TypeScript, written because the forecast engine needs
-grid template 3.1 (rotated latitude-longitude: every ECCC HRDPS, RDPS,
-REPS, and RAQDPS field) and multi-field messages (NCEP's paired U/V
-submessages), and no maintained JavaScript decoder provides either.
-The browser-safe core carries no I/O; JPEG 2000 and the worker pool
-live in the Node-only `@azohra/meteo.grib/j2k-node` subpath.
+A GRIB2 decoder in pure TypeScript. It exists because the forecast engine
+needs grid template 3.1 (rotated latitude-longitude, used by every ECCC
+HRDPS, RDPS, REPS, and RAQDPS field) and multi-field messages (NCEP's paired
+U/V submessages), and no maintained JavaScript decoder handles either. The
+core does no I/O and runs in the browser. JPEG 2000 decoding and the worker
+pool live in the Node-only `@azohra/meteo.grib/j2k-node` subpath.
 
 ```sh
 pnpm add @azohra/meteo.grib
@@ -13,9 +13,9 @@ pnpm add @azohra/meteo.grib
 
 ## Decode a real field
 
-This decodes a committed HRDPS 2 m temperature field (rotated grid,
-JPEG 2000 packing, the combination that motivated the package) and
-samples one launch:
+This decodes a committed HRDPS 2 m temperature field and reads the value at
+one launch. The field is on a rotated grid and packed with JPEG 2000, the
+combination the package was written for.
 
 ```js
 // decode-fixture.mjs — run inside grib/ after `mise run build`
@@ -51,15 +51,16 @@ rotated 2540x1290 = 3276600 points
 2 m temperature: 23.05 C
 ```
 
-Every decode path is accepted bit-for-bit against ecCodes over the
-frozen twenty-message corpus in [`test/fixtures/`](test/fixtures/README.md);
-the gate's full story is at
-<https://meteo.azohra.com/docs/grib/correctness/>.
+Every decode path must match ecCodes bit-for-bit over the frozen
+twenty-message corpus in [`test/fixtures/`](test/fixtures/README.md).
+[The ecCodes gate](https://meteo.azohra.com/docs/grib/correctness/)
+explains how.
 
 ## Documentation
 
-The reference lives in [`docs/`](docs/) (coverage, the ecCodes gate,
-and the JPEG 2000 codecs and worker pool each have a page) and is
-served at <https://meteo.azohra.com/docs/grib/>.
+Read the [full documentation](https://meteo.azohra.com/docs/grib/) on the
+project site. Start with [what it decodes](https://meteo.azohra.com/docs/grib/coverage/)
+if you are checking whether your files are supported. The source pages live
+in [`docs/`](docs/).
 
 MIT © Justin Watts

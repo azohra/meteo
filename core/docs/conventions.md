@@ -1,26 +1,26 @@
 ---
 title: Units, angles, one wind sign
-description: The unit vocabulary, angle helpers, and the single wind sign convention the platform's wire documents share.
+description: The unit vocabulary, angle helpers, direction arcs, and the single wind sign convention the platform's wire documents share.
 ---
 
-The station and briefing packages compute with the same physical vocabulary
-(units, angles, and one wind sign convention), defined by
+The station and briefing packages compute with the same units, angles, and
+wind sign convention. They are defined in
 [`units.ts`](https://github.com/azohra/meteo/blob/main/core/src/units.ts),
 [`angles.ts`](https://github.com/azohra/meteo/blob/main/core/src/angles.ts),
 and [`wind.ts`](https://github.com/azohra/meteo/blob/main/core/src/wind.ts).
 
 ## One wind sign convention
 
-Wind values carry two complementary representations, and the sign convention
-between them is fixed platform-wide:
+Wind values carry two complementary representations, and the sign
+convention between them is fixed across the platform.
 
-Direction is meteorological: the compass bearing the wind blows *from*,
-in degrees clockwise from north. Components are the velocity of the air
-itself: `uMps` is the zonal component, positive eastward; `vMps` is the
-meridional component, positive northward; both in m/s.
+Direction is meteorological. It is the compass bearing the wind blows
+*from*, in degrees clockwise from north. Components are the velocity of
+the air itself. `uMps` is the zonal component, positive eastward, and
+`vMps` is the meridional component, positive northward. Both are in m/s.
 
-The two representations point opposite ways, and the conversion owns that
-minus sign so no other package ever writes it:
+The two representations point opposite ways. The conversion owns that
+minus sign, so no other package ever writes it.
 
 - `windToComponents(speedMps, directionDeg)` computes
   `uMps = -speed · sin(θ)` and `vMps = -speed · cos(θ)`, where θ is the
@@ -49,14 +49,14 @@ wherever it travels between packages.
 ### Mean direction
 
 `meanDirectionDeg(directionsDeg)` is the unit-vector circular mean of
-from-directions (every direction weighted equally, regardless of speed)
-and returns `null` on empty input. Averaging compass degrees arithmetically
-is wrong across north (350° and 10° average to 180°); the circular mean
-reports 0°.
+from-directions (every direction weighted equally, regardless of speed).
+It returns `null` on empty input. Averaging compass degrees arithmetically
+is wrong across north, where 350° and 10° average to 180°. The circular
+mean reports 0°.
 
 ## Units
 
-Speeds compute in m/s; km/h is a display conversion:
+Speeds are computed in m/s, and km/h is a display conversion.
 
 - `KMH_PER_MPS`: the constant `3.6`.
 - `kmhToMps(value)`: divides by `KMH_PER_MPS`.
@@ -76,14 +76,15 @@ Speeds compute in m/s; km/h is a display conversion:
 
 ## Direction arcs
 
-An arc of acceptable from-directions (a station's favorable sectors, a
-launch's wind window) is one shape platform-wide, defined by
-[`arcs.ts`](https://github.com/azohra/meteo/blob/main/core/src/arcs.ts):
+An arc of acceptable from-directions, such as a station's favorable
+sectors or a launch's wind window, has one shape across the platform. It
+is defined in
+[`arcs.ts`](https://github.com/azohra/meteo/blob/main/core/src/arcs.ts).
 
 - `DirectionArc`: `{ fromDeg, toDeg }`, meteorological FROM bearings in
   degrees clockwise from north. `fromDeg > toDeg` wraps through north, and
   both boundaries are inclusive. `fromDeg === toDeg` reads as a single
-  bearing, not a full circle.
+  bearing rather than a full circle.
 - `inDirectionArcs(directionDeg, arcs)`: whether a bearing falls inside any
   arc of the list; an empty list holds nothing.
 - `directionArcSpanDeg(arc)`: the arc's clockwise span in `[0, 360)`.
@@ -97,6 +98,6 @@ inDirectionArcs(0, window); // true — due north sits inside the wrap
 inDirectionArcs(180, window); // false
 ```
 
-Arcs are a judgment parameter wherever they gate a drawing or a verdict:
-no package supplies a default list, and a consumer that passes none gets
+Wherever arcs gate a drawing or a verdict, they are a judgment parameter.
+No package supplies a default list, and a consumer that passes none gets
 no marks drawn.

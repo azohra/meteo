@@ -1,7 +1,8 @@
 ---
-/* The commands are the README's verified forms (§ Install, § Run your
-   own); the second panel is the exact command that captured the dataset
-   shown above (site/public/data-sample/README.md § How it was generated).
+/* The commands are the README's verified forms (§ The CLI). The command
+   list lives in forecast/src/cli.ts, so the lede names only the command
+   shown here. The second panel is the exact command that captured the
+   dataset shown above (site/public/data-sample/README.md § How it was generated).
    The 48-hour horizon is read from the engine's live catalogue
    (forecast/models.json via catalogue.ts) — the data-sample copy is a
    captured run, kept for wire-shaped documents only. */
@@ -14,8 +15,7 @@ const horizonHours = modelBySlug("hrdps-continental")?.horizonHours ?? 48;
   <div class="section-inner">
     <h2 id="cli-title">The CLI</h2>
     <p class="fc-section-lede">
-      Installing the package puts the <code>meteo</code> binary on your path. Five
-      commands: <code>meteo forecast &lt;build|terrain|runs-index|freshness|catalogue&gt;</code>.
+      Installing the package puts the <code>meteo</code> binary on your path, and <code>meteo forecast build</code> is the command that produces a dataset. The <a href="/docs/forecast/">forecast documentation</a> covers the rest of the CLI.
     </p>
 
     <div class="fc-cli-grid">

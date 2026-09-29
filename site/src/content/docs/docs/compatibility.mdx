@@ -17,9 +17,9 @@ import {
 import { BRIEFING_PACKAGE_VERSION } from '../../../components/docs/package-info';
 
 Published documents and npm packages version independently. One rule
-covers every reader: a document names its family with `schemaVersion`,
-and the package you installed is the exact compatibility test — parse the
-document with the package you chose, and let the parser answer.
+covers every reader. A document names its family with `schemaVersion`,
+and the package you installed is the exact compatibility test. Parse the
+document with the package you chose and let the parser answer.
 
 <Aside type="caution" title="Do not compare the numbers">
   An npm `0.x` release does not mean schema `0.x`, and the package
@@ -29,7 +29,7 @@ document with the package you chose, and let the parser answer.
 ## Document families
 
 Every family pins its own exported constant, so a breaking change to one
-family never invalidates readers of another:
+family does not invalidate readers of another.
 
 | Documents | Current `schemaVersion` | Constant (all in the zod contract, `briefing/src/contract.ts`) |
 | --- | ---: | --- |
@@ -47,60 +47,60 @@ their parse guards are the behavioural authority.
 
 These rules hold across every family:
 
-- adding an optional field, enum-independent metadata, or a new model
-  catalogue entry is not a schema break;
-- absence of an optional declared-capability field means **not published**, never
-  zero;
-- changing a stored field's unit or meaning, removing or renaming one, or
-  making an optional field required changes the `schemaVersion`;
-- readers parse **every version a family ever published**, normalizing old
+- Adding an optional field, enum-independent metadata, or a new model
+  catalogue entry is not a schema break.
+- An absent optional declared-capability field means the value is not
+  published. It does not mean zero.
+- Changing a stored field's unit or meaning, removing or renaming a stored
+  field, or making an optional field required changes the `schemaVersion`.
+- Readers parse every version a family has ever published, normalize old
   documents up to the newest shape, and reject only a `schemaVersion` newer
-  than the package — a guard never drops a version, because month archives
-  are append-only and immutable, so every past version's documents stay on
-  the wire forever;
-- model identity is an open slug from `models.json`, not a package enum;
-  and
-- stored documents keep their own run, site, and semantics — never
-  reinterpreted with later catalogue values.
+  than the package. A guard does not drop support for a version,
+  because month archives are append-only and immutable, so documents of
+  every past version stay on the wire forever.
+- Model identity is an open slug from `models.json`. It is not a package
+  enum.
+- Stored documents keep their own run, site, and semantics. Later catalogue
+  values do not reinterpret them.
 
-Validate with the raw-text guards at every storage or network boundary —
-the [contract guide](/docs/briefing/contract/) carries the worked fence.
-Never patch a rejected document in presentation code: upgrade the
-publisher or choose a compatible package before validation.
+Validate with the raw-text guards at every storage or network boundary. The
+[contract guide](/docs/briefing/contract/) has the worked example. Do not
+patch a rejected document in presentation code. Upgrade the writer or choose
+a compatible package before validation.
 
 ## Rolling a schemaVersion bump across a deployment
 
 A deployment has three moving parts: readers pinning
 `@azohra/meteo.briefing`, an operator pinning `@azohra/meteo.forecast`
 (which embeds its own briefing as the writer), and the published dataset
-between them. Guards normalize up — a package parses every version its
-family ever published and returns the newest shape — while writers emit
-only the newest, so the bump itself carries the choreography:
+between them. Guards normalize up. A package parses every version its
+family has ever published and returns the newest shape, while writers emit
+only the newest. The bump itself therefore sets the order of the rollout.
 
-1. **The release that bumps a family ships the upgrade with it**: the new
-   briefing parses the new version *and* everything before it; the
+1. The release that bumps a family ships the upgrade with it. The new
+   briefing parses the new version and everything before it, and the
    forecast release that embeds it is the new writer.
-2. **Consumers upgrade at their own pace, in any order.** A reader that
-   upgrades early keeps parsing the old documents still being published;
-   a reader that upgrades late keeps serving until it does — its only
+2. Consumers upgrade at their own pace, in any order. A reader that
+   upgrades early keeps parsing the old documents still being published.
+   A reader that upgrades late keeps serving until it upgrades. Its only
    symptom for new documents is `{ miss: "invalid" }` with
-   `declaredSchemaVersion` naming the newer number, the signal to upgrade
-   the package, not to debug bytes. An
+   `declaredSchemaVersion` naming the newer number. That result is the
+   signal to upgrade the package rather than debug the bytes. An
    [ingesting reader](/docs/briefing/run-an-ingest/) serves what it last
-   stored throughout: stale, never wrong.
+   stored the whole time, so its data can be stale but is never wrong.
 
-The one rule left is the release rule: never move a writer to a version
-no released reader parses. Everything else is a pin bump on the
-consumer's own schedule.
+One release rule remains. Do not move a writer to a version that no
+released reader parses. Everything else is a pin bump on the consumer's
+own schedule.
 
-![A three-lane swimlane read left to right through a schematic v1-to-v2 schemaVersion bump. The lanes are the writer (an operator pinning @azohra/meteo.forecast, which embeds its own briefing as the writer), the published dataset between them, and readers pinning @azohra/meteo.briefing. In the before column the writer emits v1, v1 documents sit on the wire, and a reader parses them — a guard parses every version ever published, normalized up. In phase 1 the release that bumps the family ships the upgrade with it: the new briefing parses v2 and everything before it, and the forecast release that embeds it is the new writer, emitting only v2; the dataset now holds v2 current documents while v1 archives stay on the wire, append-only and immutable. In phase 2 consumers upgrade at their own pace, in any order: a reader that bumps its pin early keeps parsing the old documents still being published, while a reader that bumps late sees, for new documents only, a miss of invalid with declaredSchemaVersion 2 against a supported 1 — the signal to upgrade the package, not to debug bytes — and an ingesting reader serves what it last stored. A callout carries the release rule: never move a writer to a version no released reader parses.](figures/schema-rollout.svg)
+![A swimlane diagram of the writer, the published dataset and the readers through a v1-to-v2 schemaVersion bump, covering the state before the bump, the release that ships the new reader with the new writer, and consumers upgrading in any order.](figures/schema-rollout.svg)
 
 ## The forecast engine's boundary
 
 The engine is the `@azohra/meteo.forecast` package, versioned and
 released like every other platform package. Its supported boundary is
 the documents it publishes and the documented CLI invocations
-(`pnpm exec meteo forecast ...`) — internal modules are not a promised
+(`pnpm exec meteo forecast ...`). Internal modules are not a promised
 API. A scientific change to a derived value that leaves the JSON shape
 untouched is a package release; a change to a stored field's unit, null
 meaning, or shape follows the document rules above.
@@ -117,7 +117,7 @@ the published models.
 Forecast archives contain the complete profile document as it was
 published. They do not inherit later catalogue or package metadata.
 
-Package-level versioning — npm semver intent and the finding
-vocabularies (currently npm <code>{BRIEFING_PACKAGE_VERSION}</code> on
-the read side) — is
-[the briefing package's page](/docs/briefing/versioning/).
+[The briefing package's versioning page](/docs/briefing/versioning/)
+covers package-level versioning, meaning npm semver intent and the finding
+vocabularies. The read side is currently npm
+<code>{BRIEFING_PACKAGE_VERSION}</code>.

@@ -65,7 +65,7 @@ export default defineConfig({
   // ingested from the capability docs directories; they are committed
   // finished assets, so no raster optimizer (sharp) is wanted or installed.
   image: { service: passthroughImageService() },
-  // Local figures/*.svg images in Markdown docs are inlined as real <svg>
+  // Local figures/*.svg images in Markdown and MDX docs are inlined as real <svg>
   // elements so the page's --meteo-gram-* chrome tokens reach the plates;
   // see src/lib/rehype-inline-figures.mjs for the doctrine and the scope.
   markdown: { rehypePlugins: [rehypeInlineFigures] },
