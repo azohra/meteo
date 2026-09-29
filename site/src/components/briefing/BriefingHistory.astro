@@ -3,33 +3,23 @@
    archive and its sidecar index by the package's reader (exhibit.ts);
    the two are cross-checked, so the panel fails the build before it
    could show a stale offset. */
+import type { RunComparisonFindingKind } from "@azohra/meteo.briefing/history";
 import { formatBytes } from "../../lib/forecast-exhibit";
 import { sampleArchive } from "./exhibit";
 
 const archive = sampleArchive();
 
-const KINDS: { kind: string; gloss: string }[] = [
-  {
-    kind: "existenceTrajectory",
-    gloss: "every run's vote on the day: window, quiet, or an abstention with its stated reason",
-  },
-  {
-    kind: "timingTrajectory",
-    gloss: 'window edges across runs; an edge clipped by the forecast horizon reads "open since at least", not as a timing',
-  },
-  {
-    kind: "magnitudeTrajectory",
-    gloss: "peak climb, peak lift above launch, and window duration for each run, with the change between runs",
-  },
-  {
-    kind: "identityDrift",
-    gloss: "republications and changed model facts, so a fix by the operator is not mistaken for weather",
-  },
-  {
-    kind: "settled",
-    gloss: "whether the newest runs' lift magnitudes fall within one stated band, which measures run-to-run stability and says nothing about skill",
-  },
-];
+/* compareRuns' kinds, checked against the package's own union so the
+   list cannot gain or lose one silently. What each states is
+   briefing/docs/history.md's to say; the link below goes there. */
+const KIND_SET = {
+  existenceTrajectory: true,
+  timingTrajectory: true,
+  magnitudeTrajectory: true,
+  identityDrift: true,
+  settled: true,
+} satisfies Record<RunComparisonFindingKind, true>;
+const KINDS = Object.keys(KIND_SET);
 ---
 
 <section class="bf-history" aria-labelledby="briefing-history-title">
@@ -76,19 +66,16 @@ const KINDS: { kind: string; gloss: string }[] = [
 
       <div class="bf-history-kinds">
         <h3>What <code>compareRuns</code> states</h3>
-        <dl>
-          {KINDS.map((entry) => (
-            <div>
-              <dt><code>{entry.kind}</code></dt>
-              <dd>{entry.gloss}</dd>
-            </div>
+        <ul>
+          {KINDS.map((kind) => (
+            <li><code>{kind}</code></li>
           ))}
-        </dl>
+        </ul>
         <p class="bf-history-refusals">
           It reports the series and the arithmetic and leaves the
           interpretation to you. It does not say a forecast is "trending
           better", weight one run over another, or grade agreement. <a href="/docs/briefing/history/">History and run
-          convergence</a> documents every kind.
+          convergence</a> says what each kind states.
         </p>
       </div>
     </div>
@@ -210,27 +197,22 @@ const KINDS: { kind: string; gloss: string }[] = [
     font-size: 0.92em;
   }
 
-  .bf-history-kinds dl {
+  .bf-history-kinds ul {
     display: grid;
-    gap: 0.85rem;
+    gap: 0.6rem;
     margin: 1.1rem 0 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .bf-history-kinds dl div {
+  .bf-history-kinds li {
     padding-left: clamp(0.9rem, 2vw, 1.25rem);
     border-left: 1px solid var(--rule);
   }
 
-  .bf-history-kinds dt code {
+  .bf-history-kinds li code {
     font: 600 0.8rem/1.5 var(--mono);
     color: var(--ink);
-  }
-
-  .bf-history-kinds dd {
-    margin: 0.2rem 0 0;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: var(--ink-mute);
   }
 
   .bf-history-refusals {

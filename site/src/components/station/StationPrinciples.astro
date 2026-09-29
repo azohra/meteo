@@ -1,26 +1,25 @@
 ---
-/* The station capability's four behaviours as product copy;
-   station/docs/index.md (How it behaves) carries them in full. */
+/* One line of product copy. The rules themselves live in
+   station/docs/wire-contract.md (Semantics); this band links there
+   instead of restating them. */
 ---
 
 <section class="station-principles" aria-label="Principles">
   <div class="station-principles-inner section-inner">
     <span class="station-principles-label">Principles</span>
-    <ul class="station-maxims">
-      <li><strong>Stations declare what they measure.</strong> A missing reading renders as absent, and a dark sensor reports null.</li>
-      <li><strong>Outages carry a reason.</strong> A failed station shows as unavailable with its reason code, and the rest of the feed is unaffected.</li>
-      <li><strong>The wire carries codes and degrees.</strong> Your site chooses the words, units, and colours.</li>
-      <li><strong>Bands follow your limits.</strong> Wind-speed bands use your thresholds and your theme&rsquo;s colours.</li>
-    </ul>
+    <p class="station-principles-copy">
+      Stations report what they measure and why they are down, and your site decides the
+      words, units, colours, and wind bands. The <a href="/docs/station/wire-contract/">wire contract</a> sets out the rules in full.
+    </p>
   </div>
 </section>
 
 <style>
   .station-principles-inner {
     display: grid;
-    grid-template-columns: max-content repeat(4, minmax(0, 1fr));
+    grid-template-columns: max-content minmax(0, 1fr);
     gap: clamp(1.1rem, 2.5vw, 1.75rem);
-    align-items: center;
+    align-items: baseline;
     padding-block: clamp(1.6rem, 3.5vw, 2.4rem);
   }
   .station-principles-label {
@@ -29,39 +28,15 @@
     text-transform: uppercase;
     color: var(--ink-mute);
   }
-  .station-maxims {
-    display: contents;
-    list-style: none;
+  .station-principles-copy {
     margin: 0;
-    padding: 0;
+    max-width: 46rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
   }
-  .station-maxims li {
-    align-self: stretch;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    color: var(--ink-mute);
-    padding-left: clamp(1.1rem, 2.5vw, 1.75rem);
-    border-left: 1px solid var(--rule);
-  }
-  .station-maxims strong { color: var(--ink); display: block; }
 
-  @media (max-width: 1000px) {
-    .station-principles-inner {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      row-gap: 1.25rem;
-      align-items: start;
-    }
-    .station-principles-label { grid-column: 1 / -1; }
-    .station-maxims li:nth-child(odd) {
-      border-left: none;
-      padding-left: 0;
-    }
-  }
   @media (max-width: 520px) {
-    .station-principles-inner { grid-template-columns: 1fr; row-gap: 1rem; }
-    .station-maxims li {
-      border-left: none;
-      padding-left: 0;
-    }
+    .station-principles-inner { grid-template-columns: 1fr; row-gap: 0.5rem; }
   }
 </style>
