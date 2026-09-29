@@ -4,8 +4,8 @@
   "type": "module",
   "dependencies": {
     "@astrojs/mdx": "^7.0.5",
-    "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/starlight": "^0.41.7",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/starlight": "^0.42.4",
     "@azohra/meteo.briefing": "workspace:*",
     "@azohra/meteo.core": "workspace:*",
     "@azohra/meteo.forecast": "workspace:*",
@@ -13,7 +13,7 @@
     "@fontsource-variable/instrument-sans": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/ibm-plex-sans": "^5.3.0",
-    "astro": "^7.2.8",
+    "astro": "^7.3.5",
     "hast-util-from-html": "^2.0.3"
   },
   "devDependencies": {
