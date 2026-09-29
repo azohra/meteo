@@ -1,7 +1,7 @@
 # Contributing to meteo
 
-meteo welcomes focused fixes and additions that strengthen its published
-contracts, meteorological methods, or documentation. For a substantial change,
+Focused fixes and additions that strengthen meteo's published contracts,
+meteorological methods, or documentation are welcome. For a substantial change,
 open an issue first so the approach can be settled before code is written.
 
 ## Set up the workspace
@@ -17,8 +17,8 @@ dependencies and Chromium for the browser suite.
 
 ## Prove a change
 
-Run the narrowest useful task while working. These root tasks cover the common
-feedback loops:
+Run the narrowest useful task while you work. These root tasks cover the
+common feedback loops:
 
 ```sh
 mise run lint       # formatting and linting
@@ -50,13 +50,13 @@ task:
 Generated package output in `dist/`, the built site, and the committed sample
 dataset are also derived artifacts. Do not patch them to hide drift.
 
-Golden SVG failures ask for review, not automatic acceptance. Inspect geometry,
-labels, units, stable IDs, colour meaning, and accessibility before updating a
+Review a golden SVG failure; do not accept it automatically. Inspect geometry, labels,
+units, stable IDs, colour meaning, and accessibility before updating a
 snapshot. Unrelated golden churn usually points to an unstable input.
 
 ## Keep the contracts clear
 
-- Treat missing provider data as absent. Never turn it into zero.
+- Treat missing provider data as absent. Do not turn it into zero.
 - Keep observations distinct from forecasts, provider values from derivations,
   and chart reading from a decision about whether to fly.
 - Put units, freshness, uncertainty, attribution, and material limitations next
@@ -122,15 +122,17 @@ For a locally prepared PR on another branch, run **Release** manually with its
 full merged version commit SHA in `commit`, or check out that commit and run
 `mise run release` locally with `NPM_TOKEN` and an authenticated `gh` CLI.
 Publication reads the new ledger entries and package version changes from that
-commit, builds the packages, publishes to npm and pushes matching package tags. Each package also gets a GitHub Release containing its
-generated changelog section. GitHub Releases are not marked as the repository
-latest because packages version independently. Publication never writes main.
+commit, builds the packages, publishes to npm and pushes matching package
+tags. Each package also gets a GitHub Release containing its generated
+changelog section. GitHub Releases are not marked as the repository latest
+because packages version independently. Publication does not write to main.
 
 If publication stops partway through, run **Release** manually with the same
-merged commit in `commit`. pnpm skips versions already on npm and the release
-task repairs missing tags and GitHub
-Releases. Existing matching releases are skipped; conflicting notes stop the
-operation without overwriting them. Retries also work after main advances. Existing tags are never moved.
+merged commit in `commit`. pnpm skips versions already on npm, and the
+release task repairs missing tags and GitHub Releases. Existing matching
+releases are skipped. Conflicting notes stop the operation without
+overwriting them. Retries also work after main advances. Existing tags are
+never moved.
 
 The required PR Check runs the complete proof against an up-to-date base.
 Deployment builds the site from main independently of package releases.

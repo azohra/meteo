@@ -2,10 +2,10 @@
 
 This directory holds deterministic recipes for model-shaped forecast data:
 the platform's reviewed synthetic corpus and the read side's regression
-goldens. The resulting profiles are synthetic and test artifacts, not
-forecasts. They do not describe present conditions, past conditions, or
-expected conditions at a launch. Public figures using them must retain a
-visible **Synthetic scenario** label and a useful accessibility description.
+goldens. The resulting profiles are synthetic test artifacts. They are not
+forecasts, and they do not describe present conditions, past conditions, or
+expected conditions at a launch. Public figures that use them must keep a
+visible "Synthetic scenario" label and a useful accessibility description.
 
 ## Why control the input
 
@@ -31,17 +31,18 @@ documents; prose and components consume those artifacts.
 
 The generator enforces the distinction:
 
-- definitions use synthetic scenario ids and one of the abstract model shapes
-  in `scenario.schema.json`, never a production model slug as public identity;
-- every clock instant and time zone is explicit and every definition carries a
-  seed, so output cannot depend on the current date, ambient randomness, or a
-  machine-local time zone;
-- baselines are repository-local JSON files, so generation performs no network
-  access;
-- definitions and baselines contain source values only;
-- the forecaster's derivation (`deriveSiteForecast` in `forecast/src/derive.ts`)
-  remains the authority for `derived.*` values;
-- generated profiles are committed for reproducible rendering, but they are
+- Definitions use synthetic scenario ids and one of the abstract model shapes
+  in `scenario.schema.json`. They do not use a production model slug as
+  public identity.
+- Every clock instant and time zone is explicit, and every definition carries
+  a seed, so output cannot depend on the current date, ambient randomness, or
+  a machine-local time zone.
+- Baselines are repository-local JSON files, so generation performs no network
+  access.
+- Definitions and baselines contain source values only.
+- The forecaster's derivation (`deriveSiteForecast` in `forecast/src/derive.ts`)
+  remains the authority for `derived.*` values.
+- Generated profiles are committed for reproducible rendering, and they are
   never edited by hand.
 
 ## Directory contract
@@ -62,13 +63,14 @@ scenarios/
 
 The scenario runner discovers only
 `scenarios/definitions/*.json`. Files below `definitions/invalid/` are test
-fixtures. The runner resolves baseline paths from `scenarios/`, not from the definition
-file's directory or the process working directory.
+fixtures. The runner resolves baseline paths from `scenarios/`. It does not
+resolve them from the definition file's directory or the process working
+directory.
 
 `catalog/` holds the three synthetic sites (`test-hill`, `test-ridge`, and
 `test-valley`) whose `sites.json` and `site-context.json` the documentation's
 examples and the committed sample dataset build from. They are the same
-documents the logbook entry
+documents the page
 [The mountain the model sees](https://meteo.azohra.com/docs/forecast/the-mountain-the-model-sees/)
 reads its relief and land-cover figures from.
 
@@ -86,28 +88,29 @@ neighbouring `index.schema.json`.
 Every definition has these required fields:
 
 - `id`, `title`, and `lesson` identify the recipe and the single relationship
-  it teaches;
-- `kind` is `deterministic`, `ensemble`, or `comparison`;
-- `modelShape` selects a synthetic transport shape, not a named forecast model;
-- `timeZone` is an explicit IANA-style zone echoed into the generated
+  it teaches.
+- `kind` is `deterministic`, `ensemble`, or `comparison`.
+- `modelShape` selects a synthetic transport shape. It does not name a
+  forecast model.
+- `timeZone` is an explicit IANA-style zone, echoed into the generated
   profile as `site.timeZone` for local-time analysis, projection, and
-  presentation;
-- `site.synthetic` is always `true`; the site block is sample provenance
-  only; generated documents are launch-agnostic;
-- `launch` declares the launch elevation the lesson teaches against. It never
-  enters the generated document: the index publishes it, and renderers pass it
-  as the package's `MeteogramOptions.launch`. Assertions read it as
-  `launch.elevationM`. Baselines are launch-agnostic too; one carrying the
-  retired `siteAltitudeM` is rejected with directions;
-- `clock` fixes the UTC reference, generation, and first-valid instants,
-  sampling step, hour count, and random seed;
+  presentation.
+- `site.synthetic` is always `true`. The site block is sample provenance
+  only, and generated documents are launch-agnostic.
+- `launch` declares the launch elevation the lesson teaches against. It does
+  not enter the generated document. The index publishes it, and renderers
+  pass it as the package's `MeteogramOptions.launch`. Assertions read it as
+  `launch.elevationM`. Baselines are launch-agnostic too, and one that
+  carries the retired `siteAltitudeM` is rejected with directions.
+- `clock` fixes the UTC reference, generation, and first-valid instants, the
+  sampling step, the hour count, and the random seed.
 - `baseline` names one local source file and, for calibrated material, its
-  provenance record;
-- `transforms` contains only declared source-input operations;
+  provenance record.
+- `transforms` contains only declared source-input operations.
 - `semantics` explicitly declares how synthetic gust and precipitation fields
-  map to the profile contract's semantics vocabulary;
+  map to the profile contract's semantics vocabulary.
 - `capabilities` uses the same field-presence vocabulary as the published model
-  catalogue without claiming that a production model produced the data;
+  catalogue without claiming that a production model produced the data.
 - `assertions` records machine-checkable relationships that establish the
   lesson.
 
@@ -131,8 +134,8 @@ before the resulting profiles enter the production ensemble aggregator.
 A comparison declares two to four neutral variant ids; variant-specific
 transforms refer to those ids through `target`. Its output filenames include
 the variant id and the generated index keeps the corresponding label beside
-each path. Comparison labels describe controlled differences, not correctness
-or probability.
+each path. Comparison labels describe controlled differences. They make no
+claim about correctness or probability.
 
 ## Transform vocabulary
 
@@ -176,18 +179,19 @@ so the synthetic path exercises production derivations.
 
 A `calibrated` baseline may be reconstructed from real provider output to keep
 synthetic magnitudes and vertical relationships credible. It is calibration
-material only: the website must never import it directly and public prose must
-not present its timestamps as a current or historical forecast example. Its
+material only. The website must never import it directly, and public prose
+must not present its timestamps as a current or historical forecast example. Its
 definition must name a sibling `*.provenance.json` record containing:
 
-- provider and model;
-- model reference time and retrieval or capture date;
-- source URL or feed identifier and applicable attribution or licence terms;
-- site identity and coordinates used during capture;
-- fields retained, fields omitted, and the reconstruction method;
-- numeric tolerances introduced by reconstruction;
+- the provider and model
+- the model reference time and the retrieval or capture date
+- the source URL or feed identifier, and applicable attribution or licence
+  terms
+- the site identity and coordinates used during capture
+- the fields retained, the fields omitted, and the reconstruction method
+- numeric tolerances introduced by reconstruction
 - the repository revision and a `[verified YYYY-MM-DD]` date for provider
-  facts.
+  facts
 
 The provenance record credits the provider adjacent to any discussion of the
 calibration method. Generated output continues to be labelled
@@ -196,8 +200,8 @@ synthetic and uses synthetic public identity.
 At generation time the definition's `site`, `timeZone`, and `clock` replace
 baseline metadata: valid times are rebuilt from `startAt`, `stepHours`, and
 `hourCount`, and the zone is echoed as the profile's `site.timeZone`.
-The baseline contributes the atmospheric source columns, not public identity or
-time claims. The validator also rejects a scenario id that equals any slug in
+The baseline contributes the atmospheric source columns. It contributes no
+public identity or time claims. The validator also rejects a scenario id that equals any slug in
 the current `forecast/models.json` catalogue. The check reads the catalogue instead
 of copying its slugs into this schema.
 
@@ -208,10 +212,10 @@ source baseline contains two fixed hourly columns and no `derived` block.
 
 The fixtures below `definitions/invalid/` each isolate a required rejection:
 
-- `missing-lesson.json` omits `lesson`;
-- `unknown-transform.json` names an operation outside the closed vocabulary;
+- `missing-lesson.json` omits `lesson`.
+- `unknown-transform.json` names an operation outside the closed vocabulary.
 - `invalid-clock.json` uses an unsupported two-hour cadence for an hourly
-  shape;
+  shape.
 - `direct-derived-authorship.json` attempts to transform
   `derived.thermalVelocityMps`.
 
