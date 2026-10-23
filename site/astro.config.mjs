@@ -1,3 +1,4 @@
+import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
@@ -68,7 +69,7 @@ export default defineConfig({
   // Local figures/*.svg images in Markdown and MDX docs are inlined as real <svg>
   // elements so the page's --meteo-gram-* chrome tokens reach the plates;
   // see src/lib/rehype-inline-figures.mjs for the doctrine and the scope.
-  markdown: { rehypePlugins: [rehypeInlineFigures] },
+  markdown: { processor: unified({ rehypePlugins: [rehypeInlineFigures] }) },
   integrations: [
     publishSchemaArtifacts,
     starlight({
