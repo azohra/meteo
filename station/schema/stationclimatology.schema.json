@@ -3,69 +3,72 @@
   "$id": "https://meteo.azohra.com/schema/stationclimatology.schema.json",
   "title": "StationClimatology",
   "description": "The multi-year cube served at /climatology: (month, slot-of-day, sector) sums bucketed in the station's standard time, binned with the consumer's thresholds. Its own document family — it versions apart from the feed.",
-  "type": "object",
-  "properties": {
-    "schemaVersion": {
-      "type": "number",
-      "const": 1
-    },
-    "servedAt": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "stationId": {
-      "type": "string",
-      "minLength": 1
-    },
-    "sectorCount": {
-      "type": "integer",
-      "minimum": 4,
-      "maximum": 9007199254740991
-    },
-    "slotMinutes": {
-      "type": "integer",
-      "exclusiveMinimum": 0,
-      "maximum": 9007199254740991,
-      "description": "Minutes per slot of day; must divide 1440."
-    },
-    "thresholdsMps": {
-      "type": "array",
-      "items": {
-        "type": "number",
-        "minimum": 0
-      },
-      "description": "The consumer's speed-band bounds the cube was binned with, m/s, ascending. A judgment parameter echoed so a reader knows which opinion shaped bandCounts."
-    },
-    "utcOffsetMinutes": {
-      "type": "number",
-      "description": "The station's STANDARD utc offset used for month and slot bucketing — no DST, so a slot means the same solar hours in January and July."
-    },
-    "years": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/ClimatologyYear"
-      },
-      "description": "Oldest first; the coverage ledger."
-    },
-    "cells": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/ClimatologyCell"
-      }
-    }
-  },
-  "required": [
-    "schemaVersion",
-    "servedAt",
-    "stationId",
-    "sectorCount",
-    "slotMinutes",
-    "thresholdsMps",
-    "utcOffsetMinutes",
-    "years",
-    "cells"
-  ],
+  "$ref": "#/$defs/StationClimatology",
   "$defs": {
+    "StationClimatology": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "servedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "stationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sectorCount": {
+          "type": "integer",
+          "minimum": 4,
+          "maximum": 9007199254740991
+        },
+        "slotMinutes": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Minutes per slot of day; must divide 1440."
+        },
+        "thresholdsMps": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "The consumer's speed-band bounds the cube was binned with, m/s, ascending. A judgment parameter echoed so a reader knows which opinion shaped bandCounts."
+        },
+        "utcOffsetMinutes": {
+          "type": "number",
+          "description": "The station's STANDARD utc offset used for month and slot bucketing — no DST, so a slot means the same solar hours in January and July."
+        },
+        "years": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ClimatologyYear"
+          },
+          "description": "Oldest first; the coverage ledger."
+        },
+        "cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ClimatologyCell"
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "servedAt",
+        "stationId",
+        "sectorCount",
+        "slotMinutes",
+        "thresholdsMps",
+        "utcOffsetMinutes",
+        "years",
+        "cells"
+      ]
+    },
     "ClimatologyYear": {
       "type": "object",
       "properties": {

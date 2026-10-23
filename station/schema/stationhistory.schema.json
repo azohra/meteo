@@ -3,32 +3,35 @@
   "$id": "https://meteo.azohra.com/schema/stationhistory.schema.json",
   "title": "StationHistory",
   "description": "One requested archive window served at /history — the pan/zoom road. Reuses the history shape; periodMinutes echoes what the source actually supplied.",
-  "type": "object",
-  "properties": {
-    "schemaVersion": {
-      "type": "number",
-      "const": 2
-    },
-    "servedAt": {
-      "type": "string",
-      "format": "date-time"
-    },
-    "stationId": {
-      "type": "string",
-      "minLength": 1
-    },
-    "history": {
-      "description": "The window's records at the served resolution; periodMinutes echoes what the source actually supplied, which may differ from the request when the vendor snapped it.",
-      "$ref": "#/$defs/History"
-    }
-  },
-  "required": [
-    "schemaVersion",
-    "servedAt",
-    "stationId",
-    "history"
-  ],
+  "$ref": "#/$defs/StationHistory",
   "$defs": {
+    "StationHistory": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 2
+        },
+        "servedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "stationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "history": {
+          "description": "The window's records at the served resolution; periodMinutes echoes what the source actually supplied, which may differ from the request when the vendor snapped it.",
+          "$ref": "#/$defs/History"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "servedAt",
+        "stationId",
+        "history"
+      ]
+    },
     "HistoryPoint": {
       "type": "object",
       "properties": {
@@ -77,13 +80,9 @@
           "description": "Degrees FROM; null exactly when the period was calm (below 0.5 m/s)."
         },
         "temperatureC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "seaLevelPressureHpa": {
@@ -110,23 +109,15 @@
           ]
         },
         "temperatureMinC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "temperatureMaxC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "seaLevelPressureMinHpa": {

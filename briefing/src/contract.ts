@@ -20,7 +20,7 @@ const slugSchema = z
 
 const utcInstantSchema = z.iso
   .datetime()
-  .describe("UTC instant, ISO 8601 with a Z suffix; fractional seconds tolerated.");
+  .describe("UTC instant, ISO 8601 with seconds and a Z suffix; fractional seconds tolerated.");
 
 const populatedEnsembleSchema = z.object({
   members: z
