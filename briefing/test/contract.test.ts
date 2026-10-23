@@ -287,6 +287,17 @@ describe("profile schema", () => {
     expect(parseSiteForecast(profile)).toBeNull();
   });
 
+  it("requires seconds in timestamps and tolerates fractional seconds", () => {
+    const withValidAt = (validAt: string) => {
+      const profile = deterministicProfile();
+      profile.hours[0].validAt = validAt;
+      return parseSiteForecast(profile);
+    };
+    expect(withValidAt("2026-08-09T00:00Z")).toBeNull();
+    expect(withValidAt("2026-08-09T00:00:00Z")).not.toBeNull();
+    expect(withValidAt("2026-08-09T00:00:00.250Z")).not.toBeNull();
+  });
+
   it("guards the stored-JSON boundary like parseStoredForecast", () => {
     expect(parseSiteForecastJson(JSON.stringify(deterministicProfile()))).not.toBeNull();
     expect(parseSiteForecastJson("not json")).toBeNull();

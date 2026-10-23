@@ -40,13 +40,9 @@
               "type": "string"
             },
             "pageUrl": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "latitude": {
@@ -85,13 +81,9 @@
               ]
             },
             "elevationM": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "number",
+                "null"
               ]
             },
             "declaredFavorableDirections": {
@@ -220,13 +212,9 @@
               "type": "string"
             },
             "pageUrl": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "latitude": {
@@ -265,13 +253,9 @@
               ]
             },
             "elevationM": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "number",
+                "null"
               ]
             },
             "declaredFavorableDirections": {
@@ -393,35 +377,23 @@
         },
         "live": {
           "description": "The station has a live sample stream; absent or null reads as false.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "boolean",
+            "null"
           ]
         },
         "battery": {
           "description": "The station reports battery telemetry; absent or null reads as false.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "boolean",
+            "null"
           ]
         },
         "recentSummaries": {
           "description": "The source maintains pre-digested rolling step summaries; absent or null reads as false.",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "boolean",
+            "null"
           ]
         }
       },
@@ -483,23 +455,15 @@
           "description": "Minimum m/s within the sampling window; null ≠ zero."
         },
         "temperatureC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "windChillC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "conditions": {
@@ -528,13 +492,9 @@
       "type": "object",
       "properties": {
         "dewPointC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "lastLightningStrikeAt": {
@@ -549,53 +509,33 @@
           ]
         },
         "lastLightningStrikeDistanceKm": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "lightningStrikeCountLastHour": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "precipitationMinutesToday": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "precipitationRateMmPerHour": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "precipitationTodayMm": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "pressureTrend": {
@@ -615,33 +555,21 @@
           ]
         },
         "relativeHumidityPercent": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "seaLevelPressureHpa": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "solarRadiationWm2": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "uvIndex": {
@@ -741,13 +669,9 @@
           "description": "Degrees FROM; null exactly when the period was calm (below 0.5 m/s)."
         },
         "temperatureC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "seaLevelPressureHpa": {
@@ -774,23 +698,15 @@
           ]
         },
         "temperatureMinC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "temperatureMaxC": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
+          "type": [
+            "number",
+            "null"
           ]
         },
         "seaLevelPressureMinHpa": {
@@ -829,15 +745,11 @@
       "type": "object",
       "properties": {
         "batteryVoltage": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Station supply volts. null means 'not reported here', never a dead battery."
+          "description": "Station supply volts. null means 'not reported here', never a dead battery.",
+          "type": [
+            "number",
+            "null"
+          ]
         }
       },
       "required": [
