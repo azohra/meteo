@@ -120,3 +120,19 @@ test("the complete chart and key remain contained on mobile, print, and reduced 
   await expect(figure.locator("[data-meteogram-key-mount] svg")).toHaveCSS("width", /.+px/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+test("the phone menu opens the docs sidebar, locks the page, and closes on Escape", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/docs/briefing/reading-a-meteogram/", { waitUntil: "networkidle" });
+
+  const sidebar = page.locator("#starlight__sidebar");
+  await expect(sidebar).toBeHidden();
+
+  await page.getByRole("button", { name: "Menu" }).click();
+  await expect(sidebar).toBeVisible();
+  await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+
+  await page.keyboard.press("Escape");
+  await expect(sidebar).toBeHidden();
+  await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+});
