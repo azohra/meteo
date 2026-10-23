@@ -1,5 +1,11 @@
 # @azohra/meteo.core
 
+## 0.3.1
+
+### Patch Changes
+
+- Raise the zod floor to `^4.6.7`, which fixes GHSA-mrhx-c7xc-m3w5: validating an oversized array could exhaust memory.
+
 ## 0.3.0
 
 ### Minor Changes

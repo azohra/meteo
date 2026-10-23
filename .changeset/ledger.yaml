@@ -1,0 +1,16 @@
+"@azohra/meteo.briefing@0.7.0":
+  dir: briefing
+  intents:
+    - hungry-geese-bake
+"@azohra/meteo.core@0.3.1":
+  dir: core
+  intents:
+    - clean-lions-collect
+"@azohra/meteo.forecast@0.6.1":
+  dir: forecast
+  intents:
+    - clean-lions-collect
+"@azohra/meteo.station@0.7.0":
+  dir: station
+  intents:
+    - old-swans-relate
