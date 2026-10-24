@@ -73,7 +73,8 @@ function fixture({ firstRelease = false } = {}) {
   const initial = {
     versions: firstRelease ? [] : ["1.0.0"],
     calls: [] as string[],
-    wrongRemote: false,
+    origin: "https://github.com/azohra/meteo.git",
+    hiddenReads: 0,
     dirtyBuild: false,
     failBuild: false,
     failPublish: false,
@@ -98,7 +99,7 @@ const save = () => fs.writeFileSync(statePath, JSON.stringify(state));
 save();
 if (command === 'git') {
   if (args[0] === 'remote' && args[1] === 'get-url') {
-    console.log(state.wrongRemote ? 'https://github.com/someone/else.git' : 'https://github.com/azohra/meteo.git');
+    console.log(state.origin);
   } else {
     if (state.failPush && args[0] === 'push') process.exit(1);
     const result = cp.spawnSync(${JSON.stringify(realGit)}, args, { stdio: 'inherit' });
@@ -116,6 +117,7 @@ if (command === 'git') {
   } else process.exit(1);
 } else if (command === 'npm') {
   const version = args[1].split("@").at(-1);
+  if (state.hiddenReads && state.versions.includes(version)) { state.hiddenReads--; save(); process.stderr.write("E404"); process.exit(1); }
   if (state.versions.includes(version)) console.log(JSON.stringify(version));
   else { process.stderr.write("E404"); process.exit(1); }
 } else if (command === 'mise') {
@@ -179,15 +181,47 @@ describe("release boundaries", () => {
     );
   });
 
-  it.each(["wrongRemote", "dirtyBuild", "failBuild"] as const)(
-    "refuses %s before publication",
-    (flag) => {
-      const f = fixture();
-      f.configure({ [flag]: true });
-      expect(f.run().status).not.toBe(0);
-      expectNoPublication(f);
-    },
-  );
+  it.each([
+    "https://github.com/azohra/meteo",
+    "https://github.com/azohra/meteo.git",
+    "git@github.com:azohra/meteo",
+    "git@github.com:azohra/meteo.git",
+  ])("accepts origin %s", (origin) => {
+    const f = fixture();
+    f.configure({ origin });
+    const result = f.run();
+    expect(result.status, result.stderr).toBe(0);
+  });
+
+  it.each([
+    "https://github.com/someone/else.git",
+    "https://github.com/azohra/meteo-fork",
+    "https://github.com/azohra/meteo.git.git",
+    "https://example.com/azohra/meteo.git",
+    "https://github.com/azohra/meteo.git\nhttps://github.com/someone/else.git",
+  ])("refuses origin %j before publication", (origin) => {
+    const f = fixture();
+    f.configure({ origin });
+    expect(f.run().stderr).toContain("origin must point to azohra/meteo");
+    expectNoPublication(f);
+  });
+
+  it.each(["dirtyBuild", "failBuild"] as const)("refuses %s before publication", (flag) => {
+    const f = fixture();
+    f.configure({ [flag]: true });
+    expect(f.run().status).not.toBe(0);
+    expectNoPublication(f);
+  });
+
+  it("waits for npm to serve a version it has just accepted before tagging", () => {
+    const f = fixture();
+    f.configure({ hiddenReads: 1 });
+    const result = f.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(f.state().hiddenReads).toBe(0);
+    expect(f.state().calls.filter((call) => call.startsWith("pnpm publish"))).toHaveLength(1);
+    expect(f.git("ls-remote", "origin", `refs/tags/${f.tag}^{}`)).toContain(f.head);
+  }, 20_000);
 
   it("refuses an unmerged release commit", () => {
     const f = fixture();
