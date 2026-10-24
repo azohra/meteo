@@ -59,8 +59,8 @@ function coordinate(value) {
 }
 
 /* Serialized from each glyph's raw font-unit commands, never opentype's
-   getPath/toPathData: those shapers emit NaN path data for some sequences in
-   these WOFF builds (2.x corrupts single glyphs too — hence the 1.3.5 pin). */
+   getPath/toPathData: in opentype.js 2.0 those emit NaN path data for some
+   single glyphs and sequences in these WOFF builds. */
 function glyphPathData(glyph, x, y, scale) {
   const px = (value) => coordinate(x + value * scale);
   const py = (value) => coordinate(y - value * scale);
