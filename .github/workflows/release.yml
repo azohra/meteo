@@ -38,8 +38,11 @@ jobs:
       - name: Select merged release source
         env:
           RELEASE_COMMIT: ${{ github.event.pull_request.merge_commit_sha || inputs.commit }}
+        # The release script comes from the release commit, and older ones
+        # accept origin only with the .git suffix that checkout leaves off.
         run: |
           [[ "$RELEASE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git remote set-url origin "https://github.com/$GITHUB_REPOSITORY.git"
           git fetch -q origin main
           git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
           git checkout --detach "$RELEASE_COMMIT"

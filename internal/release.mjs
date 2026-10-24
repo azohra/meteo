@@ -20,9 +20,10 @@ const previous = (path) => {
 
 if (process.argv.length > 2)
   refuse("release takes no arguments; check out the merged version commit");
+// actions/checkout sets origin without the .git suffix.
 for (const direction of [[], ["--push"]]) {
   const origin = capture("git", ["remote", "get-url", ...direction, "--all", "origin"]);
-  if (!["https://github.com/azohra/meteo.git", "git@github.com:azohra/meteo.git"].includes(origin))
+  if (!/^(?:https:\/\/github\.com\/|git@github\.com:)azohra\/meteo(?:\.git)?$/.test(origin))
     refuse("origin must point to azohra/meteo");
 }
 if (capture("git", ["status", "--porcelain"])) refuse("the worktree is not clean");
@@ -77,6 +78,14 @@ function published(pkg) {
   if (result.status === 0) return JSON.parse(result.stdout) === pkg.version;
   if (result.stderr.includes("E404")) return false;
   refuse(`could not read ${pkg.name}@${pkg.version} from npm`);
+}
+// The registry can take a minute to serve a version it has just accepted.
+function available(pkg) {
+  for (let attempt = 1; attempt < 12; attempt++) {
+    if (published(pkg)) return true;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000);
+  }
+  return published(pkg);
 }
 function remoteTarget(tag) {
   const refs = capture("git", ["ls-remote", "origin", `refs/tags/${tag}`, `refs/tags/${tag}^{}`]);
@@ -149,7 +158,7 @@ if (candidates.some((pkg) => !published(pkg))) {
 }
 for (const pkg of candidates) {
   const tag = `${pkg.name}@${pkg.version}`;
-  if (!published(pkg)) refuse(`${tag} is not available from npm`);
+  if (!available(pkg)) refuse(`${tag} is not available from npm`);
   const target = remoteTarget(tag);
   if (target === head) continue;
   if (target) refuse(`${tag} already points to another commit`);
