@@ -18,8 +18,8 @@
     "hast-util-from-html": "^2.0.3"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
-    "@playwright/test": "^1.62.1",
+    "@astrojs/check": "^0.9.12",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^22.10.0",
     "typescript": "^6.0.3",
     "wrangler": "^4.152.0"
