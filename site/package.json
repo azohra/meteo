@@ -6,7 +6,7 @@
     "@astrojs/markdown-remark": "^7.3.4",
     "@astrojs/mdx": "^8.1.1",
     "@astrojs/sitemap": "^3.7.4",
-    "@astrojs/starlight": "^0.42.6",
+    "@astrojs/starlight": "^0.42.7",
     "@azohra/meteo.briefing": "workspace:*",
     "@azohra/meteo.core": "workspace:*",
     "@azohra/meteo.forecast": "workspace:*",
