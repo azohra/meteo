@@ -55,7 +55,12 @@ facts.
 
 The shared manifest core records downloads, bytes, retries, and duration.
 Transports may add their own numeric counters, but these extension keys are
-unstable and consumers cannot build logic on them. Missing required records
+unstable and consumers cannot build logic on them. Datamart, NOAA and dataset
+fetches, and the HEAD that probes for a complete run, make up to three attempts
+on a dropped connection, throttling, or a 5xx, backing off exponentially from
+15 s. A probe that still fails after the third attempt throws instead of
+reporting the file as absent. GOES granule reads keep their own shorter
+cadence. Missing required records
 fail a build. Optional declared-capability records may stay absent only when
 the catalogue and builder behaviour agree.
 

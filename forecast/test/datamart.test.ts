@@ -107,7 +107,7 @@ describe("fetchBytes", () => {
     expect(wire.requests).toHaveLength(2);
   });
 
-  it("backs off 0.25·2^n seconds, jittered ±25%", async () => {
+  it("backs off 15·2^n seconds, jittered ±25%", async () => {
     const wire = stubFetch([{ status: 500 }, { status: 500 }, { status: 500 }]);
     const delays: number[] = [];
     const jitter = [0, 1];
@@ -122,7 +122,7 @@ describe("fetchBytes", () => {
       }),
     ).rejects.toThrowError();
 
-    expect(delays).toEqual([187.5, 625]);
+    expect(delays).toEqual([11250, 37500]);
   });
 
   it("a Content-Length mismatch is retried, never returned", async () => {

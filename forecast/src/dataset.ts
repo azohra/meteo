@@ -118,6 +118,7 @@ async function fetchPublishedS3(key: string, options: DatasetOptions): Promise<U
     try {
       exchange = await signedS3Fetch(key, { method: "GET" }, options);
     } catch (error) {
+      if (error instanceof PublisherConfigurationError) throw error;
       lastError = error instanceof Error ? error : new Error(String(error));
     }
     if (exchange !== null) {

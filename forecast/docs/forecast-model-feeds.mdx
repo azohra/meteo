@@ -126,6 +126,10 @@ Shared quirks, verified 2026-08-08:
   hoc data retrieval". The builders send a project User-Agent and probe
   availability with one HEAD of a concrete file per model per tick, never a
   listing. A worst-case day stays under the daily budget.
+- **hpfx drops connections in bursts.** On 2026-10-31 and 2026-11-01 hpfx
+  answered `read ECONNRESET` for at least 38 s at a time while dd served the
+  same ticks cleanly. A sub-second retry budget could not outlast that, so the
+  shared backoff now spreads three attempts over about 45 s.
 - **Per-element reads re-decode the whole field.** Every
   `codes_get_double_element` call re-decodes the entire field internally
   (~0.21 s per call on HRDPS's 3.3M points, the same as a full

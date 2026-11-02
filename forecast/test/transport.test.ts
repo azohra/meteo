@@ -7,7 +7,7 @@ import {
   keepAliveFetch,
   USER_AGENT,
 } from "../src/providers/transport.js";
-import { stubFetch } from "./helpers/wire.js";
+import { noSleep, stubFetch } from "./helpers/wire.js";
 
 describe("USER_AGENT", () => {
   it("carries the package version, with the 0.dev source-tree fallback", () => {
@@ -69,6 +69,31 @@ describe("exists", () => {
     expect(init?.method).toBe("HEAD");
     expect(init?.headers?.["user-agent"]).toBe(USER_AGENT);
     expect(init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("retries a dropped connection instead of failing the probe", async () => {
+    const wire = stubFetch([new Error("read ECONNRESET"), { status: 200 }]);
+    expect(
+      await exists("https://hpfx.collab.science.gc.ca/there.grib2", wire.fetch, { sleep: noSleep }),
+    ).toBe(true);
+    expect(wire.requests).toHaveLength(2);
+  });
+
+  it("retries throttling and 5xx rather than reading them as absent", async () => {
+    const wire = stubFetch([{ status: 503 }, { status: 429 }, { status: 404 }]);
+    expect(
+      await exists("https://dd.weather.gc.ca/nowhere.grib2", wire.fetch, { sleep: noSleep }),
+    ).toBe(false);
+    expect(wire.requests).toHaveLength(3);
+  });
+
+  it("throws once the retry budget is spent", async () => {
+    const reset = new Error("read ECONNRESET");
+    const wire = stubFetch([reset, reset, reset]);
+    await expect(
+      exists("https://hpfx.collab.science.gc.ca/there.grib2", wire.fetch, { sleep: noSleep }),
+    ).rejects.toThrow("read ECONNRESET");
+    expect(wire.requests).toHaveLength(3);
   });
 });
 
