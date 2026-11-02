@@ -270,30 +270,54 @@ export class DownloadCounters {
   }
 }
 
+export interface BackoffOptions {
+  sleep?: (ms: number) => Promise<void>;
+  random?: () => number;
+}
+
+/**
+ * Whether a probe URL answers 200. A dropped connection, throttling or a 5xx
+ * is retried like any other fetch, then thrown: reading a reset as "not
+ * published" would quietly settle on an older run.
+ */
 export async function exists(
   url: string,
   fetchImpl: TransportFetch = keepAliveFetch,
+  options: BackoffOptions = {},
 ): Promise<boolean> {
-  const response = await fetchImpl(url, {
-    method: "HEAD",
-    headers: { "user-agent": USER_AGENT },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_S * 1000),
-  });
-  return response.status === 200;
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetchImpl(url, {
+        method: "HEAD",
+        headers: { "user-agent": USER_AGENT },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_S * 1000),
+      });
+      if (response.status !== 429 && response.status < 500) {
+        return response.status === 200;
+      }
+      lastError = new Error(`${url} failed with ${response.status}`);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+    if (attempt < 2) {
+      await transportBackoff(attempt, options);
+    }
+  }
+  throw lastError!;
 }
 
 /**
  * The shared retry cadence: exponential backoff with ±25% jitter. Every
- * provider and dataset transport waits through this one formula.
+ * provider and dataset transport waits through this one formula. The 15 s
+ * base spreads three attempts over about 45 s, long enough to outlast the
+ * bursts of connection resets seen from the ECCC hpfx mirror.
  */
-export function transportBackoff(
-  attempt: number,
-  options: { sleep?: (ms: number) => Promise<void>; random?: () => number } = {},
-): Promise<void> {
+export function transportBackoff(attempt: number, options: BackoffOptions = {}): Promise<void> {
   const sleep =
     options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const random = options.random ?? Math.random;
-  return sleep(0.25 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
+  return sleep(15 * 2 ** attempt * (0.75 + random() * 0.5) * 1000);
 }
 
 export function concurrencyLimit(maxConcurrent: number): <T>(task: () => Promise<T>) => Promise<T> {

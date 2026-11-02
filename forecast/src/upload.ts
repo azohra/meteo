@@ -273,6 +273,7 @@ async function putObject(
     try {
       exchange = await signedS3Fetch(key, init, options);
     } catch (error) {
+      if (error instanceof PublisherConfigurationError) throw error;
       lastError = error instanceof Error ? error : new Error(String(error));
     }
     if (exchange !== null) {
