@@ -10,6 +10,10 @@
   dir: forecast
   intents:
     - clean-lions-collect
+"@azohra/meteo.forecast@0.6.2":
+  dir: forecast
+  intents:
+    - neat-cherries-taste
 "@azohra/meteo.station@0.7.0":
   dir: station
   intents:
