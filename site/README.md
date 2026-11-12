@@ -8,8 +8,10 @@ current profiles in the browser.
 
 ## Developing
 
+Run these from the repository root; the first task installs the frozen
+dependencies and the test browser.
+
 ```sh
-mise run setup                # frozen install + the test browser
 mise run dev                  # dev server; automatic port selection
 mise run //site:typecheck    # astro check
 mise run //site:build         # -> site/dist/

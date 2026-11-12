@@ -8,8 +8,6 @@
 # own check. Root tasks are the aggregates, the workspace shell's own
 # gates, and the repo-wide doc gates.
 #
-#   mise run install — frozen dependencies + the test browser
-#   mise run setup — make a fresh checkout workable
 #   mise run build — every package dist, then the workspace shell
 #   mise run check — the definition of green: every gate, one verb
 #   mise run dev   — the site dev server (automatic port selection)
@@ -77,20 +75,11 @@ description = "vitest with filters passing through (e.g. src/host.unit.test.ts)"
 depends = ["build"]
 run = "pnpm exec vitest run"
 
-# --- setup and build ---------------------------------------------------------
+# --- dependencies and build --------------------------------------------------
 
-[tasks.install]
-description = "Install dependencies from the lockfile and the test browser"
-run = """
-#!/usr/bin/env bash
-set -euo pipefail
-pnpm install --frozen-lockfile
-pnpm --dir site exec playwright install chromium
-"""
-
-[tasks.setup]
-description = "Make a fresh checkout workable"
-depends = ["install"]
+[deps.pnpm]
+auto = true
+run = "pnpm install --frozen-lockfile && pnpm --dir site exec playwright install chromium"
 
 [tasks.build]
 description = "Build every package, then the workspace shell (skips when fresh)"
@@ -403,9 +392,14 @@ run = "node internal/scenarios.mjs generate"
 
 # --- aggregates ----------------------------------------------------------------
 
+[tasks."check:tasks"]
+description = "Every task definition is valid"
+run = "mise tasks validate"
+
 [tasks.check]
 description = "The definition of green: every gate, one command"
 depends = [
+  "check:tasks",
   "lint",
   "changes:check",
   "content",
@@ -438,6 +432,7 @@ run = [{ task = "//site:e2e" }]
 [tasks.dev]
 description = "Site dev server (flags pass through)"
 dir = "site"
+raw = true
 raw_args = true
 run = """
 #!/usr/bin/env bash
