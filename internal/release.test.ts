@@ -66,6 +66,8 @@ function fixture({ firstRelease = false } = {}) {
   );
   git("add", ".");
   git("commit", "-m", "chore: version packages");
+  // A custom init.templateDir can leave a new repository without .git/info.
+  mkdirSync(join(repo, ".git/info"), { recursive: true });
   writeFileSync(join(repo, ".git/info/exclude"), "node_modules\n");
   symlinkSync(resolve("node_modules"), join(repo, "node_modules"), "dir");
   git("push", "-u", "origin", "main");
