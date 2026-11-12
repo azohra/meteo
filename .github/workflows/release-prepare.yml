@@ -31,7 +31,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         env:
           MISE_GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -42,7 +42,7 @@ jobs:
           if [ "$(jq length <<< "$releases")" -eq 0 ]; then
             git restore --worktree .
           fi
-      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+      - uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           token: ${{ steps.token.outputs.token }}
           branch: release/main
