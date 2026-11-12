@@ -6,14 +6,10 @@ open an issue first so the approach can be settled before code is written.
 
 ## Set up the workspace
 
-Install [mise](https://mise.jdx.dev/), clone the repository, and run:
-
-```sh
-mise run setup
-```
-
-mise supplies the pinned toolchain. The setup task installs workspace
-dependencies and Chromium for the browser suite.
+Install [mise](https://mise.jdx.dev/) and clone the repository. mise supplies
+the pinned toolchain. The first task run from the repository root installs
+workspace dependencies and Chromium for the browser suite, and does so again
+whenever the lockfile changes.
 
 ## Prove a change
 

@@ -51,7 +51,6 @@ jobs:
           MISE_GITHUB_TOKEN: ${{ github.token }}
         with:
           minimum_release_age: 24h
-      - run: mise run install
       - name: Configure tag author
         run: |
           git config user.name "github-actions[bot]"

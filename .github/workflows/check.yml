@@ -50,7 +50,6 @@ jobs:
           key: mise-tasks-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: |
             mise-tasks-${{ runner.os }}-${{ runner.arch }}-
-      - run: mise run install
       - run: mise run check
       - if: github.event_name == 'push'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9

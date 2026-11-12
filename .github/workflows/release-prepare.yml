@@ -36,10 +36,9 @@ jobs:
           MISE_GITHUB_TOKEN: ${{ github.token }}
         with:
           minimum_release_age: 24h
-      - run: mise run install
       - name: Prepare package versions
         run: |
-          releases=$(mise run release:prepare)
+          releases=$(mise run --quiet release:prepare)
           if [ "$(jq length <<< "$releases")" -eq 0 ]; then
             git restore --worktree .
           fi
