@@ -13,7 +13,7 @@
 #   mise run dev   — the site dev server (automatic port selection)
 #   mise run deploy — build and deploy the site from origin/main
 #   mise run release:prepare — prepare versions for a release PR
-#   mise run release — publish merged package versions
+#   mise run release — publish merged package versions (Release workflow only)
 
 min_version = { soft = "2026.8.12" }
 monorepo_root = true
@@ -464,6 +464,5 @@ description = "Apply pnpm change intents for a release PR"
 run = "pnpm version -r --json"
 
 [tasks.release]
-description = "Publish merged package versions and their tags"
-confirm = "Publish Meteo's merged package versions?"
+description = "Publish merged package versions and their tags (Release workflow only)"
 run = "node internal/release.mjs"

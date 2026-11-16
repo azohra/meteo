@@ -115,13 +115,12 @@ new package code and its intents in preceding PRs.
 Merging the repository's `release/main` PR starts **Release** automatically from
 that exact merge commit. Ordinary development PRs do not publish packages.
 For a locally prepared PR on another branch, run **Release** manually with its
-full merged version commit SHA in `commit`, or check out that commit and run
-`mise run release` locally with an authenticated `gh` CLI and an npm login
-that can publish the packages.
+full merged version commit SHA in `commit`. Packages are published only by
+that workflow; `mise run release` refuses to run anywhere else.
 Publication reads the new ledger entries and package version changes from that
 commit, builds the packages, publishes to npm and pushes matching package
-tags. In CI, npm trusted publishing authorizes **Release** by its workflow
-file, `release.yml`, so the workflow needs no npm token, and pnpm attaches a
+tags. npm trusted publishing authorizes **Release** by its workflow file,
+`release.yml`, so the workflow needs no npm token, and pnpm attaches a
 provenance statement to each package. Each package also gets a GitHub Release
 containing its generated changelog section. GitHub Releases are not marked as
 the repository latest because packages version independently. Publication does
