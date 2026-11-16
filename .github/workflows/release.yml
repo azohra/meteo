@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: write
+  # npm trusted publishing: npm accepts this workflow, by filename, in place of a token.
+  id-token: write
 
 concurrency:
   group: meteo-production
@@ -58,4 +60,3 @@ jobs:
       - run: mise run release
         env:
           GH_TOKEN: ${{ github.token }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -143,7 +143,7 @@ if (command === 'git') {
     spawnSync(process.execPath, ["internal/release.mjs", ...args], {
       cwd: repo,
       encoding: "utf8",
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, NPM_TOKEN: "fixture-only" },
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
     });
   const tag = "@azohra/meteo.core@1.1.0";
   const check = (base = "origin/main") =>
