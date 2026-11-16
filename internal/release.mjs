@@ -66,8 +66,6 @@ const candidates = packages.filter((pkg) => {
 if (!candidates.length) refuse("HEAD contains no prepared package releases");
 if (candidates.some((pkg) => !pkg.name.startsWith("@azohra/meteo.")))
   refuse("release candidates must belong to @azohra/meteo");
-if (!process.env.NPM_TOKEN) refuse("NPM_TOKEN is unset");
-process.env["npm_config_//registry.npmjs.org/:_authToken"] = process.env.NPM_TOKEN;
 
 function published(pkg) {
   const result = spawnSync(
