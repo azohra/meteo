@@ -143,8 +143,23 @@ if (command === 'git') {
     spawnSync(process.execPath, ["internal/release.mjs", ...args], {
       cwd: repo,
       encoding: "utf8",
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+      env: {
+        ...process.env,
+        GITHUB_ACTIONS: "true",
+        ACTIONS_ID_TOKEN_REQUEST_URL: "https://token.actions.example.invalid",
+        PATH: `${bin}:${process.env.PATH}`,
+      },
     });
+  const runOutsideWorkflow = () => {
+    const env: NodeJS.ProcessEnv = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
+    delete env.GITHUB_ACTIONS;
+    delete env.ACTIONS_ID_TOKEN_REQUEST_URL;
+    return spawnSync(process.execPath, ["internal/release.mjs"], {
+      cwd: repo,
+      encoding: "utf8",
+      env,
+    });
+  };
   const tag = "@azohra/meteo.core@1.1.0";
   const check = (base = "origin/main") =>
     spawnSync(process.execPath, ["internal/check-changes.mjs"], {
@@ -153,7 +168,7 @@ if (command === 'git') {
       env: { ...process.env, CHANGE_BASE: base, PATH: `${bin}:${process.env.PATH}` },
     });
   expect(git("status", "--porcelain")).toBe("");
-  return { repo, git, head, state, configure, run, tag, check, notes };
+  return { repo, git, head, state, configure, run, runOutsideWorkflow, tag, check, notes };
 }
 
 function expectNoPublication(f: ReturnType<typeof fixture>) {
@@ -163,6 +178,14 @@ function expectNoPublication(f: ReturnType<typeof fixture>) {
 }
 
 describe("release boundaries", () => {
+  it("refuses to run outside the Release workflow before touching git or npm", () => {
+    const f = fixture();
+    const result = f.runOutsideWorkflow();
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("only in the Release workflow");
+    expect(f.state().calls).toEqual([]);
+  });
+
   it("publishes the merged versions and only its tags, preserving main and unrelated local tags", () => {
     const f = fixture();
     f.git("tag", "-a", "unrelated", "-m", "Unrelated");

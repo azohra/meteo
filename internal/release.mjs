@@ -18,6 +18,9 @@ const previous = (path) => {
   return result.status === 0 ? result.stdout : "";
 };
 
+// Only the Release workflow publishes: npm trusted publishing needs its OIDC token.
+if (process.env.GITHUB_ACTIONS !== "true" || !process.env.ACTIONS_ID_TOKEN_REQUEST_URL)
+  refuse("runs only in the Release workflow");
 if (process.argv.length > 2)
   refuse("release takes no arguments; check out the merged version commit");
 // actions/checkout sets origin without the .git suffix.
