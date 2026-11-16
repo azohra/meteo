@@ -1,5 +1,16 @@
 # @azohra/meteo.forecast
 
+## 0.6.3
+
+### Patch Changes
+
+- Publish from CI with npm trusted publishing, so each release carries a provenance statement that links it to the commit and workflow that built it.
+
+- Updated dependencies:
+  - @azohra/meteo.briefing@0.7.1
+  - @azohra/meteo.core@0.3.2
+  - @azohra/meteo.grib@0.1.5
+
 ## 0.6.2
 
 ### Patch Changes
