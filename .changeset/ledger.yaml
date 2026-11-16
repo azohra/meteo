@@ -2,10 +2,18 @@
   dir: briefing
   intents:
     - hungry-geese-bake
+"@azohra/meteo.briefing@0.7.1":
+  dir: briefing
+  intents:
+    - trusted-publishing
 "@azohra/meteo.core@0.3.1":
   dir: core
   intents:
     - clean-lions-collect
+"@azohra/meteo.core@0.3.2":
+  dir: core
+  intents:
+    - trusted-publishing
 "@azohra/meteo.forecast@0.6.1":
   dir: forecast
   intents:
@@ -14,7 +22,23 @@
   dir: forecast
   intents:
     - neat-cherries-taste
+"@azohra/meteo.forecast@0.6.3":
+  dir: forecast
+  intents:
+    - trusted-publishing
+"@azohra/meteo.grib@0.1.5":
+  dir: grib
+  intents:
+    - trusted-publishing
+"@azohra/meteo.j2k@0.2.1":
+  dir: j2k
+  intents:
+    - trusted-publishing
 "@azohra/meteo.station@0.7.0":
   dir: station
   intents:
     - old-swans-relate
+"@azohra/meteo.station@0.7.1":
+  dir: station
+  intents:
+    - trusted-publishing

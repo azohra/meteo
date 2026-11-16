@@ -1,5 +1,11 @@
 # @azohra/meteo.core
 
+## 0.3.2
+
+### Patch Changes
+
+- Publish from CI with npm trusted publishing, so each release carries a provenance statement that links it to the commit and workflow that built it.
+
 ## 0.3.1
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @azohra/meteo.grib
 
+## 0.1.5
+
+### Patch Changes
+
+- Publish from CI with npm trusted publishing, so each release carries a provenance statement that links it to the commit and workflow that built it.
+
+- Updated dependencies:
+  - @azohra/meteo.j2k@0.2.1
+
 ## 0.1.4
 
 ### Patch Changes
