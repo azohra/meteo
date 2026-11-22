@@ -86,7 +86,9 @@ impact and consumer-facing summary with `pnpm change`, alongside the code.
 A package change that needs no release uses `--bump none` with a short reason.
 The PR Check requires an intent for each changed public package and previews the
 result with pnpm. Shared build or dependency changes still need review for their
-impact on package consumers.
+impact on package consumers. Dependabot raises a package's dependency range only
+when a new release falls outside it, so an update inside the range touches only the
+lockfile and needs no intent. One that edits a package's manifest needs one.
 
 While packages are below v1, use `minor` for features and breaking changes, and
 `patch` for compatible fixes. Describe breaking changes and their migration in
