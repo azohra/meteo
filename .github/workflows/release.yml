@@ -48,7 +48,7 @@ jobs:
           git fetch -q origin main
           git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
           git checkout --detach "$RELEASE_COMMIT"
-      - uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
         env:
           MISE_GITHUB_TOKEN: ${{ github.token }}
         with:
