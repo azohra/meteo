@@ -29,6 +29,10 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 1
+    # A release inside a package's caret range changes only the lockfile, so
+    # no published manifest moves and no change intent is needed. An update
+    # outside the range still edits the package's manifest and needs one.
+    versioning-strategy: increase-if-necessary
     # @types/node follows the oldest Node the packages support (engines
     # >=22), so packages cannot use an API that release lacks. A Node major
     # is a change of its own.
