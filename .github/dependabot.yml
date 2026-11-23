@@ -39,6 +39,11 @@ updates:
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # The site holds TypeScript 6 for astro check (see site/mise.toml). This
+      # also hides the next major from the packages; remove it once astro
+      # check, or its successor, runs on the current major.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       npm-production-minor-patch:
         patterns: ["*"]
