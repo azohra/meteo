@@ -17,6 +17,11 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The Cloudflare token reaches the whole account, so it is held in an
+    # environment only main may use.
+    environment:
+      name: automation
+      deployment: false
     env:
       GH_TOKEN: ${{ github.token }}
       MISE_JOBS: 1
