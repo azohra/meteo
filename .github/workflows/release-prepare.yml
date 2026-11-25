@@ -17,6 +17,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Bosun's key mints a token for every repository Bosun is installed in,
+    # so it is held in an environment only main may use.
+    environment:
+      name: automation
+      deployment: false
     steps:
       - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc
         id: token
